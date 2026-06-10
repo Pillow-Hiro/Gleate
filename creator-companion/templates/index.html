@@ -106,14 +106,15 @@
   }
 
   .streak-badge {
-    font-size: 0.72rem;
-    color: var(--accent);
-    background: var(--paper-warm);
-    border: 1px solid var(--accent-light);
-    border-radius: 2px;
-    padding: 2px 8px;
+    font-size: 0.875rem;
+    color: #7c4b10;
+    background: #fdf2e0;
+    border: 1.5px solid #c2862a;
+    border-radius: 4px;
+    padding: 4px 12px;
     white-space: nowrap;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
+    font-weight: 500;
   }
 
   /* 7-day activity dots */
@@ -153,7 +154,7 @@
   .goal-chip-label {
     font-size: 0.68rem;
     color: var(--ink-faint);
-    min-width: 2.5rem;
+    min-width: 5.5rem;
     flex-shrink: 0;
   }
   .goal-chip-text { color: var(--ink-soft); }
@@ -324,7 +325,7 @@
     <div class="date-line">
       <span id="today-date"></span>
       {% if streak > 0 %}
-      <span class="streak-badge">{{ streak }}日継続中</span>
+      <span class="streak-badge">🔥 {{ streak }}日連続</span>
       {% endif %}
       <div class="activity-dots">
         {% for day in recent_activity %}
@@ -339,7 +340,7 @@
   <div class="goal-bar">
     {% if weekly_goal %}
     <div class="goal-chip">
-      <span class="goal-chip-label">今週</span>
+      <span class="goal-chip-label" id="weekly-goal-label">今週</span>
       <span class="goal-chip-text">{{ weekly_goal }}</span>
     </div>
     {% endif %}
@@ -385,7 +386,7 @@
 
   {% if weekly and weekly.days > 0 %}
   <hr class="divider">
-  <div class="section-heading">今週の記録</div>
+  <div class="section-heading" id="week-section-heading">今週の記録</div>
   <div class="week-summary">
     <div class="week-stat">
       <span class="week-stat-value">{{ weekly.days }}</span>
@@ -419,6 +420,26 @@
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
   });
+
+  (function() {
+    const today = new Date();
+    const dow = today.getDay();
+    const diffToMonday = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const pad = n => String(n).padStart(2, '0');
+    const y = monday.getFullYear();
+    const fullRange = `${y}/${pad(monday.getMonth()+1)}/${pad(monday.getDate())} 〜 ${pad(sunday.getMonth()+1)}/${pad(sunday.getDate())}`;
+    const compactRange = `${pad(monday.getMonth()+1)}/${pad(monday.getDate())}〜${pad(sunday.getMonth()+1)}/${pad(sunday.getDate())}`;
+
+    const weekHeading = document.getElementById('week-section-heading');
+    if (weekHeading) weekHeading.textContent = `今週の記録　${fullRange}`;
+
+    const weeklyGoalLabel = document.getElementById('weekly-goal-label');
+    if (weeklyGoalLabel) weeklyGoalLabel.textContent = compactRange;
+  })();
 
   document.getElementById('log-form').addEventListener('submit', async (e) => {
     e.preventDefault();
