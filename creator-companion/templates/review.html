@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>振り返り — Creator Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1814; --ink-soft: #5a5650; --ink-faint: #9a9490;
+    --paper: #f7f4ef; --paper-warm: #ede9e2; --accent: #7c6a52;
+    --accent-light: #c4b49a; --green-soft: #e8ede4; --green-ink: #3d5c3a;
+    --border: #d8d3cc;
+  }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.8; }
+  header { border-bottom: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: baseline; gap: 1rem; background: var(--paper); }
+  .logo { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; font-weight: 400; letter-spacing: 0.05em; }
+  .logo span { color: var(--accent); }
+  nav a { font-size: 0.8rem; color: var(--ink-faint); text-decoration: none; margin-left: 1.5rem; }
+  nav a:hover { color: var(--accent); }
+  nav a.active { color: var(--accent); }
+  .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
+  .date-line { font-size: 0.75rem; color: var(--ink-faint); letter-spacing: 0.08em; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem; }
+  .date-line::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .toggle-wrap { display: flex; gap: 0; margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; width: fit-content; }
+  .toggle-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toggle-btn + .toggle-btn { border-left: 1px solid var(--border); }
+  .toggle-btn.active { background: var(--paper-warm); color: var(--ink); }
+
+  .generate-area { margin-bottom: 2rem; }
+  .generate-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0.7rem 2rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .generate-btn:hover { background: var(--accent); }
+  .generate-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
+
+  .review-box {
+    padding: 1.5rem;
+    background: var(--green-soft);
+    border: 1px solid rgba(61,92,58,0.15);
+    border-radius: 4px 14px 14px 14px;
+    display: none;
+  }
+  .review-box.visible { display: block; }
+  .review-from { font-size: 0.75rem; color: var(--green-ink); margin-bottom: 0.6rem; font-weight: 500; }
+  .review-text { font-size: 0.9rem; color: var(--ink); line-height: 1.9; white-space: pre-line; }
+  .review-meta { font-size: 0.72rem; color: var(--ink-faint); margin-top: 1rem; }
+
+  .loading-text { font-size: 0.85rem; color: var(--ink-faint); padding: 1rem 0; display: none; }
+  .loading-text.visible { display: block; }
+
+  .empty-hint { font-size: 0.85rem; color: var(--ink-faint); line-height: 1.8; margin-bottom: 1.5rem; }
+
+  @media (max-width: 600px) { .main { padding: 2rem 1.25rem; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Creator <span>Companion</span></div>
+  <nav>
+    <a href="/">今日</a>
+    <a href="/goals">目標</a>
+    <a href="/review" class="active">振り返り</a>
+    <a href="/logs">履歴</a>
+  </nav>
+</header>
+
+<div class="main">
+  <div class="date-line">振り返り</div>
+
+  <div class="toggle-wrap">
+    <button class="toggle-btn active" id="btn-weekly" onclick="setType('weekly')">今週</button>
+    <button class="toggle-btn" id="btn-monthly" onclick="setType('monthly')">今月</button>
+  </div>
+
+  <div class="generate-area">
+    <p class="empty-hint" id="hint-text">今週の活動をCreator Companionが振り返ります。<br>ログが少なくても生成できます。</p>
+    <button class="generate-btn" id="generate-btn" onclick="generateReview()">振り返りを生成する</button>
+    <div class="loading-text" id="loading-text">振り返りを生成中...</div>
+  </div>
+
+  <div class="review-box" id="review-box">
+    <div class="review-from">Creator Companion</div>
+    <div class="review-text" id="review-text"></div>
+    <div class="review-meta" id="review-meta"></div>
+  </div>
+</div>
+
+<script>
+  let currentType = 'weekly';
+
+  function setType(type) {
+    currentType = type;
+    document.getElementById('btn-weekly').classList.toggle('active', type === 'weekly');
+    document.getElementById('btn-monthly').classList.toggle('active', type === 'monthly');
+    document.getElementById('hint-text').textContent =
+      type === 'weekly'
+        ? '今週の活動をCreator Companionが振り返ります。\nログが少なくても生成できます。'
+        : '今月の活動をCreator Companionが振り返ります。\nあなたの強みや独自性を言葉にします。';
+    document.getElementById('review-box').classList.remove('visible');
+  }
+
+  async function generateReview() {
+    const btn = document.getElementById('generate-btn');
+    const loading = document.getElementById('loading-text');
+    btn.disabled = true;
+    loading.classList.add('visible');
+
+    const res = await fetch('/api/review/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type: currentType})
+    });
+    const data = await res.json();
+
+    document.getElementById('review-text').textContent = data.review;
+    document.getElementById('review-meta').textContent =
+      `${data.period_label}の記録 ${data.log_count} 件をもとに生成しました`;
+    document.getElementById('review-box').classList.add('visible');
+
+    btn.disabled = false;
+    loading.classList.remove('visible');
+    document.getElementById('review-box').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  }
+</script>
+</body>
+</html>

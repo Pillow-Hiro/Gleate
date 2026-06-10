@@ -47,10 +47,7 @@
     letter-spacing: 0.05em;
     color: var(--ink);
   }
-
-  .logo span {
-    color: var(--accent);
-  }
+  .logo span { color: var(--accent); }
 
   nav a {
     font-size: 0.8rem;
@@ -61,9 +58,33 @@
   nav a:hover { color: var(--accent); }
 
   .main {
-    max-width: 680px;
+    max-width: 640px;
     margin: 0 auto;
     padding: 3rem 2rem;
+  }
+
+  /* Welcome note — first-time visitors only */
+  .welcome-note {
+    background: var(--green-soft);
+    border-left: 3px solid var(--accent-light);
+    padding: 0.9rem 1.25rem;
+    margin-bottom: 2.5rem;
+    border-radius: 0 4px 4px 0;
+  }
+  .welcome-note p {
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    line-height: 1.85;
+  }
+  .welcome-note .welcome-from {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    margin-top: 0.4rem;
+  }
+
+  /* Journal header — date + streak + activity dots */
+  .journal-header {
+    margin-bottom: 2rem;
   }
 
   .date-line {
@@ -71,37 +92,80 @@
     color: var(--ink-faint);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 2.5rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
   .date-line::after {
     content: '';
     flex: 1;
     height: 1px;
     background: var(--border);
+    min-width: 20px;
   }
 
-  .streak {
-    font-size: 0.75rem;
+  .streak-badge {
+    font-size: 0.72rem;
     color: var(--accent);
     background: var(--paper-warm);
     border: 1px solid var(--accent-light);
     border-radius: 2px;
     padding: 2px 8px;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
   }
 
-  .section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+  /* 7-day activity dots */
+  .activity-dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .activity-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .activity-dot.logged { background: var(--accent-light); }
+  .activity-dot.today-logged { background: var(--accent); }
+  .activity-dot.today-empty {
+    background: transparent;
+    border: 1.5px solid var(--accent-light);
+  }
+
+  /* Goal bar */
+  .goal-bar {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .goal-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+  }
+  .goal-chip-label {
+    font-size: 0.68rem;
     color: var(--ink-faint);
-    margin-bottom: 0.5rem;
+    min-width: 2.5rem;
+    flex-shrink: 0;
   }
+  .goal-chip-text { color: var(--ink-soft); }
 
-  .field {
-    margin-bottom: 1.5rem;
+  /* Journal form */
+  .field { margin-bottom: 1.75rem; }
+
+  .prompt-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.5rem;
   }
 
   textarea {
@@ -122,39 +186,52 @@
   textarea:focus { border-bottom-color: var(--accent); }
   textarea::placeholder { color: var(--ink-faint); font-size: 0.85rem; }
 
+  .form-footer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.25rem;
+  }
+
   .save-btn {
     background: var(--ink);
     color: var(--paper);
     border: none;
-    padding: 0.7rem 2rem;
+    padding: 0.65rem 1.75rem;
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 0.85rem;
     letter-spacing: 0.05em;
     cursor: pointer;
     border-radius: 2px;
     transition: background 0.2s, transform 0.1s;
-    margin-top: 0.5rem;
   }
   .save-btn:hover { background: var(--accent); }
   .save-btn:active { transform: scale(0.98); }
   .save-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
 
-  .companion-response {
-    margin-top: 2.5rem;
-    padding: 1.5rem;
-    background: var(--green-soft);
-    border-left: 2px solid var(--green-ink);
-    border-radius: 0 2px 2px 0;
+  .saved-notice {
+    font-size: 0.75rem;
+    color: var(--green-ink);
     display: none;
   }
-  .companion-response.visible { display: block; }
-  .companion-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+  .saved-notice.visible { display: inline; }
+
+  /* Companion message — chat bubble style */
+  .companion-message { display: none; margin-top: 2rem; }
+  .companion-message.visible { display: block; }
+
+  .companion-bubble {
+    background: var(--green-soft);
+    border: 1px solid rgba(61, 92, 58, 0.12);
+    border-radius: 4px 14px 14px 14px;
+    padding: 1.25rem 1.5rem;
+  }
+  .companion-name {
+    font-size: 0.72rem;
     color: var(--green-ink);
-    margin-bottom: 0.75rem;
-    opacity: 0.7;
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.03em;
   }
   .companion-text {
     font-size: 0.9rem;
@@ -166,90 +243,59 @@
   .divider {
     border: none;
     border-top: 1px solid var(--border);
-    margin: 3rem 0;
+    margin: 2.5rem 0;
   }
 
-  .weekly {
-    margin-top: 0;
-  }
-  .weekly-title {
+  /* Section heading */
+  .section-heading {
     font-family: 'Noto Serif JP', serif;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 400;
-    color: var(--ink-soft);
-    margin-bottom: 1.5rem;
-  }
-
-  .weekly-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .weekly-card {
-    background: var(--paper-warm);
-    border: 1px solid var(--border);
-    padding: 1rem 1.25rem;
-    border-radius: 2px;
-  }
-  .weekly-card-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     color: var(--ink-faint);
-    margin-bottom: 0.25rem;
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.05em;
   }
-  .weekly-card-value {
-    font-size: 1.6rem;
+
+  /* Week summary — simplified stats */
+  .week-summary {
+    display: flex;
+    gap: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .week-stat { display: flex; flex-direction: column; gap: 0.15rem; }
+  .week-stat-value {
     font-family: 'Noto Serif JP', serif;
+    font-size: 1.5rem;
     font-weight: 300;
     color: var(--accent);
   }
-  .weekly-card-unit {
-    font-size: 0.75rem;
+  .week-stat-label {
+    font-size: 0.7rem;
     color: var(--ink-faint);
+    letter-spacing: 0.04em;
   }
 
-  .log-list {
-    list-style: none;
-  }
-  .log-item {
-    padding: 0.75rem 0;
+  /* Recent log entries */
+  .log-list { list-style: none; }
+  .log-entry {
+    padding: 0.6rem 0;
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 1.5rem;
     align-items: baseline;
   }
+  .log-entry:last-child { border-bottom: none; }
   .log-date {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--ink-faint);
     min-width: 80px;
     flex-shrink: 0;
   }
-  .log-content {
-    font-size: 0.85rem;
-    color: var(--ink-soft);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 3rem 0;
-    color: var(--ink-faint);
-    font-size: 0.85rem;
-  }
-
-  .saved-notice {
-    font-size: 0.75rem;
-    color: var(--green-ink);
-    margin-left: 1rem;
-    display: none;
-  }
-  .saved-notice.visible { display: inline; }
+  .log-text { font-size: 0.85rem; color: var(--ink-soft); }
 
   @media (max-width: 600px) {
     .main { padding: 2rem 1.25rem; }
-    .weekly-grid { grid-template-columns: 1fr; }
+    header { padding: 1.25rem 1.25rem; }
   }
 </style>
 </head>
@@ -259,68 +305,96 @@
   <div class="logo">Creator <span>Companion</span></div>
   <nav>
     <a href="/">今日</a>
+    <a href="/goals">目標</a>
+    <a href="/review">振り返り</a>
     <a href="/logs">履歴</a>
   </nav>
 </header>
 
 <div class="main">
 
-  <div class="date-line">
-    <span id="today-date"></span>
-    <span class="streak" id="streak-badge" style="display:none"></span>
+  {% if is_first_visit %}
+  <div class="welcome-note">
+    <p>毎日の創作を記録して、AI伴走者と一緒に振り返りましょう。すべての項目は任意です。</p>
+    <div class="welcome-from">— Creator Companion</div>
   </div>
+  {% endif %}
+
+  <div class="journal-header">
+    <div class="date-line">
+      <span id="today-date"></span>
+      {% if streak > 0 %}
+      <span class="streak-badge">{{ streak }}日継続中</span>
+      {% endif %}
+      <div class="activity-dots">
+        {% for day in recent_activity %}
+        <span class="activity-dot {% if day.is_today and day.logged %}today-logged{% elif day.is_today %}today-empty{% elif day.logged %}logged{% endif %}"
+              title="{{ day.date }}"></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if weekly_goal or monthly_goal %}
+  <div class="goal-bar">
+    {% if weekly_goal %}
+    <div class="goal-chip">
+      <span class="goal-chip-label">今週</span>
+      <span class="goal-chip-text">{{ weekly_goal }}</span>
+    </div>
+    {% endif %}
+    {% if monthly_goal %}
+    <div class="goal-chip">
+      <span class="goal-chip-label">今月</span>
+      <span class="goal-chip-text">{{ monthly_goal }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <form id="log-form">
     <div class="field">
-      <div class="section-label">今日作ったもの・進捗</div>
-      <textarea name="created" rows="2" placeholder="今日の創作活動を書いてください">{{ today_log.created if today_log else '' }}</textarea>
+      <label class="prompt-label">今日つくったこと</label>
+      <textarea name="created" rows="2" placeholder="進捗、完成したもの、作業したことなど">{{ today_log.created if today_log else '' }}</textarea>
     </div>
     <div class="field">
-      <div class="section-label">楽しかったこと</div>
+      <label class="prompt-label">よかったこと・楽しかったこと</label>
       <textarea name="enjoyable" rows="2" placeholder="小さなことでも">{{ today_log.enjoyable if today_log else '' }}</textarea>
     </div>
     <div class="field">
-      <div class="section-label">困ったこと</div>
-      <textarea name="struggled" rows="2" placeholder="詰まったこと、迷ったこと">{{ today_log.struggled if today_log else '' }}</textarea>
+      <label class="prompt-label">詰まったこと・困ったこと</label>
+      <textarea name="struggled" rows="2" placeholder="迷ったこと、うまくいかなかったこと">{{ today_log.struggled if today_log else '' }}</textarea>
     </div>
     <div class="field">
-      <div class="section-label">次回やること</div>
+      <label class="prompt-label">次にやること</label>
       <textarea name="next" rows="2" placeholder="次の一歩">{{ today_log.next if today_log else '' }}</textarea>
     </div>
 
-    <div style="display:flex; align-items:center;">
+    <div class="form-footer">
       <button type="submit" class="save-btn" id="save-btn">記録する</button>
       <span class="saved-notice" id="saved-notice">保存しました</span>
     </div>
   </form>
 
-  <div class="companion-response {% if today_log and today_log.ai_response %}visible{% endif %}" id="companion-box">
-    <div class="companion-label">Companion</div>
-    <div class="companion-text" id="companion-text">{{ today_log.ai_response if today_log and today_log.ai_response else '' }}</div>
+  <div class="companion-message {% if today_log and today_log.ai_response %}visible{% endif %}" id="companion-box">
+    <div class="companion-bubble">
+      <div class="companion-name">Creator Companion</div>
+      <div class="companion-text" id="companion-text">{{ today_log.ai_response if today_log and today_log.ai_response else '' }}</div>
+    </div>
   </div>
 
   {% if weekly and weekly.days > 0 %}
   <hr class="divider">
-  <div class="weekly">
-    <div class="weekly-title">今週のまとめ</div>
-    <div class="weekly-grid">
-      <div class="weekly-card">
-        <div class="weekly-card-label">創作した日</div>
-        <div class="weekly-card-value">{{ weekly.days }}<span class="weekly-card-unit"> 日</span></div>
-      </div>
-      <div class="weekly-card">
-        <div class="weekly-card-label">楽しかったこと</div>
-        <div class="weekly-card-value">{{ weekly.enjoyed | length }}<span class="weekly-card-unit"> 件</span></div>
-      </div>
+  <div class="section-heading">今週の記録</div>
+  <div class="week-summary">
+    <div class="week-stat">
+      <span class="week-stat-value">{{ weekly.days }}</span>
+      <span class="week-stat-label">創作した日</span>
     </div>
     {% if weekly.enjoyed %}
-    <div class="field">
-      <div class="section-label">今週の「楽しかったこと」</div>
-      <ul class="log-list">
-        {% for e in weekly.enjoyed %}
-        <li class="log-item"><span class="log-content">{{ e }}</span></li>
-        {% endfor %}
-      </ul>
+    <div class="week-stat">
+      <span class="week-stat-value">{{ weekly.enjoyed | length }}</span>
+      <span class="week-stat-label">よかったこと</span>
     </div>
     {% endif %}
   </div>
@@ -328,12 +402,12 @@
 
   {% if logs %}
   <hr class="divider">
-  <div class="weekly-title" style="font-family:'Noto Serif JP',serif;font-size:0.9rem;color:var(--ink-soft);margin-bottom:1rem;">直近の記録</div>
+  <div class="section-heading">直近の記録</div>
   <ul class="log-list">
     {% for log in logs | reverse %}
-    <li class="log-item">
+    <li class="log-entry">
       <span class="log-date">{{ log.date }}</span>
-      <span class="log-content">{{ log.created or '（記録なし）' }}</span>
+      <span class="log-text">{{ log.created or '（記録なし）' }}</span>
     </li>
     {% endfor %}
   </ul>
@@ -342,9 +416,8 @@
 </div>
 
 <script>
-  const today = new Date();
-  document.getElementById('today-date').textContent = today.toLocaleDateString('ja-JP', {
-    year:'numeric', month:'long', day:'numeric', weekday:'short'
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('ja-JP', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
   });
 
   document.getElementById('log-form').addEventListener('submit', async (e) => {
@@ -353,19 +426,16 @@
     btn.disabled = true;
     btn.textContent = '送信中...';
 
-    const fd = new FormData(e.target);
-    const data = Object.fromEntries(fd.entries());
-
+    const data = Object.fromEntries(new FormData(e.target).entries());
     const res = await fetch('/save', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
     const result = await res.json();
 
     const box = document.getElementById('companion-box');
-    const text = document.getElementById('companion-text');
-    text.textContent = result.ai_response;
+    document.getElementById('companion-text').textContent = result.ai_response;
     box.classList.add('visible');
 
     const notice = document.getElementById('saved-notice');
@@ -374,10 +444,9 @@
 
     btn.disabled = false;
     btn.textContent = '記録する';
-    box.scrollIntoView({behavior:'smooth', block:'nearest'});
+    box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
-  // テキストエリアの自動リサイズ
   document.querySelectorAll('textarea').forEach(ta => {
     ta.addEventListener('input', () => {
       ta.style.height = 'auto';
