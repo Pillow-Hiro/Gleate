@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>履歴 — Creator Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1814; --ink-soft: #5a5650; --ink-faint: #9a9490;
+    --paper: #f7f4ef; --paper-warm: #ede9e2; --accent: #7c6a52;
+    --accent-light: #c4b49a; --green-soft: #e8ede4; --green-ink: #3d5c3a;
+    --border: #d8d3cc;
+  }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.8; }
+  header { border-bottom: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .logo { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; font-weight: 400; letter-spacing: 0.05em; }
+  .logo span { color: var(--accent); }
+  nav a { font-size: 0.8rem; color: var(--ink-faint); text-decoration: none; margin-left: 1.5rem; }
+  nav a:hover { color: var(--accent); }
+  .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
+  .page-title { font-family: 'Noto Serif JP', serif; font-size: 1rem; font-weight: 400; color: var(--ink-soft); margin-bottom: 2rem; }
+  .log-card { border: 1px solid var(--border); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+  .log-card-header { background: var(--paper-warm); padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .log-card-date { font-size: 0.8rem; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .log-card-body { padding: 1.25rem; }
+  .log-field { margin-bottom: 1rem; }
+  .log-field:last-child { margin-bottom: 0; }
+  .log-field-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.25rem; }
+  .log-field-value { font-size: 0.88rem; color: var(--ink-soft); }
+  .log-ai { background: var(--green-soft); border-top: 1px solid var(--border); padding: 1rem 1.25rem; }
+  .log-ai-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-ink); margin-bottom: 0.4rem; opacity: 0.7; }
+  .log-ai-text { font-size: 0.85rem; color: var(--ink); white-space: pre-line; line-height: 1.9; }
+  .empty-state { text-align: center; padding: 4rem 0; color: var(--ink-faint); font-size: 0.85rem; }
+  .empty-state a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Creator <span>Companion</span></div>
+  <nav>
+    <a href="/">今日</a>
+    <a href="/logs">履歴</a>
+  </nav>
+</header>
+
+<div class="main">
+  <div class="page-title">創作ログ 履歴</div>
+
+  {% if logs %}
+    {% for log in logs %}
+    <div class="log-card">
+      <div class="log-card-header">
+        <span class="log-card-date">{{ log.date }}</span>
+      </div>
+      <div class="log-card-body">
+        {% if log.created %}
+        <div class="log-field">
+          <div class="log-field-label">作ったもの・進捗</div>
+          <div class="log-field-value">{{ log.created }}</div>
+        </div>
+        {% endif %}
+        {% if log.enjoyable %}
+        <div class="log-field">
+          <div class="log-field-label">楽しかったこと</div>
+          <div class="log-field-value">{{ log.enjoyable }}</div>
+        </div>
+        {% endif %}
+        {% if log.struggled %}
+        <div class="log-field">
+          <div class="log-field-label">困ったこと</div>
+          <div class="log-field-value">{{ log.struggled }}</div>
+        </div>
+        {% endif %}
+        {% if log.next %}
+        <div class="log-field">
+          <div class="log-field-label">次回やること</div>
+          <div class="log-field-value">{{ log.next }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if log.ai_response %}
+      <div class="log-ai">
+        <div class="log-ai-label">Companion</div>
+        <div class="log-ai-text">{{ log.ai_response }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    まだログがありません。<br>
+    <a href="/">今日の創作を記録する</a>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

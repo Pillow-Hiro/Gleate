@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creator Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1814;
+    --ink-soft: #5a5650;
+    --ink-faint: #9a9490;
+    --paper: #f7f4ef;
+    --paper-warm: #ede9e2;
+    --accent: #7c6a52;
+    --accent-light: #c4b49a;
+    --green-soft: #e8ede4;
+    --green-ink: #3d5c3a;
+    --border: #d8d3cc;
+  }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    background: var(--paper);
+  }
+
+  .logo {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  nav a {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    text-decoration: none;
+    margin-left: 1.5rem;
+  }
+  nav a:hover { color: var(--accent); }
+
+  .main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+
+  .date-line {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .date-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .streak {
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: var(--paper-warm);
+    border: 1px solid var(--accent-light);
+    border-radius: 2px;
+    padding: 2px 8px;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.5rem;
+  }
+
+  .field {
+    margin-bottom: 1.5rem;
+  }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    line-height: 1.7;
+    min-height: 44px;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-bottom-color: var(--accent); }
+  textarea::placeholder { color: var(--ink-faint); font-size: 0.85rem; }
+
+  .save-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0.7rem 2rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .save-btn:hover { background: var(--accent); }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
+
+  .companion-response {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    background: var(--green-soft);
+    border-left: 2px solid var(--green-ink);
+    border-radius: 0 2px 2px 0;
+    display: none;
+  }
+  .companion-response.visible { display: block; }
+  .companion-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green-ink);
+    margin-bottom: 0.75rem;
+    opacity: 0.7;
+  }
+  .companion-text {
+    font-size: 0.9rem;
+    color: var(--ink);
+    line-height: 1.9;
+    white-space: pre-line;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 3rem 0;
+  }
+
+  .weekly {
+    margin-top: 0;
+  }
+  .weekly-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-bottom: 1.5rem;
+  }
+
+  .weekly-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .weekly-card {
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    border-radius: 2px;
+  }
+  .weekly-card-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.25rem;
+  }
+  .weekly-card-value {
+    font-size: 1.6rem;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 300;
+    color: var(--accent);
+  }
+  .weekly-card-unit {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+  }
+
+  .log-list {
+    list-style: none;
+  }
+  .log-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 1.5rem;
+    align-items: baseline;
+  }
+  .log-date {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  .log-content {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 0;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+  }
+
+  .saved-notice {
+    font-size: 0.75rem;
+    color: var(--green-ink);
+    margin-left: 1rem;
+    display: none;
+  }
+  .saved-notice.visible { display: inline; }
+
+  @media (max-width: 600px) {
+    .main { padding: 2rem 1.25rem; }
+    .weekly-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Creator <span>Companion</span></div>
+  <nav>
+    <a href="/">今日</a>
+    <a href="/logs">履歴</a>
+  </nav>
+</header>
+
+<div class="main">
+
+  <div class="date-line">
+    <span id="today-date"></span>
+    <span class="streak" id="streak-badge" style="display:none"></span>
+  </div>
+
+  <form id="log-form">
+    <div class="field">
+      <div class="section-label">今日作ったもの・進捗</div>
+      <textarea name="created" rows="2" placeholder="今日の創作活動を書いてください">{{ today_log.created if today_log else '' }}</textarea>
+    </div>
+    <div class="field">
+      <div class="section-label">楽しかったこと</div>
+      <textarea name="enjoyable" rows="2" placeholder="小さなことでも">{{ today_log.enjoyable if today_log else '' }}</textarea>
+    </div>
+    <div class="field">
+      <div class="section-label">困ったこと</div>
+      <textarea name="struggled" rows="2" placeholder="詰まったこと、迷ったこと">{{ today_log.struggled if today_log else '' }}</textarea>
+    </div>
+    <div class="field">
+      <div class="section-label">次回やること</div>
+      <textarea name="next" rows="2" placeholder="次の一歩">{{ today_log.next if today_log else '' }}</textarea>
+    </div>
+
+    <div style="display:flex; align-items:center;">
+      <button type="submit" class="save-btn" id="save-btn">記録する</button>
+      <span class="saved-notice" id="saved-notice">保存しました</span>
+    </div>
+  </form>
+
+  <div class="companion-response {% if today_log and today_log.ai_response %}visible{% endif %}" id="companion-box">
+    <div class="companion-label">Companion</div>
+    <div class="companion-text" id="companion-text">{{ today_log.ai_response if today_log and today_log.ai_response else '' }}</div>
+  </div>
+
+  {% if weekly and weekly.days > 0 %}
+  <hr class="divider">
+  <div class="weekly">
+    <div class="weekly-title">今週のまとめ</div>
+    <div class="weekly-grid">
+      <div class="weekly-card">
+        <div class="weekly-card-label">創作した日</div>
+        <div class="weekly-card-value">{{ weekly.days }}<span class="weekly-card-unit"> 日</span></div>
+      </div>
+      <div class="weekly-card">
+        <div class="weekly-card-label">楽しかったこと</div>
+        <div class="weekly-card-value">{{ weekly.enjoyed | length }}<span class="weekly-card-unit"> 件</span></div>
+      </div>
+    </div>
+    {% if weekly.enjoyed %}
+    <div class="field">
+      <div class="section-label">今週の「楽しかったこと」</div>
+      <ul class="log-list">
+        {% for e in weekly.enjoyed %}
+        <li class="log-item"><span class="log-content">{{ e }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if logs %}
+  <hr class="divider">
+  <div class="weekly-title" style="font-family:'Noto Serif JP',serif;font-size:0.9rem;color:var(--ink-soft);margin-bottom:1rem;">直近の記録</div>
+  <ul class="log-list">
+    {% for log in logs | reverse %}
+    <li class="log-item">
+      <span class="log-date">{{ log.date }}</span>
+      <span class="log-content">{{ log.created or '（記録なし）' }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+</div>
+
+<script>
+  const today = new Date();
+  document.getElementById('today-date').textContent = today.toLocaleDateString('ja-JP', {
+    year:'numeric', month:'long', day:'numeric', weekday:'short'
+  });
+
+  document.getElementById('log-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    const fd = new FormData(e.target);
+    const data = Object.fromEntries(fd.entries());
+
+    const res = await fetch('/save', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    const box = document.getElementById('companion-box');
+    const text = document.getElementById('companion-text');
+    text.textContent = result.ai_response;
+    box.classList.add('visible');
+
+    const notice = document.getElementById('saved-notice');
+    notice.classList.add('visible');
+    setTimeout(() => notice.classList.remove('visible'), 3000);
+
+    btn.disabled = false;
+    btn.textContent = '記録する';
+    box.scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  // テキストエリアの自動リサイズ
+  document.querySelectorAll('textarea').forEach(ta => {
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+  });
+</script>
+</body>
+</html>
