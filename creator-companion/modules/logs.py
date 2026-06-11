@@ -47,10 +47,10 @@ def get_month_display_str():
 
 def get_week_display_str():
     today = datetime.now()
-    monday = today - timedelta(days=today.weekday())
-    sunday = monday + timedelta(days=6)
+    sunday = today - timedelta(days=(today.weekday() + 1) % 7)
+    saturday = sunday + timedelta(days=6)
     pad = lambda n: str(n).zfill(2)
-    return f"{monday.year}/{pad(monday.month)}/{pad(monday.day)}〜{pad(sunday.month)}/{pad(sunday.day)}"
+    return f"{sunday.year}/{pad(sunday.month)}/{pad(sunday.day)}〜{pad(saturday.month)}/{pad(saturday.day)}"
 
 
 def get_current_weekly_goal(goals):

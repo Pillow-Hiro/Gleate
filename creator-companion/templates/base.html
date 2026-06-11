@@ -6,9 +6,8 @@
 <title>{% block title %}Creator Companion{% endblock %}</title>
 <script>
   (function() {
-    const t = localStorage.getItem('cc-theme');
-    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-    else if (t === 'brown') document.documentElement.setAttribute('data-theme', 'brown');
+    if (localStorage.getItem('cc-theme') === 'dark')
+      document.documentElement.setAttribute('data-theme', 'dark');
   })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,49 +39,26 @@
     --sb-width: 220px;
   }
 
-  /* ── Dark mode — black base, high contrast ── */
+  /* ── Dark mode — black base, improved contrast ── */
   html[data-theme="dark"] {
     --ink: #f0ece6;
-    --ink-soft: #c4bfb8;
-    --ink-faint: #8a8680;
+    --ink-soft: #e2ddd8;
+    --ink-faint: #aaa6a2;
     --paper: #0a0a0a;
-    --paper-warm: #111110;
+    --paper-warm: #161614;
     --accent: #c4a882;
     --accent-light: #8c7a62;
     --green-soft: #0f1f0f;
     --green-ink: #6aba67;
-    --border: #3c3a36;
+    --border: #555250;
     --sb-bg: #0a0a0a;
-    --sb-border: #1f1f1f;
-    --sb-text: #5a5a5a;
-    --sb-text-hover: #c8c8c8;
+    --sb-border: #282624;
+    --sb-text: #909090;
+    --sb-text-hover: #d8d4d0;
     --sb-text-active: #f5f5f5;
-    --sb-item-hover: #1a1a1a;
-    --sb-item-active: #252525;
+    --sb-item-hover: #1e1c1a;
+    --sb-item-active: #2a2826;
     --sb-logo: #f0f0f0;
-    --sb-logo-accent: #c4a882;
-  }
-
-  /* ── Brown mode — beige/cream base ── */
-  html[data-theme="brown"] {
-    --ink: #1a1814;
-    --ink-soft: #5a5650;
-    --ink-faint: #9a9490;
-    --paper: #f7f4ef;
-    --paper-warm: #ede9e2;
-    --accent: #7c6a52;
-    --accent-light: #c4b49a;
-    --green-soft: #e8ede4;
-    --green-ink: #3d5c3a;
-    --border: #d8d3cc;
-    --sb-bg: #18181b;
-    --sb-border: #27272a;
-    --sb-text: #71717a;
-    --sb-text-hover: #d4d4d8;
-    --sb-text-active: #fafafa;
-    --sb-item-hover: #27272a;
-    --sb-item-active: #3f3f46;
-    --sb-logo: #fafafa;
     --sb-logo-accent: #c4a882;
   }
 
@@ -319,42 +295,34 @@
     btn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
     overlay.addEventListener('click', closeSidebar);
 
-    /* ── Theme toggle (3-way: light → dark → brown → light) ── */
+    /* ── Theme toggle (2-way: light ↔ dark) ── */
     const html = document.documentElement;
     const toggleBtn = document.getElementById('theme-toggle-btn');
     const themeIcon = document.getElementById('theme-icon');
     const themeLabel = document.getElementById('theme-label');
 
-    const MOON_PATH  = '<path d="M11.5 9A5 5 0 0 1 5 2.5a5 5 0 1 0 6.5 6.5z"/>';
-    const SUN_PATH   = '<circle cx="7" cy="7" r="2.5"/><line x1="7" y1="1" x2="7" y2="2.5"/><line x1="7" y1="11.5" x2="7" y2="13"/><line x1="1" y1="7" x2="2.5" y2="7"/><line x1="11.5" y1="7" x2="13" y2="7"/><line x1="2.93" y1="2.93" x2="3.99" y2="3.99"/><line x1="10.01" y1="10.01" x2="11.07" y2="11.07"/><line x1="11.07" y1="2.93" x2="10.01" y2="3.99"/><line x1="3.99" y1="10.01" x2="2.93" y2="11.07"/>';
-    const LEAF_PATH  = '<path d="M3 12C5 7 9 3 12 2C12 7 8 11 3 12z"/><line x1="3" y1="12" x2="8" y2="7"/>';
+    const MOON_PATH = '<path d="M11.5 9A5 5 0 0 1 5 2.5a5 5 0 1 0 6.5 6.5z"/>';
+    const SUN_PATH  = '<circle cx="7" cy="7" r="2.5"/><line x1="7" y1="1" x2="7" y2="2.5"/><line x1="7" y1="11.5" x2="7" y2="13"/><line x1="1" y1="7" x2="2.5" y2="7"/><line x1="11.5" y1="7" x2="13" y2="7"/><line x1="2.93" y1="2.93" x2="3.99" y2="3.99"/><line x1="10.01" y1="10.01" x2="11.07" y2="11.07"/><line x1="11.07" y1="2.93" x2="10.01" y2="3.99"/><line x1="3.99" y1="10.01" x2="2.93" y2="11.07"/>';
 
-    const THEMES = ['light', 'dark', 'brown'];
-    const THEME_CONFIG = {
-      light: { label: 'ダーク',   icon: MOON_PATH,  attr: null     },
-      dark:  { label: 'ブラウン', icon: LEAF_PATH,  attr: 'dark'   },
-      brown: { label: 'ライト',   icon: SUN_PATH,   attr: 'brown'  },
-    };
-
-    function applyTheme(name) {
-      const cfg = THEME_CONFIG[name] || THEME_CONFIG.light;
-      if (cfg.attr) html.setAttribute('data-theme', cfg.attr);
-      else html.removeAttribute('data-theme');
-      themeIcon.innerHTML = cfg.icon;
-      themeLabel.textContent = cfg.label;
-      localStorage.setItem('cc-theme', name);
+    function applyTheme(dark) {
+      if (dark) {
+        html.setAttribute('data-theme', 'dark');
+        themeIcon.innerHTML = SUN_PATH;
+        themeLabel.textContent = 'ライト';
+        localStorage.setItem('cc-theme', 'dark');
+      } else {
+        html.removeAttribute('data-theme');
+        themeIcon.innerHTML = MOON_PATH;
+        themeLabel.textContent = 'ダーク';
+        localStorage.setItem('cc-theme', 'light');
+      }
     }
 
-    function getCurrentTheme() {
-      const a = html.getAttribute('data-theme');
-      return a === 'dark' ? 'dark' : a === 'brown' ? 'brown' : 'light';
-    }
-
-    applyTheme(localStorage.getItem('cc-theme') || 'light');
+    const saved = localStorage.getItem('cc-theme');
+    applyTheme(saved === 'dark');
 
     toggleBtn.addEventListener('click', () => {
-      const next = THEMES[(THEMES.indexOf(getCurrentTheme()) + 1) % THEMES.length];
-      applyTheme(next);
+      applyTheme(html.getAttribute('data-theme') !== 'dark');
     });
   })();
 </script>
