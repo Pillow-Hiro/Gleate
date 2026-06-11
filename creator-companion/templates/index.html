@@ -224,7 +224,7 @@
   <div class="week-summary">
     <div class="week-stat">
       <span class="week-stat-value">{{ weekly.days }}</span>
-      <span class="week-stat-label">創作した日</span>
+      <span class="week-stat-label">続けた日</span>
     </div>
     {% if weekly.enjoyed %}
     <div class="week-stat">
@@ -241,7 +241,7 @@
   <ul class="log-list">
     {% for log in logs | reverse %}
     <a class="log-entry" href="/logs#log-{{ log.date }}">
-      <span class="log-date">{{ log.date }}</span>
+      <span class="log-date">{{ log.date.replace('-', '/') }}</span>
       <span class="log-text">{{ log.created or '（記録なし）' }}</span>
     </a>
     {% endfor %}

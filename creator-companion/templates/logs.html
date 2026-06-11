@@ -54,7 +54,7 @@
     {% for log in logs %}
     <div class="log-card" id="log-{{ log.date }}">
       <div class="log-card-header">
-        <span class="log-card-date">{{ log.date }}</span>
+        <span class="log-card-date">{{ log.date.replace('-', '/') }}</span>
         <button class="delete-btn" onclick="deleteLog('{{ log.date }}', this)">削除</button>
       </div>
       <div class="log-card-body">
