@@ -1,69 +1,9 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Creator Companion</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+{% extends 'base.html' %}
+{% block title %}今日 — Creator Companion{% endblock %}
+
+{% block head %}
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --ink: #1a1814;
-    --ink-soft: #5a5650;
-    --ink-faint: #9a9490;
-    --paper: #f7f4ef;
-    --paper-warm: #ede9e2;
-    --accent: #7c6a52;
-    --accent-light: #c4b49a;
-    --green-soft: #e8ede4;
-    --green-ink: #3d5c3a;
-    --border: #d8d3cc;
-  }
-
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--paper);
-    color: var(--ink);
-    min-height: 100vh;
-    font-size: 15px;
-    line-height: 1.8;
-  }
-
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    background: var(--paper);
-  }
-
-  .logo {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1.1rem;
-    font-weight: 400;
-    letter-spacing: 0.05em;
-    color: var(--ink);
-  }
-  .logo span { color: var(--accent); }
-
-  nav a {
-    font-size: 0.8rem;
-    color: var(--ink-faint);
-    text-decoration: none;
-    margin-left: 1.5rem;
-  }
-  nav a:hover { color: var(--accent); }
-
-  .main {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 3rem 2rem;
-  }
-
-  /* Welcome note — first-time visitors only */
+  /* Welcome note */
   .welcome-note {
     background: var(--green-soft);
     border-left: 3px solid var(--accent-light);
@@ -71,22 +11,11 @@
     margin-bottom: 2.5rem;
     border-radius: 0 4px 4px 0;
   }
-  .welcome-note p {
-    font-size: 0.875rem;
-    color: var(--ink-soft);
-    line-height: 1.85;
-  }
-  .welcome-note .welcome-from {
-    font-size: 0.72rem;
-    color: var(--ink-faint);
-    margin-top: 0.4rem;
-  }
+  .welcome-note p { font-size: 0.875rem; color: var(--ink-soft); line-height: 1.85; }
+  .welcome-note .welcome-from { font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.4rem; }
 
-  /* Journal header — date + streak + activity dots */
-  .journal-header {
-    margin-bottom: 2rem;
-  }
-
+  /* Journal header */
+  .journal-header { margin-bottom: 2rem; }
   .date-line {
     font-size: 0.75rem;
     color: var(--ink-faint);
@@ -106,26 +35,21 @@
   }
 
   .streak-badge {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: #7c4b10;
     background: #fdf2e0;
     border: 1.5px solid #c2862a;
     border-radius: 4px;
-    padding: 4px 12px;
+    padding: 3px 10px;
     white-space: nowrap;
     letter-spacing: 0.02em;
     font-weight: 500;
   }
 
-  /* 7-day activity dots */
-  .activity-dots {
-    display: flex;
-    gap: 3px;
-    align-items: center;
-  }
+  /* Activity dots */
+  .activity-dots { display: flex; gap: 3px; align-items: center; }
   .activity-dot {
-    width: 7px;
-    height: 7px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--border);
     flex-shrink: 0;
@@ -133,41 +57,17 @@
   }
   .activity-dot.logged { background: var(--accent-light); }
   .activity-dot.today-logged { background: var(--accent); }
-  .activity-dot.today-empty {
-    background: transparent;
-    border: 1.5px solid var(--accent-light);
-  }
+  .activity-dot.today-empty { background: transparent; border: 1.5px solid var(--accent-light); }
 
   /* Goal bar */
-  .goal-bar {
-    margin-bottom: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-  .goal-chip {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-    font-size: 0.82rem;
-  }
-  .goal-chip-label {
-    font-size: 0.68rem;
-    color: var(--ink-faint);
-    min-width: 5.5rem;
-    flex-shrink: 0;
-  }
+  .goal-bar { margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .goal-chip { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.82rem; }
+  .goal-chip-label { font-size: 0.68rem; color: var(--ink-faint); min-width: 5.5rem; flex-shrink: 0; }
   .goal-chip-text { color: var(--ink-soft); }
 
   /* Journal form */
   .field { margin-bottom: 1.75rem; }
-
-  .prompt-label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--ink-soft);
-    margin-bottom: 0.5rem;
-  }
+  .prompt-label { display: block; font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 0.5rem; }
 
   textarea {
     width: 100%;
@@ -187,65 +87,19 @@
   textarea:focus { border-bottom-color: var(--accent); }
   textarea::placeholder { color: var(--ink-faint); font-size: 0.85rem; }
 
-  .form-footer {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 0.25rem;
-  }
+  .form-footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.25rem; }
 
-  .save-btn {
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    padding: 0.65rem 1.75rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .save-btn:hover { background: var(--accent); }
-  .save-btn:active { transform: scale(0.98); }
-  .save-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
-
-  .saved-notice {
-    font-size: 0.75rem;
-    color: var(--green-ink);
-    display: none;
-  }
-  .saved-notice.visible { display: inline; }
-
-  /* Companion message — chat bubble style */
+  /* Companion message */
   .companion-message { display: none; margin-top: 2rem; }
   .companion-message.visible { display: block; }
-
   .companion-bubble {
     background: var(--green-soft);
     border: 1px solid rgba(61, 92, 58, 0.12);
     border-radius: 4px 14px 14px 14px;
     padding: 1.25rem 1.5rem;
   }
-  .companion-name {
-    font-size: 0.72rem;
-    color: var(--green-ink);
-    font-weight: 500;
-    margin-bottom: 0.6rem;
-    letter-spacing: 0.03em;
-  }
-  .companion-text {
-    font-size: 0.9rem;
-    color: var(--ink);
-    line-height: 1.9;
-    white-space: pre-line;
-  }
-
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 2.5rem 0;
-  }
+  .companion-name { font-size: 0.72rem; color: var(--green-ink); font-weight: 500; margin-bottom: 0.6rem; letter-spacing: 0.03em; }
+  .companion-text { font-size: 0.9rem; color: var(--ink); line-height: 1.9; white-space: pre-line; }
 
   /* Section heading */
   .section-heading {
@@ -257,24 +111,16 @@
     letter-spacing: 0.05em;
   }
 
-  /* Week summary — simplified stats */
-  .week-summary {
-    display: flex;
-    gap: 2.5rem;
-    margin-bottom: 1.5rem;
+  /* Week summary */
+  .week-summary { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .week-stat {
+    display: flex; flex-direction: column; gap: 0.15rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.65rem 1.1rem;
+    min-width: 80px;
   }
-  .week-stat { display: flex; flex-direction: column; gap: 0.15rem; }
-  .week-stat-value {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1.5rem;
-    font-weight: 300;
-    color: var(--accent);
-  }
-  .week-stat-label {
-    font-size: 0.7rem;
-    color: var(--ink-faint);
-    letter-spacing: 0.04em;
-  }
+  .week-stat-value { font-family: 'Noto Serif JP', serif; font-size: 1.5rem; font-weight: 300; color: var(--accent); }
+  .week-stat-label { font-size: 0.7rem; color: var(--ink-faint); letter-spacing: 0.04em; }
 
   /* Recent log entries */
   .log-list { list-style: none; }
@@ -284,34 +130,22 @@
     display: flex;
     gap: 1.5rem;
     align-items: baseline;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+    margin: 0 -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 3px;
   }
+  .log-entry:hover { background: var(--paper-warm); }
   .log-entry:last-child { border-bottom: none; }
-  .log-date {
-    font-size: 0.72rem;
-    color: var(--ink-faint);
-    min-width: 80px;
-    flex-shrink: 0;
-  }
+  .log-date { font-size: 0.72rem; color: var(--ink-faint); min-width: 80px; flex-shrink: 0; }
   .log-text { font-size: 0.85rem; color: var(--ink-soft); }
-
-  @media (max-width: 600px) {
-    .main { padding: 2rem 1.25rem; }
-    header { padding: 1.25rem 1.25rem; }
-  }
 </style>
-</head>
-<body>
+{% endblock %}
 
-<header>
-  <div class="logo">Creator <span>Companion</span></div>
-  <nav>
-    <a href="/">今日</a>
-    <a href="/goals">目標</a>
-    <a href="/review">振り返り</a>
-    <a href="/logs">履歴</a>
-  </nav>
-</header>
-
+{% block content %}
 <div class="main">
 
   {% if is_first_visit %}
@@ -346,7 +180,7 @@
     {% endif %}
     {% if monthly_goal %}
     <div class="goal-chip">
-      <span class="goal-chip-label">今月</span>
+      <span class="goal-chip-label" id="monthly-goal-label">今月</span>
       <span class="goal-chip-text">{{ monthly_goal }}</span>
     </div>
     {% endif %}
@@ -355,7 +189,7 @@
 
   <form id="log-form">
     <div class="field">
-      <label class="prompt-label">今日つくったこと</label>
+      <label class="prompt-label">今日やったこと</label>
       <textarea name="created" rows="2" placeholder="進捗、完成したもの、作業したことなど">{{ today_log.created if today_log else '' }}</textarea>
     </div>
     <div class="field">
@@ -406,16 +240,18 @@
   <div class="section-heading">直近の記録</div>
   <ul class="log-list">
     {% for log in logs | reverse %}
-    <li class="log-entry">
+    <a class="log-entry" href="/logs#log-{{ log.date }}">
       <span class="log-date">{{ log.date }}</span>
       <span class="log-text">{{ log.created or '（記録なし）' }}</span>
-    </li>
+    </a>
     {% endfor %}
   </ul>
   {% endif %}
 
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
@@ -423,22 +259,24 @@
 
   (function() {
     const today = new Date();
-    const dow = today.getDay();
+    const dow = today.getDay(); // 0=Sun
     const diffToMonday = dow === 0 ? -6 : 1 - dow;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + diffToMonday);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() + diffToMonday);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
     const pad = n => String(n).padStart(2, '0');
-    const y = monday.getFullYear();
-    const fullRange = `${y}/${pad(monday.getMonth()+1)}/${pad(monday.getDate())} 〜 ${pad(sunday.getMonth()+1)}/${pad(sunday.getDate())}`;
-    const compactRange = `${pad(monday.getMonth()+1)}/${pad(monday.getDate())}〜${pad(sunday.getMonth()+1)}/${pad(sunday.getDate())}`;
+    const y = weekStart.getFullYear();
+    const weekRange = `${y}/${pad(weekStart.getMonth()+1)}/${pad(weekStart.getDate())}〜${pad(weekEnd.getMonth()+1)}/${pad(weekEnd.getDate())}`;
 
     const weekHeading = document.getElementById('week-section-heading');
-    if (weekHeading) weekHeading.textContent = `今週の記録　${fullRange}`;
+    if (weekHeading) weekHeading.textContent = `今週の記録　${weekRange}`;
 
     const weeklyGoalLabel = document.getElementById('weekly-goal-label');
-    if (weeklyGoalLabel) weeklyGoalLabel.textContent = compactRange;
+    if (weeklyGoalLabel) weeklyGoalLabel.textContent = weekRange;
+
+    const monthlyGoalLabel = document.getElementById('monthly-goal-label');
+    if (monthlyGoalLabel) monthlyGoalLabel.textContent = `${today.getFullYear()}年${today.getMonth()+1}月`;
   })();
 
   document.getElementById('log-form').addEventListener('submit', async (e) => {
@@ -475,5 +313,4 @@
     });
   });
 </script>
-</body>
-</html>
+{% endblock %}

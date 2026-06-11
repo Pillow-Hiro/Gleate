@@ -1,31 +1,28 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>振り返り — Creator Companion</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+{% extends 'base.html' %}
+{% block title %}振り返り — Creator Companion{% endblock %}
+
+{% block head %}
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --ink: #1a1814; --ink-soft: #5a5650; --ink-faint: #9a9490;
-    --paper: #f7f4ef; --paper-warm: #ede9e2; --accent: #7c6a52;
-    --accent-light: #c4b49a; --green-soft: #e8ede4; --green-ink: #3d5c3a;
-    --border: #d8d3cc;
+  .date-line {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
-  body { font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.8; }
-  header { border-bottom: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: baseline; gap: 1rem; background: var(--paper); }
-  .logo { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; font-weight: 400; letter-spacing: 0.05em; }
-  .logo span { color: var(--accent); }
-  nav a { font-size: 0.8rem; color: var(--ink-faint); text-decoration: none; margin-left: 1.5rem; }
-  nav a:hover { color: var(--accent); }
-  nav a.active { color: var(--accent); }
-  .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
-  .date-line { font-size: 0.75rem; color: var(--ink-faint); letter-spacing: 0.08em; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem; }
   .date-line::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .toggle-wrap { display: flex; gap: 0; margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; width: fit-content; }
+  .toggle-wrap {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    width: fit-content;
+  }
   .toggle-btn {
     background: none;
     border: none;
@@ -68,23 +65,11 @@
 
   .loading-text { font-size: 0.85rem; color: var(--ink-faint); padding: 1rem 0; display: none; }
   .loading-text.visible { display: block; }
-
   .empty-hint { font-size: 0.85rem; color: var(--ink-faint); line-height: 1.8; margin-bottom: 1.5rem; }
-
-  @media (max-width: 600px) { .main { padding: 2rem 1.25rem; } }
 </style>
-</head>
-<body>
-<header>
-  <div class="logo">Creator <span>Companion</span></div>
-  <nav>
-    <a href="/">今日</a>
-    <a href="/goals">目標</a>
-    <a href="/review" class="active">振り返り</a>
-    <a href="/logs">履歴</a>
-  </nav>
-</header>
+{% endblock %}
 
+{% block content %}
 <div class="main">
   <div class="date-line">振り返り</div>
 
@@ -105,7 +90,9 @@
     <div class="review-meta" id="review-meta"></div>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
   let currentType = 'weekly';
 
@@ -143,5 +130,4 @@
     document.getElementById('review-box').scrollIntoView({behavior: 'smooth', block: 'nearest'});
   }
 </script>
-</body>
-</html>
+{% endblock %}

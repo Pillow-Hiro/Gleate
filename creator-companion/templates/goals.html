@@ -1,31 +1,20 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>目標 — Creator Companion</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+{% extends 'base.html' %}
+{% block title %}目標 — Creator Companion{% endblock %}
+
+{% block head %}
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --ink: #1a1814; --ink-soft: #5a5650; --ink-faint: #9a9490;
-    --paper: #f7f4ef; --paper-warm: #ede9e2; --accent: #7c6a52;
-    --accent-light: #c4b49a; --green-soft: #e8ede4; --green-ink: #3d5c3a;
-    --border: #d8d3cc;
+  .date-line {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
-  body { font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 15px; line-height: 1.8; }
-  header { border-bottom: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: baseline; gap: 1rem; background: var(--paper); }
-  .logo { font-family: 'Noto Serif JP', serif; font-size: 1.1rem; font-weight: 400; letter-spacing: 0.05em; }
-  .logo span { color: var(--accent); }
-  nav a { font-size: 0.8rem; color: var(--ink-faint); text-decoration: none; margin-left: 1.5rem; }
-  nav a:hover { color: var(--accent); }
-  nav a.active { color: var(--accent); }
-  .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
-  .date-line { font-size: 0.75rem; color: var(--ink-faint); letter-spacing: 0.08em; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem; }
   .date-line::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
   .section-label { font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 0.5rem; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
 
   /* Vision */
   .vision-box {
@@ -43,12 +32,7 @@
     line-height: 1.8;
     margin-bottom: 0.75rem;
   }
-  .vision-empty {
-    font-size: 0.85rem;
-    color: var(--ink-faint);
-    margin-bottom: 1rem;
-    line-height: 1.8;
-  }
+  .vision-empty { font-size: 0.85rem; color: var(--ink-faint); margin-bottom: 1rem; line-height: 1.8; }
   .link-btn {
     font-size: 0.78rem;
     color: var(--accent);
@@ -61,23 +45,9 @@
   }
 
   /* Interview */
-  .interview-wrap {
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 1rem;
-  }
-  .chat-log {
-    padding: 1.25rem;
-    max-height: 320px;
-    overflow-y: auto;
-    background: var(--paper);
-  }
-  .chat-msg {
-    margin-bottom: 1rem;
-    display: flex;
-    flex-direction: column;
-  }
+  .interview-wrap { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-top: 1rem; }
+  .chat-log { padding: 1.25rem; max-height: 320px; overflow-y: auto; background: var(--paper); }
+  .chat-msg { margin-bottom: 1rem; display: flex; flex-direction: column; }
   .chat-msg.ai { align-items: flex-start; }
   .chat-msg.user { align-items: flex-end; }
   .chat-bubble {
@@ -136,17 +106,8 @@
     margin-top: 1rem;
     display: none;
   }
-  .vision-confirm-text {
-    font-size: 0.9rem;
-    color: var(--ink-soft);
-    margin-bottom: 0.75rem;
-  }
-  .vision-confirm-value {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1rem;
-    color: var(--ink);
-    margin-bottom: 1rem;
-  }
+  .vision-confirm-text { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 0.75rem; }
+  .vision-confirm-value { font-family: 'Noto Serif JP', serif; font-size: 1rem; color: var(--ink); margin-bottom: 1rem; }
 
   /* Goal section */
   .goal-section { margin-bottom: 0.5rem; }
@@ -169,19 +130,6 @@
   textarea.goal-input::placeholder { color: var(--ink-faint); font-size: 0.85rem; }
 
   .goal-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; align-items: center; flex-wrap: wrap; }
-  .save-btn {
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    padding: 0.6rem 1.5rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.82rem;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: background 0.2s;
-  }
-  .save-btn:hover { background: var(--accent); }
-  .save-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
   .suggest-btn {
     background: none;
     border: 1px solid var(--border);
@@ -194,8 +142,6 @@
     transition: border-color 0.2s, color 0.2s;
   }
   .suggest-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .saved-notice { font-size: 0.75rem; color: var(--green-ink); display: none; }
-  .saved-notice.visible { display: inline; }
 
   .suggestion-box {
     margin-top: 0.75rem;
@@ -220,21 +166,10 @@
     text-decoration: underline;
     font-family: 'Noto Sans JP', sans-serif;
   }
-
-  @media (max-width: 600px) { .main { padding: 2rem 1.25rem; } }
 </style>
-</head>
-<body>
-<header>
-  <div class="logo">Creator <span>Companion</span></div>
-  <nav>
-    <a href="/">今日</a>
-    <a href="/goals" class="active">目標</a>
-    <a href="/review">振り返り</a>
-    <a href="/logs">履歴</a>
-  </nav>
-</header>
+{% endblock %}
 
+{% block content %}
 <div class="main">
   <div class="date-line">目標</div>
 
@@ -272,7 +207,7 @@
   <hr class="divider">
 
   <!-- Monthly goal -->
-  <div class="section-label">今月の目標 <span style="color:var(--ink-faint);font-size:0.75rem;">{{ month_str }}</span></div>
+  <div class="section-label">今月の目標 <span style="color:var(--ink-faint);font-size:0.75rem;">{{ month_display }}</span></div>
   <div class="goal-section">
     <textarea class="goal-input" id="monthly-goal" rows="2"
       placeholder="今月、何に集中しますか？">{{ current_monthly }}</textarea>
@@ -291,7 +226,7 @@
   <hr class="divider">
 
   <!-- Weekly goal -->
-  <div class="section-label">今週の目標 <span style="color:var(--ink-faint);font-size:0.75rem;">{{ week_str }}</span></div>
+  <div class="section-label">今週の目標 <span style="color:var(--ink-faint);font-size:0.75rem;">{{ week_display }}</span></div>
   <div class="goal-section">
     <textarea class="goal-input" id="weekly-goal" rows="2"
       placeholder="今週、一番大切にすることは？">{{ current_weekly }}</textarea>
@@ -307,7 +242,9 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
   let chatMessages = [];
   let pendingVision = null;
@@ -429,13 +366,11 @@
 
   function useSuggestion(type) {
     const text = document.getElementById(`${type}-suggestion-text`).textContent;
-    // Use only the first sentence as the goal
     const firstLine = text.split(/[。\n]/)[0];
     document.getElementById(`${type}-goal`).value = firstLine;
     document.getElementById(`${type}-suggestion`).style.display = 'none';
   }
 
-  // Auto-resize chat input
   document.getElementById('chat-input').addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 100) + 'px';
@@ -447,5 +382,4 @@
     }
   });
 </script>
-</body>
-</html>
+{% endblock %}

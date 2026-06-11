@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Creator Companion{% endblock %}</title>
+<script>
+  (function() {
+    const t = localStorage.getItem('cc-theme');
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Light mode tokens (default) ── */
+  :root {
+    --ink: #1a1814;
+    --ink-soft: #5a5650;
+    --ink-faint: #9a9490;
+    --paper: #f7f4ef;
+    --paper-warm: #ede9e2;
+    --accent: #7c6a52;
+    --accent-light: #c4b49a;
+    --green-soft: #e8ede4;
+    --green-ink: #3d5c3a;
+    --border: #d8d3cc;
+    --sb-bg: #18181b;
+    --sb-border: #27272a;
+    --sb-text: #71717a;
+    --sb-text-hover: #d4d4d8;
+    --sb-text-active: #fafafa;
+    --sb-item-hover: #27272a;
+    --sb-item-active: #3f3f46;
+    --sb-width: 220px;
+  }
+
+  /* ── Dark mode token overrides ── */
+  html[data-theme="dark"] {
+    --ink: #e8e5e0;
+    --ink-soft: #a09b94;
+    --ink-faint: #686460;
+    --paper: #141412;
+    --paper-warm: #1e1c1a;
+    --accent: #c4a882;
+    --accent-light: #7c6a52;
+    --green-soft: #1a241a;
+    --green-ink: #76c473;
+    --border: #2e2c29;
+    --sb-bg: #101010;
+    --sb-border: #1e1e1e;
+  }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.8;
+    transition: background 0.18s, color 0.18s;
+  }
+
+  /* ── Layout ── */
+  .app-layout { display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sb-width);
+    flex-shrink: 0;
+    background: var(--sb-bg);
+    border-right: 1px solid var(--sb-border);
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.18s, border-color 0.18s;
+  }
+  .sidebar-logo-area {
+    padding: 1.25rem 1rem 1rem;
+    border-bottom: 1px solid var(--sb-border);
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: #fafafa;
+    text-decoration: none;
+    display: block;
+  }
+  .sidebar-logo span { color: #c4a882; }
+
+  .sidebar-nav { padding: 0.625rem 0.5rem; flex: 1; }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.625rem;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    color: var(--sb-text);
+    text-decoration: none;
+    transition: background 0.1s, color 0.1s;
+    margin-bottom: 2px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .sidebar-link:hover { background: var(--sb-item-hover); color: var(--sb-text-hover); }
+  .sidebar-link.active { background: var(--sb-item-active); color: var(--sb-text-active); }
+  .sidebar-link svg { flex-shrink: 0; opacity: 0.75; }
+  .sidebar-link:hover svg, .sidebar-link.active svg { opacity: 1; }
+
+  /* ── Sidebar footer (theme toggle) ── */
+  .sidebar-footer {
+    padding: 0.75rem 0.5rem;
+    border-top: 1px solid var(--sb-border);
+    flex-shrink: 0;
+  }
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.45rem 0.625rem;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    color: var(--sb-text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.01em;
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
+  }
+  .theme-toggle:hover { background: var(--sb-item-hover); color: var(--sb-text-hover); }
+  .theme-toggle svg { flex-shrink: 0; opacity: 0.75; }
+  .theme-toggle:hover svg { opacity: 1; }
+
+  /* ── Content ── */
+  .content { flex: 1; margin-left: var(--sb-width); min-height: 100vh; transition: background 0.18s; }
+
+  /* ── Hamburger ── */
+  .hamburger {
+    display: none;
+    position: fixed;
+    top: 0.875rem; left: 0.875rem;
+    z-index: 300;
+    background: var(--sb-bg);
+    border: 1px solid var(--sb-border);
+    border-radius: 5px;
+    padding: 0.4rem 0.45rem;
+    cursor: pointer;
+    color: var(--sb-text-hover);
+    line-height: 0;
+  }
+
+  /* ── Overlay ── */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 150;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* ── Shared content components ── */
+  .main { max-width: 680px; margin: 0 auto; padding: 3rem 2rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+  .save-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0.65rem 1.75rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .save-btn:hover { background: var(--accent); color: var(--paper); }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .saved-notice { font-size: 0.75rem; color: var(--green-ink); display: none; }
+  .saved-notice.visible { display: inline; }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background 0.18s;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .content { margin-left: 0; }
+    .hamburger { display: block; }
+    .main { padding-top: 3.75rem; }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 3.75rem 1.25rem 2rem; }
+  }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<button class="hamburger" id="hamburger-btn" aria-label="メニューを開く">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+    <line x1="2" y1="4" x2="14" y2="4"/>
+    <line x1="2" y1="8" x2="14" y2="8"/>
+    <line x1="2" y1="12" x2="14" y2="12"/>
+  </svg>
+</button>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo-area">
+      <a href="/" class="sidebar-logo">Creator <span>Companion</span></a>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="sidebar-link{% if request.path == '/' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 1.5l3 3L5 12H2V9l7.5-7.5z"/>
+        </svg>
+        今日
+      </a>
+      <a href="/goals" class="sidebar-link{% if request.path == '/goals' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 2.5h9l-2 3 2 3H2"/>
+          <line x1="2" y1="2.5" x2="2" y2="12"/>
+        </svg>
+        目標
+      </a>
+      <a href="/review" class="sidebar-link{% if request.path == '/review' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 7A5 5 0 1 1 7 2c1.4 0 2.7.55 3.6 1.45L9 5"/>
+          <polyline points="11 1.5 12.5 4.5 9.5 4.5"/>
+        </svg>
+        振り返り
+      </a>
+      <a href="/logs" class="sidebar-link{% if request.path == '/logs' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="2" y1="3.5" x2="12" y2="3.5"/>
+          <line x1="2" y1="7" x2="12" y2="7"/>
+          <line x1="2" y1="10.5" x2="12" y2="10.5"/>
+        </svg>
+        これまでの記録
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-btn" aria-label="テーマ切り替え">
+        <svg id="theme-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- moon (shown in light mode) -->
+          <path d="M11.5 9A5 5 0 0 1 5 2.5a5 5 0 1 0 6.5 6.5z"/>
+        </svg>
+        <span id="theme-label">ダークモード</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+  (function() {
+    /* ── Hamburger ── */
+    const btn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+    btn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+    overlay.addEventListener('click', closeSidebar);
+
+    /* ── Theme toggle ── */
+    const html = document.documentElement;
+    const toggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeLabel = document.getElementById('theme-label');
+
+    const MOON_PATH = '<path d="M11.5 9A5 5 0 0 1 5 2.5a5 5 0 1 0 6.5 6.5z"/>';
+    const SUN_PATH = '<circle cx="7" cy="7" r="2.5"/><line x1="7" y1="1" x2="7" y2="2.5"/><line x1="7" y1="11.5" x2="7" y2="13"/><line x1="1" y1="7" x2="2.5" y2="7"/><line x1="11.5" y1="7" x2="13" y2="7"/><line x1="2.93" y1="2.93" x2="3.99" y2="3.99"/><line x1="10.01" y1="10.01" x2="11.07" y2="11.07"/><line x1="11.07" y1="2.93" x2="10.01" y2="3.99"/><line x1="3.99" y1="10.01" x2="2.93" y2="11.07"/>';
+
+    function applyTheme(dark) {
+      if (dark) {
+        html.setAttribute('data-theme', 'dark');
+        themeIcon.innerHTML = SUN_PATH;
+        themeLabel.textContent = 'ライトモード';
+        localStorage.setItem('cc-theme', 'dark');
+      } else {
+        html.removeAttribute('data-theme');
+        themeIcon.innerHTML = MOON_PATH;
+        themeLabel.textContent = 'ダークモード';
+        localStorage.setItem('cc-theme', 'light');
+      }
+    }
+
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    applyTheme(isDark);
+
+    toggleBtn.addEventListener('click', () => {
+      applyTheme(html.getAttribute('data-theme') !== 'dark');
+    });
+  })();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
