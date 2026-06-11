@@ -153,8 +153,9 @@ def suggest_goal():
     from modules.ai import call_claude
     system_prompt = f"""あなたはCreator Companionです。クリエイターの{period_label}の目標を提案します。
 
-過去の活動から具体的で達成可能な目標を1文で提案し、理由を1文で添えてください。
-才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
+過去の活動をもとに、具体的で達成可能な目標を自然な日本語の1文で提案してください。
+マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
+50文字以内で書く。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
 
     user_message = f"""ビジョン: {vision if vision else '（未設定）'}
 {context}
@@ -162,7 +163,7 @@ def suggest_goal():
 
 {period_label}の目標を提案してください。"""
 
-    result = call_claude(system_prompt, user_message, max_tokens=150)
+    result = call_claude(system_prompt, user_message, max_tokens=80)
     if result:
         return jsonify({"suggestion": result})
 

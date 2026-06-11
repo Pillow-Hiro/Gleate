@@ -365,9 +365,8 @@
   }
 
   function useSuggestion(type) {
-    const text = document.getElementById(`${type}-suggestion-text`).textContent;
-    const firstLine = text.split(/[。\n]/)[0];
-    document.getElementById(`${type}-goal`).value = firstLine;
+    const text = document.getElementById(`${type}-suggestion-text`).textContent.trim();
+    document.getElementById(`${type}-goal`).value = text;
     document.getElementById(`${type}-suggestion`).style.display = 'none';
   }
 
