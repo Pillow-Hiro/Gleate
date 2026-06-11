@@ -95,9 +95,7 @@
     box-sizing: border-box;
     transition: background 0.2s;
   }
-  .activity-dot.logged { background: var(--accent-light); }
-  .activity-dot.today-logged { background: var(--accent); }
-  .activity-dot.today-empty { background: transparent; border: 2px solid var(--accent-light); }
+  .activity-dot.dot-filled { background: var(--ink); }
 
   .activity-count {
     font-size: 0.72rem;
@@ -234,9 +232,8 @@
     {% set logged_count = recent_activity | selectattr('logged') | list | length %}
     <div class="activity-row">
       <div class="activity-track">
-        {% for day in recent_activity %}
-        <span class="activity-dot {% if day.is_today and day.logged %}today-logged{% elif day.is_today %}today-empty{% elif day.logged %}logged{% endif %}"
-              title="{{ day.date }}"></span>
+        {% for i in range(7) %}
+        <span class="activity-dot {% if i < logged_count %}dot-filled{% endif %}"></span>
         {% endfor %}
       </div>
       <span class="activity-count">{{ logged_count }}/7日</span>
