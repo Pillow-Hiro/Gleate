@@ -20,7 +20,9 @@
       "Bash(netstat -tlnp)",
       "PowerShell(Get-NetTCPConnection -LocalPort 5000 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess; Get-Process -Id \\(Get-NetTCPConnection -LocalPort 5000 -State Listen\\).OwningProcess | Select-Object Id,ProcessName,Path)",
       "PowerShell(Get-Process -Id 24476 | Select-Object Id,ProcessName; \\(Get-WmiObject Win32_Process -Filter \"ProcessId=24476\"\\).CommandLine)",
-      "Bash(kill 1402)"
+      "Bash(kill 1402)",
+      "Bash(curl -s http://localhost:5000/logs)",
+      "Bash(kill 1405 1351 1501)"
     ]
   }
 }

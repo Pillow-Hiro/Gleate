@@ -1,43 +1,68 @@
 import os
+import time
 import anthropic
 from modules.logs import get_current_weekly_goal, get_current_monthly_goal
+
+_TIMEOUT_SECONDS = 10
+_TIMEOUT_MESSAGE = "AIの応答に時間がかかっています。少し待ってから再度お試しください。"
 
 
 def call_claude(system_prompt, user_message, max_tokens=300):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return None
-    client = anthropic.Anthropic(api_key=api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=max_tokens,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_message}],
-    )
-    return message.content[0].text
+    client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
+    start = time.time()
+    print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')}")
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_message}],
+        )
+        print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
+        return message.content[0].text
+    except anthropic.APITimeoutError:
+        print(f"[AI] タイムアウト: {time.time() - start:.2f}秒経過")
+        return _TIMEOUT_MESSAGE
+    except Exception as e:
+        print(f"[AI] エラー発生: {time.time() - start:.2f}秒, {e}")
+        return None
 
 
 def call_claude_with_history(system_prompt, messages, max_tokens=300):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return None
-    client = anthropic.Anthropic(api_key=api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=max_tokens,
-        system=system_prompt,
-        messages=messages,
-    )
-    return message.content[0].text
+    client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
+    start = time.time()
+    print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')}")
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=messages,
+        )
+        print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
+        return message.content[0].text
+    except anthropic.APITimeoutError:
+        print(f"[AI] タイムアウト: {time.time() - start:.2f}秒経過")
+        return _TIMEOUT_MESSAGE
+    except Exception as e:
+        print(f"[AI] エラー発生: {time.time() - start:.2f}秒, {e}")
+        return None
 
 
 def get_ai_response(log_entry, past_logs, goals=None):
     past_context = ""
     if past_logs:
-        recent = past_logs[-5:]
-        past_context = "\n\n【過去のログ（直近5件）】\n"
+        recent = past_logs[-3:]
+        past_context = "\n\n【過去のログ（直近3件）】\n"
         for p in recent:
             past_context += f"- {p['date']}: {p.get('created','')}\n"
+        print(f"[AI] past_context データ量: {len(past_context)}文字 / {len(past_context.encode('utf-8'))}バイト")
 
     goals_context = ""
     if goals:
@@ -83,7 +108,7 @@ def get_ai_response(log_entry, past_logs, goals=None):
 困ったこと: {log_entry.get('struggled', '（未記入）')}
 次回やること: {log_entry.get('next', '（未記入）')}"""
 
-    result = call_claude(system_prompt, user_message, max_tokens=300)
+    result = call_claude(system_prompt, user_message, max_tokens=150)
     if result:
         return result
 
