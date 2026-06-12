@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}振り返り — Lantern{% endblock %}
+
+{% block head %}
+<style>
+  .date-line {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .date-line::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .toggle-wrap {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    width: fit-content;
+  }
+  .toggle-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toggle-btn + .toggle-btn { border-left: 1px solid var(--border); }
+  .toggle-btn.active { background: var(--paper-warm); color: var(--ink); }
+
+  .generate-area { margin-bottom: 2rem; }
+  .generate-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0.7rem 2rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .generate-btn:hover { background: var(--accent); }
+  .generate-btn:disabled { background: var(--ink-faint); cursor: not-allowed; }
+
+  .review-box {
+    padding: 1.5rem;
+    background: var(--green-soft);
+    border: 1px solid rgba(61,92,58,0.15);
+    border-radius: 4px 14px 14px 14px;
+    display: none;
+  }
+  .review-box.visible { display: block; }
+  .review-from { font-size: 0.75rem; color: var(--green-ink); margin-bottom: 0.6rem; font-weight: 500; }
+  .review-text { font-size: 0.9rem; color: var(--ink); line-height: 1.9; white-space: pre-line; }
+  .review-meta { font-size: 0.72rem; color: var(--ink-faint); margin-top: 1rem; }
+
+  .loading-text { font-size: 0.85rem; color: var(--ink-faint); padding: 1rem 0; display: none; }
+  .loading-text.visible { display: block; }
+  .empty-hint { font-size: 0.85rem; color: var(--ink-faint); line-height: 1.8; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+  <div class="date-line">振り返り</div>
+
+  <div class="toggle-wrap">
+    <button class="toggle-btn active" id="btn-weekly" onclick="setType('weekly')">今週</button>
+    <button class="toggle-btn" id="btn-monthly" onclick="setType('monthly')">今月</button>
+  </div>
+
+  <div class="generate-area">
+    <p class="empty-hint" id="hint-text">今週の活動をLanternが振り返ります。<br>ログが少なくても生成できます。</p>
+    <button class="generate-btn" id="generate-btn" onclick="generateReview()">振り返りを生成する</button>
+    <div class="loading-text" id="loading-text">振り返りを生成中...</div>
+  </div>
+
+  <div class="review-box" id="review-box">
+    <div class="review-from">Lantern</div>
+    <div class="review-text" id="review-text"></div>
+    <div class="review-meta" id="review-meta"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let currentType = 'weekly';
+
+  function setType(type) {
+    currentType = type;
+    document.getElementById('btn-weekly').classList.toggle('active', type === 'weekly');
+    document.getElementById('btn-monthly').classList.toggle('active', type === 'monthly');
+    document.getElementById('hint-text').textContent =
+      type === 'weekly'
+        ? '今週の活動をLanternが振り返ります。\nログが少なくても生成できます。'
+        : '今月の活動をLanternが振り返ります。\nあなたの強みや独自性を言葉にします。';
+    document.getElementById('review-box').classList.remove('visible');
+  }
+
+  async function generateReview() {
+    const btn = document.getElementById('generate-btn');
+    const loading = document.getElementById('loading-text');
+    btn.disabled = true;
+    loading.classList.add('visible');
+
+    const res = await fetch('/api/review/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type: currentType})
+    });
+    const data = await res.json();
+
+    document.getElementById('review-text').textContent = data.review;
+    document.getElementById('review-meta').textContent =
+      `${data.period_label}の記録 ${data.log_count} 件をもとに生成しました`;
+    document.getElementById('review-box').classList.add('visible');
+
+    btn.disabled = false;
+    loading.classList.remove('visible');
+    document.getElementById('review-box').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  }
+</script>
+{% endblock %}
