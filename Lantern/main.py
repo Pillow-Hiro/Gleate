@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 import os
 import re
 import time
@@ -27,6 +27,8 @@ _splash_cache = {"quote": None, "photo_url": None, "photographer": None, "cached
 
 @app.route("/")
 def index():
+    if not request.args.get("splashed"):
+        return redirect("/splash?next=/?splashed=1")
     logs = load_logs()
     goals = load_goals()
     today = datetime.now().strftime("%Y-%m-%d")
@@ -184,7 +186,7 @@ def goal_interview():
 
 【ヒアリングの流れ】
 会話の回数に応じて進めてください：
-- 1回目: 「今、どんな創作活動をしていますか？」
+- 1回目: 「今、どんな活動に取り組んでいますか？」
 - 2回目: 「それを続けて、1〜2年後どんな状態になっていたいですか？」
 - 3回目: 「その活動が誰かに届いたとき、どんな気持ちになりますか？」
 - 4回目以降: 答えをもとに「〜でありたい」「〜したい」という形のビジョン文を提案する
@@ -193,7 +195,7 @@ def goal_interview():
 
     if not messages:
         return jsonify({
-            "response": "こんにちは。一緒にあなたのビジョンを言葉にしていきましょう。\n\n今、どんな創作活動をしていますか？",
+            "response": "こんにちは。一緒にあなたのビジョンを言葉にしていきましょう。\n\n今、どんな活動に取り組んでいますか？",
             "step": 0,
         })
 
@@ -204,7 +206,7 @@ def goal_interview():
         return jsonify({"response": result, "vision": vision, "step": len(messages)})
 
     return jsonify({
-        "response": "もう少し教えてください。あなたの創作活動について、どんなことが好きですか？",
+        "response": "もう少し教えてください。あなたの取り組みについて、どんなことが好きですか？",
         "step": len(messages),
     })
 
