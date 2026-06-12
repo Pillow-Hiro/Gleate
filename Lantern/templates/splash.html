@@ -64,6 +64,18 @@
     transition: opacity 0.9s ease 0.3s, transform 0.9s ease 0.3s;
   }
   .splash-logo.show { opacity: 1; transform: translateY(0); }
+  .splash-date {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: clamp(0.7rem, 2.8vw, 0.8rem);
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    opacity: 0;
+    transition: opacity 0.7s ease 0.2s;
+  }
+  .splash-date.show { opacity: 1; }
   .splash-quote {
     font-size: clamp(0.88rem, 3.8vw, 1rem);
     font-weight: 300;
@@ -115,6 +127,7 @@
   <div class="splash-bg" id="splash-bg"></div>
   <div class="splash-overlay"></div>
   <div class="splash-content">
+    <div class="splash-date" id="splash-date"></div>
     <div class="splash-logo" id="splash-logo">Lantern</div>
     <div class="splash-quote" id="splash-quote"></div>
   </div>
@@ -125,7 +138,6 @@
 
 <script>
   const NEXT_URL = {{ next_url | tojson }};
-  const DURATION = 8000;
   const FALLBACKS = [
     '小さな一歩が、大きな旅になる。',
     '続けることに、やがて意味が宿る。',
@@ -141,6 +153,13 @@
     window.location.href = NEXT_URL;
   }
 
+  // Set date "12 JUN"
+  (function() {
+    const now = new Date();
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    document.getElementById('splash-date').textContent = now.getDate() + ' ' + months[now.getMonth()];
+  })();
+
   // Set random fallback quote immediately while waiting for AI
   document.getElementById('splash-quote').textContent =
     FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
@@ -148,20 +167,35 @@
   // Trigger animations
   document.getElementById('splash-bg').classList.add('show');
   setTimeout(() => {
+    document.getElementById('splash-date').classList.add('show');
     document.getElementById('splash-logo').classList.add('show');
     document.getElementById('splash-quote').classList.add('show');
     document.getElementById('splash-hint').classList.add('show');
   }, 50);
 
-  // Progress bar (double rAF ensures CSS transition fires)
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const prog = document.getElementById('splash-progress');
-    prog.style.transition = 'width ' + DURATION + 'ms linear';
-    prog.style.width = '100%';
-  }));
+  // Picsumフォールバック（Unsplash未設定時）
+  function getPicsumUrl() {
+    const seed = new Date().toISOString().slice(0, 10);
+    return 'https://picsum.photos/seed/' + seed + '/800/1400';
+  }
 
-  // Auto redirect
-  setTimeout(goNext, DURATION + 100);
+  function applyPhoto(url, credit) {
+    const bg = document.getElementById('splash-bg');
+    const img = new Image();
+    img.onload = () => { bg.style.backgroundImage = "url('" + url.replace(/'/g, "\\'") + "')"; };
+    img.onerror = () => {
+      const fallback = getPicsumUrl();
+      const fi = new Image();
+      fi.onload = () => { bg.style.backgroundImage = "url('" + fallback + "')"; };
+      fi.src = fallback;
+    };
+    img.src = url;
+    if (credit) {
+      const el = document.getElementById('splash-credit');
+      el.textContent = 'Photo by ' + credit + ' / Unsplash';
+      el.style.display = 'block';
+    }
+  }
 
   // Fetch real content (AI quote + Unsplash photo) async
   fetch('/api/splash/content')
@@ -170,21 +204,12 @@
       if (data.quote) {
         document.getElementById('splash-quote').textContent = data.quote;
       }
-      if (data.photo_url) {
-        const img = new Image();
-        img.onload = () => {
-          const bg = document.getElementById('splash-bg');
-          bg.style.backgroundImage = "url('" + data.photo_url.replace(/'/g, "\\'") + "')";
-        };
-        img.src = data.photo_url;
-        if (data.photographer) {
-          const credit = document.getElementById('splash-credit');
-          credit.textContent = 'Photo by ' + data.photographer + ' / Unsplash';
-          credit.style.display = 'block';
-        }
-      }
+      const photoUrl = data.photo_url || getPicsumUrl();
+      applyPhoto(photoUrl, data.photographer || '');
     })
-    .catch(() => {});
+    .catch(() => {
+      applyPhoto(getPicsumUrl(), '');
+    });
 </script>
 </body>
 </html>

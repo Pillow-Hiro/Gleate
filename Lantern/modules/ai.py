@@ -55,7 +55,7 @@ def call_claude_with_history(system_prompt, messages, max_tokens=300):
         return None
 
 
-_SPLASH_FALLBACKS = [
+_SPLASH_FALLBACKS_SNOOPY = [
     "小さな一歩が、大きな旅になる。",
     "続けることに、やがて意味が宿る。",
     "昨日より少しでも前へ、それで十分。",
@@ -63,16 +63,29 @@ _SPLASH_FALLBACKS = [
     "今日も記録することが、すでに答えだ。",
 ]
 
+_SPLASH_FALLBACKS_ZEN = [
+    "動かずして、動くものを見よ。",
+    "水は低きに流れ、人は高きを目指す。",
+    "花は散るから美しい。",
+    "風は見えないが、木は揺れる。",
+    "一歩踏み出せば、道はそこにある。",
+]
 
-def get_splash_quote():
+
+def get_splash_quote(quote_type="snoopy"):
     import random
-    system_prompt = """あなたはLanternです。今日も記録を続けるユーザーへ、朝の短い一言を届けます。
-スヌーピーの名言のような質感で、温かく本質をついた言葉を1文だけ書いてください。
+    if quote_type == "zen":
+        system_prompt = """禅の言葉の質感で、自然や静けさを感じる短い一言を1文だけ書いてください。
+30文字以内。Markdownなし。説教せず、ただ静かに心に届く言葉。"""
+        fallbacks = _SPLASH_FALLBACKS_ZEN
+    else:
+        system_prompt = """スヌーピーの名言のような質感で、温かく本質をついた言葉を1文だけ書いてください。
 30文字以内。Markdownなし。才能・努力・結果を評価しない。自然に心に届く言葉。"""
+        fallbacks = _SPLASH_FALLBACKS_SNOOPY
     result = call_claude(system_prompt, "今日の一言をください。", max_tokens=60)
     if result:
         return result.strip()
-    return random.choice(_SPLASH_FALLBACKS)
+    return random.choice(fallbacks)
 
 
 def get_ai_response(log_entry, past_logs, goals=None):

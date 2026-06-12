@@ -22,7 +22,8 @@ from modules.summary import get_weekly_summary, get_streak, get_recent_activity
 load_dotenv()
 app = Flask(__name__)
 
-_splash_cache = {"quote": None, "photo_url": None, "photographer": None, "cached_at": 0}
+_splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
+_splash_access_count = 0
 
 
 @app.route("/")
@@ -254,8 +255,13 @@ def splash():
 
 @app.route("/api/splash/content")
 def splash_content_api():
+    global _splash_access_count
+    _splash_access_count += 1
+    quote_type = "zen" if _splash_access_count % 2 == 0 else "snoopy"
+
+    # 写真は6時間キャッシュ（APIコスト削減）
     now = time.time()
-    if now - _splash_cache["cached_at"] > 21600:  # 6h cache
+    if now - _splash_photo_cache["cached_at"] > 21600:
         unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY", "")
         photo_url = ""
         photographer = ""
@@ -271,23 +277,30 @@ def splash_content_api():
                     data = r.json()
                     photo_url = data["urls"]["regular"]
                     photographer = data["user"]["name"]
+                    print(f"[Splash] Unsplash取得成功: {photo_url[:60]}...")
+                else:
+                    print(f"[Splash] Unsplash HTTPエラー: {r.status_code}")
             except Exception as e:
                 print(f"[Splash] Unsplash error: {e}")
+        else:
+            print("[Splash] UNSPLASH_ACCESS_KEY未設定 — Picsumフォールバック使用")
 
-        from modules.ai import get_splash_quote
-        quote = get_splash_quote()
-
-        _splash_cache.update({
-            "quote": quote,
+        _splash_photo_cache.update({
             "photo_url": photo_url,
             "photographer": photographer,
             "cached_at": now,
         })
 
+    # 一言はリクエストごとに生成（奇数=スヌーピー風 / 偶数=禅語）
+    from modules.ai import get_splash_quote
+    quote = get_splash_quote(quote_type)
+    print(f"[Splash] アクセス#{_splash_access_count} quote_type={quote_type}")
+
     return jsonify({
-        "photo_url": _splash_cache["photo_url"],
-        "photographer": _splash_cache["photographer"],
-        "quote": _splash_cache["quote"],
+        "photo_url": _splash_photo_cache["photo_url"],
+        "photographer": _splash_photo_cache["photographer"],
+        "quote": quote,
+        "quote_type": quote_type,
     })
 
 
