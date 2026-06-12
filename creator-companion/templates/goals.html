@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}目標 — Creator Companion{% endblock %}
+{% block title %}目標 — Lantern{% endblock %}
 
 {% block head %}
 <style>
@@ -217,7 +217,7 @@
       <span class="saved-notice" id="monthly-notice">保存しました</span>
     </div>
     <div id="monthly-suggestion" style="display:none" class="suggestion-box">
-      <div class="suggestion-from">Creator Companion</div>
+      <div class="suggestion-from">Lantern</div>
       <div id="monthly-suggestion-text"></div>
       <button class="use-suggestion-btn" onclick="useSuggestion('monthly')">この提案を使う</button>
     </div>
@@ -236,7 +236,7 @@
       <span class="saved-notice" id="weekly-notice">保存しました</span>
     </div>
     <div id="weekly-suggestion" style="display:none" class="suggestion-box">
-      <div class="suggestion-from">Creator Companion</div>
+      <div class="suggestion-from">Lantern</div>
       <div id="weekly-suggestion-text"></div>
       <button class="use-suggestion-btn" onclick="useSuggestion('weekly')">この提案を使う</button>
     </div>
@@ -270,7 +270,7 @@
     wrap.className = `chat-msg ${role}`;
     const from = document.createElement('div');
     from.className = 'chat-from';
-    from.textContent = role === 'ai' ? 'Creator Companion' : 'あなた';
+    from.textContent = role === 'ai' ? 'Lantern' : 'あなた';
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${role}`;
     bubble.textContent = text;

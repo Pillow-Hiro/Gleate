@@ -75,7 +75,7 @@ def get_ai_response(log_entry, past_logs, goals=None):
         if weekly:
             goals_context += f"\n今週の目標: {weekly}"
 
-    system_prompt = """あなたはCreator Companionです。クリエイターの創作活動を支える、AI伴走者です。
+    system_prompt = """あなたはLanternです。クリエイターの創作活動を支える、AI伴走者です。
 評価者でも審査員でもなく、隣で一緒に歩む存在として言葉をかけてください。
 
 【役割】
@@ -142,7 +142,7 @@ def get_weekly_review(period_logs, goals):
     vision = goals.get("vision", "")
     weekly_goal = get_current_weekly_goal(goals)
 
-    system_prompt = """あなたはCreator Companionです。週次レビューを生成します。
+    system_prompt = """あなたはLanternです。週次レビューを生成します。
 
 【役割】
 クリエイターが自分の活動を振り返り、強みと次の焦点を言語化できるよう支援する。
@@ -184,7 +184,7 @@ def get_monthly_review(period_logs, goals):
     vision = goals.get("vision", "")
     monthly_goal = get_current_monthly_goal(goals)
 
-    system_prompt = """あなたはCreator Companionです。月次レビューを生成します。
+    system_prompt = """あなたはLanternです。月次レビューを生成します。
 
 【役割】
 クリエイターが自分の強みと勝ち筋を言語化できるよう支援する。

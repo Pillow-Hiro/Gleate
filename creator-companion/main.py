@@ -151,7 +151,7 @@ def suggest_goal():
     context = f"今月の目標: {monthly_goal}" if (goal_type == "weekly" and monthly_goal) else ""
 
     from modules.ai import call_claude
-    system_prompt = f"""あなたはCreator Companionです。クリエイターの{period_label}の目標を提案します。
+    system_prompt = f"""あなたはLanternです。クリエイターの{period_label}の目標を提案します。
 
 過去の活動をもとに、具体的で達成可能な目標を自然な日本語の1文で提案してください。
 マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
@@ -175,7 +175,7 @@ def goal_interview():
     data = request.json
     messages = data.get("messages", [])
 
-    system_prompt = """あなたはCreator Companionです。クリエイターが自分のビジョン（大きな目標）を言語化するのをサポートします。
+    system_prompt = """あなたはLanternです。クリエイターが自分のビジョン（大きな目標）を言語化するのをサポートします。
 
 【ヒアリングの流れ】
 会話の回数に応じて進めてください：

@@ -61,6 +61,17 @@
 
 ---
 
+## 完了済み（続き）
+
+### 2026/06/12
+
+**リブランディング**
+- [x] アプリ名を全ファイルで「Creator Companion」→「Lantern」に変更（templates/base.html・index.html・logs.html・goals.html・review.html、modules/ai.py、main.py）
+- [x] ウェルカムテキストを更新（「あなたの毎日を記録して、Lanternと一緒に振り返りましょう。」）
+- [x] モバイルハンバーガーメニューをページタイトルに被らないよう修正（フローティングボタン廃止→固定ヘッダーバー方式に変更、Lanternロゴを表示）
+
+---
+
 ## 進行中
 
 ---

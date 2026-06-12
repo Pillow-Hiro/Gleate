@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}振り返り — Creator Companion{% endblock %}
+{% block title %}振り返り — Lantern{% endblock %}
 
 {% block head %}
 <style>
@@ -79,13 +79,13 @@
   </div>
 
   <div class="generate-area">
-    <p class="empty-hint" id="hint-text">今週の活動をCreator Companionが振り返ります。<br>ログが少なくても生成できます。</p>
+    <p class="empty-hint" id="hint-text">今週の活動をLanternが振り返ります。<br>ログが少なくても生成できます。</p>
     <button class="generate-btn" id="generate-btn" onclick="generateReview()">振り返りを生成する</button>
     <div class="loading-text" id="loading-text">振り返りを生成中...</div>
   </div>
 
   <div class="review-box" id="review-box">
-    <div class="review-from">Creator Companion</div>
+    <div class="review-from">Lantern</div>
     <div class="review-text" id="review-text"></div>
     <div class="review-meta" id="review-meta"></div>
   </div>
@@ -102,8 +102,8 @@
     document.getElementById('btn-monthly').classList.toggle('active', type === 'monthly');
     document.getElementById('hint-text').textContent =
       type === 'weekly'
-        ? '今週の活動をCreator Companionが振り返ります。\nログが少なくても生成できます。'
-        : '今月の活動をCreator Companionが振り返ります。\nあなたの強みや独自性を言葉にします。';
+        ? '今週の活動をLanternが振り返ります。\nログが少なくても生成できます。'
+        : '今月の活動をLanternが振り返ります。\nあなたの強みや独自性を言葉にします。';
     document.getElementById('review-box').classList.remove('visible');
   }
 

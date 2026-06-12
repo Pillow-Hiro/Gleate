@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}今日 — Creator Companion{% endblock %}
+{% block title %}今日 — Lantern{% endblock %}
 
 {% block head %}
 <style>
@@ -214,8 +214,8 @@
 
   {% if is_first_visit %}
   <div class="welcome-note">
-    <p>毎日の創作を記録して、AI伴走者と一緒に振り返りましょう。すべての項目は任意です。</p>
-    <div class="welcome-from">— Creator Companion</div>
+    <p>あなたの毎日を記録して、Lanternと一緒に振り返りましょう。</p>
+    <div class="welcome-from">— Lantern</div>
   </div>
   {% endif %}
 
@@ -288,7 +288,7 @@
 
   <div class="companion-message {% if today_log and today_log.ai_response %}visible{% endif %}" id="companion-box">
     <div class="companion-bubble">
-      <div class="companion-name">Creator Companion</div>
+      <div class="companion-name">Lantern</div>
       <div class="companion-text" id="companion-text">{{ today_log.ai_response if today_log and today_log.ai_response else '' }}</div>
     </div>
   </div>
