@@ -69,6 +69,19 @@
 - [x] アプリ名を全ファイルで「Creator Companion」→「Lantern」に変更（templates/base.html・index.html・logs.html・goals.html・review.html、modules/ai.py、main.py）
 - [x] ウェルカムテキストを更新（「あなたの毎日を記録して、Lanternと一緒に振り返りましょう。」）
 - [x] モバイルハンバーガーメニューをページタイトルに被らないよう修正（フローティングボタン廃止→固定ヘッダーバー方式に変更、Lanternロゴを表示）
+- [x] CLAUDE.md・PROGRESS.md・MVP_SPEC.mdの「Creator Companion」を「Lantern」に統一
+
+**起動画面（Splash Screen）**
+- [x] Unsplash API連携（自然・風景写真をランダム取得、6時間キャッシュ）
+- [x] AI生成の朝の一言（30文字以内・スヌーピー風）、フォールバック5件
+- [x] 4秒後またはタップでメイン画面へ遷移（プログレスバー表示）
+- [x] 一日1回だけ表示（localStorage: lantern_splash_date）
+- [x] Unsplash未設定時はグラデーション背景にフォールバック
+- [x] 環境変数: UNSPLASH_ACCESS_KEY（Render・.envに追加が必要）
+
+**AIプロンプト汎用化**
+- [x] modules/ai.pyの「創作」を「活動」に変更（5箇所：システムプロンプト・user_message・フォールバック文）
+- [x] 活動の種類を問わない汎用的な伴走者として機能するよう修正
 
 ---
 
@@ -92,7 +105,7 @@
 
 - データ保存がJSONファイルのため、ユーザーが増えた場合はDBへの移行が必要
 - Renderの無料枠はスリープがあるため、有料プランへの移行タイミングを検討
-- アプリ名を検討中（Creator Companion以外の候補あり）
+- アプリ名は「Lantern」に決定済み（全ファイル統一完了）
 
 ---
 

@@ -328,6 +328,16 @@
 
 {% block scripts %}
 <script>
+  // Show splash once per day on app launch
+  (function() {
+    var key = 'lantern_splash_date';
+    var today = new Date().toDateString();
+    if (localStorage.getItem(key) !== today) {
+      localStorage.setItem(key, today);
+      window.location.replace('/splash?next=/');
+    }
+  })();
+
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
   });

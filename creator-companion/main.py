@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, jsonify
+import os
 import re
+import time
+import requests as http_req
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -18,6 +21,8 @@ from modules.summary import get_weekly_summary, get_streak, get_recent_activity
 
 load_dotenv()
 app = Flask(__name__)
+
+_splash_cache = {"quote": None, "photo_url": None, "photographer": None, "cached_at": 0}
 
 
 @app.route("/")
@@ -238,6 +243,51 @@ def generate_review():
     return jsonify({"review": review, "log_count": len(period_logs), "period_label": period_label})
 
 
+@app.route("/splash")
+def splash():
+    return render_template("splash.html",
+        next_url=request.args.get("next", "/")
+    )
+
+
+@app.route("/api/splash/content")
+def splash_content_api():
+    now = time.time()
+    if now - _splash_cache["cached_at"] > 21600:  # 6h cache
+        unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY", "")
+        photo_url = ""
+        photographer = ""
+        if unsplash_key:
+            try:
+                r = http_req.get(
+                    "https://api.unsplash.com/photos/random",
+                    params={"query": "nature landscape", "orientation": "portrait", "content_filter": "high"},
+                    headers={"Authorization": f"Client-ID {unsplash_key}"},
+                    timeout=5,
+                )
+                if r.ok:
+                    data = r.json()
+                    photo_url = data["urls"]["regular"]
+                    photographer = data["user"]["name"]
+            except Exception as e:
+                print(f"[Splash] Unsplash error: {e}")
+
+        from modules.ai import get_splash_quote
+        quote = get_splash_quote()
+
+        _splash_cache.update({
+            "quote": quote,
+            "photo_url": photo_url,
+            "photographer": photographer,
+            "cached_at": now,
+        })
+
+    return jsonify({
+        "photo_url": _splash_cache["photo_url"],
+        "photographer": _splash_cache["photographer"],
+        "quote": _splash_cache["quote"],
+    })
+
+
 if __name__ == "__main__":
-    import os
     app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
