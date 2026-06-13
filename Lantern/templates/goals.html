@@ -176,13 +176,12 @@
   <!-- Vision -->
   <div class="section-label">ビジョン</div>
   <div class="goal-section">
-    <div class="vision-box" id="vision-display" style="{{ 'display:none' if not goals.vision else '' }}">
-      <div class="vision-text" id="vision-text">{{ goals.vision }}</div>
-      <button class="link-btn" onclick="showInterview()">編集する</button>
-    </div>
-    <div id="vision-empty" style="{{ 'display:none' if goals.vision else '' }}">
-      <div class="vision-empty">あなたのビジョン（大きな目標）を言葉にしましょう。<br>AIとの会話を通じて、自分の言葉で書き出せます。</div>
-      <button class="save-btn" onclick="showInterview()">AIと一緒に言葉にする</button>
+    <textarea class="goal-input" id="vision-input" rows="2"
+      placeholder="あなたのビジョン（大きな目標）を書いてみましょう">{{ goals.vision }}</textarea>
+    <div class="goal-actions">
+      <button class="save-btn" onclick="saveVisionDirect()">保存</button>
+      <button class="suggest-btn" onclick="toggleInterview()">AIと一緒に考える</button>
+      <span class="saved-notice" id="vision-notice">保存しました</span>
     </div>
 
     <div id="interview-section" style="display:none; margin-top:1rem;">
@@ -191,14 +190,6 @@
         <div class="chat-input-wrap">
           <textarea class="chat-input" id="chat-input" rows="1" placeholder="ここに入力してEnterで送信"></textarea>
           <button class="send-btn" id="send-btn" onclick="sendMessage()">送信</button>
-        </div>
-      </div>
-      <div class="vision-confirm" id="vision-confirm">
-        <div class="vision-confirm-text">このビジョンで保存しますか？</div>
-        <div class="vision-confirm-value" id="vision-confirm-value"></div>
-        <div style="display:flex;gap:0.75rem;">
-          <button class="save-btn" onclick="saveVision()">保存する</button>
-          <button class="suggest-btn" onclick="hideVisionConfirm()">続けて話す</button>
         </div>
       </div>
     </div>
@@ -247,11 +238,16 @@
 {% block scripts %}
 <script>
   let chatMessages = [];
-  let pendingVision = null;
+  let interviewStarted = false;
 
-  function showInterview() {
-    document.getElementById('interview-section').style.display = 'block';
-    if (chatMessages.length === 0) startInterview();
+  function toggleInterview() {
+    const section = document.getElementById('interview-section');
+    const hidden = section.style.display === 'none' || section.style.display === '';
+    section.style.display = hidden ? 'block' : 'none';
+    if (hidden && !interviewStarted) {
+      interviewStarted = true;
+      startInterview();
+    }
   }
 
   async function startInterview() {
@@ -293,44 +289,36 @@
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
 
-    chatMessages.push({role: 'assistant', content: '...'});
     const res = await fetch('/goals/interview', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({messages: chatMessages.slice(0, -1)})
+      body: JSON.stringify({messages: chatMessages})
     });
-    chatMessages.pop();
-
     const data = await res.json();
+    const displayText = data.response.replace(/【ビジョン[:：].+?】/g, '').trim();
     chatMessages.push({role: 'assistant', content: data.response});
-    appendChatBubble('ai', data.response);
+    appendChatBubble('ai', displayText);
     btn.disabled = false;
 
     if (data.vision) {
-      pendingVision = data.vision;
-      document.getElementById('vision-confirm-value').textContent = data.vision;
-      document.getElementById('vision-confirm').style.display = 'block';
+      const visionInput = document.getElementById('vision-input');
+      visionInput.value = data.vision;
+      visionInput.style.height = 'auto';
+      visionInput.style.height = visionInput.scrollHeight + 'px';
+      appendChatBubble('ai', 'ビジョンをテキストボックスに反映しました。編集して「保存」ボタンで保存できます。');
     }
   }
 
-  function hideVisionConfirm() {
-    document.getElementById('vision-confirm').style.display = 'none';
-  }
-
-  async function saveVision() {
-    if (!pendingVision) return;
-    await fetch('/goals/save', {
+  async function saveVisionDirect() {
+    const vision = document.getElementById('vision-input').value.trim();
+    await fetch('/api/vision', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({type: 'vision', vision: pendingVision})
+      body: JSON.stringify({vision})
     });
-    document.getElementById('vision-text').textContent = pendingVision;
-    document.getElementById('vision-display').style.display = 'block';
-    document.getElementById('vision-empty').style.display = 'none';
-    document.getElementById('interview-section').style.display = 'none';
-    document.getElementById('vision-confirm').style.display = 'none';
-    chatMessages = [];
-    pendingVision = null;
+    const notice = document.getElementById('vision-notice');
+    notice.classList.add('visible');
+    setTimeout(() => notice.classList.remove('visible'), 2500);
   }
 
   async function saveGoal(type) {

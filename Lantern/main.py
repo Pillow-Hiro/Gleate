@@ -212,6 +212,21 @@ def goal_interview():
     })
 
 
+@app.route("/api/vision", methods=["GET"])
+def get_vision():
+    goals = load_goals()
+    return jsonify({"vision": goals.get("vision", "")})
+
+
+@app.route("/api/vision", methods=["POST"])
+def save_vision_api():
+    data = request.json
+    goals = load_goals()
+    goals["vision"] = data.get("vision", "")
+    save_goals_data(goals)
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/logs/<date>", methods=["DELETE"])
 def delete_log(date):
     logs = load_logs()
