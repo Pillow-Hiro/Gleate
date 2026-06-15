@@ -210,6 +210,10 @@ def goal_interview():
             "step": 0,
         })
 
+    # Anthropic APIはmessages[0]がuserである必要があるため補正
+    if messages[0]["role"] == "assistant":
+        messages = [{"role": "user", "content": "ビジョンヒアリングを始めてください"}] + messages
+
     result = call_claude_with_history(system_prompt, messages, max_tokens=200)
     if result:
         vision_match = re.search(r'【ビジョン[:：](.+?)】', result)

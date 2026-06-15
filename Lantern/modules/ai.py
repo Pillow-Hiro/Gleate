@@ -108,30 +108,30 @@ def get_ai_response(log_entry, past_logs, goals=None):
         if weekly:
             goals_context += f"\n今週の目標: {weekly}"
 
-    system_prompt = """あなたはLanternです。あなたの日々の活動を支える、AI伴走者です。
+    system_prompt = """あなたはLanternです。日々の活動を支えるAI伴走者です。
 評価者でも審査員でもなく、隣で一緒に歩む存在として言葉をかけてください。
 
-【役割】
-状況整理・振り返り支援・次の一歩の提案。決めるのは本人。
+【最重要：ログの内容を必ず参照する】
+「作ったもの・進捗」「楽しかったこと」「困ったこと」「次回やること」を具体的に読み、
+その内容に直接触れた言葉をかける。入力が一言（「あ」「うーん」など）でも、
+過去ログや文脈から状況を想像して、その人固有の言葉で応える。
+同じような書き出しや表現を繰り返さず、毎回異なる切り口で返す。
 
-【絶対に言ってはいけないこと（NGパターン）】
-- 才能の有無を判断する（「才能があります」「才能がありません」など）
+【NGパターン（絶対に出力しない）】
+- 才能の有無を判断する
 - 数字で人を評価する（「フォロワーが少ないので〜」など）
-- 活動の継続を否定する（「やめた方がいいかもしれません」など）
+- 活動の継続を否定する
 - プレッシャーをかける（「もっと頑張れば〜」など）
 - 流行への迎合を勧める
 - 人格・内面を評価する（行動と結果のみに向ける）
 - 「次の実験：」「アクション：」などのラベルや見出しを使う
-- 意欲を損なう否定的な言葉を使う
+- 今日の活動に触れずに一般論を返す
 
 【トーン】
-温かく、本質をついた言葉がけ。スヌーピーの名言のような質感。
-間違いは率直に伝える（ただし人格ではなく行動・結果に向ける）。
+温かく、本質をついた言葉。スヌーピーの名言のような質感。自然な日本語の文章のみ。
 
-【返答の構成（全体200文字以内）】
-1. 今日の活動への共感・気づき（2〜3文）
-2. 課題や困りごとへの率直なコメント（あれば）
-3. 次の一歩のアイデアを会話の流れに自然に溶け込ませる（ラベル・見出し不要）"""
+【返答（全体200文字以内）】
+今日の具体的な内容への共感・気づき → 困りごとへのコメント（あれば）→ 次の一歩を自然な文に溶け込ませる"""
 
     user_message = f"""今日のログです。{past_context}{goals_context}
 
@@ -141,22 +141,21 @@ def get_ai_response(log_entry, past_logs, goals=None):
 困ったこと: {log_entry.get('struggled', '（未記入）')}
 次回やること: {log_entry.get('next', '（未記入）')}"""
 
-    result = call_claude(system_prompt, user_message, max_tokens=150)
+    result = call_claude(system_prompt, user_message, max_tokens=200)
     if result:
         return result
 
-    enjoyed = log_entry.get("enjoyable", "")
+    import random
+    created = log_entry.get("created", "")
     struggled = log_entry.get("struggled", "")
-    next_action = log_entry.get("next", "")
-    response = "今日も続けたこと、それ自体が価値です。"
-    if enjoyed:
-        response += f"「{enjoyed}」という感覚、大切にしてください。"
+    fallbacks = [
+        "今日も記録した。それだけで十分な一歩です。",
+        "続けていること自体が、すでに何かを作っている。",
+        "小さくても、前に進んだ日は大事にしたい。",
+    ]
+    response = random.choice(fallbacks)
     if struggled:
-        response += f"\n困ったこと（{struggled}）は、次の実験のヒントです。"
-    if next_action:
-        response += f"\n{next_action}、まず小さく試してみましょう。"
-    else:
-        response += "\n明日、一つだけ試したいことを決めてみてください。"
+        response += f" {struggled}のこと、次に活かせそうなことがあるかもしれない。"
     return response
 
 

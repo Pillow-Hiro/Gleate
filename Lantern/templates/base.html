@@ -259,7 +259,8 @@
       <a href="/" class="sidebar-logo">Lantern</a>
     </div>
     <nav class="sidebar-nav">
-      <a href="/" class="sidebar-link{% if request.path == '/' %} active{% endif %}">
+      <a href="/?splashed=1" class="sidebar-link{% if request.path == '/' %} active{% endif %}"
+         onclick="if(this.classList.contains('active')){event.preventDefault();}">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9.5 1.5l3 3L5 12H2V9l7.5-7.5z"/>
         </svg>
