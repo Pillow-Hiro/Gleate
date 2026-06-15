@@ -261,6 +261,7 @@
       body: JSON.stringify({messages: []})
     });
     const data = await res.json();
+    chatMessages.push({role: 'assistant', content: data.response});
     appendChatBubble('ai', data.response);
   }
 

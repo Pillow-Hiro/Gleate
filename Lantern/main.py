@@ -155,21 +155,31 @@ def suggest_goal():
     for log in recent_logs[-5:]:
         logs_summary += f"\n- {log['date']}: {log.get('created', '')}"
 
-    period_label = "今週" if goal_type == "weekly" else "今月"
-    context = f"今月の目標: {monthly_goal}" if (goal_type == "weekly" and monthly_goal) else ""
-
     from modules.ai import call_claude
-    system_prompt = f"""あなたはLanternです。クリエイターの{period_label}の目標を提案します。
+    if goal_type == "monthly":
+        system_prompt = """あなたはLanternです。クリエイターの今月の目標を提案します。
 
-過去の活動をもとに、具体的で達成可能な目標を自然な日本語の1文で提案してください。
+月レベルの目標：方向性・テーマ・今月挑戦したいこと（30日スパン）。
+ビジョンに向かって今月どんな実験や取り組みをするか、自然な1文で提案してください。
 マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
-50文字以内で書く。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
+50文字以内。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
+        user_message = f"""ビジョン: {vision if vision else '（未設定）'}
+直近の活動:{logs_summary if logs_summary else '（記録なし）'}
 
-    user_message = f"""ビジョン: {vision if vision else '（未設定）'}
+今月（30日間）の目標を1文で提案してください。"""
+    else:
+        system_prompt = """あなたはLanternです。クリエイターの今週の目標を提案します。
+
+週レベルの目標：今週できる具体的な行動（5〜7日スパン）。
+今月の目標に向けて、今週何を試すか・作るか・続けるかを、自然な1文で提案してください。
+マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
+50文字以内。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
+        context = f"今月の目標: {monthly_goal}" if monthly_goal else ""
+        user_message = f"""ビジョン: {vision if vision else '（未設定）'}
 {context}
 直近の活動:{logs_summary if logs_summary else '（記録なし）'}
 
-{period_label}の目標を提案してください。"""
+今週（5〜7日間）の具体的な行動目標を1文で提案してください。"""
 
     result = call_claude(system_prompt, user_message, max_tokens=80)
     if result:
@@ -183,16 +193,16 @@ def goal_interview():
     data = request.json
     messages = data.get("messages", [])
 
-    system_prompt = """あなたはLanternです。クリエイターが自分のビジョン（大きな目標）を言語化するのをサポートします。
+    system_prompt = """あなたはLanternです。会話の流れを読みながら、クリエイターが自分のビジョンを言語化するのをサポートします。
 
-【ヒアリングの流れ】
-会話の回数に応じて進めてください：
-- 1回目: 「今、どんな活動に取り組んでいますか？」
-- 2回目: 「それを続けて、1〜2年後どんな状態になっていたいですか？」
-- 3回目: 「その活動が誰かに届いたとき、どんな気持ちになりますか？」
-- 4回目以降: 答えをもとに「〜でありたい」「〜したい」という形のビジョン文を提案する
+【ヒアリングの原則】
+- 会話履歴を必ず踏まえて、次の問いを自然に決める
+- 最初は現在の活動・取り組みを聞く
+- 次に将来の状態や、誰かに届いたときの気持ちを掘り下げる
+- 3〜4往復の会話でビジョン文（「〜でありたい」「〜したい」形）を提案する
+- ビジョンが固まったら、文末に【ビジョン:（提案文）】を付ける
 
-各メッセージは短く（100文字以内）。4回目以降はビジョン文の提案をして、確定したら文末に【ビジョン:（提案文）】を付ける。"""
+各メッセージは短く（100文字以内）。押しつけず、相手の言葉を引き出す。決めるのは本人。"""
 
     if not messages:
         return jsonify({
