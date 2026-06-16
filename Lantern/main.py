@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import re
 import time
@@ -22,33 +22,11 @@ from modules.summary import get_weekly_summary, get_streak, get_recent_activity
 load_dotenv()
 app = Flask(__name__)
 
+STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
+
 _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 _splash_access_count = 0
 
-
-@app.route("/")
-def index():
-    if not request.args.get("splashed"):
-        return redirect("/splash?next=/?splashed=1")
-    logs = load_logs()
-    goals = load_goals()
-    today = datetime.now().strftime("%Y-%m-%d")
-    today_log = next((l for l in logs if l.get("date") == today), None)
-    weekly = get_weekly_summary(logs)
-    streak = get_streak(logs)
-    recent_activity = get_recent_activity(logs)
-    return render_template(
-        "index.html",
-        today_log=today_log,
-        weekly=weekly,
-        logs=logs[-7:],
-        goals=goals,
-        weekly_goal=get_current_weekly_goal(goals),
-        monthly_goal=get_current_monthly_goal(goals),
-        streak=streak,
-        recent_activity=recent_activity,
-        is_first_visit=len(logs) == 0,
-    )
 
 
 @app.route("/save", methods=["POST"])
@@ -85,26 +63,6 @@ def save():
 
     return jsonify({"status": "ok", "ai_response": ai_response})
 
-
-@app.route("/logs")
-def logs_page():
-    logs = load_logs()
-    return render_template("logs.html", logs=list(reversed(logs)))
-
-
-@app.route("/goals")
-def goals_page():
-    goals = load_goals()
-    return render_template(
-        "goals.html",
-        goals=goals,
-        current_monthly=get_current_monthly_goal(goals),
-        current_weekly=get_current_weekly_goal(goals),
-        month_str=get_month_str(),
-        month_display=get_month_display_str(),
-        week_str=get_week_str(),
-        week_display=get_week_display_str(),
-    )
 
 
 @app.route("/goals/save", methods=["POST"])
@@ -256,10 +214,6 @@ def delete_log(date):
     return jsonify({"status": "ok"})
 
 
-@app.route("/review")
-def review_page():
-    return render_template("review.html")
-
 
 @app.route("/api/review/generate", methods=["POST"])
 def generate_review():
@@ -281,12 +235,6 @@ def generate_review():
 
     return jsonify({"review": review, "log_count": len(period_logs), "period_label": period_label})
 
-
-@app.route("/splash")
-def splash():
-    return render_template("splash.html",
-        next_url=request.args.get("next", "/")
-    )
 
 
 @app.route("/api/splash/content")
@@ -319,7 +267,7 @@ def splash_content_api():
             except Exception as e:
                 print(f"[Splash] Unsplash error: {e}")
         else:
-            print("[Splash] UNSPLASH_ACCESS_KEY未設定 — Picsumフォールバック使用")
+            print("[Splash] UNSPLASH_ACCESS_KEY未設定 - Picsumフォールバック使用")
 
         _splash_photo_cache.update({
             "photo_url": photo_url,
@@ -338,6 +286,15 @@ def splash_content_api():
         "quote": quote,
         "quote_type": quote_type,
     })
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    file_path = os.path.join(STATIC_DIR, path)
+    if path and os.path.isfile(file_path):
+        return send_from_directory(STATIC_DIR, path)
+    return send_from_directory(STATIC_DIR, 'index.html')
 
 
 if __name__ == "__main__":
