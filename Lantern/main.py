@@ -185,7 +185,7 @@ def suggest_goal():
     if result:
         return jsonify({"suggestion": result})
 
-    fallback = "今月は、一つのことに集中してみてはどうでしょう。小さな完成体験が積み重なります。" if period == "monthly" else "今週は、一つ試せることを実行してみましょう。小さく始めるほど続きやすいものです。"
+    fallback = "今月は、一つのことに集中してみてはどうでしょう。小さな完成体験が積み重なります。" if goal_type == "monthly" else "今週は、一つ試せることを実行してみましょう。小さく始めるほど続きやすいものです。"
     return jsonify({"suggestion": fallback})
 
 

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 function ReviewSection({ title, type, description }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -9,7 +11,7 @@ function ReviewSection({ title, type, description }) {
     setLoading(true)
     setText('')
     try {
-      const res = await fetch('/api/review/generate', {
+      const res = await fetch(`${API_BASE}/api/review/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),

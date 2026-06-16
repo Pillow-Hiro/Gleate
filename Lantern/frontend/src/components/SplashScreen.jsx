@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 const FALLBACKS = [
   '小さな一歩が、大きな旅になる。',
@@ -34,7 +35,7 @@ export default function SplashScreen({ onClose }) {
   }, [])
 
   useEffect(() => {
-    fetch('/api/splash/content')
+    fetch(`${API_BASE}/api/splash/content`)
       .then(r => r.json())
       .then(data => {
         if (data.quote) setQuote(data.quote)

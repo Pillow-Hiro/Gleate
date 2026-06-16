@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 // UTCではなくローカル日付を使う（UTC+9で日付ずれを防ぐ）
 function localDateStr(date = new Date()) {
@@ -92,7 +93,7 @@ function RecordForm({ todayLog, onSaved }) {
     setLoading(true)
     setAiResponse('')
     try {
-      const res = await fetch('/save', {
+      const res = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -172,8 +173,8 @@ export default function Home() {
   async function fetchData() {
     try {
       const [splashRes, logsRes] = await Promise.all([
-        fetch('/api/splash/content'),
-        fetch('/api/logs'),
+        fetch(`${API_BASE}/api/splash/content`),
+        fetch(`${API_BASE}/api/logs`),
       ])
       const splashData = await splashRes.json()
       const logsData = await logsRes.json()

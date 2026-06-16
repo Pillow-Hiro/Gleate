@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 function SettingsRow({ label, description, children }) {
   return (
     <div className="flex items-center justify-between py-4 border-b border-border last:border-b-0">
@@ -26,7 +28,7 @@ export default function Settings() {
   const [theme, setTheme] = useState(() => localStorage.getItem('lantern-theme') || 'light')
 
   useEffect(() => {
-    fetch('/api/logs')
+    fetch(`${API_BASE}/api/logs`)
       .then(r => r.json())
       .then(data => setLogs(data))
       .catch(() => {})

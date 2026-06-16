@@ -11,6 +11,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5000',
       '/save': 'http://localhost:5000',
+      '/goals': 'http://localhost:5000',
     },
   },
 })

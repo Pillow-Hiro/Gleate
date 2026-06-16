@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 function parseDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -33,7 +34,7 @@ function LogDetail({ log, onDelete }) {
   async function handleDelete() {
     if (!confirm('この記録を削除しますか？')) return
     setDeleting(true)
-    await fetch(`/api/logs/${log.date}`, { method: 'DELETE' })
+    await fetch(`${API_BASE}/api/logs/${log.date}`, { method: 'DELETE' })
     if (onDelete) onDelete(log.date)
   }
 
@@ -107,7 +108,7 @@ export default function Journal() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetch('/api/logs')
+    fetch(`${API_BASE}/api/logs`)
       .then(r => r.json())
       .then(data => setLogs(data))
       .finally(() => setLoading(false))
