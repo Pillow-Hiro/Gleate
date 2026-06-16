@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
 import os
 import re
 import time
@@ -22,10 +21,6 @@ from modules.summary import get_weekly_summary, get_streak, get_recent_activity
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app, origins=[
-    "https://lantern-inky-three.vercel.app",
-    "http://localhost:5173",
-])
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
