@@ -164,29 +164,33 @@ export default function Home() {
   const [logs, setLogs] = useState([])
   const [todayLog, setTodayLog] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshTick, setRefreshTick] = useState(0)
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
   const dateJa = formatDateJa(now)
 
-  async function fetchData() {
-    try {
-      const logsRes = await fetch(`${API_BASE}/api/logs`)
-      const logsData = await logsRes.json()
-      setLogs(logsData)
-      setTodayLog(logsData.find(l => l.date === todayStr()) || null)
+  function refreshData() { setRefreshTick(t => t + 1) }
 
-      const quoteRes = await fetch(`${API_BASE}/api/daily/quote`)
-      const quoteData = await quoteRes.json()
-      setQuote(quoteData.quote || '')
-    } catch {
-      // fallback — keep empty state
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    ;(async () => {
+      setLoading(true)
+      try {
+        const logsRes = await fetch(`${API_BASE}/api/logs`)
+        const logsData = await logsRes.json()
+        setLogs(logsData)
+        setTodayLog(logsData.find(l => l.date === todayStr()) || null)
 
-  useEffect(() => { fetchData() }, [])
+        const quoteRes = await fetch(`${API_BASE}/api/daily/quote`)
+        const quoteData = await quoteRes.json()
+        setQuote(quoteData.quote || '')
+      } catch {
+        // fallback — keep empty state
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [refreshTick])
 
   // 今月の記録日数
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
@@ -272,7 +276,7 @@ export default function Home() {
 
       {/* 今日の記録 */}
       <section>
-        <RecordForm todayLog={todayLog} onSaved={fetchData} />
+        <RecordForm todayLog={todayLog} onSaved={refreshData} />
       </section>
     </div>
   )
