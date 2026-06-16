@@ -185,7 +185,8 @@ def suggest_goal():
     if result:
         return jsonify({"suggestion": result})
 
-    return jsonify({"suggestion": f"{period_label}、一つのことに集中してみてはどうでしょう。小さな完成体験が積み重なります。"})
+    fallback = "今月は、一つのことに集中してみてはどうでしょう。小さな完成体験が積み重なります。" if period == "monthly" else "今週は、一つ試せることを実行してみましょう。小さく始めるほど続きやすいものです。"
+    return jsonify({"suggestion": fallback})
 
 
 @app.route("/goals/interview", methods=["POST"])
@@ -224,6 +225,12 @@ def goal_interview():
         "response": "もう少し教えてください。あなたの取り組みについて、どんなことが好きですか？",
         "step": len(messages),
     })
+
+
+@app.route("/api/logs", methods=["GET"])
+def get_logs_api():
+    logs = load_logs()
+    return jsonify(logs)
 
 
 @app.route("/api/vision", methods=["GET"])

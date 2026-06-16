@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #faf9f7;
+  --color-stone: #f0ede8;
+  --color-parchment: #e8e4dc;
+  --color-forest: #2d4a3e;
+  --color-sage: #4a7c68;
+  --color-sage-light: #e8f0ec;
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #525252;
+  --color-ink-faint: #a8a29e;
+  --color-border: #e5e1db;
+  --color-amber: #92680a;
+  --color-amber-light: #fdf2e0;
+
+  --font-display: "Noto Serif JP", serif;
+  --font-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
