@@ -100,60 +100,75 @@ function RecordForm({ todayLog, onSaved }) {
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
+      setOpen(false)
     } finally {
       setLoading(false)
     }
   }
 
-  if (!open && !todayLog) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="w-full border border-border rounded-lg px-5 py-4 text-left text-sm text-ink-soft hover:border-sage/60 hover:text-ink hover:bg-sage-light/30 transition-all duration-150"
-      >
-        <span className="text-xs text-ink-faint tracking-wider uppercase block mb-0.5">今日の記録</span>
-        タップして記録を始める
-      </button>
-    )
-  }
-
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-border bg-stone flex items-center justify-between">
-        <span className="text-xs text-ink-soft tracking-wider uppercase">今日の記録</span>
-        {!todayLog && (
-          <button onClick={() => setOpen(false)} className="text-ink-faint hover:text-ink text-xs">閉じる</button>
-        )}
-      </div>
-
-      <div className="px-5 py-4 space-y-4">
-        {fields.map(({ key, label }) => (
-          <div key={key}>
-            <label className="block text-xs text-ink-faint mb-1.5 tracking-wide">{label}</label>
-            <textarea
-              value={form[key]}
-              onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-              rows={2}
-              className="w-full bg-cream border border-border rounded px-3 py-2 text-sm text-ink placeholder-ink-faint resize-none focus:outline-none focus:border-sage/60 transition-colors"
-              placeholder="（任意）"
-            />
-          </div>
-        ))}
-
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="w-full bg-forest text-cream text-sm py-2.5 rounded tracking-wide hover:bg-sage transition-colors disabled:opacity-50"
+      {/* トグルヘッダー */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full px-5 py-4 flex items-center justify-between text-left transition-colors hover:bg-stone/50"
+      >
+        <div className="flex items-center gap-2.5">
+          {todayLog ? (
+            <>
+              <span className="text-forest text-base leading-none">✓</span>
+              <span className="text-sm text-ink-soft">今日の記録を編集する</span>
+            </>
+          ) : (
+            <span className="text-sm text-ink-soft">今日を記録する</span>
+          )}
+        </div>
+        <svg
+          width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+          viewBox="0 0 14 14"
+          className={`text-ink-faint shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         >
-          {loading ? '保存中...' : '記録する'}
-        </button>
+          <path d="M2.5 5l4.5 4 4.5-4" />
+        </svg>
+      </button>
 
-        {aiResponse && (
-          <div className="bg-sage-light rounded-lg px-4 py-3.5 text-sm text-forest leading-relaxed">
-            {aiResponse}
+      {/* アニメーション展開エリア（CSS grid trick） */}
+      <div
+        className="grid transition-all duration-300 ease-out"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border px-5 py-4 space-y-4">
+            {fields.map(({ key, label }) => (
+              <div key={key}>
+                <label className="block text-xs text-ink-faint mb-1.5 tracking-wide">{label}</label>
+                <textarea
+                  value={form[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  rows={2}
+                  className="w-full bg-cream border border-border rounded px-3 py-2 text-sm text-ink placeholder-ink-faint resize-none focus:outline-none focus:border-sage/60 transition-colors"
+                  placeholder="（任意）"
+                />
+              </div>
+            ))}
+
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="w-full bg-forest text-cream text-sm py-2.5 rounded tracking-wide hover:bg-sage transition-colors disabled:opacity-50"
+            >
+              {loading ? '保存中...' : '記録する'}
+            </button>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* AI応答（折りたたみ後も表示） */}
+      {aiResponse && (
+        <div className="border-t border-sage/20 bg-sage-light/50 px-5 py-4">
+          <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
+        </div>
+      )}
     </div>
   )
 }
