@@ -20,11 +20,12 @@ function formatDateJa(date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${WEEKDAYS_JA[date.getDay()]}曜日`
 }
 
-// ── カレンダー（月ナビ付き日付グリッド）────────────────────────
-function ActivityCalendar({ logs }) {
+// ── カレンダー（月ナビ・クリックで記録表示）──────────────────────
+function ActivityCalendar({ logs, onEditToday }) {
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
+  const [selectedDate, setSelectedDate] = useState(null)
 
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
   const firstDay = new Date(viewYear, viewMonth, 1).getDay()
@@ -33,11 +34,13 @@ function ActivityCalendar({ logs }) {
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
 
   function prevMonth() {
+    setSelectedDate(null)
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
     else setViewMonth(m => m - 1)
   }
   function nextMonth() {
     if (isCurrentMonth) return
+    setSelectedDate(null)
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
     else setViewMonth(m => m + 1)
   }
@@ -48,6 +51,8 @@ function ActivityCalendar({ logs }) {
     const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     cells.push({ d, dateStr, hasLog: logSet.has(dateStr), isToday: dateStr === today })
   }
+
+  const selectedLog = selectedDate ? logs.find(l => l.date === selectedDate) : null
 
   return (
     <div>
@@ -87,31 +92,96 @@ function ActivityCalendar({ logs }) {
       {/* グリッド */}
       <div className="grid grid-cols-7 gap-0.5">
         {cells.map((cell, i) => {
-          if (!cell) return <div key={`empty-${i}`} />
+          if (!cell) return <div key={`empty-${i}`} className="w-6 h-6" />
+          const isSelected = selectedDate === cell.dateStr
           let cls = 'w-6 h-6 rounded flex items-center justify-center text-[9px] transition-colors '
+          if (cell.hasLog) cls += 'cursor-pointer '
           if (cell.isToday && cell.hasLog) {
-            cls += 'bg-forest text-cream font-semibold'
+            cls += isSelected
+              ? 'bg-forest/80 text-cream font-semibold ring-1 ring-forest/60'
+              : 'bg-forest text-cream font-semibold'
           } else if (cell.isToday) {
             cls += 'ring-1 ring-forest text-forest font-semibold bg-stone'
           } else if (cell.hasLog) {
-            cls += 'bg-sage text-cream font-medium'
+            cls += isSelected
+              ? 'bg-sage/80 text-cream font-medium ring-1 ring-sage/60'
+              : 'bg-sage text-cream font-medium'
           } else {
             cls += 'bg-stone text-ink-faint'
           }
           return (
-            <div key={cell.dateStr} title={`${cell.d}日`} className={cls}>
+            <div
+              key={cell.dateStr}
+              title={`${cell.d}日`}
+              className={cls}
+              onClick={() => {
+                if (!cell.hasLog) return
+                setSelectedDate(d => d === cell.dateStr ? null : cell.dateStr)
+              }}
+            >
               {cell.d}
             </div>
           )
         })}
       </div>
+
+      {/* 記録詳細パネル */}
+      {selectedLog && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10px] text-ink-faint tracking-wider">
+              {selectedDate.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, m, d) => `${y}年${+m}月${+d}日`)}
+            </p>
+            {selectedDate === today ? (
+              <button
+                onClick={() => { setSelectedDate(null); onEditToday?.() }}
+                className="text-[10px] text-sage hover:text-forest transition-colors"
+              >
+                編集する
+              </button>
+            ) : (
+              <span className="text-[10px] text-ink-faint">閲覧のみ</span>
+            )}
+          </div>
+          <div className="space-y-2.5">
+            {selectedLog.created && (
+              <div>
+                <p className="text-[10px] text-ink-faint mb-0.5">やったこと</p>
+                <p className="text-xs text-ink leading-relaxed">{selectedLog.created}</p>
+              </div>
+            )}
+            {selectedLog.enjoyable && (
+              <div>
+                <p className="text-[10px] text-ink-faint mb-0.5">よかったこと</p>
+                <p className="text-xs text-ink leading-relaxed">{selectedLog.enjoyable}</p>
+              </div>
+            )}
+            {selectedLog.struggled && (
+              <div>
+                <p className="text-[10px] text-ink-faint mb-0.5">詰まったこと</p>
+                <p className="text-xs text-ink leading-relaxed">{selectedLog.struggled}</p>
+              </div>
+            )}
+            {selectedLog.next && (
+              <div>
+                <p className="text-[10px] text-ink-faint mb-0.5">次にやること</p>
+                <p className="text-xs text-ink leading-relaxed">{selectedLog.next}</p>
+              </div>
+            )}
+            {selectedLog.ai_response && (
+              <div className="pt-2 border-t border-sage/20">
+                <p className="text-xs text-forest leading-relaxed">{selectedLog.ai_response}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ── 今日の記録フォーム ────────────────────────────────────────
-function RecordForm({ todayLog, onSaved }) {
-  const [open, setOpen] = useState(false)
+function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
   const [form, setForm] = useState({
     created: todayLog?.created || '',
     enjoyable: todayLog?.enjoyable || '',
@@ -140,7 +210,7 @@ function RecordForm({ todayLog, onSaved }) {
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
-      setOpen(false)
+      onOpenChange(false)
     } finally {
       setLoading(false)
     }
@@ -150,7 +220,7 @@ function RecordForm({ todayLog, onSaved }) {
     <div className="border border-border rounded-lg overflow-hidden">
       {/* トグルヘッダー */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => onOpenChange(o => !o)}
         className="w-full px-5 py-4 flex items-center justify-between text-left transition-colors hover:bg-stone/50"
       >
         <div className="flex items-center gap-2.5">
@@ -220,6 +290,7 @@ export default function Home() {
   const [todayLog, setTodayLog] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
+  const [formOpen, setFormOpen] = useState(false)
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
@@ -283,7 +354,7 @@ export default function Home() {
           </div>
         )}
         <div className="bg-stone/50 rounded-xl p-4">
-          <ActivityCalendar logs={logs} />
+          <ActivityCalendar logs={logs} onEditToday={() => setFormOpen(true)} />
         </div>
       </section>
 
@@ -317,7 +388,7 @@ export default function Home() {
                 <div className="text-sm text-forest leading-relaxed space-y-2">
                   <p>{observation}</p>
                   {latestNext && (
-                    <p className="text-ink-soft text-[13px]">次の実験 — {latestNext}</p>
+                    <p className="text-ink-soft text-[13px]">「{latestNext}」が次にやることとして記録されています。</p>
                   )}
                 </div>
               )
@@ -328,7 +399,7 @@ export default function Home() {
 
       {/* 今日の記録 */}
       <section>
-        <RecordForm todayLog={todayLog} onSaved={refreshData} />
+        <RecordForm todayLog={todayLog} onSaved={refreshData} open={formOpen} onOpenChange={setFormOpen} />
       </section>
     </div>
   )
