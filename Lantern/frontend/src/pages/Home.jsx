@@ -51,32 +51,30 @@ function ActivityCalendar({ logs }) {
 
   return (
     <div>
-      {/* 月ナビゲーション */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] text-ink-faint tracking-[0.18em]">
+      {/* 月ナビゲーション: < 2026年6月 > */}
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <button
+          onClick={prevMonth}
+          className="p-1 text-ink-faint hover:text-ink transition-colors rounded"
+          aria-label="前月"
+        >
+          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
+            <path d="M7 2L4 5.5 7 9" />
+          </svg>
+        </button>
+        <span className="text-[10px] text-ink-faint tracking-[0.18em] min-w-[5rem] text-center">
           {viewYear}年{viewMonth + 1}月
         </span>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={prevMonth}
-            className="p-1 text-ink-faint hover:text-ink transition-colors rounded"
-            aria-label="前月"
-          >
-            <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
-              <path d="M7 2L4 5.5 7 9" />
-            </svg>
-          </button>
-          <button
-            onClick={nextMonth}
-            disabled={isCurrentMonth}
-            className="p-1 text-ink-faint hover:text-ink transition-colors rounded disabled:opacity-25 disabled:cursor-not-allowed"
-            aria-label="翌月"
-          >
-            <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
-              <path d="M4 2L7 5.5 4 9" />
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={nextMonth}
+          disabled={isCurrentMonth}
+          className="p-1 text-ink-faint hover:text-ink transition-colors rounded disabled:opacity-25 disabled:cursor-not-allowed"
+          aria-label="翌月"
+        >
+          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
+            <path d="M4 2L7 5.5 4 9" />
+          </svg>
+        </button>
       </div>
 
       {/* 曜日ヘッダー */}
@@ -90,7 +88,7 @@ function ActivityCalendar({ logs }) {
       <div className="grid grid-cols-7 gap-0.5">
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />
-          let cls = 'w-7 h-7 rounded flex items-center justify-center text-[10px] transition-colors '
+          let cls = 'w-6 h-6 rounded flex items-center justify-center text-[9px] transition-colors '
           if (cell.isToday && cell.hasLog) {
             cls += 'bg-forest text-cream font-semibold'
           } else if (cell.isToday) {
