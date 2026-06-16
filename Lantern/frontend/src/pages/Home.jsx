@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -49,18 +48,18 @@ function ActivityCalendar({ logs }) {
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />
+          let cls = 'aspect-square rounded flex items-center justify-center text-[11px] transition-colors '
+          if (cell.isToday && cell.hasLog) {
+            cls += 'bg-forest text-cream font-semibold'
+          } else if (cell.isToday) {
+            cls += 'ring-2 ring-forest text-forest font-semibold bg-stone'
+          } else if (cell.hasLog) {
+            cls += 'bg-sage-light text-forest font-medium'
+          } else {
+            cls += 'bg-stone text-ink-faint'
+          }
           return (
-            <div
-              key={cell.dateStr}
-              title={`${cell.d}日`}
-              className={`
-                aspect-square rounded flex items-center justify-center text-[11px] transition-colors
-                ${cell.isToday ? 'ring-1 ring-forest/40' : ''}
-                ${cell.hasLog
-                  ? 'bg-sage-light text-forest font-medium'
-                  : 'bg-stone text-ink-faint'}
-              `}
-            >
+            <div key={cell.dateStr} title={`${cell.d}日`} className={cls}>
               {cell.d}
             </div>
           )
@@ -96,7 +95,7 @@ function RecordForm({ todayLog, onSaved }) {
       const res = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, date: todayStr() }),
       })
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
@@ -190,7 +189,7 @@ export default function Home() {
 
   useEffect(() => { fetchData() }, [])
 
-  // 継続日数（連続）
+  // 継続日数（連続）— 今日記録済みなら最低1を保証
   const streak = (() => {
     let count = 0
     const check = new Date()
@@ -201,7 +200,7 @@ export default function Home() {
       count++
       check.setDate(check.getDate() - 1)
     }
-    return count
+    return Math.max(count, todayLog ? 1 : 0)
   })()
 
   return (

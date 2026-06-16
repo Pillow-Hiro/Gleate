@@ -39,7 +39,7 @@ def save():
     data = request.json
     logs = load_logs()
     goals = load_goals()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = data.get("date") or datetime.now().strftime("%Y-%m-%d")
 
     entry = {
         "date": today,
