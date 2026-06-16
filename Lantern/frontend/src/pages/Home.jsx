@@ -20,41 +20,83 @@ function formatDateJa(date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${WEEKDAYS_JA[date.getDay()]}曜日`
 }
 
-// ── カレンダー（当月の日付グリッド）─────────────────────────────
+// ── カレンダー（月ナビ付き日付グリッド）────────────────────────
 function ActivityCalendar({ logs }) {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstDay = new Date(year, month, 1).getDay()
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
 
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
   const logSet = new Set(logs.map(l => l.date))
   const today = todayStr()
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (isCurrentMonth) return
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
 
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     cells.push({ d, dateStr, hasLog: logSet.has(dateStr), isToday: dateStr === today })
   }
 
   return (
     <div>
-      <div className="grid grid-cols-7 mb-1.5">
+      {/* 月ナビゲーション */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] text-ink-faint tracking-[0.18em]">
+          {viewYear}年{viewMonth + 1}月
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={prevMonth}
+            className="p-1 text-ink-faint hover:text-ink transition-colors rounded"
+            aria-label="前月"
+          >
+            <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
+              <path d="M7 2L4 5.5 7 9" />
+            </svg>
+          </button>
+          <button
+            onClick={nextMonth}
+            disabled={isCurrentMonth}
+            className="p-1 text-ink-faint hover:text-ink transition-colors rounded disabled:opacity-25 disabled:cursor-not-allowed"
+            aria-label="翌月"
+          >
+            <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11">
+              <path d="M4 2L7 5.5 4 9" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* 曜日ヘッダー */}
+      <div className="grid grid-cols-7 mb-1">
         {['日','月','火','水','木','金','土'].map(w => (
-          <div key={w} className="text-center text-[10px] text-ink-faint tracking-wider py-0.5">{w}</div>
+          <div key={w} className="text-center text-[10px] text-ink-faint tracking-wider">{w}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+
+      {/* グリッド */}
+      <div className="grid grid-cols-7 gap-0.5">
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} />
-          let cls = 'aspect-square rounded flex items-center justify-center text-[11px] transition-colors '
+          let cls = 'w-7 h-7 rounded flex items-center justify-center text-[10px] transition-colors '
           if (cell.isToday && cell.hasLog) {
             cls += 'bg-forest text-cream font-semibold'
           } else if (cell.isToday) {
-            cls += 'ring-2 ring-forest text-forest font-semibold bg-stone'
+            cls += 'ring-1 ring-forest text-forest font-semibold bg-stone'
           } else if (cell.hasLog) {
-            cls += 'bg-sage-light text-forest font-medium'
+            cls += 'bg-sage text-cream font-medium'
           } else {
             cls += 'bg-stone text-ink-faint'
           }
@@ -235,16 +277,13 @@ export default function Home() {
 
       {/* 継続バッジ + カレンダー */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">
-            {now.getFullYear()}年{now.getMonth() + 1}月
-          </p>
-          {thisMonthCount > 0 && (
+        {thisMonthCount > 0 && (
+          <div className="flex justify-end mb-3">
             <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
               今月の灯り {thisMonthCount}日
             </span>
-          )}
-        </div>
+          </div>
+        )}
         <div className="bg-stone/50 rounded-xl p-4">
           <ActivityCalendar logs={logs} />
         </div>
