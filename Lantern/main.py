@@ -242,6 +242,15 @@ def generate_review():
 
 
 
+@app.route("/api/daily/quote")
+def daily_quote():
+    logs = load_logs()
+    recent_logs = logs[-7:] if logs else None
+    from modules.ai import get_daily_quote
+    quote = get_daily_quote(recent_logs)
+    return jsonify({"quote": quote})
+
+
 @app.route("/api/splash/content")
 def splash_content_api():
     global _splash_access_count

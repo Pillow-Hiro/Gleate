@@ -6,6 +6,22 @@ from modules.logs import get_current_weekly_goal, get_current_monthly_goal
 _TIMEOUT_SECONDS = 10
 _TIMEOUT_MESSAGE = "AIの応答に時間がかかっています。少し待ってから再度お試しください。"
 
+# ── AI憲法（全プロンプトの基盤） ────────────────────────────────
+_LANTERN_CONSTITUTION = """【AI憲法 — 絶対に守るルール】
+- 人格を評価しない（評価対象は行動と結果のみ）
+- 才能の有無を判断しない
+- 夢を裁かない（続けるべきか辞めるべきかを決めない）
+- 数字で人を評価しない（フォロワー数・売上は状態を示す指標にすぎない）
+- 創作モチベーションを損なわない
+- 独自性を尊重する（流行への迎合を最適解として扱わない）
+- 最終決定権は人にある（AIは提案する、決めるのはユーザー）
+
+【禁止表現】
+「頑張りましょう」「諦めないでください」「成功できます」「才能があります/ありません」
+「もっと頑張れば〜」「やめた方がいいかもしれません」
+マークダウン記法（**太字**・## 見出し・--- 区切り線）
+ラベル・見出し（「次の実験：」「アクション：」など）"""
+
 
 def call_claude(system_prompt, user_message, max_tokens=300):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -108,30 +124,22 @@ def get_ai_response(log_entry, past_logs, goals=None):
         if weekly:
             goals_context += f"\n今週の目標: {weekly}"
 
-    system_prompt = """あなたはLanternです。日々の活動を支えるAI伴走者です。
+    system_prompt = f"""あなたはLanternです。日々の活動に寄り添うAI伴走者です。
 評価者でも審査員でもなく、隣で一緒に歩む存在として言葉をかけてください。
+
+{_LANTERN_CONSTITUTION}
 
 【最重要：ログの内容を必ず参照する】
 「作ったもの・進捗」「楽しかったこと」「困ったこと」「次回やること」を具体的に読み、
-その内容に直接触れた言葉をかける。入力が一言（「あ」「うーん」など）でも、
-過去ログや文脈から状況を想像して、その人固有の言葉で応える。
-同じような書き出しや表現を繰り返さず、毎回異なる切り口で返す。
-
-【NGパターン（絶対に出力しない）】
-- 才能の有無を判断する
-- 数字で人を評価する（「フォロワーが少ないので〜」など）
-- 活動の継続を否定する
-- プレッシャーをかける（「もっと頑張れば〜」など）
-- 流行への迎合を勧める
-- 人格・内面を評価する（行動と結果のみに向ける）
-- 「次の実験：」「アクション：」などのラベルや見出しを使う
-- 今日の活動に触れずに一般論を返す
+その内容に直接触れた言葉をかける。入力が一言でも過去ログや文脈から状況を想像して、
+その人固有の言葉で応える。同じ書き出しや表現を繰り返さず、毎回異なる切り口で返す。
+今日の活動に触れずに一般論を返すことは禁止。
 
 【トーン】
 温かく、本質をついた言葉。スヌーピーの名言のような質感。自然な日本語の文章のみ。
 
-【返答（全体200文字以内）】
-今日の具体的な内容への共感・気づき → 困りごとへのコメント（あれば）→ 次の一歩を自然な文に溶け込ませる"""
+【返答（200文字以内）】
+今日の具体的な内容への気づき → 困りごとへのコメント（あれば）→ 次の一歩を自然な文に溶け込ませる"""
 
     user_message = f"""今日のログです。{past_context}{goals_context}
 
@@ -199,6 +207,57 @@ def get_weekly_review(period_logs, goals):
         return result
 
     return f"今週は{len(period_logs)}日間、活動を続けました。継続すること自体が大きな力です。来週も一歩ずつ進んでいきましょう。"
+
+
+def get_daily_quote(recent_logs=None):
+    """今日の灯りを生成。ログ0件はLanternの世界観、1件以上は記録から生成。"""
+    import random
+
+    _fallbacks_nolog = [
+        "始める前の一歩が、一番遠い。",
+        "記録することは、自分を信じることだ。",
+        "迷いながら進む人が、一番遠くへ行く。",
+        "続けることに、やがて意味が宿る。",
+        "小さな記録が、大きな地図になる。",
+    ]
+    _fallbacks_withlog = [
+        "今日も記録することが、すでに答えだ。",
+        "続けていること自体が、すでに何かを作っている。",
+        "小さくても、前に進んだ日は大事にしたい。",
+    ]
+
+    if not recent_logs:
+        system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に、
+創作を続けることへの静かな一言を書いてください。
+
+{_LANTERN_CONSTITUTION}
+
+30文字以内。励ますのではなく寄り添う。Markdownなし。"""
+        result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
+        return result.strip() if result else random.choice(_fallbacks_nolog)
+
+    logs_text = ""
+    for log in recent_logs[-3:]:
+        if log.get("created"):
+            logs_text += f"\n- やったこと: {log['created']}"
+        if log.get("enjoyable"):
+            logs_text += f"\n- 楽しかったこと: {log['enjoyable']}"
+        if log.get("next"):
+            logs_text += f"\n- 次にやること: {log['next']}"
+
+    system_prompt = f"""あなたはLanternです。ユーザーの活動記録を読んで、今日の一言を添えます。
+
+{_LANTERN_CONSTITUTION}
+
+スヌーピーの名言のような温かさで、ユーザーの具体的な活動に自然に触れながら、
+静かに照らす一文を書いてください。40文字以内。Markdownなし。"""
+
+    result = call_claude(
+        system_prompt,
+        f"最近の活動記録:{logs_text}\n\n今日の一言を。",
+        max_tokens=60,
+    )
+    return result.strip() if result else random.choice(_fallbacks_withlog)
 
 
 def get_monthly_review(period_logs, goals):

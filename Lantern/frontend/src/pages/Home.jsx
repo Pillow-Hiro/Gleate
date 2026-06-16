@@ -171,15 +171,14 @@ export default function Home() {
 
   async function fetchData() {
     try {
-      const [splashRes, logsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/splash/content`),
-        fetch(`${API_BASE}/api/logs`),
-      ])
-      const splashData = await splashRes.json()
+      const logsRes = await fetch(`${API_BASE}/api/logs`)
       const logsData = await logsRes.json()
-      setQuote(splashData.quote || '')
       setLogs(logsData)
       setTodayLog(logsData.find(l => l.date === todayStr()) || null)
+
+      const quoteRes = await fetch(`${API_BASE}/api/daily/quote`)
+      const quoteData = await quoteRes.json()
+      setQuote(quoteData.quote || '')
     } catch {
       // fallback — keep empty state
     } finally {
@@ -189,19 +188,9 @@ export default function Home() {
 
   useEffect(() => { fetchData() }, [])
 
-  // 継続日数（連続）— 今日記録済みなら最低1を保証
-  const streak = (() => {
-    let count = 0
-    const check = new Date()
-    const logSet = new Set(logs.map(l => l.date))
-    for (let i = 0; i < 365; i++) {
-      const d = localDateStr(check)
-      if (!logSet.has(d)) break
-      count++
-      check.setDate(check.getDate() - 1)
-    }
-    return Math.max(count, todayLog ? 1 : 0)
-  })()
+  // 今月の記録日数
+  const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const thisMonthCount = logs.filter(l => l.date >= thisMonthStart).length
 
   return (
     <div className="space-y-8">
@@ -231,9 +220,9 @@ export default function Home() {
           <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">
             {now.getFullYear()}年{now.getMonth() + 1}月
           </p>
-          {streak > 0 && (
+          {thisMonthCount > 0 && (
             <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
-              {streak}日連続
+              今月の灯り {thisMonthCount}日
             </span>
           )}
         </div>
@@ -248,17 +237,31 @@ export default function Home() {
           <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">今週の発見</p>
           <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4">
             {(() => {
-              const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+              const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 6)
               const weekLogs = logs.filter(l => l.date >= localDateStr(weekAgo))
+                .sort((a, b) => b.date.localeCompare(a.date))
               if (weekLogs.length === 0) return (
                 <p className="text-sm text-ink-soft">今週の記録がまだありません。</p>
               )
-              const enjoyed = weekLogs.flatMap(l => l.enjoyable ? [l.enjoyable] : [])
+              const enjoyedCount = weekLogs.filter(l => l.enjoyable).length
+              const struggledCount = weekLogs.filter(l => l.struggled).length
+              const latestNext = weekLogs.find(l => l.next)?.next
+              const half = Math.ceil(weekLogs.length / 2)
+              let observation
+              if (enjoyedCount >= half) {
+                observation = '今週は楽しかったことが多く記録されています。'
+              } else if (struggledCount >= half) {
+                observation = '今週は試行錯誤の場面が多く記録されています。'
+              } else if (latestNext) {
+                observation = '今週は次のステップが具体的に記録されています。'
+              } else {
+                observation = `今週は${weekLogs.length}日間、活動が続いています。`
+              }
               return (
-                <div className="text-sm text-forest leading-relaxed space-y-1">
-                  <p>今週は{weekLogs.length}日間、記録しました。</p>
-                  {enjoyed.length > 0 && (
-                    <p className="text-ink-soft">よかったこと：{enjoyed[enjoyed.length - 1]}</p>
+                <div className="text-sm text-forest leading-relaxed space-y-2">
+                  <p>{observation}</p>
+                  {latestNext && (
+                    <p className="text-ink-soft text-[13px]">次の実験 — {latestNext}</p>
                   )}
                 </div>
               )
