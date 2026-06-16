@@ -24,8 +24,9 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
+    'https://lantern-5qtgm1lwi-pillow-hiros-projects.vercel.app',
+    'https://lantern-eg1yrhqrr-pillow-hiros-projects.vercel.app',
     'http://localhost:5173',
-    'http://localhost:3000',
 ])
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
