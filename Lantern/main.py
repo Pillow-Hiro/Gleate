@@ -244,6 +244,16 @@ def generate_review():
 
 
 
+@app.route("/api/strengths/generate", methods=["POST"])
+def generate_strengths():
+    logs = load_logs()
+    if len(logs) < 7:
+        return jsonify({"error": "7日以上の記録が必要です", "log_count": len(logs)}), 400
+    from modules.ai import get_strengths_analysis
+    strengths = get_strengths_analysis(logs)
+    return jsonify({"strengths": strengths, "log_count": len(logs)})
+
+
 @app.route("/api/daily/quote")
 def daily_quote():
     logs = load_logs()

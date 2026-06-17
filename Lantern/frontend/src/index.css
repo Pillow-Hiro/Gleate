@@ -18,6 +18,21 @@
   --font-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
+html.dark {
+  --color-cream: #1a1c19;
+  --color-stone: #242721;
+  --color-parchment: #2d312a;
+  --color-forest: #6db899;
+  --color-sage: #5ea884;
+  --color-sage-light: #1b2d22;
+  --color-ink: #e4e0da;
+  --color-ink-soft: #a09b96;
+  --color-ink-faint: #6b6765;
+  --color-border: #2e322b;
+  --color-amber: #e8a020;
+  --color-amber-light: #271a06;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }

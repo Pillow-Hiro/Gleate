@@ -300,3 +300,44 @@ def get_monthly_review(period_logs, goals):
         return result
 
     return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、必ずあなただけの強みが見えてきます。"
+
+
+def get_strengths_analysis(logs):
+    """記録からパターンを観察し、強みを言語化する（才能判定禁止）。"""
+    if not logs:
+        return "記録が見つかりません。"
+
+    logs_text = ""
+    for log in logs[-30:]:
+        parts = []
+        if log.get("created"):
+            parts.append(f"やったこと: {log['created']}")
+        if log.get("enjoyable"):
+            parts.append(f"楽しかったこと: {log['enjoyable']}")
+        if log.get("struggled"):
+            parts.append(f"困ったこと: {log['struggled']}")
+        if parts:
+            logs_text += f"\n{log['date']}: {' / '.join(parts)}"
+
+    system_prompt = f"""あなたはLanternです。クリエイターの活動記録から、繰り返し現れているパターンを観察します。
+
+{_LANTERN_CONSTITUTION}
+
+【観察の原則】
+- 「才能があります」「強みがあります」という断定をしない
+- 「このような場面が繰り返されています」という観察に留める
+- 評価ではなく、パターンの言語化を行う
+- 決めるのはクリエイター本人
+
+楽しんでいる場面、試行錯誤のパターン、続けていることへの観察を、自然な文章で伝える。
+ラベルや箇条書き・見出しは使わない。200文字以内。"""
+
+    user_message = f"""活動記録（直近最大30件）:{logs_text}
+
+この記録から、繰り返し現れているパターンを観察してください。"""
+
+    result = call_claude(system_prompt, user_message, max_tokens=300)
+    if result:
+        return result
+
+    return f"{len(logs)}日間の記録の中に、続けてきたことのパターンが見えています。それ自体が、あなたの取り組み方の輪郭です。"
