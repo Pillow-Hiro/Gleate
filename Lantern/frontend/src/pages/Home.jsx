@@ -188,15 +188,9 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
     struggled: todayLog?.struggled || '',
     next: todayLog?.next || '',
   })
+  const [detailOpen, setDetailOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(todayLog?.ai_response || '')
-
-  const fields = [
-    { key: 'created', label: '今日やったこと' },
-    { key: 'enjoyable', label: 'よかったこと・楽しかったこと' },
-    { key: 'struggled', label: '詰まったこと・困ったこと' },
-    { key: 'next', label: '次にやること' },
-  ]
 
   async function handleSave() {
     setLoading(true)
@@ -216,9 +210,24 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
     }
   }
 
+  function field(key, label, rows = 2, placeholder = '（任意）') {
+    return (
+      <div>
+        <label className="block text-xs text-ink-faint mb-1.5 tracking-wide">{label}</label>
+        <textarea
+          value={form[key]}
+          onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+          rows={rows}
+          className="w-full bg-cream border border-border rounded px-3 py-2 text-sm text-ink placeholder-ink-faint resize-none focus:outline-none focus:border-sage/60 transition-colors"
+          placeholder={placeholder}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      {/* トグルヘッダー */}
+      {/* 外側トグル */}
       <button
         onClick={() => onOpenChange(o => !o)}
         className="w-full px-5 py-4 flex items-center justify-between text-left transition-colors hover:bg-stone/50"
@@ -242,25 +251,45 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
         </svg>
       </button>
 
-      {/* アニメーション展開エリア（CSS grid trick） */}
+      {/* 展開エリア */}
       <div
         className="grid transition-all duration-300 ease-out"
         style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
           <div className="border-t border-border px-5 py-4 space-y-4">
-            {fields.map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-xs text-ink-faint mb-1.5 tracking-wide">{label}</label>
-                <textarea
-                  value={form[key]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  rows={2}
-                  className="w-full bg-cream border border-border rounded px-3 py-2 text-sm text-ink placeholder-ink-faint resize-none focus:outline-none focus:border-sage/60 transition-colors"
-                  placeholder="（任意）"
-                />
+
+            {/* メイン項目 */}
+            {field('created', '今日のこと', 5, '今日どんなことをしましたか？')}
+            {field('next', '次にやること', 2)}
+
+            {/* 詳細折りたたみ */}
+            <button
+              type="button"
+              onClick={() => setDetailOpen(o => !o)}
+              className="flex items-center gap-1.5 text-xs text-ink-faint hover:text-ink-soft transition-colors"
+            >
+              <svg
+                width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75"
+                strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11"
+                className={`transition-transform duration-200 ${detailOpen ? 'rotate-90' : ''}`}
+              >
+                <path d="M3 2l4.5 3.5L3 9" />
+              </svg>
+              {detailOpen ? 'もっと詳しく書く（閉じる）' : '＋ もっと詳しく書く'}
+            </button>
+
+            <div
+              className="grid transition-all duration-300 ease-out"
+              style={{ gridTemplateRows: detailOpen ? '1fr' : '0fr' }}
+            >
+              <div className="overflow-hidden">
+                <div className="space-y-4 pt-1">
+                  {field('enjoyable', 'よかったこと・楽しかったこと')}
+                  {field('struggled', '詰まったこと・困ったこと')}
+                </div>
               </div>
-            ))}
+            </div>
 
             <button
               onClick={handleSave}
