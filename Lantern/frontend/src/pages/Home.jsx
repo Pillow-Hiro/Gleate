@@ -276,7 +276,7 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
               >
                 <path d="M3 2l4.5 3.5L3 9" />
               </svg>
-              {detailOpen ? 'もっと詳しく書く（閉じる）' : '＋ もっと詳しく書く'}
+              {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
             </button>
 
             <div
