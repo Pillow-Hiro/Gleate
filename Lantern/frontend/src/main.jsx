@@ -4,13 +4,13 @@ import './index.css'
 import App from './App.jsx'
 
 // テーマ初期化（レンダリング前に適用してフラッシュを防ぐ）
-;(function () {
+try {
   const saved = localStorage.getItem('lantern-theme')
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   if (saved === 'dark' || (!saved && prefersDark)) {
     document.documentElement.classList.add('dark')
   }
-})()
+} catch { /* localStorage or matchMedia unavailable */ }
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

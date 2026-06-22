@@ -191,20 +191,25 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
   const [detailOpen, setDetailOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(todayLog?.ai_response || '')
+  const [saveError, setSaveError] = useState('')
 
   async function handleSave() {
     setLoading(true)
     setAiResponse('')
+    setSaveError('')
     try {
       const res = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, date: todayStr() }),
       })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
       onOpenChange(false)
+    } catch {
+      setSaveError('保存に失敗しました。接続を確認してください。')
     } finally {
       setLoading(false)
     }
@@ -298,6 +303,9 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
             >
               {loading ? '保存中...' : '記録する'}
             </button>
+            {saveError && (
+              <p className="text-xs text-red-500 text-center">{saveError}</p>
+            )}
           </div>
         </div>
       </div>
