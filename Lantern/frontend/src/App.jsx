@@ -8,13 +8,19 @@ import Journal from './pages/Journal'
 import Insights from './pages/Insights'
 import Settings from './pages/Settings'
 
-function Layout({ onSplashOpen }) {
+function Layout({ onSplashOpen, isDark, onToggleTheme }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-cream">
-      <Sidebar onLogoClick={onSplashOpen} />
-      <HamburgerMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} onLogoClick={onSplashOpen} />
+      <Sidebar onLogoClick={onSplashOpen} isDark={isDark} onToggleTheme={onToggleTheme} />
+      <HamburgerMenu
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onLogoClick={onSplashOpen}
+        isDark={isDark}
+        onToggleTheme={onToggleTheme}
+      />
 
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
         {/* Mobile header */}
@@ -43,7 +49,7 @@ function Layout({ onSplashOpen }) {
             <Route path="/" element={<Home />} />
             <Route path="/journal" element={<Journal />} />
             <Route path="/insights" element={<Insights />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<Settings isDark={isDark} onToggleTheme={onToggleTheme} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
@@ -55,16 +61,26 @@ function Layout({ onSplashOpen }) {
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [splashKey, setSplashKey] = useState(0)
+  const [isDark, setIsDark] = useState(() => {
+    try { return localStorage.getItem('lantern-theme') === 'dark' } catch { return false }
+  })
 
   function openSplash() {
     setSplashKey(k => k + 1)
     setShowSplash(true)
   }
 
+  function toggleTheme() {
+    const next = !isDark
+    setIsDark(next)
+    try { localStorage.setItem('lantern-theme', next ? 'dark' : 'light') } catch { /* localStorage unavailable */ }
+    document.documentElement.classList.toggle('dark', next)
+  }
+
   return (
     <BrowserRouter>
       {showSplash && <SplashScreen key={splashKey} onClose={() => setShowSplash(false)} />}
-      <Layout onSplashOpen={openSplash} />
+      <Layout onSplashOpen={openSplash} isDark={isDark} onToggleTheme={toggleTheme} />
     </BrowserRouter>
   )
 }

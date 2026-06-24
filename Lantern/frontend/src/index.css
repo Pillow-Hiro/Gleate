@@ -2,35 +2,39 @@
 
 @theme {
   --color-cream: #faf9f7;
-  --color-stone: #f0ede8;
+  --color-stone: #f0eeea;
   --color-parchment: #e8e4dc;
   --color-forest: #2d4a3e;
   --color-sage: #4a7c68;
   --color-sage-light: #e8f0ec;
   --color-ink: #1a1a1a;
-  --color-ink-soft: #525252;
-  --color-ink-faint: #a8a29e;
-  --color-border: #e5e1db;
+  --color-ink-soft: #666666;
+  --color-ink-faint: #999999;
+  --color-border: rgba(0, 0, 0, 0.08);
   --color-amber: #92680a;
   --color-amber-light: #fdf2e0;
+  --color-accent: #c4a882;
+  --color-lantern: #d4956a;
 
   --font-display: "Noto Serif JP", serif;
   --font-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
 html.dark {
-  --color-cream: #1a1c19;
-  --color-stone: #242721;
-  --color-parchment: #2d312a;
+  --color-cream: #0f0e0c;
+  --color-stone: #1a1814;
+  --color-parchment: #211f1c;
   --color-forest: #6db899;
   --color-sage: #5ea884;
   --color-sage-light: #1b2d22;
-  --color-ink: #e4e0da;
-  --color-ink-soft: #a09b96;
-  --color-ink-faint: #6b6765;
-  --color-border: #2e322b;
+  --color-ink: #e8e0d0;
+  --color-ink-soft: #a09880;
+  --color-ink-faint: #6b6560;
+  --color-border: rgba(255, 255, 255, 0.07);
   --color-amber: #e8a020;
   --color-amber-light: #271a06;
+  --color-accent: #c4a882;
+  --color-lantern: #d4956a;
 }
 
 * {

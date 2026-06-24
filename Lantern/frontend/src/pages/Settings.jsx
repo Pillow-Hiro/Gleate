@@ -23,13 +23,8 @@ function Section({ title, children }) {
   )
 }
 
-export default function Settings() {
+export default function Settings({ isDark, onToggleTheme }) {
   const [logs, setLogs] = useState([])
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('lantern-theme')
-    if (saved) return saved
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  })
 
   useEffect(() => {
     fetch(`${API_BASE}/api/logs`)
@@ -37,13 +32,6 @@ export default function Settings() {
       .then(data => setLogs(data))
       .catch(() => {})
   }, [])
-
-  function toggleTheme() {
-    const next = theme === 'light' ? 'dark' : 'light'
-    setTheme(next)
-    localStorage.setItem('lantern-theme', next)
-    document.documentElement.classList.toggle('dark', next === 'dark')
-  }
 
   const streak = (() => {
     let count = 0
@@ -78,12 +66,12 @@ export default function Settings() {
 
       {/* 表示 */}
       <Section title="表示">
-        <SettingsRow label="テーマ" description="システム設定に自動対応">
+        <SettingsRow label="テーマ" description="ボタンで手動切り替え">
           <button
-            onClick={toggleTheme}
+            onClick={onToggleTheme}
             className="text-xs text-forest border border-sage/40 px-3 py-1.5 rounded-full hover:bg-sage-light transition-colors"
           >
-            {theme === 'light' ? '🌙 ダークに切替' : '☀️ ライトに切替'}
+            {isDark ? '☀️ ライトに切替' : '🌙 ダークに切替'}
           </button>
         </SettingsRow>
       </Section>

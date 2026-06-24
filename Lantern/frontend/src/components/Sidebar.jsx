@@ -48,7 +48,30 @@ const navItems = [
   },
 ]
 
-export default function Sidebar({ onLogoClick }) {
+function ThemeIcon({ isDark }) {
+  if (isDark) {
+    return (
+      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
+        <circle cx="7" cy="7" r="2.5" />
+        <line x1="7" y1="1" x2="7" y2="2.5" />
+        <line x1="7" y1="11.5" x2="7" y2="13" />
+        <line x1="1" y1="7" x2="2.5" y2="7" />
+        <line x1="11.5" y1="7" x2="13" y2="7" />
+        <line x1="2.93" y1="2.93" x2="4.05" y2="4.05" />
+        <line x1="9.95" y1="9.95" x2="11.07" y2="11.07" />
+        <line x1="2.93" y1="11.07" x2="4.05" y2="9.95" />
+        <line x1="9.95" y1="4.05" x2="11.07" y2="2.93" />
+      </svg>
+    )
+  }
+  return (
+    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
+      <path d="M12 9.5A5.5 5.5 0 1 1 4.5 2a4 4 0 0 0 7.5 7.5z" />
+    </svg>
+  )
+}
+
+export default function Sidebar({ onLogoClick, isDark, onToggleTheme }) {
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-56 bg-stone border-r border-border z-40">
       <div className="px-5 py-6 border-b border-border">
@@ -80,8 +103,15 @@ export default function Sidebar({ onLogoClick }) {
         ))}
       </nav>
 
-      <div className="px-4 pb-5 pt-3 border-t border-border">
+      <div className="px-4 pb-5 pt-3 border-t border-border flex items-center justify-between">
         <p className="text-[10px] text-ink-faint tracking-wider">Lantern v0.2</p>
+        <button
+          onClick={onToggleTheme}
+          className="text-ink-faint hover:text-ink transition-colors p-1 rounded"
+          aria-label={isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+        >
+          <ThemeIcon isDark={isDark} />
+        </button>
       </div>
     </aside>
   )
