@@ -29,10 +29,10 @@ function groupByMonth(logs) {
 }
 
 function LogDetail({ log, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   async function handleDelete() {
-    if (!confirm('この記録を削除しますか？')) return
     setDeleting(true)
     await fetch(`${API_BASE}/api/logs/${log.date}`, { method: 'DELETE' })
     if (onDelete) onDelete(log.date)
@@ -61,14 +61,32 @@ function LogDetail({ log, onDelete }) {
           <p className="text-sm text-forest leading-relaxed">{log.ai_response}</p>
         </div>
       )}
-      <div className="pt-1 flex justify-end">
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="text-xs text-ink-faint hover:text-red-500 transition-colors"
-        >
-          {deleting ? '削除中...' : '削除'}
-        </button>
+      <div className="pt-1 flex justify-end items-center gap-3">
+        {confirmDelete ? (
+          <>
+            <span className="text-xs text-ink-faint">削除しますか？</span>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="text-xs text-ink-faint hover:text-ink transition-colors"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {deleting ? '削除中...' : '削除する'}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="text-xs text-ink-faint hover:text-red-500 transition-colors"
+          >
+            削除
+          </button>
+        )}
       </div>
     </div>
   )
@@ -82,7 +100,7 @@ function LogItem({ log, onDelete }) {
     <div className="border-b border-border last:border-b-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full text-left py-3.5 flex items-start justify-between gap-3 hover:bg-stone/40 -mx-4 px-4 transition-colors"
+        className="w-full text-left py-3.5 flex items-center justify-between gap-3 hover:bg-stone/40 -mx-4 px-4 transition-colors"
       >
         <div className="flex-1 min-w-0">
           <span className="text-xs text-ink-faint mr-2.5 shrink-0">{dayLabel(log.date)}</span>
@@ -92,12 +110,19 @@ function LogItem({ log, onDelete }) {
           width="14" height="14"
           fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
           viewBox="0 0 14 14"
-          className={`shrink-0 mt-0.5 text-ink-faint transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         >
           <path d="M2.5 5l4.5 4 4.5-4" />
         </svg>
       </button>
-      {open && <LogDetail log={log} onDelete={onDelete} />}
+      <div
+        className="grid transition-all duration-300 ease-out"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <LogDetail log={log} onDelete={onDelete} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -118,10 +143,11 @@ export default function Journal() {
     setLogs(prev => prev.filter(l => l.date !== date))
   }
 
-  const filtered = search
+  const q = search.trim().toLowerCase()
+  const filtered = q
     ? logs.filter(l =>
         [l.created, l.enjoyable, l.struggled, l.next].some(v =>
-          v?.includes(search)
+          v?.toLowerCase().includes(q)
         )
       )
     : logs
@@ -135,6 +161,9 @@ export default function Journal() {
       <div>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-0.5">Journal</p>
         <h1 className="font-display text-xl font-light text-ink">記録</h1>
+        {!loading && logs.length > 0 && (
+          <p className="text-sm text-ink-soft mt-1">{logs.length}日間の記録</p>
+        )}
       </div>
 
       {/* 検索 */}
@@ -151,8 +180,19 @@ export default function Journal() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="記録を検索"
-          className="w-full bg-stone border border-border rounded-lg pl-8 pr-4 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors"
+          className="w-full bg-stone border border-border rounded-lg pl-8 pr-9 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors"
         />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors"
+          >
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" viewBox="0 0 13 13">
+              <line x1="2" y1="2" x2="11" y2="11" />
+              <line x1="11" y1="2" x2="2" y2="11" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* ログ一覧 */}
@@ -162,18 +202,26 @@ export default function Journal() {
             <div key={i} className="h-12 bg-stone rounded-lg animate-pulse" />
           ))}
         </div>
+      ) : logs.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-3xl mb-4 opacity-40">◇</p>
+          <p className="text-sm text-ink-soft">まだ記録がありません</p>
+          <p className="text-xs text-ink-faint mt-1.5">Homeから今日の記録を始めましょう</p>
+        </div>
       ) : monthKeys.length === 0 ? (
-        <div className="text-center py-16 text-ink-faint">
-          <p className="text-sm">まだ記録がありません</p>
-          <p className="text-xs mt-1">今日から記録を始めましょう</p>
+        <div className="text-center py-12">
+          <p className="text-sm text-ink-faint">「{search.trim()}」の記録は見つかりませんでした</p>
         </div>
       ) : (
         <div className="space-y-8">
           {monthKeys.map(month => (
             <section key={month}>
-              <h2 className="text-xs text-ink-soft tracking-wider mb-3 font-medium">
-                {monthLabel(groups[month][0].date)}
-              </h2>
+              <div className="flex items-center gap-2.5 mb-3">
+                <h2 className="text-xs text-ink-soft tracking-wider font-medium">
+                  {monthLabel(groups[month][0].date)}
+                </h2>
+                <span className="text-[10px] text-ink-faint">{groups[month].length}日</span>
+              </div>
               <div className="bg-stone/40 rounded-xl px-4">
                 {groups[month].map(log => (
                   <LogItem key={log.date} log={log} onDelete={handleDelete} />

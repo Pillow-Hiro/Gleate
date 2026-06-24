@@ -2,10 +2,28 @@ import { useState, useEffect } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
+function formatAge(isoStr) {
+  const diff = Date.now() - new Date(isoStr).getTime()
+  const hours = Math.floor(diff / 3600000)
+  if (hours < 1) return '1時間以内'
+  if (hours < 24) return `${hours}時間前`
+  const days = Math.floor(hours / 24)
+  return `${days}日前`
+}
+
 function ReviewSection({ title, type, description }) {
-  const [text, setText] = useState('')
+  const storageKey = `lantern-review-${type}`
+
+  const [text, setText] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.text || '' } catch { return '' }
+  })
+  const [logCount, setLogCount] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.logCount || 0 } catch { return 0 }
+  })
+  const [generatedAt, setGeneratedAt] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.generatedAt || '' } catch { return '' }
+  })
   const [loading, setLoading] = useState(false)
-  const [logCount, setLogCount] = useState(0)
 
   async function generate() {
     setLoading(true)
@@ -16,9 +34,17 @@ function ReviewSection({ title, type, description }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       })
+      if (!res.ok) throw new Error()
       const data = await res.json()
+      const now = new Date().toISOString()
       setText(data.review || '')
       setLogCount(data.log_count || 0)
+      setGeneratedAt(now)
+      localStorage.setItem(storageKey, JSON.stringify({
+        text: data.review || '',
+        logCount: data.log_count || 0,
+        generatedAt: now,
+      }))
     } catch {
       setText('振り返りの生成に失敗しました。')
     } finally {
@@ -38,7 +64,7 @@ function ReviewSection({ title, type, description }) {
           disabled={loading}
           className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50 shrink-0"
         >
-          {loading ? '生成中...' : '振り返る'}
+          {loading ? '生成中...' : text ? '再生成' : '振り返る'}
         </button>
       </div>
 
@@ -52,11 +78,16 @@ function ReviewSection({ title, type, description }) {
 
       {text && !loading && (
         <div className="bg-stone/60 rounded-xl px-5 py-4">
-          {logCount > 0 && (
-            <p className="text-[10px] text-ink-faint tracking-wider uppercase mb-3">
-              {logCount}日分の記録をもとに
-            </p>
-          )}
+          <div className="flex items-center justify-between mb-3">
+            {logCount > 0 && (
+              <p className="text-[10px] text-ink-faint tracking-wider uppercase">
+                {logCount}日分の記録をもとに
+              </p>
+            )}
+            {generatedAt && (
+              <p className="text-[10px] text-ink-faint">{formatAge(generatedAt)}</p>
+            )}
+          </div>
           <p className="text-sm text-ink leading-[1.9]">{text}</p>
         </div>
       )}
@@ -73,7 +104,14 @@ function ReviewSection({ title, type, description }) {
 const STRENGTHS_UNLOCK_DAYS = 7
 
 function StrengthsSection({ logCount }) {
-  const [text, setText] = useState('')
+  const storageKey = 'lantern-strengths'
+
+  const [text, setText] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.text || '' } catch { return '' }
+  })
+  const [generatedAt, setGeneratedAt] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey))?.generatedAt || '' } catch { return '' }
+  })
   const [loading, setLoading] = useState(false)
   const unlocked = logCount >= STRENGTHS_UNLOCK_DAYS
 
@@ -85,8 +123,15 @@ function StrengthsSection({ logCount }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
+      if (!res.ok) throw new Error()
       const data = await res.json()
+      const now = new Date().toISOString()
       setText(data.strengths || '')
+      setGeneratedAt(now)
+      localStorage.setItem(storageKey, JSON.stringify({
+        text: data.strengths || '',
+        generatedAt: now,
+      }))
     } catch {
       setText('分析の生成に失敗しました。')
     } finally {
@@ -130,7 +175,7 @@ function StrengthsSection({ logCount }) {
           disabled={loading}
           className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50 shrink-0"
         >
-          {loading ? '分析中...' : '分析する'}
+          {loading ? '分析中...' : text ? '再分析' : '分析する'}
         </button>
       </div>
 
@@ -144,7 +189,12 @@ function StrengthsSection({ logCount }) {
 
       {text && !loading && (
         <div className="bg-stone/60 rounded-xl px-5 py-4">
-          <p className="text-[10px] text-ink-faint tracking-wider uppercase mb-3">パターンの観察</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] text-ink-faint tracking-wider uppercase">パターンの観察</p>
+            {generatedAt && (
+              <p className="text-[10px] text-ink-faint">{formatAge(generatedAt)}</p>
+            )}
+          </div>
           <p className="text-sm text-ink leading-[1.9]">{text}</p>
         </div>
       )}
