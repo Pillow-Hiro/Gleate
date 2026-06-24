@@ -19,8 +19,13 @@ _LANTERN_CONSTITUTION = """【AI憲法 — 絶対に守るルール】
 【禁止表現】
 「頑張りましょう」「諦めないでください」「成功できます」「才能があります/ありません」
 「もっと頑張れば〜」「やめた方がいいかもしれません」
+「継続すること自体が力です」「必ず〇〇できます」「素晴らしいです」「頑張っていますね」
 マークダウン記法（**太字**・## 見出し・--- 区切り線）
-ラベル・見出し（「次の実験：」「アクション：」など）"""
+ラベル・見出し（「次の実験：」「アクション：」など）
+
+【推奨トーン】
+評価しない・観察する。余白を残す・短い・押し付けない。
+例：「記録が続いています」「続けることで、見えてくるものがあります」"""
 
 
 def call_claude(system_prompt, user_message, max_tokens=300):
@@ -208,58 +213,76 @@ def get_weekly_review(period_logs, goals):
     if result:
         return result
 
-    return f"今週は{len(period_logs)}日間、活動を続けました。継続すること自体が大きな力です。来週も一歩ずつ進んでいきましょう。"
+    return f"今週は{len(period_logs)}日間、記録が残っています。続けることで、見えてくるものがあります。"
 
 
-def get_daily_quote(recent_logs=None):
-    """今日の灯りを生成。ログ0件はLanternの世界観、1件以上は記録から生成。"""
+def get_daily_quote(yesterday_log=None, recent_logs=None):
+    """今日の灯りを生成。
+    - 前日の記録がある → 前日の内容を読んで今朝の一言を生成
+    - 前日の記録がない → 直近記録または汎用の言葉
+    """
     import random
 
-    _fallbacks_nolog = [
+    _fallbacks = [
         "始める前の一歩が、一番遠い。",
         "記録することは、自分を信じることだ。",
-        "迷いながら進む人が、一番遠くへ行く。",
         "続けることに、やがて意味が宿る。",
         "小さな記録が、大きな地図になる。",
-    ]
-    _fallbacks_withlog = [
-        "今日も記録することが、すでに答えだ。",
-        "続けていること自体が、すでに何かを作っている。",
-        "小さくても、前に進んだ日は大事にしたい。",
+        "今日も、ここから始められる。",
     ]
 
-    if not recent_logs:
-        system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に、
-創作を続けることへの静かな一言を書いてください。
+    if yesterday_log:
+        created = yesterday_log.get("created", "")
+        enjoyable = yesterday_log.get("enjoyable", "")
+        struggled = yesterday_log.get("struggled", "")
+        next_thing = yesterday_log.get("next", "")
+
+        system_prompt = f"""あなたはLanternです。昨日の活動記録を読んで、今朝届ける一言を書きます。
 
 {_LANTERN_CONSTITUTION}
 
-30文字以内。励ますのではなく寄り添う。Markdownなし。"""
-        result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
-        return result.strip() if result else random.choice(_fallbacks_nolog)
+【書き方】
+昨日の具体的な内容に触れる（一般論にしない）。評価せず、観察する。短く、余白を残す。
+例：「難しいと感じた日も、ちゃんと残っています」
+例：「昨日の記録が、今日の足場になる」
+例：「続けている、それが見えています」
 
-    logs_text = ""
-    for log in recent_logs[-3:]:
-        if log.get("created"):
-            logs_text += f"\n- やったこと: {log['created']}"
-        if log.get("enjoyable"):
-            logs_text += f"\n- 楽しかったこと: {log['enjoyable']}"
-        if log.get("next"):
-            logs_text += f"\n- 次にやること: {log['next']}"
+40文字以内。自然な日本語の一文のみ。Markdownなし。"""
 
-    system_prompt = f"""あなたはLanternです。ユーザーの活動記録を読んで、今日の一言を添えます。
+        content_lines = []
+        if created:
+            content_lines.append(f"やったこと: {created}")
+        if enjoyable:
+            content_lines.append(f"よかったこと: {enjoyable}")
+        if struggled:
+            content_lines.append(f"詰まったこと: {struggled}")
+        if next_thing:
+            content_lines.append(f"次にやること: {next_thing}")
+
+        user_message = "昨日の記録：\n" + "\n".join(content_lines) + "\n\nこの記録を読んで、今朝の一言を。"
+        result = call_claude(system_prompt, user_message, max_tokens=70)
+        return result.strip() if result else random.choice(_fallbacks)
+
+    if recent_logs:
+        logs_text = "\n".join(
+            f"- {l['date']}: {l.get('created', '')}"
+            for l in recent_logs[-3:] if l.get("created")
+        )
+        system_prompt = f"""あなたはLanternです。活動記録を読んで、今日の一言を添えます。
 
 {_LANTERN_CONSTITUTION}
 
-スヌーピーの名言のような温かさで、ユーザーの具体的な活動に自然に触れながら、
-静かに照らす一文を書いてください。40文字以内。Markdownなし。"""
+静かに照らす一文を。40文字以内。Markdownなし。"""
+        result = call_claude(system_prompt, f"記録:\n{logs_text}\n\n今日の一言を。", max_tokens=60)
+        return result.strip() if result else random.choice(_fallbacks)
 
-    result = call_claude(
-        system_prompt,
-        f"最近の活動記録:{logs_text}\n\n今日の一言を。",
-        max_tokens=60,
-    )
-    return result.strip() if result else random.choice(_fallbacks_withlog)
+    system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に静かな一言を。
+
+{_LANTERN_CONSTITUTION}
+
+30文字以内。寄り添う。Markdownなし。"""
+    result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
+    return result.strip() if result else random.choice(_fallbacks)
 
 
 def get_monthly_review(period_logs, goals):
@@ -301,7 +324,7 @@ def get_monthly_review(period_logs, goals):
     if result:
         return result
 
-    return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、必ずあなただけの強みが見えてきます。"
+    return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、あなただけのパターンが見えてきます。"
 
 
 def get_strengths_analysis(logs):

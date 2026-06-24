@@ -256,9 +256,11 @@ def generate_strengths():
 @app.route("/api/daily/quote")
 def daily_quote():
     logs = load_logs()
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday_log = next((l for l in logs if l.get("date") == yesterday), None)
     recent_logs = logs[-7:] if logs else None
     from modules.ai import get_daily_quote
-    quote = get_daily_quote(recent_logs)
+    quote = get_daily_quote(yesterday_log=yesterday_log, recent_logs=recent_logs)
     return jsonify({"quote": quote})
 
 

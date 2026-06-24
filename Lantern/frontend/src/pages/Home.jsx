@@ -98,16 +98,16 @@ function ActivityCalendar({ logs, onEditToday }) {
           if (cell.hasLog) cls += 'cursor-pointer '
           if (cell.isToday && cell.hasLog) {
             cls += isSelected
-              ? 'bg-forest/80 text-cream font-semibold ring-1 ring-forest/60'
-              : 'bg-forest text-cream font-semibold'
+              ? 'bg-amber/20 text-amber font-semibold ring-1 ring-amber/70'
+              : 'bg-amber-light text-amber font-semibold ring-1 ring-amber/40'
           } else if (cell.isToday) {
-            cls += 'ring-1 ring-forest text-forest font-semibold bg-stone'
+            cls += 'ring-1 ring-forest/40 text-forest font-semibold'
           } else if (cell.hasLog) {
             cls += isSelected
-              ? 'bg-sage/80 text-cream font-medium ring-1 ring-sage/60'
-              : 'bg-sage text-cream font-medium'
+              ? 'bg-amber/20 text-amber ring-1 ring-amber/50'
+              : 'bg-amber-light text-amber'
           } else {
-            cls += 'bg-stone text-ink-faint'
+            cls += 'text-ink-faint/60'
           }
           return (
             <div
@@ -407,26 +407,47 @@ export default function Home() {
               if (weekLogs.length === 0) return (
                 <p className="text-sm text-ink-soft">今週の記録がまだありません。</p>
               )
-              const enjoyedCount = weekLogs.filter(l => l.enjoyable).length
-              const struggledCount = weekLogs.filter(l => l.struggled).length
-              const latestNext = weekLogs.find(l => l.next)?.next
-              const half = Math.ceil(weekLogs.length / 2)
-              let observation
-              if (enjoyedCount >= half) {
-                observation = '今週は楽しかったことが多く記録されています。'
-              } else if (struggledCount >= half) {
-                observation = '今週は試行錯誤の場面が多く記録されています。'
-              } else if (latestNext) {
-                observation = '今週は次のステップが具体的に記録されています。'
-              } else {
-                observation = `今週は${weekLogs.length}日間、活動が続いています。`
+
+              function snip(text, max = 24) {
+                return text.length > max ? text.slice(0, max) + '…' : text
               }
+
+              const observations = []
+
+              const latestEnjoyable = weekLogs.find(l => l.enjoyable)?.enjoyable
+              if (latestEnjoyable) {
+                observations.push(`「${snip(latestEnjoyable)}」が楽しかったこととして記録されています。`)
+              }
+
+              const latestNext = weekLogs.find(l => l.next)?.next
+              if (latestNext) {
+                observations.push(`「${snip(latestNext)}」が次にやることとして残っています。`)
+              }
+
+              const latestStruggled = weekLogs.find(l => l.struggled)?.struggled
+              if (latestStruggled && !latestEnjoyable) {
+                observations.push(`「${snip(latestStruggled)}」が今週の記録に残っています。`)
+              }
+
+              const eveningCount = weekLogs.filter(l => {
+                if (!l.saved_at) return false
+                const h = new Date(l.saved_at).getHours()
+                return h >= 20 || h < 5
+              }).length
+              if (eveningCount >= 2) observations.push('夜の時間帯に記録が続いています。')
+
+              if (observations.length === 0) {
+                const latestCreated = weekLogs[0]?.created
+                if (latestCreated) {
+                  observations.push(`「${snip(latestCreated)}」が記録されています。`)
+                } else {
+                  observations.push('記録が続いています。')
+                }
+              }
+
               return (
                 <div className="text-sm text-forest leading-relaxed space-y-2">
-                  <p>{observation}</p>
-                  {latestNext && (
-                    <p className="text-ink-soft text-[13px]">「{latestNext}」が次にやることとして記録されています。</p>
-                  )}
+                  {observations.slice(0, 2).map((obs, i) => <p key={i}>{obs}</p>)}
                 </div>
               )
             })()}
