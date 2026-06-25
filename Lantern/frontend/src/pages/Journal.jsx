@@ -34,8 +34,14 @@ function LogDetail({ log, onDelete }) {
 
   async function handleDelete() {
     setDeleting(true)
-    await fetch(`${API_BASE}/api/logs/${log.date}`, { method: 'DELETE' })
-    if (onDelete) onDelete(log.date)
+    try {
+      await fetch(`${API_BASE}/api/logs/${log.date}`, { method: 'DELETE' })
+      if (onDelete) onDelete(log.date)
+    } catch {
+      setConfirmDelete(false)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const fields = [

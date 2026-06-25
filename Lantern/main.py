@@ -18,7 +18,6 @@ from modules.ai import (
     get_weekly_review, get_monthly_review,
     call_claude_with_history,
 )
-from modules.summary import get_weekly_summary, get_streak, get_recent_activity
 
 load_dotenv()
 app = Flask(__name__)

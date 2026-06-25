@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
+function localDateStr(date = new Date()) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 function SettingsRow({ label, description, children }) {
   return (
     <div className="flex items-center justify-between py-4 border-b border-border last:border-b-0">
@@ -38,7 +45,7 @@ export default function Settings({ isDark, onToggleTheme }) {
     const check = new Date()
     const logSet = new Set(logs.map(l => l.date))
     for (let i = 0; i < 365; i++) {
-      const d = check.toISOString().slice(0, 10)
+      const d = localDateStr(check)
       if (!logSet.has(d)) break
       count++
       check.setDate(check.getDate() - 1)

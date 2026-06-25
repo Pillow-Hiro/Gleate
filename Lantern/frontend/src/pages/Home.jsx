@@ -457,7 +457,7 @@ export default function Home() {
 
       {/* 今日の記録 */}
       <section>
-        <RecordForm todayLog={todayLog} onSaved={refreshData} open={formOpen} onOpenChange={setFormOpen} />
+        <RecordForm key={todayLog?.date || 'new'} todayLog={todayLog} onSaved={refreshData} open={formOpen} onOpenChange={setFormOpen} />
       </section>
     </div>
   )
