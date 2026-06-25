@@ -314,6 +314,39 @@ def splash_content_api():
     })
 
 
+@app.route("/api/weekly-change", methods=["GET"])
+def weekly_change():
+    logs = load_logs()
+    today = datetime.now().date()
+    days_since_monday = today.weekday()  # 0=Mon, 6=Sun
+    this_monday = today - timedelta(days=days_since_monday)
+    last_monday = this_monday - timedelta(days=7)
+    last_sunday = this_monday - timedelta(days=1)
+
+    this_monday_str = this_monday.strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+    last_monday_str = last_monday.strftime("%Y-%m-%d")
+    last_sunday_str = last_sunday.strftime("%Y-%m-%d")
+
+    this_week = [l for l in logs if this_monday_str <= l.get("date", "") <= today_str]
+    last_week = [l for l in logs if last_monday_str <= l.get("date", "") <= last_sunday_str]
+
+    if not this_week or not last_week:
+        return jsonify({
+            "change": None,
+            "last_week_count": len(last_week),
+            "this_week_count": len(this_week),
+        })
+
+    from modules.ai import generate_weekly_change
+    change = generate_weekly_change(last_week, this_week)
+    return jsonify({
+        "change": change,
+        "last_week_count": len(last_week),
+        "this_week_count": len(this_week),
+    })
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
