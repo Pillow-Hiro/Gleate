@@ -347,6 +347,33 @@ def weekly_change():
     })
 
 
+@app.route("/api/monthly-change", methods=["GET"])
+def monthly_change():
+    logs = load_logs()
+    today = datetime.now().date()
+    this_month_prefix = today.strftime("%Y-%m")
+    last_month_date = (today.replace(day=1) - timedelta(days=1))
+    last_month_prefix = last_month_date.strftime("%Y-%m")
+
+    this_month = [l for l in logs if l.get("date", "").startswith(this_month_prefix)]
+    last_month = [l for l in logs if l.get("date", "").startswith(last_month_prefix)]
+
+    if not this_month or not last_month:
+        return jsonify({
+            "change": None,
+            "last_month_count": len(last_month),
+            "this_month_count": len(this_month),
+        })
+
+    from modules.ai import generate_monthly_change
+    change = generate_monthly_change(last_month, this_month)
+    return jsonify({
+        "change": change,
+        "last_month_count": len(last_month),
+        "this_month_count": len(this_month),
+    })
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):

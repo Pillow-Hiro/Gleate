@@ -71,16 +71,13 @@ function ThemeIcon({ isDark }) {
   )
 }
 
-export default function Sidebar({ onLogoClick, isDark, onToggleTheme }) {
+export default function Sidebar({ isDark, onToggleTheme }) {
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-56 bg-stone border-r border-border z-40">
       <div className="px-5 py-6 border-b border-border">
-        <button
-          onClick={onLogoClick}
-          className="font-display text-sm tracking-[0.22em] text-ink hover:text-ink-soft transition-colors"
-        >
+        <span className="font-display text-sm tracking-[0.22em] text-ink">
           Lantern
-        </button>
+        </span>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">

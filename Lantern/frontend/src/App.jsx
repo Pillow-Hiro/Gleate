@@ -13,11 +13,10 @@ function Layout({ onSplashOpen, isDark, onToggleTheme }) {
 
   return (
     <div className="flex min-h-screen bg-cream">
-      <Sidebar onLogoClick={onSplashOpen} isDark={isDark} onToggleTheme={onToggleTheme} />
+      <Sidebar isDark={isDark} onToggleTheme={onToggleTheme} />
       <HamburgerMenu
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onLogoClick={onSplashOpen}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
       />

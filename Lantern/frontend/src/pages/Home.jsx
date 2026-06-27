@@ -4,7 +4,6 @@ const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
-// UTCではなくローカル日付を使う（UTC+9で日付ずれを防ぐ）
 function localDateStr(date = new Date()) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -20,12 +19,16 @@ function formatDateJa(date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${WEEKDAYS_JA[date.getDay()]}曜日`
 }
 
-// ── カレンダー（月ナビ・クリックで記録表示）──────────────────────
-function ActivityCalendar({ logs, onEditToday }) {
+function dateDisplayJa(dateStr) {
+  const [, m, d] = dateStr.split('-')
+  return `${Number(m)}月${Number(d)}日`
+}
+
+// ── カレンダー ────────────────────────────────────────────────
+function ActivityCalendar({ logs, selectedFormDate, onDateSelect }) {
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
-  const [selectedDate, setSelectedDate] = useState(null)
 
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
   const firstDay = new Date(viewYear, viewMonth, 1).getDay()
@@ -34,29 +37,30 @@ function ActivityCalendar({ logs, onEditToday }) {
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
 
   function prevMonth() {
-    setSelectedDate(null)
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
     else setViewMonth(m => m - 1)
   }
   function nextMonth() {
     if (isCurrentMonth) return
-    setSelectedDate(null)
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
     else setViewMonth(m => m + 1)
+  }
+  function goToday() {
+    setViewYear(now.getFullYear())
+    setViewMonth(now.getMonth())
   }
 
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    cells.push({ d, dateStr, hasLog: logSet.has(dateStr), isToday: dateStr === today })
+    const isFuture = dateStr > today
+    cells.push({ d, dateStr, hasLog: logSet.has(dateStr), isToday: dateStr === today, isFuture })
   }
-
-  const selectedLog = selectedDate ? logs.find(l => l.date === selectedDate) : null
 
   return (
     <div>
-      {/* 月ナビゲーション: < 2026年6月 > */}
+      {/* 月ナビゲーション */}
       <div className="flex items-center justify-center gap-2 mb-2">
         <button
           onClick={prevMonth}
@@ -67,9 +71,11 @@ function ActivityCalendar({ logs, onEditToday }) {
             <path d="M7 2L4 5.5 7 9" />
           </svg>
         </button>
+
         <span className="text-[10px] text-ink-faint tracking-[0.18em] min-w-[5rem] text-center">
           {viewYear}年{viewMonth + 1}月
         </span>
+
         <button
           onClick={nextMonth}
           disabled={isCurrentMonth}
@@ -80,6 +86,15 @@ function ActivityCalendar({ logs, onEditToday }) {
             <path d="M4 2L7 5.5 4 9" />
           </svg>
         </button>
+
+        {!isCurrentMonth && (
+          <button
+            onClick={goToday}
+            className="text-[10px] text-ink-faint hover:text-ink tracking-wider border border-border rounded px-1.5 py-0.5 transition-colors"
+          >
+            今日
+          </button>
+        )}
       </div>
 
       {/* 曜日ヘッダー */}
@@ -93,105 +108,64 @@ function ActivityCalendar({ logs, onEditToday }) {
       <div className="grid grid-cols-7 gap-0.5">
         {cells.map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} className="w-6 h-6" />
-          const isSelected = selectedDate === cell.dateStr
+
+          const isSelected = selectedFormDate === cell.dateStr
           let cls = 'w-6 h-6 rounded flex items-center justify-center text-[9px] transition-colors '
-          if (cell.hasLog) cls += 'cursor-pointer '
-          if (cell.isToday && cell.hasLog) {
-            cls += isSelected
-              ? 'bg-amber/20 text-amber font-semibold ring-1 ring-amber/70'
-              : 'bg-amber-light text-amber font-semibold ring-1 ring-amber/40'
-          } else if (cell.isToday) {
-            cls += 'ring-1 ring-forest/40 text-forest font-semibold'
-          } else if (cell.hasLog) {
-            cls += isSelected
-              ? 'bg-amber/20 text-amber ring-1 ring-amber/50'
-              : 'bg-amber-light text-amber'
+
+          if (cell.isFuture) {
+            cls += 'text-ink-faint/30 cursor-not-allowed'
           } else {
-            cls += 'text-ink-faint/60'
+            cls += 'cursor-pointer '
+            if (cell.isToday && cell.hasLog) {
+              cls += isSelected
+                ? 'bg-amber/20 text-amber font-semibold ring-1 ring-amber/70'
+                : 'bg-amber-light text-amber font-semibold ring-1 ring-amber/40 hover:bg-amber/20'
+            } else if (cell.isToday) {
+              cls += isSelected
+                ? 'bg-forest/10 text-forest font-semibold ring-1 ring-forest/50'
+                : 'ring-1 ring-forest/40 text-forest font-semibold hover:bg-forest/10'
+            } else if (cell.hasLog) {
+              cls += isSelected
+                ? 'bg-amber/20 text-amber ring-1 ring-amber/50'
+                : 'bg-amber-light text-amber hover:bg-amber/20'
+            } else {
+              cls += isSelected
+                ? 'bg-stone text-ink ring-1 ring-border'
+                : 'text-ink-faint/60 hover:bg-stone hover:text-ink-faint'
+            }
           }
+
           return (
             <div
               key={cell.dateStr}
               title={`${cell.d}日`}
               className={cls}
-              onClick={() => {
-                if (!cell.hasLog) return
-                setSelectedDate(d => d === cell.dateStr ? null : cell.dateStr)
-              }}
+              onClick={() => !cell.isFuture && onDateSelect(cell.dateStr)}
             >
               {cell.d}
             </div>
           )
         })}
       </div>
-
-      {/* 記録詳細パネル */}
-      {selectedLog && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[10px] text-ink-faint tracking-wider">
-              {selectedDate.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, m, d) => `${y}年${+m}月${+d}日`)}
-            </p>
-            {selectedDate === today ? (
-              <button
-                onClick={() => { setSelectedDate(null); onEditToday?.() }}
-                className="text-[10px] text-sage hover:text-forest transition-colors"
-              >
-                編集する
-              </button>
-            ) : (
-              <span className="text-[10px] text-ink-faint">閲覧のみ</span>
-            )}
-          </div>
-          <div className="space-y-2.5">
-            {selectedLog.created && (
-              <div>
-                <p className="text-[10px] text-ink-faint mb-0.5">やったこと</p>
-                <p className="text-xs text-ink leading-relaxed">{selectedLog.created}</p>
-              </div>
-            )}
-            {selectedLog.enjoyable && (
-              <div>
-                <p className="text-[10px] text-ink-faint mb-0.5">よかったこと</p>
-                <p className="text-xs text-ink leading-relaxed">{selectedLog.enjoyable}</p>
-              </div>
-            )}
-            {selectedLog.struggled && (
-              <div>
-                <p className="text-[10px] text-ink-faint mb-0.5">詰まったこと</p>
-                <p className="text-xs text-ink leading-relaxed">{selectedLog.struggled}</p>
-              </div>
-            )}
-            {selectedLog.next && (
-              <div>
-                <p className="text-[10px] text-ink-faint mb-0.5">次にやること</p>
-                <p className="text-xs text-ink leading-relaxed">{selectedLog.next}</p>
-              </div>
-            )}
-            {selectedLog.ai_response && (
-              <div className="pt-2 border-t border-sage/20">
-                <p className="text-xs text-forest leading-relaxed">{selectedLog.ai_response}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-// ── 今日の記録フォーム ────────────────────────────────────────
-function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
+// ── 記録フォーム ──────────────────────────────────────────────
+function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
+  const isToday = targetDate === todayStr()
   const [form, setForm] = useState({
-    created: todayLog?.created || '',
-    enjoyable: todayLog?.enjoyable || '',
-    struggled: todayLog?.struggled || '',
-    next: todayLog?.next || '',
+    created: existingLog?.created || '',
+    enjoyable: existingLog?.enjoyable || '',
+    struggled: existingLog?.struggled || '',
+    next: existingLog?.next || '',
   })
   const [detailOpen, setDetailOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [aiResponse, setAiResponse] = useState(todayLog?.ai_response || '')
+  const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
+
+  const dateLabel = isToday ? '今日' : dateDisplayJa(targetDate)
 
   async function handleSave() {
     setLoading(true)
@@ -201,7 +175,7 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
       const res = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, date: todayStr() }),
+        body: JSON.stringify({ ...form, date: targetDate }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
@@ -232,19 +206,19 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      {/* 外側トグル */}
+      {/* トグルヘッダー */}
       <button
         onClick={() => onOpenChange(o => !o)}
         className="w-full px-5 py-4 flex items-center justify-between text-left transition-colors hover:bg-stone/50"
       >
         <div className="flex items-center gap-2.5">
-          {todayLog ? (
+          {existingLog ? (
             <>
               <span className="text-forest text-base leading-none">✓</span>
-              <span className="text-sm text-ink-soft">今日の記録を編集する</span>
+              <span className="text-sm text-ink-soft">{dateLabel}の記録を編集する</span>
             </>
           ) : (
-            <span className="text-sm text-ink-soft">今日を記録する</span>
+            <span className="text-sm text-ink-soft">{dateLabel}を記録する</span>
           )}
         </div>
         <svg
@@ -263,9 +237,12 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
       >
         <div className="overflow-hidden">
           <div className="border-t border-border px-5 py-4 space-y-4">
+            {/* 日付ラベル（今日以外） */}
+            {!isToday && (
+              <p className="text-xs text-ink-faint tracking-wide">{dateDisplayJa(targetDate)}の記録</p>
+            )}
 
-            {/* メイン項目 */}
-            {field('created', '今日のこと', 5, '今日どんなことをしましたか？')}
+            {field('created', `${isToday ? '今日' : 'この日'}のこと`, 5, `${isToday ? '今日' : 'この日'}どんなことをしましたか？`)}
             {field('next', '次にやること', 2)}
 
             {/* 詳細折りたたみ */}
@@ -310,7 +287,7 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
         </div>
       </div>
 
-      {/* AI応答（折りたたみ後も表示） */}
+      {/* AI応答 */}
       {aiResponse && (
         <div className="border-t border-sage/20 bg-sage-light/50 px-5 py-4">
           <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
@@ -324,10 +301,10 @@ function RecordForm({ todayLog, onSaved, open, onOpenChange }) {
 export default function Home() {
   const [quote, setQuote] = useState('')
   const [logs, setLogs] = useState([])
-  const [todayLog, setTodayLog] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
+  const [selectedFormDate, setSelectedFormDate] = useState(todayStr)
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
@@ -335,18 +312,27 @@ export default function Home() {
 
   function refreshData() { setRefreshTick(t => t + 1) }
 
+  function handleDateSelect(dateStr) {
+    setSelectedFormDate(dateStr)
+    setFormOpen(true)
+  }
+
   useEffect(() => {
     ;(async () => {
       setLoading(true)
       try {
-        const logsRes = await fetch(`${API_BASE}/api/logs`)
-        const logsData = await logsRes.json()
-        setLogs(logsData)
-        setTodayLog(logsData.find(l => l.date === todayStr()) || null)
-
-        const quoteRes = await fetch(`${API_BASE}/api/daily/quote`)
-        const quoteData = await quoteRes.json()
-        setQuote(quoteData.quote || '')
+        const [logsRes, quoteRes] = await Promise.all([
+          fetch(`${API_BASE}/api/logs`),
+          fetch(`${API_BASE}/api/daily/quote`),
+        ])
+        if (logsRes.ok) {
+          const logsData = await logsRes.json()
+          setLogs(logsData)
+        }
+        if (quoteRes.ok) {
+          const quoteData = await quoteRes.json()
+          setQuote(quoteData.quote || '')
+        }
       } catch {
         // fallback — keep empty state
       } finally {
@@ -355,9 +341,9 @@ export default function Home() {
     })()
   }, [refreshTick])
 
-  // 今月の記録日数
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const thisMonthCount = logs.filter(l => l.date >= thisMonthStart).length
+  const existingLog = logs.find(l => l.date === selectedFormDate) || null
 
   return (
     <div className="space-y-8">
@@ -391,7 +377,11 @@ export default function Home() {
           </div>
         )}
         <div className="bg-stone/50 rounded-xl p-4">
-          <ActivityCalendar logs={logs} onEditToday={() => setFormOpen(true)} />
+          <ActivityCalendar
+            logs={logs}
+            selectedFormDate={selectedFormDate}
+            onDateSelect={handleDateSelect}
+          />
         </div>
       </section>
 
@@ -413,21 +403,14 @@ export default function Home() {
               }
 
               const observations = []
-
               const latestEnjoyable = weekLogs.find(l => l.enjoyable)?.enjoyable
-              if (latestEnjoyable) {
-                observations.push(`「${snip(latestEnjoyable)}」が楽しかったこととして記録されています。`)
-              }
+              if (latestEnjoyable) observations.push(`「${snip(latestEnjoyable)}」が楽しかったこととして記録されています。`)
 
               const latestNext = weekLogs.find(l => l.next)?.next
-              if (latestNext) {
-                observations.push(`「${snip(latestNext)}」が次にやることとして残っています。`)
-              }
+              if (latestNext) observations.push(`「${snip(latestNext)}」が次にやることとして残っています。`)
 
               const latestStruggled = weekLogs.find(l => l.struggled)?.struggled
-              if (latestStruggled && !latestEnjoyable) {
-                observations.push(`「${snip(latestStruggled)}」が今週の記録に残っています。`)
-              }
+              if (latestStruggled && !latestEnjoyable) observations.push(`「${snip(latestStruggled)}」が今週の記録に残っています。`)
 
               const eveningCount = weekLogs.filter(l => {
                 if (!l.saved_at) return false
@@ -438,11 +421,7 @@ export default function Home() {
 
               if (observations.length === 0) {
                 const latestCreated = weekLogs[0]?.created
-                if (latestCreated) {
-                  observations.push(`「${snip(latestCreated)}」が記録されています。`)
-                } else {
-                  observations.push('記録が続いています。')
-                }
+                observations.push(latestCreated ? `「${snip(latestCreated)}」が記録されています。` : '記録が続いています。')
               }
 
               return (
@@ -455,9 +434,16 @@ export default function Home() {
         </section>
       )}
 
-      {/* 今日の記録 */}
+      {/* 記録フォーム */}
       <section>
-        <RecordForm key={todayLog?.date || 'new'} todayLog={todayLog} onSaved={refreshData} open={formOpen} onOpenChange={setFormOpen} />
+        <RecordForm
+          key={selectedFormDate}
+          existingLog={existingLog}
+          targetDate={selectedFormDate}
+          onSaved={refreshData}
+          open={formOpen}
+          onOpenChange={setFormOpen}
+        />
       </section>
     </div>
   )

@@ -375,6 +375,54 @@ def generate_weekly_change(last_week_logs, this_week_logs):
     return "先週と今週で、取り組みの様子が少し変わっています。"
 
 
+def generate_monthly_change(last_month_logs, this_month_logs):
+    """先月と今月の変化を観察・言語化する（評価・才能判定禁止）。"""
+    def fmt(logs):
+        if not logs:
+            return "（記録なし）"
+        lines = []
+        for l in logs:
+            parts = []
+            if l.get("created"):
+                parts.append(f"やったこと: {l['created']}")
+            if l.get("enjoyable"):
+                parts.append(f"楽しかったこと: {l['enjoyable']}")
+            if l.get("struggled"):
+                parts.append(f"詰まったこと: {l['struggled']}")
+            if parts:
+                lines.append(f"{l['date']}: {' / '.join(parts)}")
+        return "\n".join(lines) if lines else "（詳細なし）"
+
+    system_prompt = f"""あなたはLanternというアプリのAI伴走者です。
+
+{_LANTERN_CONSTITUTION}
+
+先月と今月の記録を比較して、変化を観察します。
+
+【追加ルール】
+「〇〇しましょう」「〇〇してみては」など命令・推奨は禁止。
+数字による比較・序列化は禁止。
+200文字以内。自然な日本語の文章のみ。Markdownなし。
+
+【良い例】
+「先月より、取り組む内容が少し変わっています。」
+「今月は楽しかった記録が続いています。」
+「詰まる場面のパターンが少し変化しています。」"""
+
+    user_message = f"""先月の記録：
+{fmt(last_month_logs)}
+
+今月の記録：
+{fmt(this_month_logs)}
+
+先月と今月を比較して、やったこと・気持ち・詰まったことの変化を評価せず、観察者として短く言語化してください。"""
+
+    result = call_claude(system_prompt, user_message, max_tokens=250)
+    if result:
+        return result.strip()
+    return "先月と今月で、取り組みの様子が少し変わっています。"
+
+
 def get_strengths_analysis(logs):
     """記録からパターンを観察し、強みを言語化する（才能判定禁止）。"""
     if not logs:

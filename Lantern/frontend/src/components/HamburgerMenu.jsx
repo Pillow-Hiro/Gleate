@@ -72,7 +72,7 @@ function ThemeIcon({ isDark }) {
   )
 }
 
-export default function HamburgerMenu({ open, onClose, onLogoClick, isDark, onToggleTheme }) {
+export default function HamburgerMenu({ open, onClose, isDark, onToggleTheme }) {
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -96,12 +96,9 @@ export default function HamburgerMenu({ open, onClose, onLogoClick, isDark, onTo
         }`}
       >
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-          <button
-            onClick={() => { onLogoClick?.(); onClose() }}
-            className="font-display text-sm tracking-[0.22em] text-ink hover:text-ink-soft transition-colors"
-          >
+          <span className="font-display text-sm tracking-[0.22em] text-ink">
             Lantern
-          </button>
+          </span>
           <button
             onClick={onClose}
             className="text-ink-faint hover:text-ink transition-colors p-1"
