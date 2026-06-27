@@ -230,26 +230,24 @@ def generate_review():
     if review_type == "weekly":
         week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         period_logs = [l for l in logs if l.get("date", "") >= week_ago]
-        review = get_weekly_review(period_logs, goals)
+        today = datetime.now().date()
+        this_monday = today - timedelta(days=today.weekday())
+        last_monday = this_monday - timedelta(days=7)
+        last_sunday = this_monday - timedelta(days=1)
+        last_week_logs = [l for l in logs if last_monday.strftime("%Y-%m-%d") <= l.get("date", "") <= last_sunday.strftime("%Y-%m-%d")]
+        review = get_weekly_review(period_logs, goals, last_week_logs=last_week_logs or None)
         period_label = "今週"
     else:
         month_start = datetime.now().strftime("%Y-%m-01")
         period_logs = [l for l in logs if l.get("date", "") >= month_start]
-        review = get_monthly_review(period_logs, goals)
+        today = datetime.now()
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        last_month_start = last_month_end.replace(day=1)
+        last_month_logs = [l for l in logs if last_month_start.strftime("%Y-%m-%d") <= l.get("date", "") <= last_month_end.strftime("%Y-%m-%d")]
+        review = get_monthly_review(period_logs, goals, last_month_logs=last_month_logs or None)
         period_label = "今月"
 
     return jsonify({"review": review, "log_count": len(period_logs), "period_label": period_label})
-
-
-
-@app.route("/api/strengths/generate", methods=["POST"])
-def generate_strengths():
-    logs = load_logs()
-    if len(logs) < 7:
-        return jsonify({"error": "7日以上の記録が必要です", "log_count": len(logs)}), 400
-    from modules.ai import get_strengths_analysis
-    strengths = get_strengths_analysis(logs)
-    return jsonify({"strengths": strengths, "log_count": len(logs)})
 
 
 @app.route("/api/daily/quote")
@@ -313,65 +311,6 @@ def splash_content_api():
         "quote_type": quote_type,
     })
 
-
-@app.route("/api/weekly-change", methods=["GET"])
-def weekly_change():
-    logs = load_logs()
-    today = datetime.now().date()
-    days_since_monday = today.weekday()  # 0=Mon, 6=Sun
-    this_monday = today - timedelta(days=days_since_monday)
-    last_monday = this_monday - timedelta(days=7)
-    last_sunday = this_monday - timedelta(days=1)
-
-    this_monday_str = this_monday.strftime("%Y-%m-%d")
-    today_str = today.strftime("%Y-%m-%d")
-    last_monday_str = last_monday.strftime("%Y-%m-%d")
-    last_sunday_str = last_sunday.strftime("%Y-%m-%d")
-
-    this_week = [l for l in logs if this_monday_str <= l.get("date", "") <= today_str]
-    last_week = [l for l in logs if last_monday_str <= l.get("date", "") <= last_sunday_str]
-
-    if not this_week or not last_week:
-        return jsonify({
-            "change": None,
-            "last_week_count": len(last_week),
-            "this_week_count": len(this_week),
-        })
-
-    from modules.ai import generate_weekly_change
-    change = generate_weekly_change(last_week, this_week)
-    return jsonify({
-        "change": change,
-        "last_week_count": len(last_week),
-        "this_week_count": len(this_week),
-    })
-
-
-@app.route("/api/monthly-change", methods=["GET"])
-def monthly_change():
-    logs = load_logs()
-    today = datetime.now().date()
-    this_month_prefix = today.strftime("%Y-%m")
-    last_month_date = (today.replace(day=1) - timedelta(days=1))
-    last_month_prefix = last_month_date.strftime("%Y-%m")
-
-    this_month = [l for l in logs if l.get("date", "").startswith(this_month_prefix)]
-    last_month = [l for l in logs if l.get("date", "").startswith(last_month_prefix)]
-
-    if not this_month or not last_month:
-        return jsonify({
-            "change": None,
-            "last_month_count": len(last_month),
-            "this_month_count": len(this_month),
-        })
-
-    from modules.ai import generate_monthly_change
-    change = generate_monthly_change(last_month, this_month)
-    return jsonify({
-        "change": change,
-        "last_month_count": len(last_month),
-        "this_month_count": len(this_month),
-    })
 
 
 @app.route('/', defaults={'path': ''})

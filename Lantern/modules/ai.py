@@ -174,32 +174,38 @@ def get_ai_response(log_entry, past_logs, goals=None):
     return response
 
 
-def get_weekly_review(period_logs, goals):
+def get_weekly_review(period_logs, goals, last_week_logs=None):
     if not period_logs:
         return "今週のログがまだありません。"
 
-    logs_text = ""
-    for log in period_logs:
-        logs_text += f"\n{log['date']}: {log.get('created', '')}"
-        if log.get("enjoyable"):
-            logs_text += f"（楽しかったこと: {log['enjoyable']}）"
-        if log.get("struggled"):
-            logs_text += f"（困ったこと: {log['struggled']}）"
+    def fmt(logs):
+        text = ""
+        for log in logs:
+            text += f"\n{log['date']}: {log.get('created', '')}"
+            if log.get("enjoyable"):
+                text += f"（楽しかったこと: {log['enjoyable']}）"
+            if log.get("struggled"):
+                text += f"（困ったこと: {log['struggled']}）"
+        return text
 
     vision = goals.get("vision", "")
     weekly_goal = get_current_weekly_goal(goals)
 
+    last_week_context = ""
+    if last_week_logs:
+        last_week_context = f"\n\n先週のログ（変化の参考）:{fmt(last_week_logs)}"
+
     system_prompt = """あなたはLanternです。週次レビューを生成します。
 
 【役割】
-クリエイターが自分の活動を振り返り、強みと次の焦点を言語化できるよう支援する。
+クリエイターが自分の活動を振り返り、次の焦点を言語化できるよう支援する。
 
 【絶対に守ること】
 - 人格・才能を評価しない
 - 数字で価値を測らない
 - やめることを勧めない
 
-今週の活動パターンへの気づき、学んだこと、来週の焦点を自然な文章で書く。
+今週の活動パターンへの気づきと学んだことを書く。先週のログがある場合は、今週との変化を文章に自然に溶け込ませる（「先週と比べて〜」など直接比較の表現は避ける）。
 ラベルや箇条書きは使わず、伴走者が語りかけるような文体で。300文字以内。"""
 
     user_message = f"""今週のログの週次レビューを生成してください。
@@ -207,7 +213,7 @@ def get_weekly_review(period_logs, goals):
 ビジョン: {vision if vision else '（未設定）'}
 今週の目標: {weekly_goal if weekly_goal else '（未設定）'}
 
-今週のログ:{logs_text}"""
+今週のログ:{fmt(period_logs)}{last_week_context}"""
 
     result = call_claude(system_prompt, user_message, max_tokens=400)
     if result:
@@ -285,32 +291,38 @@ def get_daily_quote(yesterday_log=None, recent_logs=None):
     return result.strip() if result else random.choice(_fallbacks)
 
 
-def get_monthly_review(period_logs, goals):
+def get_monthly_review(period_logs, goals, last_month_logs=None):
     if not period_logs:
         return "今月のログがまだありません。"
 
-    logs_text = ""
-    for log in period_logs:
-        logs_text += f"\n{log['date']}: {log.get('created', '')}"
-        if log.get("enjoyable"):
-            logs_text += f"（楽しかったこと: {log['enjoyable']}）"
-        if log.get("struggled"):
-            logs_text += f"（困ったこと: {log['struggled']}）"
+    def fmt(logs):
+        text = ""
+        for log in logs:
+            text += f"\n{log['date']}: {log.get('created', '')}"
+            if log.get("enjoyable"):
+                text += f"（楽しかったこと: {log['enjoyable']}）"
+            if log.get("struggled"):
+                text += f"（困ったこと: {log['struggled']}）"
+        return text
 
     vision = goals.get("vision", "")
     monthly_goal = get_current_monthly_goal(goals)
 
+    last_month_context = ""
+    if last_month_logs:
+        last_month_context = f"\n\n先月のログ（変化の参考）:{fmt(last_month_logs)}"
+
     system_prompt = """あなたはLanternです。月次レビューを生成します。
 
 【役割】
-クリエイターが自分の強みと勝ち筋を言語化できるよう支援する。
+クリエイターが自分の活動を振り返り、次の焦点を言語化できるよう支援する。
 
 【絶対に守ること】
 - 人格・才能を評価しない
 - 数字で価値を測らない
 - やめることを勧めない
 
-今月の活動から見えてきた強みや独自性、繰り返し現れたパターン、来月の焦点を自然な文章で。
+今月の活動から見えてきたパターンと来月の焦点を書く。先月のログがある場合は、今月との変化を文章に自然に溶け込ませる（「先月と比べて〜」など直接比較の表現は避ける）。
 ラベルや箇条書きは使わず、伴走者が語りかけるような文体で。400文字以内。"""
 
     user_message = f"""今月のログの月次レビューを生成してください。
@@ -318,7 +330,7 @@ def get_monthly_review(period_logs, goals):
 ビジョン: {vision if vision else '（未設定）'}
 今月の目標: {monthly_goal if monthly_goal else '（未設定）'}
 
-今月のログ:{logs_text}"""
+今月のログ:{fmt(period_logs)}{last_month_context}"""
 
     result = call_claude(system_prompt, user_message, max_tokens=500)
     if result:
@@ -327,138 +339,3 @@ def get_monthly_review(period_logs, goals):
     return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、あなただけのパターンが見えてきます。"
 
 
-def generate_weekly_change(last_week_logs, this_week_logs):
-    """先週と今週の変化を観察・言語化する（評価・才能判定禁止）。"""
-    def fmt(logs):
-        if not logs:
-            return "（記録なし）"
-        lines = []
-        for l in logs:
-            parts = []
-            if l.get("created"):
-                parts.append(f"やったこと: {l['created']}")
-            if l.get("enjoyable"):
-                parts.append(f"楽しかったこと: {l['enjoyable']}")
-            if l.get("struggled"):
-                parts.append(f"詰まったこと: {l['struggled']}")
-            if parts:
-                lines.append(f"{l['date']}: {' / '.join(parts)}")
-        return "\n".join(lines) if lines else "（詳細なし）"
-
-    system_prompt = f"""あなたはLanternというアプリのAI伴走者です。
-
-{_LANTERN_CONSTITUTION}
-
-先週と今週の記録を比較して、変化を観察します。
-
-【追加ルール】
-「〇〇しましょう」「〇〇してみては」など命令・推奨は禁止。
-数字による比較・序列化は禁止。
-200文字以内。自然な日本語の文章のみ。Markdownなし。
-
-【良い例】
-「先週より、詰まる場面が少し変わっています。」
-「今週は楽しかった記録が多く残っています。」
-「取り組む内容が少し広がっています。」"""
-
-    user_message = f"""先週の記録：
-{fmt(last_week_logs)}
-
-今週の記録：
-{fmt(this_week_logs)}
-
-先週と今週を比較して、やったこと・気持ち・詰まったことの変化を評価せず、観察者として短く言語化してください。"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=250)
-    if result:
-        return result.strip()
-    return "先週と今週で、取り組みの様子が少し変わっています。"
-
-
-def generate_monthly_change(last_month_logs, this_month_logs):
-    """先月と今月の変化を観察・言語化する（評価・才能判定禁止）。"""
-    def fmt(logs):
-        if not logs:
-            return "（記録なし）"
-        lines = []
-        for l in logs:
-            parts = []
-            if l.get("created"):
-                parts.append(f"やったこと: {l['created']}")
-            if l.get("enjoyable"):
-                parts.append(f"楽しかったこと: {l['enjoyable']}")
-            if l.get("struggled"):
-                parts.append(f"詰まったこと: {l['struggled']}")
-            if parts:
-                lines.append(f"{l['date']}: {' / '.join(parts)}")
-        return "\n".join(lines) if lines else "（詳細なし）"
-
-    system_prompt = f"""あなたはLanternというアプリのAI伴走者です。
-
-{_LANTERN_CONSTITUTION}
-
-先月と今月の記録を比較して、変化を観察します。
-
-【追加ルール】
-「〇〇しましょう」「〇〇してみては」など命令・推奨は禁止。
-数字による比較・序列化は禁止。
-200文字以内。自然な日本語の文章のみ。Markdownなし。
-
-【良い例】
-「先月より、取り組む内容が少し変わっています。」
-「今月は楽しかった記録が続いています。」
-「詰まる場面のパターンが少し変化しています。」"""
-
-    user_message = f"""先月の記録：
-{fmt(last_month_logs)}
-
-今月の記録：
-{fmt(this_month_logs)}
-
-先月と今月を比較して、やったこと・気持ち・詰まったことの変化を評価せず、観察者として短く言語化してください。"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=250)
-    if result:
-        return result.strip()
-    return "先月と今月で、取り組みの様子が少し変わっています。"
-
-
-def get_strengths_analysis(logs):
-    """記録からパターンを観察し、強みを言語化する（才能判定禁止）。"""
-    if not logs:
-        return "記録が見つかりません。"
-
-    logs_text = ""
-    for log in logs[-30:]:
-        parts = []
-        if log.get("created"):
-            parts.append(f"やったこと: {log['created']}")
-        if log.get("enjoyable"):
-            parts.append(f"楽しかったこと: {log['enjoyable']}")
-        if log.get("struggled"):
-            parts.append(f"困ったこと: {log['struggled']}")
-        if parts:
-            logs_text += f"\n{log['date']}: {' / '.join(parts)}"
-
-    system_prompt = f"""あなたはLanternです。クリエイターの活動記録から、繰り返し現れているパターンを観察します。
-
-{_LANTERN_CONSTITUTION}
-
-【観察の原則】
-- 「才能があります」「強みがあります」という断定をしない
-- 「このような場面が繰り返されています」という観察に留める
-- 評価ではなく、パターンの言語化を行う
-- 決めるのはクリエイター本人
-
-楽しんでいる場面、試行錯誤のパターン、続けていることへの観察を、自然な文章で伝える。
-ラベルや箇条書き・見出しは使わない。200文字以内。"""
-
-    user_message = f"""活動記録（直近最大30件）:{logs_text}
-
-この記録から、繰り返し現れているパターンを観察してください。"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=300)
-    if result:
-        return result
-
-    return f"{len(logs)}日間の記録の中に、続けてきたことのパターンが見えています。それ自体が、あなたの取り組み方の輪郭です。"
