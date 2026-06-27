@@ -48,6 +48,7 @@ function ActivityCalendar({ logs, selectedFormDate, onDateSelect }) {
   function goToday() {
     setViewYear(now.getFullYear())
     setViewMonth(now.getMonth())
+    onDateSelect(today)
   }
 
   const cells = []
@@ -87,14 +88,12 @@ function ActivityCalendar({ logs, selectedFormDate, onDateSelect }) {
           </svg>
         </button>
 
-        {!isCurrentMonth && (
-          <button
-            onClick={goToday}
-            className="text-[10px] text-ink-faint hover:text-ink tracking-wider border border-border rounded px-1.5 py-0.5 transition-colors"
-          >
-            今日
-          </button>
-        )}
+        <button
+          onClick={goToday}
+          className="text-[10px] text-ink-faint hover:text-ink tracking-wider border border-border rounded px-1.5 py-0.5 transition-colors"
+        >
+          今日
+        </button>
       </div>
 
       {/* 曜日ヘッダー */}
