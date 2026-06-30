@@ -3,3 +3,4 @@ flask-cors
 anthropic
 python-dotenv
 requests
+supabase>=2.0.0

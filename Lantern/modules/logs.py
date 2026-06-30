@@ -1,36 +1,123 @@
-import json
 import os
 from datetime import datetime, timedelta
+from supabase import create_client
 
-DATA_FILE = "data/logs.json"
-GOALS_FILE = "data/goals.json"
+_url = os.environ.get("SUPABASE_URL", "")
+_key = os.environ.get("SUPABASE_KEY", "")
+supabase = create_client(_url, _key) if _url and _key else None
 
+# Supabase カラム名 ↔ アプリ内フィールド名の変換
+# Supabase: content / good_things / struggles / next_action / lantern_message / updated_at
+# App:      created / enjoyable   / struggled / next        / ai_response     / saved_at
+
+_DB_SELECT = "id, date, content, next_action, good_things, struggles, lantern_message, updated_at"
+
+
+def _from_db(row):
+    return {
+        "date": str(row.get("date", "")),
+        "created": row.get("content", ""),
+        "enjoyable": row.get("good_things", ""),
+        "struggled": row.get("struggles", ""),
+        "next": row.get("next_action", ""),
+        "saved_at": row.get("updated_at", "") or "",
+        "ai_response": row.get("lantern_message", ""),
+    }
+
+
+def _to_db(l):
+    return {
+        "date": l.get("date", ""),
+        "content": l.get("created", ""),
+        "good_things": l.get("enjoyable", ""),
+        "struggles": l.get("struggled", ""),
+        "next_action": l.get("next", ""),
+        "lantern_message": l.get("ai_response", ""),
+        "updated_at": l.get("saved_at") or datetime.now().isoformat(),
+    }
+
+
+def _upsert_one(row):
+    existing = supabase.table("logs").select("id").eq("date", row["date"]).execute()
+    if existing.data:
+        update_fields = {k: v for k, v in row.items() if k != "date"}
+        supabase.table("logs").update(update_fields).eq("date", row["date"]).execute()
+    else:
+        supabase.table("logs").insert(row).execute()
+
+
+# ── ログ ─────────────────────────────────────────────────────────
 
 def load_logs():
-    if not os.path.exists(DATA_FILE):
+    if not supabase:
         return []
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        result = supabase.table("logs").select(_DB_SELECT).order("date").execute()
+        return [_from_db(r) for r in (result.data or [])]
+    except Exception as e:
+        print(f"[Supabase] load_logs error: {e}")
+        return []
 
 
 def save_logs(logs):
-    os.makedirs("data", exist_ok=True)
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(logs, f, ensure_ascii=False, indent=2)
+    if not supabase or not logs:
+        return
+    try:
+        for l in logs:
+            _upsert_one(_to_db(l))
+    except Exception as e:
+        print(f"[Supabase] save_logs error: {e}")
 
+
+def delete_log_by_date(date):
+    if not supabase:
+        return
+    try:
+        supabase.table("logs").delete().eq("date", date).execute()
+    except Exception as e:
+        print(f"[Supabase] delete_log_by_date error: {e}")
+
+
+# ── 目標 ─────────────────────────────────────────────────────────
 
 def load_goals():
-    if not os.path.exists(GOALS_FILE):
+    if not supabase:
         return {"vision": "", "monthly_goals": [], "weekly_goals": []}
-    with open(GOALS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        result = supabase.table("goals").select("*").eq("id", 1).execute()
+        if result.data:
+            row = result.data[0]
+            return {
+                "vision": row.get("vision", ""),
+                "monthly_goals": row.get("monthly_goals", []) or [],
+                "weekly_goals": row.get("weekly_goals", []) or [],
+            }
+    except Exception as e:
+        print(f"[Supabase] load_goals error: {e}")
+    return {"vision": "", "monthly_goals": [], "weekly_goals": []}
 
 
 def save_goals_data(goals):
-    os.makedirs("data", exist_ok=True)
-    with open(GOALS_FILE, "w", encoding="utf-8") as f:
-        json.dump(goals, f, ensure_ascii=False, indent=2)
+    if not supabase:
+        return
+    try:
+        existing = supabase.table("goals").select("id").eq("id", 1).execute()
+        payload = {
+            "id": 1,
+            "vision": goals.get("vision", ""),
+            "monthly_goals": goals.get("monthly_goals", []),
+            "weekly_goals": goals.get("weekly_goals", []),
+            "updated_at": datetime.now().isoformat(),
+        }
+        if existing.data:
+            supabase.table("goals").update(payload).eq("id", 1).execute()
+        else:
+            supabase.table("goals").insert(payload).execute()
+    except Exception as e:
+        print(f"[Supabase] save_goals_data error: {e}")
 
+
+# ── 日付ヘルパー（変更なし） ──────────────────────────────────────
 
 def get_week_str():
     return datetime.now().strftime("%Y-W%W")

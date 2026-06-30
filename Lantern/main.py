@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
@@ -5,21 +8,19 @@ import re
 import time
 import requests as http_req
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
 from modules.logs import (
     load_logs, save_logs,
     load_goals, save_goals_data,
     get_week_str, get_month_str, get_month_display_str, get_week_display_str,
     get_current_weekly_goal, get_current_monthly_goal,
+    delete_log_by_date,
 )
 from modules.ai import (
     get_ai_response,
     get_weekly_review, get_monthly_review,
     call_claude_with_history,
 )
-
-load_dotenv()
 app = Flask(__name__)
 CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
@@ -213,9 +214,7 @@ def save_vision_api():
 
 @app.route("/api/logs/<date>", methods=["DELETE"])
 def delete_log(date):
-    logs = load_logs()
-    logs = [l for l in logs if l.get("date") != date]
-    save_logs(logs)
+    delete_log_by_date(date)
     return jsonify({"status": "ok"})
 
 
