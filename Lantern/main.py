@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
 import os
 import re
@@ -21,6 +21,8 @@ from modules.ai import (
     get_weekly_review, get_monthly_review,
     call_claude_with_history,
 )
+from modules.auth import require_auth
+
 app = Flask(__name__)
 CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
@@ -34,11 +36,12 @@ _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 _splash_access_count = 0
 
 
-
 @app.route("/save", methods=["POST"])
+@require_auth
 def save():
+    user_id = g.user_id
     data = request.json
-    logs = load_logs()
+    logs = load_logs(user_id)
     goals = load_goals()
     today = data.get("date") or datetime.now().strftime("%Y-%m-%d")
 
@@ -56,7 +59,7 @@ def save():
         logs[existing] = entry
     else:
         logs.append(entry)
-    save_logs(logs)
+    save_logs(logs, user_id)
 
     ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
     entry["ai_response"] = ai_response
@@ -65,13 +68,13 @@ def save():
         logs[existing] = entry
     else:
         logs[-1] = entry
-    save_logs(logs)
+    save_logs(logs, user_id)
 
     return jsonify({"status": "ok", "ai_response": ai_response})
 
 
-
 @app.route("/goals/save", methods=["POST"])
+@require_auth
 def save_goal():
     data = request.json
     goals = load_goals()
@@ -82,7 +85,7 @@ def save_goal():
     elif goal_type == "monthly":
         month = get_month_str()
         goals.setdefault("monthly_goals", [])
-        goals["monthly_goals"] = [g for g in goals["monthly_goals"] if g.get("month") != month]
+        goals["monthly_goals"] = [gl for gl in goals["monthly_goals"] if gl.get("month") != month]
         if data.get("goal", "").strip():
             goals["monthly_goals"].append({
                 "month": month,
@@ -92,7 +95,7 @@ def save_goal():
     elif goal_type == "weekly":
         week = get_week_str()
         goals.setdefault("weekly_goals", [])
-        goals["weekly_goals"] = [g for g in goals["weekly_goals"] if g.get("week") != week]
+        goals["weekly_goals"] = [gl for gl in goals["weekly_goals"] if gl.get("week") != week]
         if data.get("goal", "").strip():
             goals["weekly_goals"].append({
                 "week": week,
@@ -105,11 +108,12 @@ def save_goal():
 
 
 @app.route("/goals/suggest", methods=["POST"])
+@require_auth
 def suggest_goal():
     data = request.json
     goal_type = data.get("type", "weekly")
     goals = load_goals()
-    logs = load_logs()
+    logs = load_logs(g.user_id)
 
     vision = goals.get("vision", "")
     monthly_goal = get_current_monthly_goal(goals)
@@ -154,6 +158,7 @@ def suggest_goal():
 
 
 @app.route("/goals/interview", methods=["POST"])
+@require_auth
 def goal_interview():
     data = request.json
     messages = data.get("messages", [])
@@ -175,7 +180,6 @@ def goal_interview():
             "step": 0,
         })
 
-    # Anthropic APIはmessages[0]がuserである必要があるため補正
     if messages[0]["role"] == "assistant":
         messages = [{"role": "user", "content": "ビジョンヒアリングを始めてください"}] + messages
 
@@ -192,18 +196,21 @@ def goal_interview():
 
 
 @app.route("/api/logs", methods=["GET"])
+@require_auth
 def get_logs_api():
-    logs = load_logs()
+    logs = load_logs(g.user_id)
     return jsonify(logs)
 
 
 @app.route("/api/vision", methods=["GET"])
+@require_auth
 def get_vision():
     goals = load_goals()
     return jsonify({"vision": goals.get("vision", "")})
 
 
 @app.route("/api/vision", methods=["POST"])
+@require_auth
 def save_vision_api():
     data = request.json
     goals = load_goals()
@@ -213,17 +220,18 @@ def save_vision_api():
 
 
 @app.route("/api/logs/<date>", methods=["DELETE"])
+@require_auth
 def delete_log(date):
-    delete_log_by_date(date)
+    delete_log_by_date(date, g.user_id)
     return jsonify({"status": "ok"})
 
 
-
 @app.route("/api/review/generate", methods=["POST"])
+@require_auth
 def generate_review():
     data = request.json
     review_type = data.get("type", "weekly")
-    logs = load_logs()
+    logs = load_logs(g.user_id)
     goals = load_goals()
 
     if review_type == "weekly":
@@ -250,8 +258,9 @@ def generate_review():
 
 
 @app.route("/api/daily/quote")
+@require_auth
 def daily_quote():
-    logs = load_logs()
+    logs = load_logs(g.user_id)
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     yesterday_log = next((l for l in logs if l.get("date") == yesterday), None)
     recent_logs = logs[-7:] if logs else None
@@ -266,7 +275,6 @@ def splash_content_api():
     _splash_access_count += 1
     quote_type = "zen" if _splash_access_count % 2 == 0 else "snoopy"
 
-    # 写真は6時間キャッシュ（APIコスト削減）
     now = time.time()
     if now - _splash_photo_cache["cached_at"] > 21600:
         unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY", "")
@@ -298,7 +306,6 @@ def splash_content_api():
             "cached_at": now,
         })
 
-    # 一言はリクエストごとに生成（奇数=スヌーピー風 / 偶数=禅語）
     from modules.ai import get_splash_quote
     quote = get_splash_quote(quote_type)
     print(f"[Splash] アクセス#{_splash_access_count} quote_type={quote_type}")
@@ -309,7 +316,6 @@ def splash_content_api():
         "quote": quote,
         "quote_type": quote_type,
     })
-
 
 
 @app.route('/', defaults={'path': ''})

@@ -10,7 +10,7 @@ supabase = create_client(_url, _key) if _url and _key else None
 # Supabase: content / good_things / struggles / next_action / lantern_message / updated_at
 # App:      created / enjoyable   / struggled / next        / ai_response     / saved_at
 
-_DB_SELECT = "id, date, content, next_action, good_things, struggles, lantern_message, updated_at"
+_DB_SELECT = "id, date, content, next_action, good_things, struggles, lantern_message, updated_at, user_id"
 
 
 def _from_db(row):
@@ -25,7 +25,7 @@ def _from_db(row):
     }
 
 
-def _to_db(l):
+def _to_db(l, user_id=None):
     return {
         "date": l.get("date", ""),
         "content": l.get("created", ""),
@@ -34,46 +34,57 @@ def _to_db(l):
         "next_action": l.get("next", ""),
         "lantern_message": l.get("ai_response", ""),
         "updated_at": l.get("saved_at") or datetime.now().isoformat(),
+        "user_id": user_id,
     }
 
 
 def _upsert_one(row):
-    existing = supabase.table("logs").select("id").eq("date", row["date"]).execute()
+    user_id = row.get("user_id")
+    q = supabase.table("logs").select("id").eq("date", row["date"])
+    if user_id:
+        q = q.eq("user_id", user_id)
+    existing = q.execute()
     if existing.data:
         update_fields = {k: v for k, v in row.items() if k != "date"}
-        supabase.table("logs").update(update_fields).eq("date", row["date"]).execute()
+        supabase.table("logs").update(update_fields).eq("date", row["date"]).eq("user_id", user_id).execute()
     else:
         supabase.table("logs").insert(row).execute()
 
 
 # ── ログ ─────────────────────────────────────────────────────────
 
-def load_logs():
+def load_logs(user_id=None):
     if not supabase:
         return []
     try:
-        result = supabase.table("logs").select(_DB_SELECT).order("date").execute()
+        q = supabase.table("logs").select(_DB_SELECT)
+        if user_id:
+            q = q.eq("user_id", user_id)
+        result = q.order("date").execute()
         return [_from_db(r) for r in (result.data or [])]
     except Exception as e:
         print(f"[Supabase] load_logs error: {e}")
         return []
 
 
-def save_logs(logs):
+def save_logs(logs, user_id=None):
     if not supabase or not logs:
         return
     try:
         for l in logs:
-            _upsert_one(_to_db(l))
+            _upsert_one(_to_db(l, user_id))
     except Exception as e:
         print(f"[Supabase] save_logs error: {e}")
 
 
-def delete_log_by_date(date):
+def delete_log_by_date(date, user_id=None):
     if not supabase:
         return
     try:
-        supabase.table("logs").delete().eq("date", date).execute()
+        q = supabase.table("logs").delete().eq("date", date)
+        if user_id:
+            q = q.eq("user_id", user_id)
+        q.execute()
     except Exception as e:
         print(f"[Supabase] delete_log_by_date error: {e}")
 

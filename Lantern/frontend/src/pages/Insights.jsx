@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const API_BASE = import.meta.env.VITE_API_URL || ''
+import { authFetch } from '../lib/supabase'
 
 function formatAge(isoStr) {
   const diff = Date.now() - new Date(isoStr).getTime()
@@ -29,9 +28,8 @@ function ReviewSection({ title, type, description }) {
     setLoading(true)
     setText('')
     try {
-      const res = await fetch(`${API_BASE}/api/review/generate`, {
+      const res = await authFetch('/api/review/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       })
       if (!res.ok) throw new Error()

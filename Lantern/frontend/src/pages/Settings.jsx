@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-const API_BASE = import.meta.env.VITE_API_URL || ''
+import { supabase, authFetch } from '../lib/supabase'
 
 function localDateStr(date = new Date()) {
   const y = date.getFullYear()
@@ -32,9 +31,10 @@ function Section({ title, children }) {
 
 export default function Settings({ isDark, onToggleTheme }) {
   const [logs, setLogs] = useState([])
+  const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/logs`)
+    authFetch('/api/logs')
       .then(r => r.json())
       .then(data => setLogs(data))
       .catch(() => {})
@@ -52,6 +52,12 @@ export default function Settings({ isDark, onToggleTheme }) {
     }
     return count
   })()
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    await supabase.auth.signOut()
+    // onAuthStateChange が session=null を検知して Login 画面に切り替わる
+  }
 
   return (
     <div className="space-y-8">
@@ -101,10 +107,23 @@ export default function Settings({ isDark, onToggleTheme }) {
         </SettingsRow>
       </Section>
 
+      {/* アカウント */}
+      <Section title="アカウント">
+        <SettingsRow label="ログアウト" description="このデバイスからサインアウトします">
+          <button
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="text-xs text-red-500 border border-red-200 dark:border-red-900/40 px-3.5 py-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+          >
+            {signingOut ? 'ログアウト中...' : 'ログアウト'}
+          </button>
+        </SettingsRow>
+      </Section>
+
       {/* Lanternについて */}
       <Section title="Lanternについて">
         <SettingsRow label="バージョン">
-          <span className="text-xs text-ink-faint">v0.2</span>
+          <span className="text-xs text-ink-faint">v0.5</span>
         </SettingsRow>
         <SettingsRow label="コンセプト" description="AI伴走者 — 評価しない、決めない、照らすだけ。">
           <span />

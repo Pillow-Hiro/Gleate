@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabase'
 import Sidebar from './components/Sidebar'
 import HamburgerMenu from './components/HamburgerMenu'
 import SplashScreen from './components/SplashScreen'
+import Login from './pages/Login'
 import Home from './pages/Home'
 import Journal from './pages/Journal'
 import Insights from './pages/Insights'
@@ -63,6 +65,25 @@ export default function App() {
   const [isDark, setIsDark] = useState(() => {
     try { return localStorage.getItem('lantern-theme') === 'dark' } catch { return false }
   })
+  // undefined = 確認中, null = 未ログイン, object = ログイン済み
+  const [session, setSession] = useState(undefined)
+
+  useEffect(() => {
+    // ダークモード初期適用
+    document.documentElement.classList.toggle('dark', isDark)
+
+    // 現在のセッションを取得
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    // セッション変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   function openSplash() {
     setSplashKey(k => k + 1)
@@ -76,6 +97,17 @@ export default function App() {
     document.documentElement.classList.toggle('dark', next)
   }
 
+  // セッション確認中
+  if (session === undefined) {
+    return <div className="min-h-screen bg-cream" />
+  }
+
+  // 未ログイン
+  if (session === null) {
+    return <Login />
+  }
+
+  // ログイン済み
   return (
     <BrowserRouter>
       {showSplash && <SplashScreen key={splashKey} onClose={() => setShowSplash(false)} />}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
+import { authFetch } from '../lib/supabase'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
-const API_BASE = import.meta.env.VITE_API_URL || ''
 
 function localDateStr(date = new Date()) {
   const y = date.getFullYear()
@@ -171,9 +171,8 @@ function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
     setAiResponse('')
     setSaveError('')
     try {
-      const res = await fetch(`${API_BASE}/save`, {
+      const res = await authFetch('/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, date: targetDate }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -321,8 +320,8 @@ export default function Home() {
       setLoading(true)
       try {
         const [logsRes, quoteRes] = await Promise.all([
-          fetch(`${API_BASE}/api/logs`),
-          fetch(`${API_BASE}/api/daily/quote`),
+          authFetch('/api/logs'),
+          authFetch('/api/daily/quote'),
         ])
         if (logsRes.ok) {
           const logsData = await logsRes.json()

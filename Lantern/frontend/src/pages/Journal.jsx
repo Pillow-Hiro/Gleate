@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
+import { authFetch } from '../lib/supabase'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
-const API_BASE = import.meta.env.VITE_API_URL || ''
 
 function parseDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -35,7 +35,7 @@ function LogDetail({ log, onDelete }) {
   async function handleDelete() {
     setDeleting(true)
     try {
-      await fetch(`${API_BASE}/api/logs/${log.date}`, { method: 'DELETE' })
+      await authFetch(`/api/logs/${log.date}`, { method: 'DELETE' })
       if (onDelete) onDelete(log.date)
     } catch {
       setConfirmDelete(false)
@@ -139,7 +139,7 @@ export default function Journal() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/logs`)
+    authFetch('/api/logs')
       .then(r => r.json())
       .then(data => setLogs(data))
       .finally(() => setLoading(false))
