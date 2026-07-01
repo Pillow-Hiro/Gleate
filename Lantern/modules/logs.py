@@ -70,23 +70,17 @@ def load_logs(user_id=None):
 def save_logs(logs, user_id=None):
     if not supabase or not logs:
         return
-    try:
-        for l in logs:
-            _upsert_one(_to_db(l, user_id))
-    except Exception as e:
-        print(f"[Supabase] save_logs error: {e}")
+    for l in logs:
+        _upsert_one(_to_db(l, user_id))
 
 
 def delete_log_by_date(date, user_id=None):
     if not supabase:
         return
-    try:
-        q = supabase.table("logs").delete().eq("date", date)
-        if user_id:
-            q = q.eq("user_id", user_id)
-        q.execute()
-    except Exception as e:
-        print(f"[Supabase] delete_log_by_date error: {e}")
+    q = supabase.table("logs").delete().eq("date", date)
+    if user_id:
+        q = q.eq("user_id", user_id)
+    q.execute()
 
 
 # ── 目標 ─────────────────────────────────────────────────────────

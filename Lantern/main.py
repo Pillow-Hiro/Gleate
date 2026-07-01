@@ -41,6 +41,9 @@ _splash_access_count = 0
 def save():
     user_id = g.user_id
     data = request.json
+    if not data:
+        return jsonify({"error": "Invalid request body"}), 400
+
     logs = load_logs(user_id)
     goals = load_goals()
     today = data.get("date") or datetime.now().strftime("%Y-%m-%d")
@@ -59,7 +62,12 @@ def save():
         logs[existing] = entry
     else:
         logs.append(entry)
-    save_logs(logs, user_id)
+
+    try:
+        save_logs(logs, user_id)
+    except Exception as e:
+        print(f"[/save] DB error: {type(e).__name__}: {e}")
+        return jsonify({"error": f"保存に失敗しました: {e}"}), 500
 
     ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
     entry["ai_response"] = ai_response
@@ -68,7 +76,11 @@ def save():
         logs[existing] = entry
     else:
         logs[-1] = entry
-    save_logs(logs, user_id)
+
+    try:
+        save_logs(logs, user_id)
+    except Exception as e:
+        print(f"[/save] DB error (ai_response update): {type(e).__name__}: {e}")
 
     return jsonify({"status": "ok", "ai_response": ai_response})
 
@@ -222,7 +234,11 @@ def save_vision_api():
 @app.route("/api/logs/<date>", methods=["DELETE"])
 @require_auth
 def delete_log(date):
-    delete_log_by_date(date, g.user_id)
+    try:
+        delete_log_by_date(date, g.user_id)
+    except Exception as e:
+        print(f"[DELETE /api/logs/{date}] DB error: {type(e).__name__}: {e}")
+        return jsonify({"error": f"削除に失敗しました: {e}"}), 500
     return jsonify({"status": "ok"})
 
 
