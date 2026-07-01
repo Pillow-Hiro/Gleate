@@ -209,6 +209,40 @@ def goal_interview():
     })
 
 
+@app.route("/debug/db-test")
+@require_auth
+def db_test():
+    from modules.logs import supabase
+    try:
+        result = supabase.table("logs").select("id, date, user_id").limit(3).execute()
+        return jsonify({"status": "ok", "rows": result.data, "count": len(result.data or [])})
+    except Exception as e:
+        import traceback
+        return jsonify({"status": "error", "error": str(e), "traceback": traceback.format_exc()}), 500
+
+
+@app.route("/debug/insert-test")
+@require_auth
+def insert_test():
+    from modules.logs import supabase, _to_db
+    from datetime import datetime
+    dummy = {
+        "date": "1970-01-01",
+        "created": "debug test",
+        "enjoyable": "", "struggled": "", "next": "",
+        "saved_at": datetime.now().isoformat(),
+    }
+    row = _to_db(dummy, g.user_id)
+    try:
+        supabase.table("logs").delete().eq("date", "1970-01-01").eq("user_id", g.user_id).execute()
+        result = supabase.table("logs").insert(row).execute()
+        supabase.table("logs").delete().eq("date", "1970-01-01").eq("user_id", g.user_id).execute()
+        return jsonify({"status": "ok", "inserted": result.data})
+    except Exception as e:
+        import traceback
+        return jsonify({"status": "error", "error": str(e), "traceback": traceback.format_exc()}), 500
+
+
 @app.route("/api/logs", methods=["GET"])
 @require_auth
 def get_logs_api():
