@@ -40,15 +40,22 @@ def _to_db(l, user_id=None):
 
 def _upsert_one(row):
     user_id = row.get("user_id")
-    q = supabase.table("logs").select("id").eq("date", row["date"])
-    if user_id:
-        q = q.eq("user_id", user_id)
-    existing = q.execute()
-    if existing.data:
-        update_fields = {k: v for k, v in row.items() if k != "date"}
-        supabase.table("logs").update(update_fields).eq("date", row["date"]).eq("user_id", user_id).execute()
-    else:
-        supabase.table("logs").insert(row).execute()
+    print(f"[Supabase] _upsert_one: date={row.get('date')} user_id={user_id}")
+    try:
+        q = supabase.table("logs").select("id").eq("date", row["date"])
+        if user_id:
+            q = q.eq("user_id", user_id)
+        existing = q.execute()
+        if existing.data:
+            update_fields = {k: v for k, v in row.items() if k != "date"}
+            supabase.table("logs").update(update_fields).eq("date", row["date"]).eq("user_id", user_id).execute()
+            print(f"[Supabase] updated: {row.get('date')}")
+        else:
+            supabase.table("logs").insert(row).execute()
+            print(f"[Supabase] inserted: {row.get('date')}")
+    except Exception as e:
+        print(f"[Supabase] _upsert_one FAILED: {type(e).__name__}: {e}")
+        raise
 
 
 # ── ログ ─────────────────────────────────────────────────────────

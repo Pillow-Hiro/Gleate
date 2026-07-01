@@ -6,6 +6,7 @@ from flask_cors import CORS
 import os
 import re
 import time
+import traceback
 import requests as http_req
 from datetime import datetime, timedelta
 
@@ -67,6 +68,7 @@ def save():
         save_logs(logs, user_id)
     except Exception as e:
         print(f"[/save] DB error: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
         return jsonify({"error": f"保存に失敗しました: {e}"}), 500
 
     ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
