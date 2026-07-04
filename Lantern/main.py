@@ -376,10 +376,12 @@ _FRONTEND_ORIGIN = "https://lantern-inky-three.vercel.app"
 @app.route("/api/youtube/auth-url")
 @require_auth
 def youtube_auth_url():
-    from modules.youtube import get_auth_url, YOUTUBE_CLIENT_ID
+    from modules.youtube import get_auth_url, YOUTUBE_CLIENT_ID, REDIRECT_URI
+    print(f"[YouTube] REDIRECT_URI={REDIRECT_URI}")
     if not YOUTUBE_CLIENT_ID:
         return jsonify({"error": "YouTube API未設定"}), 503
     url = get_auth_url(g.user_id)
+    print(f"[YouTube] auth_url先頭={url[:80]}")
     return jsonify({"url": url})
 
 
