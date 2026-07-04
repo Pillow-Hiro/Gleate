@@ -392,8 +392,10 @@ def youtube_callback():
     code = request.args.get("code")
     user_id = request.args.get("state")
 
+    print(f"[YouTube] callback received: error={error} code={'ok' if code else None} user_id={user_id}")
+
     if error or not code or not user_id:
-        print(f"[YouTube] callback error: error={error} code={'ok' if code else None}")
+        print(f"[YouTube] callback guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
     try:
@@ -401,7 +403,8 @@ def youtube_callback():
         save_tokens(user_id, credentials)
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
     except Exception as e:
-        print(f"[YouTube] callback exception: {type(e).__name__}: {e}")
+        print(f"[YouTube] callback FAILED: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
 

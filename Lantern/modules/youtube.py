@@ -1,4 +1,5 @@
 import os
+import traceback
 from datetime import datetime, timezone
 
 from google_auth_oauthlib.flow import Flow
@@ -41,9 +42,15 @@ def get_auth_url(user_id):
 
 
 def exchange_code_for_token(code):
-    flow = _make_flow()
-    flow.fetch_token(code=code)
-    return flow.credentials
+    print(f"[YouTube] exchange_code_for_token: REDIRECT_URI={REDIRECT_URI}")
+    try:
+        flow = _make_flow()
+        flow.fetch_token(code=code)
+        return flow.credentials
+    except Exception as e:
+        print(f"[YouTube] exchange_code_for_token FAILED: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        raise
 
 
 def save_tokens(user_id, credentials):
