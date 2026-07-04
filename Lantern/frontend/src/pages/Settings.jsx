@@ -34,6 +34,14 @@ export default function Settings({ isDark, onToggleTheme }) {
   const [signingOut, setSigningOut] = useState(false)
   const [youtubeStatus, setYoutubeStatus] = useState({ connected: false, channel_name: null })
   const [youtubeConnecting, setYoutubeConnecting] = useState(false)
+  const [youtubeMessage, setYoutubeMessage] = useState('')
+
+  function fetchYoutubeStatus() {
+    authFetch('/api/youtube/status')
+      .then(r => r.json())
+      .then(data => setYoutubeStatus(data))
+      .catch(() => {})
+  }
 
   useEffect(() => {
     authFetch('/api/logs')
@@ -41,10 +49,16 @@ export default function Settings({ isDark, onToggleTheme }) {
       .then(data => setLogs(data))
       .catch(() => {})
 
-    authFetch('/api/youtube/status')
-      .then(r => r.json())
-      .then(data => setYoutubeStatus(data))
-      .catch(() => {})
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('youtube') === 'connected') {
+      setYoutubeMessage('YouTubeと繋がりました。')
+      window.history.replaceState({}, '', '/settings')
+      fetchYoutubeStatus()
+      const timer = setTimeout(() => setYoutubeMessage(''), 4000)
+      return () => clearTimeout(timer)
+    } else {
+      fetchYoutubeStatus()
+    }
   }, [])
 
   async function handleYouTubeConnect() {
@@ -129,6 +143,9 @@ export default function Settings({ isDark, onToggleTheme }) {
 
       {/* 外部連携 */}
       <Section title="外部連携">
+        {youtubeMessage && (
+          <p className="text-xs text-forest py-3 border-b border-border">{youtubeMessage}</p>
+        )}
         {youtubeStatus.connected ? (
           <SettingsRow label="YouTube" description={youtubeStatus.channel_name || '連携済み'}>
             <button
