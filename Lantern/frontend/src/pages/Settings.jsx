@@ -32,13 +32,33 @@ function Section({ title, children }) {
 export default function Settings({ isDark, onToggleTheme }) {
   const [logs, setLogs] = useState([])
   const [signingOut, setSigningOut] = useState(false)
+  const [youtubeStatus, setYoutubeStatus] = useState({ connected: false, channel_name: null })
+  const [youtubeConnecting, setYoutubeConnecting] = useState(false)
 
   useEffect(() => {
     authFetch('/api/logs')
       .then(r => r.json())
       .then(data => setLogs(data))
       .catch(() => {})
+
+    authFetch('/api/youtube/status')
+      .then(r => r.json())
+      .then(data => setYoutubeStatus(data))
+      .catch(() => {})
   }, [])
+
+  async function handleYouTubeConnect() {
+    setYoutubeConnecting(true)
+    try {
+      const res = await authFetch('/api/youtube/auth-url')
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setYoutubeConnecting(false)
+    }
+  }
 
   const streak = (() => {
     let count = 0
@@ -105,6 +125,30 @@ export default function Settings({ isDark, onToggleTheme }) {
             エクスポート
           </button>
         </SettingsRow>
+      </Section>
+
+      {/* 外部連携 */}
+      <Section title="外部連携">
+        {youtubeStatus.connected ? (
+          <SettingsRow label="YouTube" description={youtubeStatus.channel_name || '連携済み'}>
+            <button
+              disabled
+              className="text-xs text-ink-faint border border-border px-3.5 py-1.5 rounded-full opacity-40 cursor-not-allowed"
+            >
+              連携解除
+            </button>
+          </SettingsRow>
+        ) : (
+          <SettingsRow label="YouTube" description="チャンネルの活動記録と連携します">
+            <button
+              onClick={handleYouTubeConnect}
+              disabled={youtubeConnecting}
+              className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+            >
+              {youtubeConnecting ? '移動中...' : 'YouTubeを連携する'}
+            </button>
+          </SettingsRow>
+        )}
       </Section>
 
       {/* アカウント */}
