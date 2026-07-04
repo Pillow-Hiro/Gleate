@@ -41,11 +41,14 @@ def get_auth_url(user_id):
     return auth_url
 
 
-def exchange_code_for_token(code):
-    print(f"[YouTube] exchange_code_for_token: REDIRECT_URI={REDIRECT_URI}")
+def exchange_code_for_token(code, request_url=None):
+    print(f"[YouTube] exchange_code_for_token: REDIRECT_URI={REDIRECT_URI} request_url={request_url}")
     try:
         flow = _make_flow()
-        flow.fetch_token(code=code)
+        if request_url:
+            flow.fetch_token(authorization_response=request_url)
+        else:
+            flow.fetch_token(code=code)
         return flow.credentials
     except Exception as e:
         print(f"[YouTube] exchange_code_for_token FAILED: {type(e).__name__}: {e}")
