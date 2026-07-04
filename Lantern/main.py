@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, send_from_directory, g
+from flask import Flask, request, jsonify, send_from_directory, g, redirect
 from flask_cors import CORS
 import os
 import re
@@ -367,6 +367,53 @@ def splash_content_api():
         "photographer": _splash_photo_cache["photographer"],
         "quote": quote,
         "quote_type": quote_type,
+    })
+
+
+_FRONTEND_ORIGIN = "https://lantern-inky-three.vercel.app"
+
+
+@app.route("/api/youtube/auth-url")
+@require_auth
+def youtube_auth_url():
+    from modules.youtube import get_auth_url, YOUTUBE_CLIENT_ID
+    if not YOUTUBE_CLIENT_ID:
+        return jsonify({"error": "YouTube API未設定"}), 503
+    url = get_auth_url(g.user_id)
+    return jsonify({"url": url})
+
+
+@app.route("/api/youtube/callback")
+def youtube_callback():
+    from modules.youtube import exchange_code_for_token, save_tokens
+    error = request.args.get("error")
+    code = request.args.get("code")
+    user_id = request.args.get("state")
+
+    if error or not code or not user_id:
+        print(f"[YouTube] callback error: error={error} code={'ok' if code else None}")
+        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
+
+    try:
+        credentials = exchange_code_for_token(code)
+        save_tokens(user_id, credentials)
+        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
+    except Exception as e:
+        print(f"[YouTube] callback exception: {type(e).__name__}: {e}")
+        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
+
+
+@app.route("/api/youtube/status")
+@require_auth
+def youtube_status():
+    from modules.youtube import get_tokens
+    row = get_tokens(g.user_id)
+    if not row:
+        return jsonify({"connected": False})
+    return jsonify({
+        "connected": True,
+        "channel_name": row.get("channel_name"),
+        "channel_id": row.get("channel_id"),
     })
 
 
