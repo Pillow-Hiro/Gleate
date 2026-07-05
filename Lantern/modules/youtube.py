@@ -1,4 +1,7 @@
 import os
+import secrets
+import hashlib
+import base64
 import traceback
 from datetime import datetime, timezone
 
@@ -10,6 +13,9 @@ YOUTUBE_CLIENT_ID = os.environ.get("YOUTUBE_CLIENT_ID")
 YOUTUBE_CLIENT_SECRET = os.environ.get("YOUTUBE_CLIENT_SECRET")
 REDIRECT_URI = os.environ.get("YOUTUBE_REDIRECT_URI", "http://localhost:5173/youtube/callback")
 _SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
+
+# user_id -> code_verifier の一時ストア（OAuth フロー完了まで保持）
+_verifier_store: dict = {}
 
 
 def _make_flow():
@@ -30,22 +36,41 @@ def _get_db():
     return supabase
 
 
+def generate_code_verifier():
+    return secrets.token_urlsafe(32)
+
+
+def generate_code_challenge(verifier):
+    digest = hashlib.sha256(verifier.encode()).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+
+
 def get_auth_url(user_id):
     flow = _make_flow()
+    code_verifier = generate_code_verifier()
+    code_challenge = generate_code_challenge(code_verifier)
+    _verifier_store[user_id] = code_verifier
     auth_url, _ = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         state=user_id,
         prompt="consent",
+        code_challenge=code_challenge,
+        code_challenge_method="S256",
     )
     return auth_url
 
 
-def exchange_code_for_token(code):
-    print(f"[YouTube] exchange_code_for_token: REDIRECT_URI={REDIRECT_URI}")
+def pop_code_verifier(user_id):
+    return _verifier_store.pop(user_id, None)
+
+
+def exchange_code_for_token(code, user_id):
+    code_verifier = pop_code_verifier(user_id)
+    print(f"[YouTube] exchange_code_for_token: REDIRECT_URI={REDIRECT_URI} verifier_present={bool(code_verifier)}")
     try:
         flow = _make_flow()
-        flow.fetch_token(code=code)
+        flow.fetch_token(code=code, code_verifier=code_verifier)
         return flow.credentials
     except Exception as e:
         print(f"[YouTube] exchange_code_for_token FAILED: {type(e).__name__}: {e}")

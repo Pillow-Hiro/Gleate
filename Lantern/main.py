@@ -420,7 +420,7 @@ def youtube_callback():
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
     try:
-        credentials = exchange_code_for_token(code)
+        credentials = exchange_code_for_token(code, user_id)
         save_tokens(user_id, credentials)
         logger.info("[YouTube-CB] success -> connected")
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
