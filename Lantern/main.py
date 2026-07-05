@@ -7,8 +7,12 @@ import os
 import re
 import time
 import traceback
+import logging
 import requests as http_req
 from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 from modules.logs import (
     load_logs, save_logs,
@@ -401,28 +405,28 @@ def youtube_auth_url():
 
 @app.route("/api/youtube/callback")
 def youtube_callback():
-    print(f"[YouTube-CB] ALL ARGS: {dict(request.args)}")
-    print(f"[YouTube-CB] REQUEST URL: {request.url}")
+    logger.info(f"[YouTube-CB] ALL ARGS: {dict(request.args)}")
+    logger.info(f"[YouTube-CB] REQUEST URL: {request.url}")
 
     from modules.youtube import exchange_code_for_token, save_tokens
     error = request.args.get("error")
     code = request.args.get("code")
     user_id = request.args.get("state")
 
-    print(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id}")
-    print(f"[YouTube] callback received: error={error} code={'ok' if code else None} user_id={user_id}")
+    logger.info(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id}")
 
     if error or not code or not user_id:
-        print(f"[YouTube] callback guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
+        logger.info(f"[YouTube-CB] guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
     try:
         credentials = exchange_code_for_token(code)
         save_tokens(user_id, credentials)
+        logger.info("[YouTube-CB] success -> connected")
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
     except Exception as e:
-        print(f"[YouTube] callback FAILED: {type(e).__name__}: {e}")
-        print(traceback.format_exc())
+        logger.error(f"[YouTube-CB] FAILED: {type(e).__name__}: {e}")
+        logger.error(traceback.format_exc())
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
 
