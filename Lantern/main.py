@@ -457,12 +457,12 @@ def youtube_channel():
 @app.route("/api/youtube/videos")
 @require_auth
 def youtube_videos():
-    from modules.youtube import get_videos
-    max_results = min(int(request.args.get("max_results", 20)), 50)
-    videos = get_videos(g.user_id, max_results=max_results)
+    from modules.youtube import get_recent_videos
+    max_results = min(int(request.args.get("max_results", 10)), 50)
+    videos = get_recent_videos(g.user_id, max_results=max_results)
     if videos is None:
         return jsonify({"error": "未連携またはトークン取得失敗"}), 404
-    return jsonify(videos)
+    return jsonify({"videos": videos})
 
 
 @app.route('/', defaults={'path': ''})

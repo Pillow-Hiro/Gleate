@@ -171,14 +171,14 @@ def get_channel_stats(user_id):
         return None
 
 
-def get_videos(user_id, max_results=20):
+def get_recent_videos(user_id, max_results=10):
     creds = refresh_token_if_needed(user_id)
     if not creds:
         return None
     try:
         youtube = _build_client(creds)
 
-        # uploads プレイリスト ID を取得（チャンネル ID の UC→UU より確実）
+        # uploads プレイリスト ID を取得（channels.list → contentDetails）
         ch_response = youtube.channels().list(
             part="contentDetails",
             mine=True,
@@ -212,10 +212,12 @@ def get_videos(user_id, max_results=20):
         for item in v_response.get("items", []):
             s = item.get("statistics", {})
             sn = item.get("snippet", {})
+            raw_date = sn.get("publishedAt", "")
+            published_at = raw_date[:10] if raw_date else None  # "2026-06-01T..." → "2026-06-01"
             videos.append({
-                "video_id": item["id"],
+                "id": item["id"],
                 "title": sn.get("title"),
-                "published_at": sn.get("publishedAt"),
+                "published_at": published_at,
                 "thumbnail": sn.get("thumbnails", {}).get("medium", {}).get("url"),
                 "view_count": int(s.get("viewCount", 0)),
                 "like_count": int(s.get("likeCount", 0)),
@@ -223,6 +225,6 @@ def get_videos(user_id, max_results=20):
             })
         return videos
     except Exception as e:
-        print(f"[YouTube] get_videos error: {type(e).__name__}: {e}")
+        print(f"[YouTube] get_recent_videos error: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return None
