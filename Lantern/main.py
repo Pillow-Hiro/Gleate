@@ -417,17 +417,17 @@ def youtube_callback():
 
     if error or not code or not user_id:
         logger.info(f"[YouTube-CB] guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
-        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
+        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=error")
 
     try:
         credentials = exchange_code_for_token(code, user_id)
         save_tokens(user_id, credentials)
         logger.info("[YouTube-CB] success -> connected")
-        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
+        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=connected")
     except Exception as e:
         logger.error(f"[YouTube-CB] FAILED: {type(e).__name__}: {e}")
         logger.error(traceback.format_exc())
-        return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
+        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=error")
 
 
 @app.route("/api/youtube/status")
