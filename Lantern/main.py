@@ -209,6 +209,11 @@ def goal_interview():
     })
 
 
+@app.route("/api/debug/version")
+def debug_version():
+    return jsonify({"commit": "ceaac71", "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定")})
+
+
 @app.route("/debug/db-test")
 @require_auth
 def db_test():
