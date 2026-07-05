@@ -214,6 +214,15 @@ def debug_version():
     return jsonify({"commit": "ceaac71", "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定")})
 
 
+@app.route("/api/debug/youtube-config")
+def debug_youtube_config():
+    from modules.youtube import REDIRECT_URI, YOUTUBE_CLIENT_ID
+    return jsonify({
+        "redirect_uri": REDIRECT_URI,
+        "client_id_set": bool(YOUTUBE_CLIENT_ID)
+    })
+
+
 @app.route("/debug/db-test")
 @require_auth
 def db_test():
