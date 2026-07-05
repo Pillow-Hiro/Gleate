@@ -444,6 +444,27 @@ def youtube_status():
     })
 
 
+@app.route("/api/youtube/channel")
+@require_auth
+def youtube_channel():
+    from modules.youtube import get_channel_stats
+    stats = get_channel_stats(g.user_id)
+    if stats is None:
+        return jsonify({"error": "未連携またはトークン取得失敗"}), 404
+    return jsonify(stats)
+
+
+@app.route("/api/youtube/videos")
+@require_auth
+def youtube_videos():
+    from modules.youtube import get_videos
+    max_results = min(int(request.args.get("max_results", 20)), 50)
+    videos = get_videos(g.user_id, max_results=max_results)
+    if videos is None:
+        return jsonify({"error": "未連携またはトークン取得失敗"}), 404
+    return jsonify(videos)
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):

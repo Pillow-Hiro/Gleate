@@ -135,3 +135,94 @@ def refresh_token_if_needed(user_id):
             print(f"[YouTube] token refresh error: {e}")
             return None
     return creds
+
+
+def _build_client(credentials):
+    from googleapiclient.discovery import build
+    return build("youtube", "v3", credentials=credentials)
+
+
+def get_channel_stats(user_id):
+    creds = refresh_token_if_needed(user_id)
+    if not creds:
+        return None
+    try:
+        youtube = _build_client(creds)
+        response = youtube.channels().list(
+            part="statistics,snippet",
+            mine=True,
+        ).execute()
+        if not response.get("items"):
+            return None
+        ch = response["items"][0]
+        stats = ch.get("statistics", {})
+        snippet = ch.get("snippet", {})
+        return {
+            "channel_id": ch["id"],
+            "channel_name": snippet.get("title"),
+            "thumbnail": snippet.get("thumbnails", {}).get("default", {}).get("url"),
+            "subscriber_count": int(stats.get("subscriberCount", 0)),
+            "view_count": int(stats.get("viewCount", 0)),
+            "video_count": int(stats.get("videoCount", 0)),
+        }
+    except Exception as e:
+        print(f"[YouTube] get_channel_stats error: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        return None
+
+
+def get_videos(user_id, max_results=20):
+    creds = refresh_token_if_needed(user_id)
+    if not creds:
+        return None
+    try:
+        youtube = _build_client(creds)
+
+        # uploads プレイリスト ID を取得（チャンネル ID の UC→UU より確実）
+        ch_response = youtube.channels().list(
+            part="contentDetails",
+            mine=True,
+        ).execute()
+        if not ch_response.get("items"):
+            return []
+        uploads_id = (
+            ch_response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+        )
+
+        # プレイリストから動画 ID を取得
+        pl_response = youtube.playlistItems().list(
+            part="snippet",
+            playlistId=uploads_id,
+            maxResults=max_results,
+        ).execute()
+        video_ids = [
+            item["snippet"]["resourceId"]["videoId"]
+            for item in pl_response.get("items", [])
+        ]
+        if not video_ids:
+            return []
+
+        # 動画の詳細（snippet + statistics）を一括取得
+        v_response = youtube.videos().list(
+            part="snippet,statistics",
+            id=",".join(video_ids),
+        ).execute()
+
+        videos = []
+        for item in v_response.get("items", []):
+            s = item.get("statistics", {})
+            sn = item.get("snippet", {})
+            videos.append({
+                "video_id": item["id"],
+                "title": sn.get("title"),
+                "published_at": sn.get("publishedAt"),
+                "thumbnail": sn.get("thumbnails", {}).get("medium", {}).get("url"),
+                "view_count": int(s.get("viewCount", 0)),
+                "like_count": int(s.get("likeCount", 0)),
+                "comment_count": int(s.get("commentCount", 0)),
+            })
+        return videos
+    except Exception as e:
+        print(f"[YouTube] get_videos error: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        return None
