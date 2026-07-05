@@ -401,11 +401,15 @@ def youtube_auth_url():
 
 @app.route("/api/youtube/callback")
 def youtube_callback():
+    print(f"[YouTube-CB] ALL ARGS: {dict(request.args)}")
+    print(f"[YouTube-CB] REQUEST URL: {request.url}")
+
     from modules.youtube import exchange_code_for_token, save_tokens
     error = request.args.get("error")
     code = request.args.get("code")
     user_id = request.args.get("state")
 
+    print(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id}")
     print(f"[YouTube] callback received: error={error} code={'ok' if code else None} user_id={user_id}")
 
     if error or not code or not user_id:
