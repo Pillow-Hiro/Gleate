@@ -444,6 +444,14 @@ def youtube_status():
     })
 
 
+@app.route("/api/youtube/disconnect", methods=["DELETE"])
+@require_auth
+def youtube_disconnect():
+    from modules.youtube import delete_tokens
+    delete_tokens(g.user_id)
+    return jsonify({"message": "disconnected"})
+
+
 @app.route("/api/youtube/channel")
 @require_auth
 def youtube_channel():

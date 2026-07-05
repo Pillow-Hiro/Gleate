@@ -115,6 +115,13 @@ def get_tokens(user_id):
     return result.data[0] if result.data else None
 
 
+def delete_tokens(user_id):
+    db = _get_db()
+    if not db:
+        return
+    db.table("youtube_tokens").delete().eq("user_id", user_id).execute()
+
+
 def refresh_token_if_needed(user_id):
     row = get_tokens(user_id)
     if not row or not row.get("refresh_token"):
