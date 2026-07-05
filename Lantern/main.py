@@ -413,11 +413,7 @@ def youtube_callback():
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=error")
 
     try:
-        request_url = request.url
-        if request_url.startswith('http://'):
-            request_url = request_url.replace('http://', 'https://', 1)
-        print(f"[YouTube] request_url={request_url}")
-        credentials = exchange_code_for_token(code, request_url=request_url)
+        credentials = exchange_code_for_token(code)
         save_tokens(user_id, credentials)
         return redirect(f"{_FRONTEND_ORIGIN}/settings?youtube=connected")
     except Exception as e:
