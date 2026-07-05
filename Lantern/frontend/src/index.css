@@ -43,6 +43,10 @@ html.dark {
   -webkit-tap-highlight-color: transparent;
 }
 
+button {
+  cursor: pointer;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--color-cream);
