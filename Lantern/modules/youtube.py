@@ -165,11 +165,9 @@ def get_channel_stats(user_id):
         stats = ch.get("statistics", {})
         snippet = ch.get("snippet", {})
         return {
-            "channel_id": ch["id"],
             "channel_name": snippet.get("title"),
-            "thumbnail": snippet.get("thumbnails", {}).get("default", {}).get("url"),
             "subscriber_count": int(stats.get("subscriberCount", 0)),
-            "view_count": int(stats.get("viewCount", 0)),
+            "total_view_count": int(stats.get("viewCount", 0)),
             "video_count": int(stats.get("videoCount", 0)),
         }
     except Exception as e:
@@ -209,9 +207,9 @@ def get_recent_videos(user_id, max_results=10):
         if not video_ids:
             return []
 
-        # 動画の詳細（snippet + statistics）を一括取得
+        # 動画の詳細（snippet + statistics + status）を一括取得
         v_response = youtube.videos().list(
-            part="snippet,statistics",
+            part="snippet,statistics,status",
             id=",".join(video_ids),
         ).execute()
 
@@ -219,16 +217,17 @@ def get_recent_videos(user_id, max_results=10):
         for item in v_response.get("items", []):
             s = item.get("statistics", {})
             sn = item.get("snippet", {})
+            st = item.get("status", {})
             raw_date = sn.get("publishedAt", "")
             published_at = raw_date[:10] if raw_date else None  # "2026-06-01T..." → "2026-06-01"
             videos.append({
                 "id": item["id"],
                 "title": sn.get("title"),
                 "published_at": published_at,
-                "thumbnail": sn.get("thumbnails", {}).get("medium", {}).get("url"),
                 "view_count": int(s.get("viewCount", 0)),
                 "like_count": int(s.get("likeCount", 0)),
                 "comment_count": int(s.get("commentCount", 0)),
+                "privacy": st.get("privacyStatus"),  # "public" / "unlisted" / "private"
             })
         return videos
     except Exception as e:
