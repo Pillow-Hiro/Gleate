@@ -37,6 +37,18 @@ const navItems = [
     ),
   },
   {
+    to: '/dashboard',
+    label: 'ダッシュボード',
+    icon: (
+      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 15 15">
+        <rect x="1.5" y="1.5" width="5" height="5" rx="1" />
+        <rect x="8.5" y="1.5" width="5" height="5" rx="1" />
+        <rect x="1.5" y="8.5" width="5" height="5" rx="1" />
+        <rect x="8.5" y="8.5" width="5" height="5" rx="1" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings',
     label: '設定',
     icon: (

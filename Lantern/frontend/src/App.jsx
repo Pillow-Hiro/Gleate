@@ -9,6 +9,7 @@ import Home from './pages/Home'
 import Journal from './pages/Journal'
 import Insights from './pages/Insights'
 import Settings from './pages/Settings'
+import Dashboard from './pages/Dashboard'
 
 function Layout({ onSplashOpen, isDark, onToggleTheme }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -50,6 +51,7 @@ function Layout({ onSplashOpen, isDark, onToggleTheme }) {
             <Route path="/" element={<Home />} />
             <Route path="/journal" element={<Journal />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings isDark={isDark} onToggleTheme={onToggleTheme} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
