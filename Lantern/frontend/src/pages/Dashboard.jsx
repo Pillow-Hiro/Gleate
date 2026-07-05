@@ -1,11 +1,44 @@
 import { useState, useEffect } from 'react'
 import { authFetch } from '../lib/supabase'
 
+function ConfirmModal({ onConfirm, onCancel, loading }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onCancel}
+      />
+      <div className="relative bg-cream dark:bg-stone border border-border rounded-2xl px-6 py-6 w-full max-w-xs shadow-sm">
+        <p className="text-sm text-ink mb-6 leading-relaxed">
+          YouTubeの連携を解除しますか？
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="text-xs text-ink-soft border border-border px-4 py-1.5 rounded-full hover:bg-stone/60 transition-colors disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="text-xs text-red-500 border border-red-200 dark:border-red-900/40 px-4 py-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+          >
+            {loading ? '解除中...' : '解除する'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [youtubeStatus, setYoutubeStatus] = useState({ connected: false, channel_name: null })
   const [youtubeConnecting, setYoutubeConnecting] = useState(false)
   const [youtubeDisconnecting, setYoutubeDisconnecting] = useState(false)
   const [youtubeMessage, setYoutubeMessage] = useState('')
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false)
 
   function fetchYoutubeStatus() {
     authFetch('/api/youtube/status')
@@ -32,6 +65,7 @@ export default function Dashboard() {
     try {
       await authFetch('/api/youtube/disconnect', { method: 'DELETE' })
       setYoutubeStatus({ connected: false, channel_name: null })
+      setShowDisconnectModal(false)
       setYoutubeMessage('YouTubeの連携を解除しました。')
       setTimeout(() => setYoutubeMessage(''), 4000)
     } catch {
@@ -74,11 +108,10 @@ export default function Dashboard() {
                 <p className="text-xs text-ink-faint mt-0.5">{youtubeStatus.channel_name || '連携済み'}</p>
               </div>
               <button
-                onClick={handleYouTubeDisconnect}
-                disabled={youtubeDisconnecting}
-                className="shrink-0 text-xs text-red-500 border border-red-200 dark:border-red-900/40 px-3.5 py-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                onClick={() => setShowDisconnectModal(true)}
+                className="shrink-0 text-xs text-ink-faint border border-border px-3.5 py-1.5 rounded-full hover:bg-stone/60 transition-colors"
               >
-                {youtubeDisconnecting ? '解除中...' : '連携解除'}
+                連携解除
               </button>
             </div>
           ) : (
@@ -98,6 +131,14 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+
+      {showDisconnectModal && (
+        <ConfirmModal
+          onConfirm={handleYouTubeDisconnect}
+          onCancel={() => setShowDisconnectModal(false)}
+          loading={youtubeDisconnecting}
+        />
+      )}
     </div>
   )
 }
