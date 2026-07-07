@@ -487,6 +487,45 @@ def youtube_analytics():
     return jsonify({"period_days": days, "videos": result})
 
 
+@app.route("/api/youtube/video-insight", methods=["POST"])
+@require_auth
+def youtube_video_insight():
+    from modules.logs import load_logs
+    from modules.ai import generate_video_insight
+    data = request.get_json(silent=True) or {}
+    video = data.get("video")
+    if not video or not video.get("published_at"):
+        return jsonify({"error": "video情報が不足しています"}), 400
+
+    # 投稿日 ±7日のログを取得
+    from datetime import date, timedelta
+    try:
+        pub_date = date.fromisoformat(video["published_at"])
+    except ValueError:
+        return jsonify({"error": "published_atの形式が不正です"}), 400
+
+    window_start = (pub_date - timedelta(days=7)).isoformat()
+    window_end = (pub_date + timedelta(days=7)).isoformat()
+
+    all_logs = load_logs(user_id=g.user_id)
+    nearby = [
+        l for l in all_logs
+        if window_start <= l.get("date", "") <= window_end
+    ]
+
+    logs_text = ""
+    for l in nearby:
+        line = f"{l['date']}: {l.get('created', '')}"
+        if l.get("enjoyable"):
+            line += f"（楽しかったこと: {l['enjoyable']}）"
+        if l.get("struggled"):
+            line += f"（詰まったこと: {l['struggled']}）"
+        logs_text += line + "\n"
+
+    insight = generate_video_insight(video, logs_text.strip())
+    return jsonify({"insight": insight})
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):

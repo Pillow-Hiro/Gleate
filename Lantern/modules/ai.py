@@ -339,3 +339,36 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、あなただけのパターンが見えてきます。"
 
 
+def generate_video_insight(video, logs):
+    system_prompt = f"""あなたはLanternというアプリのAI伴走者です。
+
+{_LANTERN_CONSTITUTION}
+
+【文体】
+すべて丁寧体（「〜います」「〜です」）で統一する。
+
+【良い例】
+「この動画を投稿した日、楽しかったことが記録に残っています。その気持ちが何か影響しているかもしれません。」
+「投稿した週、詰まったことが多く書かれています。それでも投稿できた日だったようです。」
+「この頃の記録には、試行錯誤の跡が見えます。」
+
+200文字以内。評価せず、観察する。Markdownなし。"""
+
+    logs_text = logs if logs else "（記録なし）"
+    user_message = f"""動画情報：
+タイトル：{video['title']}
+投稿日：{video['published_at']}
+再生回数：{video['view_count']}
+高評価数：{video['like_count']}
+
+投稿日前後の記録：
+{logs_text}
+
+上記の動画と記録を観察して、評価せず短く言語化してください。
+記録がない場合は「この頃の記録は残っていません。」と返してください。"""
+
+    result = call_claude(system_prompt, user_message, max_tokens=250)
+    if result:
+        return result.strip()
+    return "この頃の記録は残っていません。"
+
