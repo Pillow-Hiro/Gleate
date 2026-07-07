@@ -492,20 +492,27 @@ def youtube_analytics():
 def youtube_video_insight():
     from modules.logs import load_logs
     from modules.ai import generate_video_insight
-    data = request.get_json(silent=True) or {}
-    video = data.get("video")
-    if not video or not video.get("published_at"):
-        return jsonify({"error": "video情報が不足しています"}), 400
-
-    # 投稿日 ±7日のログを取得
     from datetime import date, timedelta
+    data = request.get_json(silent=True) or {}
+    published_at = data.get("published_at")
+    if not published_at:
+        return jsonify({"error": "published_atが必要です"}), 400
+
     try:
-        pub_date = date.fromisoformat(video["published_at"])
+        pub_date = date.fromisoformat(published_at)
     except ValueError:
         return jsonify({"error": "published_atの形式が不正です"}), 400
 
-    window_start = (pub_date - timedelta(days=7)).isoformat()
-    window_end = (pub_date + timedelta(days=7)).isoformat()
+    video = {
+        "title":       data.get("title", ""),
+        "published_at": published_at,
+        "view_count":  data.get("view_count", 0),
+        "like_count":  data.get("like_count", 0),
+    }
+
+    # 投稿日 ±3日のログを取得
+    window_start = (pub_date - timedelta(days=3)).isoformat()
+    window_end   = (pub_date + timedelta(days=3)).isoformat()
 
     all_logs = load_logs(user_id=g.user_id)
     nearby = [
