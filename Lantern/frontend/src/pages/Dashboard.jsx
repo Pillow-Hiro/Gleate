@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import {
   BarChart, Bar,
   LineChart, Line,
@@ -137,17 +137,47 @@ const PRIVACY_LABEL = { private: '非公開', unlisted: '限定公開', public: 
 function VideoTable({ videos }) {
   const rows = videos ?? []
   const isDim = p => p === 'private' || p === 'unlisted'
+  // { [videoId]: { loading: bool, text: string|null, visible: bool } }
+  const [insightState, setInsightState] = useState({})
+
+  async function handleAsk(video) {
+    const id = video.id
+    const current = insightState[id]
+    // 取得済み → 表示トグル
+    if (current?.text != null) {
+      setInsightState(prev => ({ ...prev, [id]: { ...prev[id], visible: !prev[id].visible } }))
+      return
+    }
+    setInsightState(prev => ({ ...prev, [id]: { loading: true, text: null, visible: false } }))
+    try {
+      const res = await authFetch('/api/youtube/video-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          video_id: video.id,
+          title: video.title,
+          published_at: video.published_at,
+          view_count: video.view_count,
+          like_count: video.like_count,
+        }),
+      })
+      const data = await res.json()
+      setInsightState(prev => ({ ...prev, [id]: { loading: false, text: data.insight ?? '', visible: true } }))
+    } catch {
+      setInsightState(prev => ({ ...prev, [id]: { loading: false, text: null, visible: false } }))
+    }
+  }
 
   return (
     <div className="bg-stone/50 rounded-xl overflow-hidden">
       <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase px-4 pt-5 pb-3">動画一覧</p>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[540px] text-xs border-collapse">
+        <table className="w-full min-w-[620px] text-xs border-collapse">
           <thead>
             <tr className="border-b border-border">
-              {['動画タイトル', '投稿日', '再生回数', '高評価', '公開設定'].map(h => (
+              {['動画タイトル', '投稿日', '再生回数', '高評価', '公開設定', ''].map((h, i) => (
                 <th
-                  key={h}
+                  key={i}
                   className="text-left text-[10px] text-ink-faint font-normal tracking-wide px-4 py-2 whitespace-nowrap"
                 >
                   {h}
@@ -158,31 +188,66 @@ function VideoTable({ videos }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-5 text-ink-faint">まだ動画がありません。</td>
+                <td colSpan={6} className="px-4 py-5 text-ink-faint">まだ動画がありません。</td>
               </tr>
-            ) : rows.map(v => (
-              <tr
-                key={v.id}
-                className={`border-b border-border last:border-b-0 hover:bg-stone/60 transition-colors ${isDim(v.privacy) ? 'text-ink-soft' : 'text-ink'}`}
-              >
-                <td className="px-4 py-3 max-w-[220px]">
-                  <a
-                    href={`https://www.youtube.com/watch?v=${v.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="line-clamp-2 leading-snug no-underline hover:text-accent transition-colors"
-                  >
-                    {v.title}
-                  </a>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.published_at}</td>
-                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.view_count.toLocaleString()}</td>
-                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.like_count.toLocaleString()}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {PRIVACY_LABEL[v.privacy] ?? v.privacy}
-                </td>
-              </tr>
-            ))}
+            ) : rows.map(v => {
+              const s = insightState[v.id] ?? {}
+              return (
+                <Fragment key={v.id}>
+                  <tr className={`border-b border-border hover:bg-stone/60 transition-colors ${isDim(v.privacy) ? 'text-ink-soft' : 'text-ink'}`}>
+                    <td className="px-4 py-3 max-w-[220px]">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${v.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="line-clamp-2 leading-snug no-underline hover:text-accent transition-colors"
+                      >
+                        {v.title}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.published_at}</td>
+                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.view_count.toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.like_count.toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {PRIVACY_LABEL[v.privacy] ?? v.privacy}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <button
+                        onClick={() => handleAsk(v)}
+                        disabled={s.loading}
+                        className={`text-[10px] border px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                          s.visible
+                            ? 'border-accent text-accent bg-accent/10'
+                            : 'border-border text-ink-faint hover:bg-stone/60'
+                        }`}
+                      >
+                        {s.loading ? (
+                          <span className="flex items-center gap-1">
+                            <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            生成中
+                          </span>
+                        ) : 'AIに聞く'}
+                      </button>
+                    </td>
+                  </tr>
+                  {s.visible && s.text && (
+                    <tr className="border-b border-border last:border-b-0">
+                      <td colSpan={6} className="px-4 py-3">
+                        <p
+                          className="text-xs leading-relaxed px-4 py-3 rounded-lg"
+                          style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
+                        >
+                          {s.text}
+                        </p>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       </div>

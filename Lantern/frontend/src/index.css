@@ -17,6 +17,8 @@
   --color-amber-light: #fdf2e0;
   --color-accent: #c4a882;
   --color-lantern: #d4956a;
+  --color-background-info: #f5ede0;
+  --color-text-info: #7a5c3a;
 
   --font-display: "Noto Serif JP", serif;
   --font-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
@@ -37,6 +39,8 @@ html.dark {
   --color-amber-light: #2e2008;
   --color-accent: #c4a882;
   --color-lantern: #d4956a;
+  --color-background-info: #261a09;
+  --color-text-info: #c4a882;
 }
 
 * {
