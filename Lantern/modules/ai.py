@@ -340,6 +340,8 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
 
 
 def generate_video_insight(video, logs):
+    has_logs = bool(logs and logs.strip())
+
     system_prompt = f"""あなたはLanternというアプリのAI伴走者です。
 
 {_LANTERN_CONSTITUTION}
@@ -347,28 +349,42 @@ def generate_video_insight(video, logs):
 【文体】
 すべて丁寧体（「〜います」「〜です」）で統一する。
 
-【良い例】
+【記録がある場合の良い例】
 「この動画を投稿した日、楽しかったことが記録に残っています。その気持ちが何か影響しているかもしれません。」
 「投稿した週、詰まったことが多く書かれています。それでも投稿できた日だったようです。」
 「この頃の記録には、試行錯誤の跡が見えます。」
 
+【記録がない場合の良い例】
+「カバー曲を投稿されていた時期の動画です。」
+「この動画には高評価がついています。」
+「2023年初頭に投稿された動画です。」
+
 200文字以内。評価せず、観察する。Markdownなし。"""
 
-    logs_text = logs if logs else "（記録なし）"
-    user_message = f"""動画情報：
+    if has_logs:
+        user_message = f"""動画情報：
 タイトル：{video['title']}
 投稿日：{video['published_at']}
 再生回数：{video['view_count']}
 高評価数：{video['like_count']}
 
 投稿日前後の記録：
-{logs_text}
+{logs}
 
-上記の動画と記録を観察して、評価せず短く言語化してください。
-記録がない場合は「この頃の記録は残っていません。」と返してください。"""
+上記の動画と記録を組み合わせて観察し、評価せず短く言語化してください。"""
+    else:
+        user_message = f"""動画情報：
+タイトル：{video['title']}
+投稿日：{video['published_at']}
+再生回数：{video['view_count']}
+高評価数：{video['like_count']}
+
+投稿日前後の記録はありません。
+動画のタイトルや投稿日から観察できることを短く言語化してください。
+記録がないことには触れないでください。"""
 
     result = call_claude(system_prompt, user_message, max_tokens=250)
     if result:
         return result.strip()
-    return "この頃の記録は残っていません。"
+    return "この動画の記録を観察しています。"
 
