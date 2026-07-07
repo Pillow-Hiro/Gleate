@@ -57,12 +57,8 @@ function CustomTooltip({ active, payload }) {
 // ─── 動画一覧テーブル ────────────────────────────────────────────
 const PRIVACY_LABEL = { private: '非公開', unlisted: '限定公開', public: '公開' }
 
-const dummyVideos = [
-  { id: 'xxx', title: 'テスト動画タイトル', published_at: '2026-06-01', view_count: 1200, like_count: 45, privacy: 'private' },
-]
-
 function VideoTable({ videos }) {
-  const rows = videos ?? dummyVideos
+  const rows = videos ?? []
   const isDim = p => p === 'private' || p === 'unlisted'
 
   return (
@@ -319,7 +315,7 @@ export default function Dashboard() {
               )}
 
               {/* 動画一覧テーブル */}
-              <VideoTable videos={videos} />
+              {videos !== null && <VideoTable videos={videos} />}
             </>
           )}
         </>
