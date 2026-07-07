@@ -59,7 +59,7 @@ function CustomTooltip({ active, payload }) {
 // ─── アナリティクスセクション ────────────────────────────────────
 const PERIODS = [
   { label: '7日間',  days: 7 },
-  { label: '28日間', days: 28 },
+  { label: '30日間', days: 30 },
   { label: '90日間', days: 90 },
 ]
 
@@ -230,7 +230,7 @@ export default function Dashboard() {
   const [channelStats, setChannelStats] = useState(null)
   const [videos, setVideos] = useState(null)
   const [dataLoading, setDataLoading] = useState(false)
-  const [analyticsDays, setAnalyticsDays] = useState(28)
+  const [analyticsDays, setAnalyticsDays] = useState(30)
   const [analyticsData, setAnalyticsData] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
@@ -288,7 +288,7 @@ export default function Dashboard() {
       fetchYoutubeStatus().then(s => {
         if (s.connected) {
           fetchYoutubeData()
-          fetchAnalytics(28)
+          fetchAnalytics(30)
         }
       })
       const timer = setTimeout(() => setYoutubeMessage(''), 4000)
@@ -297,7 +297,7 @@ export default function Dashboard() {
       fetchYoutubeStatus().then(s => {
         if (s.connected) {
           fetchYoutubeData()
-          fetchAnalytics(28)
+          fetchAnalytics(30)
         }
       })
     }

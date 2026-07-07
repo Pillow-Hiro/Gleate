@@ -478,7 +478,7 @@ def youtube_videos():
 def youtube_analytics():
     from modules.youtube import get_video_analytics
     try:
-        days = min(int(request.args.get("days", 28)), 90)
+        days = min(int(request.args.get("days", 30)), 90)
     except ValueError:
         days = 28
     result = get_video_analytics(g.user_id, days=days)
