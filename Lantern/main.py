@@ -473,6 +473,20 @@ def youtube_videos():
     return jsonify({"videos": videos})
 
 
+@app.route("/api/youtube/analytics")
+@require_auth
+def youtube_analytics():
+    from modules.youtube import get_video_analytics
+    try:
+        days = min(int(request.args.get("days", 28)), 90)
+    except ValueError:
+        days = 28
+    result = get_video_analytics(g.user_id, days=days)
+    if result is None:
+        return jsonify({"error": "未連携またはトークン取得失敗"}), 404
+    return jsonify({"period_days": days, "videos": result})
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):

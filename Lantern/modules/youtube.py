@@ -3,7 +3,7 @@ import secrets
 import hashlib
 import base64
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta, date as date_type
 
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
@@ -232,5 +232,65 @@ def get_recent_videos(user_id, max_results=10):
         return videos
     except Exception as e:
         print(f"[YouTube] get_recent_videos error: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        return None
+
+
+def get_video_analytics(user_id, days=28):
+    creds = refresh_token_if_needed(user_id)
+    if not creds:
+        return None
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).date()
+    try:
+        youtube = _build_client(creds)
+
+        ch_response = youtube.channels().list(
+            part="contentDetails",
+            mine=True,
+        ).execute()
+        if not ch_response.get("items"):
+            return []
+        uploads_id = (
+            ch_response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+        )
+
+        pl_response = youtube.playlistItems().list(
+            part="snippet",
+            playlistId=uploads_id,
+            maxResults=50,  # API 上限。期間内動画が50本を超える場合はページネーション要検討
+        ).execute()
+        video_ids = [
+            item["snippet"]["resourceId"]["videoId"]
+            for item in pl_response.get("items", [])
+        ]
+        if not video_ids:
+            return []
+
+        v_response = youtube.videos().list(
+            part="snippet,statistics",
+            id=",".join(video_ids),
+        ).execute()
+
+        videos = []
+        for item in v_response.get("items", []):
+            s = item.get("statistics", {})
+            sn = item.get("snippet", {})
+            raw_date = sn.get("publishedAt", "")
+            published_at = raw_date[:10] if raw_date else None
+            if not published_at:
+                continue
+            if date_type.fromisoformat(published_at) < cutoff:
+                continue
+            videos.append({
+                "title": sn.get("title"),
+                "published_at": published_at,
+                "view_count": int(s.get("viewCount", 0)),
+                "like_count": int(s.get("likeCount", 0)),
+            })
+
+        videos.sort(key=lambda v: v["published_at"], reverse=True)
+        return videos
+    except Exception as e:
+        print(f"[YouTube] get_video_analytics error: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return None
