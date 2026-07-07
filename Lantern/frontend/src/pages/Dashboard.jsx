@@ -54,6 +54,69 @@ function CustomTooltip({ active, payload }) {
   )
 }
 
+// ─── 動画一覧テーブル ────────────────────────────────────────────
+const PRIVACY_LABEL = { private: '非公開', unlisted: '限定公開', public: '公開' }
+
+const dummyVideos = [
+  { id: 'xxx', title: 'テスト動画タイトル', published_at: '2026-06-01', view_count: 1200, like_count: 45, privacy: 'private' },
+]
+
+function VideoTable({ videos }) {
+  const rows = videos ?? dummyVideos
+  const isDim = p => p === 'private' || p === 'unlisted'
+
+  return (
+    <div className="bg-stone/50 rounded-xl overflow-hidden">
+      <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase px-4 pt-5 pb-3">動画一覧</p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[540px] text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-border">
+              {['動画タイトル', '投稿日', '再生回数', '高評価', '公開設定'].map(h => (
+                <th
+                  key={h}
+                  className="text-left text-[10px] text-ink-faint font-normal tracking-wide px-4 py-2 whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-5 text-ink-faint">まだ動画がありません。</td>
+              </tr>
+            ) : rows.map(v => (
+              <tr
+                key={v.id}
+                className={`border-b border-border last:border-b-0 hover:bg-stone/60 transition-colors ${isDim(v.privacy) ? 'text-ink-soft' : 'text-ink'}`}
+              >
+                <td className="px-4 py-3 max-w-[220px]">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${v.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="line-clamp-2 leading-snug no-underline hover:text-accent transition-colors"
+                  >
+                    {v.title}
+                  </a>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.published_at}</td>
+                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.view_count.toLocaleString()}</td>
+                <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.like_count.toLocaleString()}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {PRIVACY_LABEL[v.privacy] ?? v.privacy}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ─── スケルトン ─────────────────────────────────────────────────
 function Skeleton() {
   return (
@@ -69,6 +132,12 @@ function Skeleton() {
       <div className="bg-stone/50 rounded-xl px-4 py-5">
         <div className="h-3 w-24 bg-parchment rounded mb-4" />
         <div className="h-40 bg-parchment rounded" />
+      </div>
+      <div className="bg-stone/50 rounded-xl px-4 py-5 space-y-3">
+        <div className="h-3 w-20 bg-parchment rounded" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-3 bg-parchment rounded" />
+        ))}
       </div>
     </div>
   )
@@ -248,6 +317,9 @@ export default function Dashboard() {
                   )}
                 </div>
               )}
+
+              {/* 動画一覧テーブル */}
+              <VideoTable videos={videos} />
             </>
           )}
         </>
