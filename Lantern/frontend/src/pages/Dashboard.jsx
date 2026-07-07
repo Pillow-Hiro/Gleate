@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar,
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { authFetch } from '../lib/supabase'
 
@@ -42,7 +44,7 @@ function SummaryCard({ label, value }) {
   )
 }
 
-// ─── カスタム Tooltip ────────────────────────────────────────────
+// ─── カスタム Tooltip（共通） ────────────────────────────────────
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
@@ -50,6 +52,81 @@ function CustomTooltip({ active, payload }) {
     <div className="bg-cream dark:bg-stone border border-border rounded-lg px-3 py-2 shadow-sm text-xs">
       <p className="text-ink-soft mb-0.5 max-w-[180px] truncate">{d.title}</p>
       <p className="text-ink tabular-nums">{d.view_count.toLocaleString()} 回</p>
+    </div>
+  )
+}
+
+// ─── アナリティクスセクション ────────────────────────────────────
+const PERIODS = [
+  { label: '7日間',  days: 7 },
+  { label: '28日間', days: 28 },
+  { label: '90日間', days: 90 },
+]
+
+function AnalyticsSection({ activeDays, onChangeDays, data, loading }) {
+  // 古い順に並べてグラフ描画
+  const chartData = data
+    ? [...data].reverse().map(v => ({
+        label: v.published_at ? v.published_at.slice(5).replace('-', '/') : '',
+        view_count: v.view_count,
+        title: v.title,
+      }))
+    : []
+
+  return (
+    <div className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
+      {/* ヘッダー行：タイトル＋タブ */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">期間内の再生回数推移</p>
+        <div className="flex gap-1">
+          {PERIODS.map(({ label, days }) => (
+            <button
+              key={days}
+              onClick={() => onChangeDays(days)}
+              className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                activeDays === days
+                  ? 'border-accent text-accent bg-accent/10'
+                  : 'border-border text-ink-faint hover:bg-stone/60'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="h-48 bg-parchment rounded animate-pulse" />
+      ) : chartData.length === 0 ? (
+        <p className="text-xs text-ink-faint py-2">この期間に投稿された動画はありません。</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--color-border)" />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--color-border)' }} />
+            <Line
+              type="monotone"
+              dataKey="view_count"
+              stroke="var(--color-accent)"
+              strokeWidth={1.5}
+              dot={{ r: 3, fill: 'var(--color-accent)', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: 'var(--color-accent)', strokeWidth: 0 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   )
 }
@@ -126,6 +203,10 @@ function Skeleton() {
         ))}
       </div>
       <div className="bg-stone/50 rounded-xl px-4 py-5">
+        <div className="h-3 w-32 bg-parchment rounded mb-4" />
+        <div className="h-48 bg-parchment rounded" />
+      </div>
+      <div className="bg-stone/50 rounded-xl px-4 py-5">
         <div className="h-3 w-24 bg-parchment rounded mb-4" />
         <div className="h-40 bg-parchment rounded" />
       </div>
@@ -149,6 +230,9 @@ export default function Dashboard() {
   const [channelStats, setChannelStats] = useState(null)
   const [videos, setVideos] = useState(null)
   const [dataLoading, setDataLoading] = useState(false)
+  const [analyticsDays, setAnalyticsDays] = useState(28)
+  const [analyticsData, setAnalyticsData] = useState(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   function fetchYoutubeStatus() {
     return authFetch('/api/youtube/status')
@@ -176,16 +260,46 @@ export default function Dashboard() {
     }
   }
 
+  async function fetchAnalytics(days) {
+    setAnalyticsLoading(true)
+    try {
+      const res = await authFetch(`/api/youtube/analytics?days=${days}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAnalyticsData(data.videos ?? [])
+      }
+    } catch {
+      // サイレント
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
+  function handleChangeDays(days) {
+    setAnalyticsDays(days)
+    fetchAnalytics(days)
+  }
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('youtube') === 'connected') {
       setYoutubeMessage('YouTubeと繋がりました。')
       window.history.replaceState({}, '', '/dashboard')
-      fetchYoutubeStatus().then(s => { if (s.connected) fetchYoutubeData() })
+      fetchYoutubeStatus().then(s => {
+        if (s.connected) {
+          fetchYoutubeData()
+          fetchAnalytics(28)
+        }
+      })
       const timer = setTimeout(() => setYoutubeMessage(''), 4000)
       return () => clearTimeout(timer)
     } else {
-      fetchYoutubeStatus().then(s => { if (s.connected) fetchYoutubeData() })
+      fetchYoutubeStatus().then(s => {
+        if (s.connected) {
+          fetchYoutubeData()
+          fetchAnalytics(28)
+        }
+      })
     }
   }, [])
 
@@ -196,6 +310,7 @@ export default function Dashboard() {
       setYoutubeStatus({ connected: false, channel_name: null })
       setChannelStats(null)
       setVideos(null)
+      setAnalyticsData(null)
       setShowDisconnectModal(false)
       setYoutubeMessage('YouTubeの連携を解除しました。')
       setTimeout(() => setYoutubeMessage(''), 4000)
@@ -217,8 +332,8 @@ export default function Dashboard() {
     }
   }
 
-  // グラフ用データ（古い順に並べ直す）
-  const chartData = videos
+  // 棒グラフ用データ（古い順）
+  const barChartData = videos
     ? [...videos].reverse().map(v => ({
         label: v.published_at ? v.published_at.slice(5).replace('-', '/') : '',
         view_count: v.view_count,
@@ -275,7 +390,7 @@ export default function Dashboard() {
             <Skeleton />
           ) : (
             <>
-              {/* サマリーカード */}
+              {/* 1. サマリーカード */}
               {channelStats && (
                 <div className="grid grid-cols-3 gap-3">
                   <SummaryCard label="登録者数" value={channelStats.subscriber_count} />
@@ -284,15 +399,23 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* 棒グラフ */}
+              {/* 2. アナリティクス（折れ線グラフ＋期間タブ） */}
+              <AnalyticsSection
+                activeDays={analyticsDays}
+                onChangeDays={handleChangeDays}
+                data={analyticsData}
+                loading={analyticsLoading}
+              />
+
+              {/* 3. 動画別再生回数（棒グラフ） */}
               {videos !== null && (
                 <div className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
                   <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-4">動画別再生回数</p>
-                  {chartData.length === 0 ? (
+                  {barChartData.length === 0 ? (
                     <p className="text-xs text-ink-faint py-2">まだ動画がありません。</p>
                   ) : (
                     <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <BarChart data={barChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid vertical={false} stroke="var(--color-border)" />
                         <XAxis
                           dataKey="label"
@@ -314,7 +437,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* 動画一覧テーブル */}
+              {/* 4. 動画一覧テーブル */}
               {videos !== null && <VideoTable videos={videos} />}
             </>
           )}
