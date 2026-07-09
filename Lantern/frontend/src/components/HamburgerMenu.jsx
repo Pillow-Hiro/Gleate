@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { APP_VERSION } from '../constants'
 import { useEffect } from 'react'
 
 const navItems = [
@@ -145,7 +146,7 @@ export default function HamburgerMenu({ open, onClose, isDark, onToggleTheme }) 
         </nav>
 
         <div className="px-4 pb-6 pt-3 border-t border-border flex items-center justify-between">
-          <p className="text-[10px] text-ink-faint tracking-wider">Lantern v0.2</p>
+          <p className="text-[10px] text-ink-faint tracking-wider">Lantern {APP_VERSION}</p>
           <button
             onClick={onToggleTheme}
             className="text-ink-faint hover:text-ink transition-colors p-1 rounded"

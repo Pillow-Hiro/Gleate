@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, authFetch } from '../lib/supabase'
+import { APP_VERSION } from '../constants'
 
 function localDateStr(date = new Date()) {
   const y = date.getFullYear()
@@ -123,7 +124,7 @@ export default function Settings({ isDark, onToggleTheme }) {
       {/* Lanternについて */}
       <Section title="Lanternについて">
         <SettingsRow label="バージョン">
-          <span className="text-xs text-ink-faint">v0.5</span>
+          <span className="text-xs text-ink-faint">{APP_VERSION}</span>
         </SettingsRow>
         <SettingsRow label="コンセプト" description="AI伴走者 — 評価しない、決めない、照らすだけ。">
           <span />
