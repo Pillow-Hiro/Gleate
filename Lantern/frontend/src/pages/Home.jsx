@@ -179,7 +179,6 @@ function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
-      onOpenChange(false)
     } catch {
       setSaveError('保存に失敗しました。接続を確認してください。')
     } finally {
@@ -281,16 +280,24 @@ function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
             {saveError && (
               <p className="text-xs text-red-500 text-center">{saveError}</p>
             )}
+
+            {/* AI応答 + 閉じるボタン */}
+            {aiResponse && (
+              <div className="border-t border-sage/20 -mx-5 px-5 pt-4 space-y-3">
+                <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => onOpenChange(false)}
+                    className="text-xs text-ink-faint hover:text-ink transition-colors"
+                  >
+                    閉じる
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* AI応答 */}
-      {aiResponse && (
-        <div className="border-t border-sage/20 bg-sage-light/50 px-5 py-4">
-          <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
-        </div>
-      )}
     </div>
   )
 }
