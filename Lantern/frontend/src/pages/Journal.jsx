@@ -100,7 +100,7 @@ function LogDetail({ log, onDelete }) {
 
 function LogItem({ log, onDelete }) {
   const [open, setOpen] = useState(false)
-  const summary = log.created || log.enjoyable || '（記録あり）'
+  const summary = log.created || log.enjoyable || log.struggled || log.next || '（記録あり）'
 
   return (
     <div className="border-b border-border last:border-b-0">
