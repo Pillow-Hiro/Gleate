@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { authFetch } from '../lib/supabase'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -303,6 +303,7 @@ export default function Home() {
   const [refreshTick, setRefreshTick] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
   const [selectedFormDate, setSelectedFormDate] = useState(todayStr)
+  const hasAutoOpened = useRef(false)
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
@@ -323,13 +324,20 @@ export default function Home() {
           authFetch('/api/logs'),
           authFetch('/api/daily/quote'),
         ])
+        let logsData = []
         if (logsRes.ok) {
-          const logsData = await logsRes.json()
+          logsData = await logsRes.json()
           setLogs(logsData)
         }
         if (quoteRes.ok) {
           const quoteData = await quoteRes.json()
           setQuote(quoteData.quote || '')
+        }
+        // 初回ロード時のみ：今日の記録がなければフォームを自動展開
+        if (!hasAutoOpened.current) {
+          hasAutoOpened.current = true
+          const hasToday = logsData.some(l => l.date === todayStr())
+          if (!hasToday) setFormOpen(true)
         }
       } catch {
         // fallback — keep empty state
