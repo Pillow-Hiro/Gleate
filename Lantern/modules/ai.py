@@ -174,52 +174,84 @@ def get_ai_response(log_entry, past_logs, goals=None):
     return response
 
 
+def _fmt_logs(logs):
+    text = ""
+    for log in logs:
+        text += f"\n{log['date']}: {log.get('created', '')}"
+        if log.get("enjoyable"):
+            text += f"（楽しかったこと: {log['enjoyable']}）"
+        if log.get("struggled"):
+            text += f"（困ったこと: {log['struggled']}）"
+    return text
+
+
+def _parse_patterns_json(raw):
+    """AI出力からJSONを抽出して検証する。失敗時は空パターンを返す。"""
+    import json as _json, re as _re
+    if not raw:
+        return '{"patterns": []}'
+    raw = raw.strip()
+    # コードブロック除去
+    raw = _re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = _re.sub(r'\s*```$', '', raw)
+    try:
+        _json.loads(raw)
+        return raw
+    except _json.JSONDecodeError:
+        m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if m:
+            try:
+                _json.loads(m.group())
+                return m.group()
+            except _json.JSONDecodeError:
+                pass
+    return '{"patterns": []}'
+
+
+_PATTERNS_SYSTEM = """あなたはLanternというアプリのAI伴走者です。
+
+記録から最大3つのパターンを抽出し、
+各パターンに短い観察と問いを添えてください。
+
+【出力形式】
+必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
+
+{"patterns": [{"observation": "今週、夜に書いた記録が3日ありました。", "question": "あなたにとって夜の創作はどんな時間ですか。"}]}
+
+【パターンの抽出観点】
+- 記録した時間帯の傾向
+- 楽しかったこと・詰まったことの傾向
+- やったことの変化・継続
+
+【絶対禁止】
+- 評価（「よく頑張りました」「素晴らしい」）
+- 予言（「続ければ見えてきます」）
+- 命令（「〇〇しましょう」）
+- 答えを出す問い（「〇〇ですよね？」）
+- Markdownの使用
+- JSON以外の出力
+
+【問いかけの原則】
+- 答えを求めない
+- 考えるきっかけを届ける
+- 短い・余韻を残す
+- 丁寧体で統一する
+
+記録が少ない場合は1つだけ返す。
+記録が0件の場合は {"patterns": []} を返す。"""
+
+
 def get_weekly_review(period_logs, goals, last_week_logs=None):
     if not period_logs:
-        return "今週のログがまだありません。"
+        return '{"patterns": []}'
 
-    def fmt(logs):
-        text = ""
-        for log in logs:
-            text += f"\n{log['date']}: {log.get('created', '')}"
-            if log.get("enjoyable"):
-                text += f"（楽しかったこと: {log['enjoyable']}）"
-            if log.get("struggled"):
-                text += f"（困ったこと: {log['struggled']}）"
-        return text
-
-    vision = goals.get("vision", "")
-    weekly_goal = get_current_weekly_goal(goals)
-
-    last_week_context = ""
+    logs_text = _fmt_logs(period_logs)
     if last_week_logs:
-        last_week_context = f"\n\n先週のログ（変化の参考）:{fmt(last_week_logs)}"
+        logs_text += f"\n\n先週のログ（変化の参考）:{_fmt_logs(last_week_logs)}"
 
-    system_prompt = """あなたはLanternです。週次レビューを生成します。
-
-【役割】
-クリエイターが自分の活動を振り返り、次の焦点を言語化できるよう支援する。
-
-【絶対に守ること】
-- 人格・才能を評価しない
-- 数字で価値を測らない
-- やめることを勧めない
-
-今週の活動パターンへの気づきと学んだことを書く。先週のログがある場合は、今週との変化を文章に自然に溶け込ませる（「先週と比べて〜」など直接比較の表現は避ける）。
-ラベルや箇条書きは使わず、伴走者が語りかけるような文体で。300文字以内。"""
-
-    user_message = f"""今週のログの週次レビューを生成してください。
-
-ビジョン: {vision if vision else '（未設定）'}
-今週の目標: {weekly_goal if weekly_goal else '（未設定）'}
-
-今週のログ:{fmt(period_logs)}{last_week_context}"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=400)
-    if result:
-        return result
-
-    return f"今週は{len(period_logs)}日間、記録が残っています。続けることで、見えてくるものがあります。"
+    user_message = f"週の記録：\n{logs_text}\n\n上記の記録からパターンを抽出してください。"
+    result = call_claude(_PATTERNS_SYSTEM, user_message, max_tokens=600)
+    return _parse_patterns_json(result)
 
 
 def get_daily_quote(yesterday_log=None, recent_logs=None):
@@ -293,50 +325,15 @@ def get_daily_quote(yesterday_log=None, recent_logs=None):
 
 def get_monthly_review(period_logs, goals, last_month_logs=None):
     if not period_logs:
-        return "今月のログがまだありません。"
+        return '{"patterns": []}'
 
-    def fmt(logs):
-        text = ""
-        for log in logs:
-            text += f"\n{log['date']}: {log.get('created', '')}"
-            if log.get("enjoyable"):
-                text += f"（楽しかったこと: {log['enjoyable']}）"
-            if log.get("struggled"):
-                text += f"（困ったこと: {log['struggled']}）"
-        return text
-
-    vision = goals.get("vision", "")
-    monthly_goal = get_current_monthly_goal(goals)
-
-    last_month_context = ""
+    logs_text = _fmt_logs(period_logs)
     if last_month_logs:
-        last_month_context = f"\n\n先月のログ（変化の参考）:{fmt(last_month_logs)}"
+        logs_text += f"\n\n先月のログ（変化の参考）:{_fmt_logs(last_month_logs)}"
 
-    system_prompt = """あなたはLanternです。月次レビューを生成します。
-
-【役割】
-クリエイターが自分の活動を振り返り、次の焦点を言語化できるよう支援する。
-
-【絶対に守ること】
-- 人格・才能を評価しない
-- 数字で価値を測らない
-- やめることを勧めない
-
-今月の活動から見えてきたパターンと来月の焦点を書く。先月のログがある場合は、今月との変化を文章に自然に溶け込ませる（「先月と比べて〜」など直接比較の表現は避ける）。
-ラベルや箇条書きは使わず、伴走者が語りかけるような文体で。400文字以内。"""
-
-    user_message = f"""今月のログの月次レビューを生成してください。
-
-ビジョン: {vision if vision else '（未設定）'}
-今月の目標: {monthly_goal if monthly_goal else '（未設定）'}
-
-今月のログ:{fmt(period_logs)}{last_month_context}"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=500)
-    if result:
-        return result
-
-    return f"今月は{len(period_logs)}日間の記録があります。続けてきた軌跡の中に、あなただけのパターンが見えてきます。"
+    user_message = f"今月の記録：\n{logs_text}\n\n上記の記録からパターンを抽出してください。"
+    result = call_claude(_PATTERNS_SYSTEM, user_message, max_tokens=600)
+    return _parse_patterns_json(result)
 
 
 def generate_video_insight(video, logs):

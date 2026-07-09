@@ -312,7 +312,7 @@ def generate_review():
         last_monday = this_monday - timedelta(days=7)
         last_sunday = this_monday - timedelta(days=1)
         last_week_logs = [l for l in logs if last_monday.strftime("%Y-%m-%d") <= l.get("date", "") <= last_sunday.strftime("%Y-%m-%d")]
-        review = get_weekly_review(period_logs, goals, last_week_logs=last_week_logs or None)
+        review_json = get_weekly_review(period_logs, goals, last_week_logs=last_week_logs or None)
         period_label = "今週"
     else:
         month_start = datetime.now().strftime("%Y-%m-01")
@@ -321,10 +321,16 @@ def generate_review():
         last_month_end = today.replace(day=1) - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
         last_month_logs = [l for l in logs if last_month_start.strftime("%Y-%m-%d") <= l.get("date", "") <= last_month_end.strftime("%Y-%m-%d")]
-        review = get_monthly_review(period_logs, goals, last_month_logs=last_month_logs or None)
+        review_json = get_monthly_review(period_logs, goals, last_month_logs=last_month_logs or None)
         period_label = "今月"
 
-    return jsonify({"review": review, "log_count": len(period_logs), "period_label": period_label})
+    import json as _json
+    try:
+        parsed = _json.loads(review_json)
+        patterns = parsed.get("patterns", [])
+    except (_json.JSONDecodeError, AttributeError):
+        patterns = []
+    return jsonify({"patterns": patterns, "period_label": period_label})
 
 
 @app.route("/api/daily/quote")
