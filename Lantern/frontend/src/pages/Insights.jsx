@@ -16,9 +16,6 @@ function ReviewSection({ title, type, description }) {
   const [text, setText] = useState(() => {
     try { return JSON.parse(localStorage.getItem(storageKey))?.text || '' } catch { /* localStorage unavailable */ return '' }
   })
-  const [logCount, setLogCount] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey))?.logCount || 0 } catch { /* localStorage unavailable */ return 0 }
-  })
   const [generatedAt, setGeneratedAt] = useState(() => {
     try { return JSON.parse(localStorage.getItem(storageKey))?.generatedAt || '' } catch { /* localStorage unavailable */ return '' }
   })
@@ -36,12 +33,10 @@ function ReviewSection({ title, type, description }) {
       const data = await res.json()
       const now = new Date().toISOString()
       setText(data.review || '')
-      setLogCount(data.log_count || 0)
       setGeneratedAt(now)
       try {
         localStorage.setItem(storageKey, JSON.stringify({
           text: data.review || '',
-          logCount: data.log_count || 0,
           generatedAt: now,
         }))
       } catch { /* localStorage unavailable */ }
@@ -78,16 +73,9 @@ function ReviewSection({ title, type, description }) {
 
       {text && !loading && (
         <div className="bg-stone/60 rounded-xl px-5 py-4">
-          <div className="flex items-center justify-between mb-3">
-            {logCount > 0 && (
-              <p className="text-[10px] text-ink-faint tracking-wider uppercase">
-                {logCount}日分の記録をもとに
-              </p>
-            )}
-            {generatedAt && (
-              <p className="text-[10px] text-ink-faint">{formatAge(generatedAt)}</p>
-            )}
-          </div>
+          {generatedAt && (
+            <p className="text-[10px] text-ink-faint mb-3">{formatAge(generatedAt)}</p>
+          )}
           <p className="text-sm text-ink leading-[1.9]">{text}</p>
         </div>
       )}
