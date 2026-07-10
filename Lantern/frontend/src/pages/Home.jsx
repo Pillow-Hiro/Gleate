@@ -386,18 +386,6 @@ export default function Home() {
         </h1>
       </div>
 
-      {/* 記録フォーム */}
-      <section>
-        <RecordForm
-          key={selectedFormDate}
-          existingLog={existingLog}
-          targetDate={selectedFormDate}
-          onSaved={refreshData}
-          open={formOpen}
-          onOpenChange={setFormOpen}
-        />
-      </section>
-
       {/* 今日の灯り */}
       <section>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">今日の灯り</p>
@@ -409,24 +397,6 @@ export default function Home() {
               {quote || '今日も記録することが、すでに答えだ。'}
             </p>
           )}
-        </div>
-      </section>
-
-      {/* 継続バッジ + カレンダー */}
-      <section>
-        {thisMonthCount > 0 && (
-          <div className="flex justify-end mb-3">
-            <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
-              今月の灯り {thisMonthCount}日
-            </span>
-          </div>
-        )}
-        <div className="bg-stone/50 rounded-xl p-4">
-          <ActivityCalendar
-            logs={logs}
-            selectedFormDate={selectedFormDate}
-            onDateSelect={handleDateSelect}
-          />
         </div>
       </section>
 
@@ -480,6 +450,36 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* 記録フォーム */}
+      <section>
+        <RecordForm
+          key={selectedFormDate}
+          existingLog={existingLog}
+          targetDate={selectedFormDate}
+          onSaved={refreshData}
+          open={formOpen}
+          onOpenChange={setFormOpen}
+        />
+      </section>
+
+      {/* 継続バッジ + カレンダー */}
+      <section>
+        {thisMonthCount > 0 && (
+          <div className="flex justify-end mb-3">
+            <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
+              今月の灯り {thisMonthCount}日
+            </span>
+          </div>
+        )}
+        <div className="bg-stone/50 rounded-xl p-4">
+          <ActivityCalendar
+            logs={logs}
+            selectedFormDate={selectedFormDate}
+            onDateSelect={handleDateSelect}
+          />
+        </div>
+      </section>
     </div>
   )
 }
