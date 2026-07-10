@@ -358,13 +358,45 @@ export default function Home() {
   const thisMonthCount = logs.filter(l => l.date >= thisMonthStart).length
   const existingLog = logs.find(l => l.date === selectedFormDate) || null
 
+  const streak = (() => {
+    const logSet = new Set(logs.map(l => l.date))
+    // 今日に記録があればそこから、なければ昨日から遡る
+    const start = new Date()
+    if (!logSet.has(todayStr())) start.setDate(start.getDate() - 1)
+    let count = 0
+    const check = new Date(start)
+    for (let i = 0; i < 365; i++) {
+      if (!logSet.has(localDateStr(check))) break
+      count++
+      check.setDate(check.getDate() - 1)
+    }
+    return count
+  })()
+
   return (
     <div className="space-y-8">
       {/* 日付ヘッダー */}
       <div>
         <p className="text-xs text-ink-faint tracking-[0.2em] uppercase mb-0.5">{dateLabel}</p>
-        <h1 className="font-display text-xl font-light text-ink tracking-wide">{dateJa}</h1>
+        <h1 className="font-display text-xl font-light text-ink tracking-wide">
+          {dateJa}
+          {streak >= 2 && (
+            <span className="text-[11px] text-ink-faint font-normal tracking-normal ml-2">· {streak}日目</span>
+          )}
+        </h1>
       </div>
+
+      {/* 記録フォーム */}
+      <section>
+        <RecordForm
+          key={selectedFormDate}
+          existingLog={existingLog}
+          targetDate={selectedFormDate}
+          onSaved={refreshData}
+          open={formOpen}
+          onOpenChange={setFormOpen}
+        />
+      </section>
 
       {/* 今日の灯り */}
       <section>
@@ -448,18 +480,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      {/* 記録フォーム */}
-      <section>
-        <RecordForm
-          key={selectedFormDate}
-          existingLog={existingLog}
-          targetDate={selectedFormDate}
-          onSaved={refreshData}
-          open={formOpen}
-          onOpenChange={setFormOpen}
-        />
-      </section>
     </div>
   )
 }
