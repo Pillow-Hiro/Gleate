@@ -251,9 +251,13 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
       )}
 
       {aiResponse && (
-        <div className="border-t border-sage/20 -mx-5 px-5 pt-4 space-y-1.5">
-          <p className="text-[10px] tracking-[0.18em] uppercase text-ink-faint">Lantern</p>
-          <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
+        <div style={{ backgroundColor: '#2a1e10', borderRadius: '12px', padding: '16px 20px', marginTop: '16px' }}>
+          <p className="text-[10px] tracking-[0.18em] uppercase" style={{ color: 'var(--color-lantern)', opacity: 0.7, marginBottom: '8px' }}>
+            Lantern
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-lantern)' }}>
+            {aiResponse}
+          </p>
         </div>
       )}
     </div>
