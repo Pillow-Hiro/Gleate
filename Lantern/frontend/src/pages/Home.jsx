@@ -251,11 +251,11 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
       )}
 
       {aiResponse && (
-        <div style={{ backgroundColor: '#2a1e10', borderRadius: '12px', padding: '16px 20px', marginTop: '16px' }}>
-          <p className="text-[10px] tracking-[0.18em] uppercase" style={{ color: 'var(--color-lantern)', opacity: 0.7, marginBottom: '8px' }}>
+        <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 mt-4 space-y-1.5">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-sage">
             Lantern
           </p>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-lantern)' }}>
+          <p className="text-sm leading-relaxed text-forest">
             {aiResponse}
           </p>
         </div>
@@ -335,11 +335,11 @@ export default function Home() {
       {/* 今日の灯り */}
       <section>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">今日の灯り</p>
-        <div className="bg-forest dark:bg-parchment rounded-xl px-6 py-7 min-h-[88px] flex items-center">
+        <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-5 min-h-[88px] flex items-center">
           {loading ? (
-            <div className="w-32 h-4 bg-white/10 dark:bg-ink/10 rounded animate-pulse" />
+            <div className="w-32 h-4 bg-sage/20 rounded animate-pulse" />
           ) : (
-            <p className="font-display text-cream/90 dark:text-lantern text-base font-light leading-relaxed tracking-wide">
+            <p className="font-display text-forest text-base font-light leading-relaxed tracking-wide">
               {quote || '今日も記録することが、すでに答えだ。'}
             </p>
           )}
