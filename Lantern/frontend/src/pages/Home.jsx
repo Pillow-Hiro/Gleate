@@ -335,11 +335,11 @@ export default function Home() {
       {/* 今日の灯り */}
       <section>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">今日の灯り</p>
-        <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-5 min-h-[88px] flex items-center">
+        <div className="bg-forest rounded-xl px-5 py-5 min-h-[88px] flex items-center">
           {loading ? (
-            <div className="w-32 h-4 bg-sage/20 rounded animate-pulse" />
+            <div className="w-32 h-4 bg-white/20 rounded animate-pulse" />
           ) : (
-            <p className="font-display text-forest text-base font-light leading-relaxed tracking-wide">
+            <p className="font-display text-cream text-base font-light leading-relaxed tracking-wide">
               {quote || '今日も記録することが、すでに答えだ。'}
             </p>
           )}
