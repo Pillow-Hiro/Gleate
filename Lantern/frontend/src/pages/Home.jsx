@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { authFetch } from '../lib/supabase'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -151,7 +151,7 @@ function ActivityCalendar({ logs, selectedFormDate, onDateSelect }) {
 }
 
 // ── 記録フォーム ──────────────────────────────────────────────
-function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
+function RecordForm({ existingLog, targetDate, onSaved }) {
   const isToday = targetDate === todayStr()
   const [form, setForm] = useState({
     created: existingLog?.created || '',
@@ -163,8 +163,6 @@ function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
-
-  const dateLabel = isToday ? '今日' : dateDisplayJa(targetDate)
 
   async function handleSave() {
     setLoading(true)
@@ -202,102 +200,61 @@ function RecordForm({ existingLog, targetDate, onSaved, open, onOpenChange }) {
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      {/* トグルヘッダー */}
+    <div className="border border-border rounded-lg px-5 py-4 space-y-4">
+      {existingLog && (
+        <p className="text-xs text-forest flex items-center gap-1.5">
+          <span className="text-sm leading-none">✓</span>
+          今日の記録を編集する
+        </p>
+      )}
+
+      {field('created', `${isToday ? '今日' : 'この日'}のこと`, 5, `${isToday ? '今日' : 'この日'}どんなことをしましたか？`)}
+      {field('next', '次にやること', 2)}
+
+      {/* 詳細折りたたみ */}
       <button
-        onClick={() => onOpenChange(o => !o)}
-        className="w-full px-5 py-4 flex items-center justify-between text-left transition-colors hover:bg-stone/50"
+        type="button"
+        onClick={() => setDetailOpen(o => !o)}
+        className="flex items-center gap-1.5 text-xs text-ink-faint hover:text-ink-soft transition-colors"
       >
-        <div className="flex items-center gap-2.5">
-          {existingLog ? (
-            <>
-              <span className="text-forest text-base leading-none">✓</span>
-              <span className="text-sm text-ink-soft">{dateLabel}の記録を編集する</span>
-            </>
-          ) : (
-            <span className="text-sm text-ink-soft">{dateLabel}を記録する</span>
-          )}
-        </div>
         <svg
-          width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
-          viewBox="0 0 14 14"
-          className={`text-ink-faint shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75"
+          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11"
+          className={`transition-transform duration-200 ${detailOpen ? 'rotate-90' : ''}`}
         >
-          <path d="M2.5 5l4.5 4 4.5-4" />
+          <path d="M3 2l4.5 3.5L3 9" />
         </svg>
+        {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
       </button>
 
-      {/* 展開エリア */}
       <div
         className="grid transition-all duration-300 ease-out"
-        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+        style={{ gridTemplateRows: detailOpen ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-border px-5 py-4 space-y-4">
-            {/* 日付ラベル（今日以外） */}
-            {!isToday && (
-              <p className="text-xs text-ink-faint tracking-wide">{dateDisplayJa(targetDate)}の記録</p>
-            )}
-
-            {field('created', `${isToday ? '今日' : 'この日'}のこと`, 5, `${isToday ? '今日' : 'この日'}どんなことをしましたか？`)}
-            {field('next', '次にやること', 2)}
-
-            {/* 詳細折りたたみ */}
-            <button
-              type="button"
-              onClick={() => setDetailOpen(o => !o)}
-              className="flex items-center gap-1.5 text-xs text-ink-faint hover:text-ink-soft transition-colors"
-            >
-              <svg
-                width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75"
-                strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11"
-                className={`transition-transform duration-200 ${detailOpen ? 'rotate-90' : ''}`}
-              >
-                <path d="M3 2l4.5 3.5L3 9" />
-              </svg>
-              {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
-            </button>
-
-            <div
-              className="grid transition-all duration-300 ease-out"
-              style={{ gridTemplateRows: detailOpen ? '1fr' : '0fr' }}
-            >
-              <div className="overflow-hidden">
-                <div className="space-y-4 pt-1">
-                  {field('enjoyable', 'よかったこと・楽しかったこと')}
-                  {field('struggled', '詰まったこと・困ったこと')}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="w-full bg-forest text-cream text-sm py-2.5 rounded tracking-wide hover:bg-sage transition-colors disabled:opacity-50"
-            >
-              {loading ? '保存中...' : '記録する'}
-            </button>
-            {saveError && (
-              <p className="text-xs text-red-500 text-center">{saveError}</p>
-            )}
-
-            {/* AI応答 + 閉じるボタン */}
-            {aiResponse && (
-              <div className="border-t border-sage/20 -mx-5 px-5 pt-4 space-y-3">
-                <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => onOpenChange(false)}
-                    className="text-xs text-ink-faint hover:text-ink transition-colors"
-                  >
-                    閉じる
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="space-y-4 pt-1">
+            {field('enjoyable', 'よかったこと・楽しかったこと')}
+            {field('struggled', '詰まったこと・困ったこと')}
           </div>
         </div>
       </div>
+
+      <button
+        onClick={handleSave}
+        disabled={loading}
+        className="w-full bg-forest text-cream text-sm py-2.5 rounded tracking-wide hover:bg-sage transition-colors disabled:opacity-50"
+      >
+        {loading ? '保存中...' : '記録する'}
+      </button>
+      {saveError && (
+        <p className="text-xs text-red-500 text-center">{saveError}</p>
+      )}
+
+      {aiResponse && (
+        <div className="border-t border-sage/20 -mx-5 px-5 pt-4">
+          <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -308,8 +265,6 @@ export default function Home() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
-  const [formOpen, setFormOpen] = useState(false)
-  const hasAutoOpened = useRef(false)
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
@@ -333,12 +288,6 @@ export default function Home() {
         if (quoteRes.ok) {
           const quoteData = await quoteRes.json()
           setQuote(quoteData.quote || '')
-        }
-        // 初回ロード時のみ：今日の記録がなければフォームを自動展開
-        if (!hasAutoOpened.current) {
-          hasAutoOpened.current = true
-          const hasToday = logsData.some(l => l.date === todayStr())
-          if (!hasToday) setFormOpen(true)
         }
       } catch {
         // fallback — keep empty state
@@ -398,8 +347,6 @@ export default function Home() {
           existingLog={existingLog}
           targetDate={todayStr()}
           onSaved={refreshData}
-          open={formOpen}
-          onOpenChange={setFormOpen}
         />
       </section>
 
