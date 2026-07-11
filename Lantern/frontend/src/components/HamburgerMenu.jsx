@@ -29,16 +29,6 @@ const navItems = [
     ),
   },
   {
-    to: '/insights',
-    label: '振り返り',
-    icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 15 15">
-        <path d="M13 11A6 6 0 1 0 7 1c1.7 0 3.3.7 4.4 1.8L9.5 4.5" />
-        <polyline points="11.5 1.5 13.5 5 10 5" />
-      </svg>
-    ),
-  },
-  {
     to: '/dashboard',
     label: 'ダッシュボード',
     icon: (
