@@ -202,10 +202,13 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
   return (
     <div className="border border-border rounded-lg px-5 py-4 space-y-4">
       {existingLog && (
-        <p className="text-xs text-forest flex items-center gap-1.5">
-          <span className="text-sm leading-none">✓</span>
-          今日の記録を編集する
-        </p>
+        <span className="text-[10px] tracking-[0.1em] px-2 py-0.5 rounded-full"
+          style={{
+            backgroundColor: 'var(--color-sage-light)',
+            color: 'var(--color-sage)'
+          }}>
+          記録済
+        </span>
       )}
 
       {field('created', `${isToday ? '今日' : 'この日'}のこと`, 5, `${isToday ? '今日' : 'この日'}どんなことをしましたか？`)}
