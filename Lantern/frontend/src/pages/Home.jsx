@@ -251,7 +251,8 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
       )}
 
       {aiResponse && (
-        <div className="border-t border-sage/20 -mx-5 px-5 pt-4">
+        <div className="border-t border-sage/20 -mx-5 px-5 pt-4 space-y-1.5">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-ink-faint">Lantern</p>
           <p className="text-sm text-forest leading-relaxed">{aiResponse}</p>
         </div>
       )}
