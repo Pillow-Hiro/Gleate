@@ -309,7 +309,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
-  const [selectedFormDate, setSelectedFormDate] = useState(todayStr)
   const hasAutoOpened = useRef(false)
 
   const now = new Date()
@@ -317,11 +316,6 @@ export default function Home() {
   const dateJa = formatDateJa(now)
 
   function refreshData() { setRefreshTick(t => t + 1) }
-
-  function handleDateSelect(dateStr) {
-    setSelectedFormDate(dateStr)
-    setFormOpen(true)
-  }
 
   useEffect(() => {
     ;(async () => {
@@ -354,9 +348,7 @@ export default function Home() {
     })()
   }, [refreshTick])
 
-  const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  const thisMonthCount = logs.filter(l => l.date >= thisMonthStart).length
-  const existingLog = logs.find(l => l.date === selectedFormDate) || null
+  const existingLog = logs.find(l => l.date === todayStr()) || null
 
   const streak = (() => {
     const logSet = new Set(logs.map(l => l.date))
@@ -386,24 +378,6 @@ export default function Home() {
         </h1>
       </div>
 
-      {/* 継続バッジ + カレンダー */}
-      <section>
-        {thisMonthCount > 0 && (
-          <div className="flex justify-end mb-3">
-            <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
-              今月の灯り {thisMonthCount}日
-            </span>
-          </div>
-        )}
-        <div className="bg-stone/50 rounded-xl p-4">
-          <ActivityCalendar
-            logs={logs}
-            selectedFormDate={selectedFormDate}
-            onDateSelect={handleDateSelect}
-          />
-        </div>
-      </section>
-
       {/* 今日の灯り */}
       <section>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">今日の灯り</p>
@@ -421,9 +395,8 @@ export default function Home() {
       {/* 記録フォーム */}
       <section>
         <RecordForm
-          key={selectedFormDate}
           existingLog={existingLog}
-          targetDate={selectedFormDate}
+          targetDate={todayStr()}
           onSaved={refreshData}
           open={formOpen}
           onOpenChange={setFormOpen}
