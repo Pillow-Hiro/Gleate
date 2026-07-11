@@ -130,7 +130,6 @@ def get_ai_response(log_entry, past_logs, goals=None):
             goals_context += f"\n今週の目標: {weekly}"
 
     system_prompt = f"""あなたはLanternです。日々の活動に寄り添うAI伴走者です。
-評価者でも審査員でもなく、隣で一緒に歩む存在として言葉をかけてください。
 
 {_LANTERN_CONSTITUTION}
 
@@ -140,11 +139,20 @@ def get_ai_response(log_entry, past_logs, goals=None):
 「次にやること」は記入があれば文の流れに自然に溶け込ませる。
 一般論・ありきたりな励ましは禁止。毎回異なる切り口で返す。
 
+【良い例】
+「詰まったことが残っています。それだけ向き合っていた時間だったようです。」
+「楽しかったことが書かれています。その感覚、もう少し引っ張れそうですか。」
+「記録が増えています。何が変わってきているか、自分で気づいていますか。」
+
+【禁止ワード】
+「すでに〇〇」「十分な〇〇」「続ければ〇〇」
+「一歩」「前進」「成長」など評価・励まし的な表現
+
 【トーン】
-温かく、本質をついた言葉。スヌーピーの名言のような質感。自然な日本語の文章のみ。
+評価しない・観察する。事実を述べる・余韻を残す。丁寧体で統一する。
 
 【返答（200文字以内）】
-今日のことへの気づき → 詳細（あれば自然に） → 次の一歩を文に溶け込ませる"""
+今日のことへの気づき → 詳細（あれば自然に） → 次の実験を文に溶け込ませる"""
 
     user_message = f"""今日のログです。{past_context}{goals_context}
 
@@ -161,17 +169,14 @@ def get_ai_response(log_entry, past_logs, goals=None):
         return result
 
     import random
-    created = log_entry.get("created", "")
-    struggled = log_entry.get("struggled", "")
-    fallbacks = [
-        "今日も記録した。それだけで十分な一歩です。",
-        "続けていること自体が、すでに何かを作っている。",
-        "小さくても、前に進んだ日は大事にしたい。",
+    _fallbacks = [
+        "記録が、ここに残った。",
+        "今日のことが、言葉になった。",
+        "書いたことが、積み重なっていく。",
+        "今日も、ここに来た。",
+        "言葉にしたことは、消えない。",
     ]
-    response = random.choice(fallbacks)
-    if struggled:
-        response += f" {struggled}のこと、次に活かせそうなことがあるかもしれない。"
-    return response
+    return random.choice(_fallbacks)
 
 
 def _fmt_logs(logs):
