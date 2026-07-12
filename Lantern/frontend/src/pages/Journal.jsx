@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { authFetch } from '../lib/supabase'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -146,6 +147,7 @@ function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
 
 // ── 記録詳細 ──────────────────────────────────────────────────
 function LogDetail({ log, onDelete }) {
+  const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -196,9 +198,14 @@ function LogDetail({ log, onDelete }) {
             </button>
           </>
         ) : (
-          <button onClick={() => setConfirmDelete(true)} className="text-xs text-ink-faint hover:text-red-500 transition-colors">
-            削除
-          </button>
+          <>
+            <button onClick={() => navigate(`/?date=${log.date}`)} className="text-xs text-ink-faint hover:text-forest transition-colors">
+              編集
+            </button>
+            <button onClick={() => setConfirmDelete(true)} className="text-xs text-ink-faint hover:text-red-500 transition-colors">
+              削除
+            </button>
+          </>
         )}
       </div>
     </div>

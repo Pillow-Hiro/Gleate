@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { authFetch } from '../lib/supabase'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -269,6 +270,8 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
 
 // ── Home ──────────────────────────────────────────────────────
 export default function Home() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [quote, setQuote] = useState('')
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -277,6 +280,10 @@ export default function Home() {
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
   const dateJa = formatDateJa(now)
+
+  const dateParam = searchParams.get('date')
+  const targetDate = (dateParam && dateParam <= todayStr()) ? dateParam : todayStr()
+  const isEditingPast = targetDate !== todayStr()
 
   function refreshData() { setRefreshTick(t => t + 1) }
 
@@ -305,7 +312,7 @@ export default function Home() {
     })()
   }, [refreshTick])
 
-  const existingLog = logs.find(l => l.date === todayStr()) || null
+  const existingLog = logs.find(l => l.date === targetDate) || null
 
   const streak = (() => {
     const logSet = new Set(logs.map(l => l.date))
@@ -351,10 +358,19 @@ export default function Home() {
 
       {/* 記録フォーム */}
       <section>
+        {isEditingPast && (
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-ink-faint">{dateDisplayJa(targetDate)}の記録を編集中</p>
+            <button onClick={() => navigate('/')} className="text-xs text-ink-faint hover:text-ink transition-colors">
+              ← 今日に戻る
+            </button>
+          </div>
+        )}
         <RecordForm
+          key={existingLog ? existingLog.date : `new-${targetDate}`}
           existingLog={existingLog}
-          targetDate={todayStr()}
-          onSaved={refreshData}
+          targetDate={targetDate}
+          onSaved={() => { refreshData(); if (isEditingPast) navigate('/') }}
         />
       </section>
 
