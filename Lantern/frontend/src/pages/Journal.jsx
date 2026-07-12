@@ -239,7 +239,7 @@ function ReviewSection({ title, type, description }) {
   async function generate() {
     if (patterns !== null && patterns.length > 0) {
       setFading(true)
-      await new Promise(r => setTimeout(r, 250))
+      await new Promise(r => setTimeout(r, 350))
       setFading(false)
     }
     setLoading(true)
@@ -293,7 +293,7 @@ function ReviewSection({ title, type, description }) {
       )}
 
       {!loading && hasPatterns && (
-        <div className={`space-y-3 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={fading ? 'space-y-3 opacity-0 transition-opacity duration-300' : 'space-y-3 lantern-fade-in'}>
           {generatedAt && <p className="text-[10px] text-ink-faint">{formatAge(generatedAt)}</p>}
           {patterns.map((p, i) => (
             <PatternCard key={i} observation={p.observation} question={p.question} />

@@ -43,6 +43,15 @@ html.dark {
   --color-text-info: #c4a882;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lantern-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
