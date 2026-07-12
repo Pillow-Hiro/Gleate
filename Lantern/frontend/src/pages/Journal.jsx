@@ -404,6 +404,11 @@ export default function Journal() {
         )}
         <div className="bg-stone/50 rounded-xl p-4">
           <ActivityCalendar logs={logs} selectedDate={selectedDate || ''} onDateSelect={setSelectedDate} />
+          {!loading && logs.length === 0 && (
+            <p className="text-[11px] text-ink-faint text-center mt-3">
+              日付をタップして記録を始めましょう
+            </p>
+          )}
         </div>
         {selectedDate && selectedLog && (
           <div className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
