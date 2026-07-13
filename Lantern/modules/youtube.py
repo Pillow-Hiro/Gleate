@@ -126,6 +126,17 @@ def refresh_token_if_needed(user_id):
     row = get_tokens(user_id)
     if not row or not row.get("refresh_token"):
         return None
+
+    # token_expiry を DB から復元（設定しないと creds.expired が常に False になり期限切れを検知できない）
+    expiry = None
+    if row.get("token_expiry"):
+        try:
+            expiry = datetime.fromisoformat(row["token_expiry"])
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+        except Exception:
+            pass
+
     creds = Credentials(
         token=row["access_token"],
         refresh_token=row["refresh_token"],
@@ -133,11 +144,14 @@ def refresh_token_if_needed(user_id):
         client_id=YOUTUBE_CLIENT_ID,
         client_secret=YOUTUBE_CLIENT_SECRET,
         scopes=_SCOPES,
+        expiry=expiry,
     )
-    if creds.expired or not creds.valid:
+    if not creds.valid:
+        print(f"[YouTube] token invalid/expired, refreshing... expiry={expiry}")
         try:
             creds.refresh(Request())
             save_tokens(user_id, creds)
+            print("[YouTube] token refreshed successfully")
         except Exception as e:
             print(f"[YouTube] token refresh error: {e}")
             return None

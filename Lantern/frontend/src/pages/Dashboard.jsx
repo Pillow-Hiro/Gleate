@@ -291,6 +291,7 @@ export default function Dashboard() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [channelInsight, setChannelInsight] = useState('')
   const [channelInsightLoading, setChannelInsightLoading] = useState(false)
+  const [videosError, setVideosError] = useState(false)
 
   function fetchYoutubeStatus() {
     return authFetch('/api/youtube/status')
@@ -301,6 +302,7 @@ export default function Dashboard() {
 
   async function fetchYoutubeData() {
     setDataLoading(true)
+    setVideosError(false)
     try {
       const [chRes, vRes] = await Promise.all([
         authFetch('/api/youtube/channel'),
@@ -310,9 +312,11 @@ export default function Dashboard() {
       if (vRes.ok) {
         const data = await vRes.json()
         setVideos(data.videos ?? [])
+      } else {
+        setVideosError(true)
       }
     } catch {
-      // サイレント
+      setVideosError(true)
     } finally {
       setDataLoading(false)
     }
@@ -368,6 +372,7 @@ export default function Dashboard() {
       setYoutubeStatus({ connected: false, channel_name: null })
       setChannelStats(null)
       setVideos(null)
+      setVideosError(false)
       setAnalyticsData(null)
       setShowDisconnectModal(false)
       setYoutubeMessage('YouTubeの連携を解除しました。')
@@ -478,7 +483,19 @@ export default function Dashboard() {
               {/* 創作の軌跡 */}
               <section>
                 <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">創作の軌跡</p>
-                <VideoTimeline videos={videos} />
+                {videosError ? (
+                  <div className="py-3 space-y-2">
+                    <p className="text-sm text-ink-faint">動画の取得に失敗しました。</p>
+                    <button
+                      onClick={fetchYoutubeData}
+                      className="text-[11px] text-forest border border-sage/40 px-3 py-1 rounded-full hover:bg-sage-light transition-colors"
+                    >
+                      再試行
+                    </button>
+                  </div>
+                ) : (
+                  <VideoTimeline videos={videos} />
+                )}
               </section>
 
               {/* AIの観察 */}
