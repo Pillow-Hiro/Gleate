@@ -41,6 +41,11 @@ html.dark {
   --color-lantern: #d4956a;
   --color-background-info: #261a09;
   --color-text-info: #c4a882;
+
+  /* 夜の書斎テーマ — カード・ボタン専用 */
+  --color-primary: #1e2d24;
+  --color-primary-hover: #26392c;
+  --color-primary-text: #e8e0d0;
 }
 
 @keyframes fadeIn {

@@ -76,7 +76,7 @@ function ThemeIcon({ isDark }) {
 
 export default function Sidebar({ isDark, onToggleTheme }) {
   return (
-    <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-56 bg-stone border-r border-border z-40">
+    <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-56 bg-stone dark:bg-[#141412] border-r border-border z-40">
       <div className="px-5 py-6 border-b border-border">
         <span className="font-display text-sm tracking-[0.22em] text-ink">
           Lantern
