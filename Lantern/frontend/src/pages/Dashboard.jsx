@@ -185,6 +185,20 @@ function VideoTimeline({ videos }) {
 
             {/* 右：動画情報 */}
             <div className="flex-1 min-w-0">
+              {/* サムネイル */}
+              <a
+                href={`https://www.youtube.com/watch?v=${v.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mb-2.5"
+              >
+                <img
+                  src={v.thumbnail || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`}
+                  alt={v.title}
+                  className="w-full sm:w-40 sm:h-[90px] rounded-lg object-cover hover:opacity-80 transition-opacity"
+                />
+              </a>
+              {/* タイトル */}
               <a
                 href={`https://www.youtube.com/watch?v=${v.id}`}
                 target="_blank"

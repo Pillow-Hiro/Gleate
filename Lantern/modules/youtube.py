@@ -228,6 +228,7 @@ def get_recent_videos(user_id, max_results=10):
                 "like_count": int(s.get("likeCount", 0)),
                 "comment_count": int(s.get("commentCount", 0)),
                 "privacy": st.get("privacyStatus"),  # "public" / "unlisted" / "private"
+                "thumbnail": f"https://i.ytimg.com/vi/{item['id']}/mqdefault.jpg",
             })
         return videos
     except Exception as e:
