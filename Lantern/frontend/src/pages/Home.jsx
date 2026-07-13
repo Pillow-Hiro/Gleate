@@ -122,8 +122,8 @@ function ActivityCalendar({ logs, selectedFormDate, onDateSelect }) {
                 : 'bg-amber-light text-amber font-semibold ring-1 ring-amber/40 hover:bg-amber/20'
             } else if (cell.isToday) {
               cls += isSelected
-                ? 'bg-forest/10 text-forest font-semibold ring-1 ring-forest/50'
-                : 'ring-1 ring-forest/40 text-forest font-semibold hover:bg-forest/10'
+                ? 'bg-accent/10 text-accent font-semibold ring-1 ring-accent/60'
+                : 'ring-1 ring-accent/50 text-accent font-semibold hover:bg-accent/10'
             } else if (cell.hasLog) {
               cls += isSelected
                 ? 'bg-amber/20 text-amber ring-1 ring-amber/50'
