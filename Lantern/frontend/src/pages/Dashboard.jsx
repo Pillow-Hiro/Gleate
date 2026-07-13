@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart, Bar,
   LineChart, Line,
@@ -44,7 +44,7 @@ function SummaryCard({ label, value }) {
   )
 }
 
-// ─── カスタム Tooltip（共通） ────────────────────────────────────
+// ─── カスタム Tooltip ────────────────────────────────────────────
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
@@ -64,7 +64,6 @@ const PERIODS = [
 ]
 
 function AnalyticsSection({ activeDays, onChangeDays, data, loading }) {
-  // 古い順に並べてグラフ描画
   const chartData = data
     ? [...data].reverse().map(v => ({
         label: v.published_at ? v.published_at.slice(5).replace('-', '/') : '',
@@ -75,7 +74,6 @@ function AnalyticsSection({ activeDays, onChangeDays, data, loading }) {
 
   return (
     <div className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
-      {/* ヘッダー行：タイトル＋タブ */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">期間内の再生回数推移</p>
         <div className="flex gap-1">
@@ -131,19 +129,14 @@ function AnalyticsSection({ activeDays, onChangeDays, data, loading }) {
   )
 }
 
-// ─── 動画一覧テーブル ────────────────────────────────────────────
-const PRIVACY_LABEL = { private: '非公開', unlisted: '限定公開', public: '公開' }
-
-function VideoTable({ videos }) {
+// ─── 動画タイムライン ────────────────────────────────────────────
+function VideoTimeline({ videos }) {
   const rows = videos ?? []
-  const isDim = p => p === 'private' || p === 'unlisted'
-  // { [videoId]: { loading: bool, text: string|null, visible: bool } }
   const [insightState, setInsightState] = useState({})
 
   async function handleAsk(video) {
     const id = video.id
     const current = insightState[id]
-    // 取得済み → 表示トグル
     if (current?.text != null) {
       setInsightState(prev => ({ ...prev, [id]: { ...prev[id], visible: !prev[id].visible } }))
       return
@@ -168,89 +161,82 @@ function VideoTable({ videos }) {
     }
   }
 
+  if (rows.length === 0) {
+    return <p className="text-sm text-ink-faint py-4">まだ動画がありません。</p>
+  }
+
   return (
-    <div className="bg-stone/50 rounded-xl overflow-hidden">
-      <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase px-4 pt-5 pb-3">動画一覧</p>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-border">
-              {['動画タイトル', '投稿日', '再生回数', '高評価', '公開設定', ''].map((h, i) => (
-                <th
-                  key={i}
-                  className="text-left text-[10px] text-ink-faint font-normal tracking-wide px-4 py-2 whitespace-nowrap"
+    <div>
+      {rows.map(v => {
+        const pub = v.published_at
+        const year = pub?.slice(0, 4)
+        const month = pub ? String(Number(pub.slice(5, 7))) : '-'
+        const day = pub ? String(Number(pub.slice(8, 10))) : '-'
+        const s = insightState[v.id] ?? {}
+        const isDim = v.privacy === 'private' || v.privacy === 'unlisted'
+
+        return (
+          <div key={v.id} className="flex gap-5 py-4 border-b border-border last:border-b-0">
+            {/* 左：日付 */}
+            <div className="w-10 shrink-0 text-right">
+              <p className="text-[9px] text-ink-faint tabular-nums leading-tight">{year}</p>
+              <p className="text-[11px] text-ink-soft tabular-nums leading-tight">{month}/{day}</p>
+            </div>
+
+            {/* 右：動画情報 */}
+            <div className="flex-1 min-w-0">
+              <a
+                href={`https://www.youtube.com/watch?v=${v.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-sm leading-snug hover:text-accent transition-colors ${isDim ? 'text-ink-soft' : 'text-ink'}`}
+              >
+                {v.title}
+              </a>
+              <div className="flex items-center flex-wrap gap-2.5 mt-1">
+                <p className="text-[11px] text-ink-faint tabular-nums">{v.view_count.toLocaleString()} 回</p>
+                {v.like_count > 0 && (
+                  <p className="text-[11px] text-ink-faint tabular-nums">♡ {v.like_count.toLocaleString()}</p>
+                )}
+                {(v.privacy === 'private' || v.privacy === 'unlisted') && (
+                  <span className="text-[9px] text-ink-faint border border-border px-1.5 py-0.5 rounded-full">
+                    {v.privacy === 'private' ? '非公開' : '限定公開'}
+                  </span>
+                )}
+              </div>
+              <div className="mt-2">
+                <button
+                  onClick={() => handleAsk(v)}
+                  disabled={s.loading}
+                  className={`text-[10px] border px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                    s.visible
+                      ? 'border-accent text-accent bg-accent/10'
+                      : 'border-border text-ink-faint hover:bg-stone/60'
+                  }`}
                 >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-5 text-ink-faint">まだ動画がありません。</td>
-              </tr>
-            ) : rows.map(v => {
-              const s = insightState[v.id] ?? {}
-              return (
-                <Fragment key={v.id}>
-                  <tr className={`border-b border-border hover:bg-stone/60 transition-colors ${isDim(v.privacy) ? 'text-ink-soft' : 'text-ink'}`}>
-                    <td className="px-4 py-3 max-w-[220px]">
-                      <a
-                        href={`https://www.youtube.com/watch?v=${v.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="line-clamp-2 leading-snug no-underline hover:text-accent transition-colors"
-                      >
-                        {v.title}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.published_at}</td>
-                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.view_count.toLocaleString()}</td>
-                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{v.like_count.toLocaleString()}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {PRIVACY_LABEL[v.privacy] ?? v.privacy}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <button
-                        onClick={() => handleAsk(v)}
-                        disabled={s.loading}
-                        className={`text-[10px] border px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                          s.visible
-                            ? 'border-accent text-accent bg-accent/10'
-                            : 'border-border text-ink-faint hover:bg-stone/60'
-                        }`}
-                      >
-                        {s.loading ? (
-                          <span className="flex items-center gap-1">
-                            <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                            生成中
-                          </span>
-                        ) : 'AIに聞く'}
-                      </button>
-                    </td>
-                  </tr>
-                  {s.visible && s.text && (
-                    <tr className="border-b border-border last:border-b-0">
-                      <td colSpan={6} className="px-4 py-3">
-                        <p
-                          className="text-xs leading-relaxed px-4 py-3 rounded-lg"
-                          style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
-                        >
-                          {s.text}
-                        </p>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+                  {s.loading ? (
+                    <span className="flex items-center gap-1">
+                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      生成中
+                    </span>
+                  ) : 'AIに聞く'}
+                </button>
+              </div>
+              {s.visible && s.text && (
+                <p
+                  className="text-xs leading-relaxed px-4 py-3 rounded-lg mt-2"
+                  style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
+                >
+                  {s.text}
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -258,29 +244,19 @@ function VideoTable({ videos }) {
 // ─── スケルトン ─────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="bg-stone/50 rounded-xl px-4 py-4 space-y-2">
-            <div className="h-2.5 w-12 bg-parchment rounded" />
-            <div className="h-5 w-16 bg-parchment rounded" />
+    <div className="animate-pulse">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="flex gap-5 py-4 border-b border-border">
+          <div className="w-10 space-y-1.5">
+            <div className="h-2 w-6 bg-parchment rounded ml-auto" />
+            <div className="h-3 w-9 bg-parchment rounded ml-auto" />
           </div>
-        ))}
-      </div>
-      <div className="bg-stone/50 rounded-xl px-4 py-5">
-        <div className="h-3 w-32 bg-parchment rounded mb-4" />
-        <div className="h-48 bg-parchment rounded" />
-      </div>
-      <div className="bg-stone/50 rounded-xl px-4 py-5">
-        <div className="h-3 w-24 bg-parchment rounded mb-4" />
-        <div className="h-40 bg-parchment rounded" />
-      </div>
-      <div className="bg-stone/50 rounded-xl px-4 py-5 space-y-3">
-        <div className="h-3 w-20 bg-parchment rounded" />
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-3 bg-parchment rounded" />
-        ))}
-      </div>
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 bg-parchment rounded w-4/5" />
+            <div className="h-2.5 bg-parchment rounded w-1/4" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -298,6 +274,7 @@ export default function Dashboard() {
   const [analyticsDays, setAnalyticsDays] = useState(30)
   const [analyticsData, setAnalyticsData] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsOpen, setAnalyticsOpen] = useState(false)
 
   function fetchYoutubeStatus() {
     return authFetch('/api/youtube/status')
@@ -397,7 +374,6 @@ export default function Dashboard() {
     }
   }
 
-  // 棒グラフ用データ（古い順）
   const barChartData = videos
     ? [...videos].reverse().map(v => ({
         label: v.published_at ? v.published_at.slice(5).replace('-', '/') : '',
@@ -411,7 +387,7 @@ export default function Dashboard() {
       {/* ページヘッダー */}
       <div>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-0.5">Dashboard</p>
-        <h1 className="font-display text-xl font-light text-ink">ダッシュボード</h1>
+        <h1 className="font-display text-xl font-light text-ink">創作の軌跡</h1>
       </div>
 
       {/* フラッシュメッセージ */}
@@ -455,55 +431,77 @@ export default function Dashboard() {
             <Skeleton />
           ) : (
             <>
-              {/* 1. サマリーカード */}
-              {channelStats && (
-                <div className="grid grid-cols-3 gap-3">
-                  <SummaryCard label="登録者数" value={channelStats.subscriber_count} />
-                  <SummaryCard label="総再生回数" value={channelStats.total_view_count} />
-                  <SummaryCard label="総動画数" value={channelStats.video_count} />
+              {/* 創作の軌跡 */}
+              <section>
+                <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">創作の軌跡</p>
+                <VideoTimeline videos={videos} />
+              </section>
+
+              {/* アナリティクス（折りたたみ） */}
+              <section>
+                <button
+                  onClick={() => setAnalyticsOpen(o => !o)}
+                  className="flex items-center gap-1.5 text-xs text-ink-faint hover:text-ink transition-colors"
+                >
+                  <svg
+                    width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.75"
+                    strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 11 11"
+                    className={`transition-transform duration-200 ${analyticsOpen ? 'rotate-90' : ''}`}
+                  >
+                    <path d="M3 2l4.5 3.5L3 9" />
+                  </svg>
+                  アナリティクスを見る
+                </button>
+
+                <div
+                  className="grid transition-all duration-300 ease-out"
+                  style={{ gridTemplateRows: analyticsOpen ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="space-y-4 pt-4">
+                      {channelStats && (
+                        <div className="grid grid-cols-3 gap-3">
+                          <SummaryCard label="登録者数" value={channelStats.subscriber_count} />
+                          <SummaryCard label="総再生回数" value={channelStats.total_view_count} />
+                          <SummaryCard label="総動画数" value={channelStats.video_count} />
+                        </div>
+                      )}
+
+                      <AnalyticsSection
+                        activeDays={analyticsDays}
+                        onChangeDays={handleChangeDays}
+                        data={analyticsData}
+                        loading={analyticsLoading}
+                      />
+
+                      {barChartData.length > 0 && (
+                        <div className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
+                          <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-4">動画別再生回数</p>
+                          <ResponsiveContainer width="100%" height={200}>
+                            <BarChart data={barChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                              <CartesianGrid vertical={false} stroke="var(--color-border)" />
+                              <XAxis
+                                dataKey="label"
+                                tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
+                              />
+                              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-parchment)' }} />
+                              <Bar dataKey="view_count" fill="var(--color-accent)" radius={[3, 3, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* 2. アナリティクス（折れ線グラフ＋期間タブ） */}
-              <AnalyticsSection
-                activeDays={analyticsDays}
-                onChangeDays={handleChangeDays}
-                data={analyticsData}
-                loading={analyticsLoading}
-              />
-
-              {/* 3. 動画別再生回数（棒グラフ） */}
-              {videos !== null && (
-                <div className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
-                  <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-4">動画別再生回数</p>
-                  {barChartData.length === 0 ? (
-                    <p className="text-xs text-ink-faint py-2">まだ動画がありません。</p>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={barChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <CartesianGrid vertical={false} stroke="var(--color-border)" />
-                        <XAxis
-                          dataKey="label"
-                          tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 10, fill: 'var(--color-ink-faint)' }}
-                          axisLine={false}
-                          tickLine={false}
-                          tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
-                        />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-parchment)' }} />
-                        <Bar dataKey="view_count" fill="var(--color-accent)" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              )}
-
-              {/* 4. 動画一覧テーブル */}
-              {videos !== null && <VideoTable videos={videos} />}
+              </section>
             </>
           )}
         </>
