@@ -25,6 +25,7 @@ from modules.ai import (
     get_ai_response,
     get_weekly_review, get_monthly_review,
     call_claude_with_history,
+    generate_channel_insight,
 )
 from modules.auth import require_auth
 
@@ -536,6 +537,17 @@ def youtube_video_insight():
         logs_text += line + "\n"
 
     insight = generate_video_insight(video, logs_text.strip())
+    return jsonify({"insight": insight})
+
+
+@app.route("/api/youtube/channel-insight", methods=["POST"])
+@require_auth
+def youtube_channel_insight():
+    data = request.get_json(silent=True) or {}
+    videos = data.get("videos", [])
+    if not videos:
+        return jsonify({"error": "動画データが必要です"}), 400
+    insight = generate_channel_insight(videos)
     return jsonify({"insight": insight})
 
 

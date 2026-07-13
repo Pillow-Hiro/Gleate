@@ -222,7 +222,7 @@ function VideoTimeline({ videos }) {
                       </svg>
                       生成中
                     </span>
-                  ) : 'AIに聞く'}
+                  ) : 'Lanternに聞く'}
                 </button>
               </div>
               {s.visible && s.text && (
@@ -275,6 +275,8 @@ export default function Dashboard() {
   const [analyticsData, setAnalyticsData] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [channelInsight, setChannelInsight] = useState('')
+  const [channelInsightLoading, setChannelInsightLoading] = useState(false)
 
   function fetchYoutubeStatus() {
     return authFetch('/api/youtube/status')
@@ -374,6 +376,34 @@ export default function Dashboard() {
     }
   }
 
+  async function handleChannelInsight() {
+    if (!videos?.length) return
+    setChannelInsightLoading(true)
+    setChannelInsight('')
+    try {
+      const res = await authFetch('/api/youtube/channel-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videos: videos.map(v => ({
+            title: v.title,
+            published_at: v.published_at,
+            view_count: v.view_count,
+            like_count: v.like_count,
+          })),
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setChannelInsight(data.insight || '')
+      }
+    } catch {
+      // サイレント
+    } finally {
+      setChannelInsightLoading(false)
+    }
+  }
+
   const barChartData = videos
     ? [...videos].reverse().map(v => ({
         label: v.published_at ? v.published_at.slice(5).replace('-', '/') : '',
@@ -435,6 +465,35 @@ export default function Dashboard() {
               <section>
                 <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">創作の軌跡</p>
                 <VideoTimeline videos={videos} />
+              </section>
+
+              {/* AIの観察 */}
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">AIの観察</p>
+                  <button
+                    onClick={handleChannelInsight}
+                    disabled={channelInsightLoading || !videos?.length}
+                    className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+                  >
+                    {channelInsightLoading ? '生成中...' : channelInsight ? '再生成' : 'Lanternに聞く'}
+                  </button>
+                </div>
+
+                {channelInsightLoading && (
+                  <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 space-y-2 animate-pulse">
+                    <div className="h-3 bg-sage/20 rounded w-full" />
+                    <div className="h-3 bg-sage/20 rounded w-4/5" />
+                    <div className="h-3 bg-sage/20 rounded w-2/3" />
+                  </div>
+                )}
+
+                {!channelInsightLoading && channelInsight && (
+                  <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 space-y-1.5 lantern-fade-in">
+                    <p className="text-[10px] tracking-[0.18em] uppercase text-sage">Lantern</p>
+                    <p className="text-sm leading-relaxed text-forest">{channelInsight}</p>
+                  </div>
+                )}
               </section>
 
               {/* アナリティクス（折りたたみ） */}

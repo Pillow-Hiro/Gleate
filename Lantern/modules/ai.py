@@ -341,6 +341,50 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     return _parse_patterns_json(result)
 
 
+def generate_channel_insight(videos):
+    """チャンネル全体の創作傾向・変化を観察して返す。"""
+    if not videos:
+        return "動画情報がありません。"
+
+    videos_text = ""
+    for v in videos:
+        line = f"- {v.get('published_at', '不明')}: {v.get('title', '')}"
+        view = v.get('view_count', 0)
+        if view:
+            line += f"（{view:,}回再生）"
+        videos_text += line + "\n"
+
+    system_prompt = """あなたはLanternというアプリのAI伴走者です。
+
+以下のYouTubeチャンネルの動画一覧から、
+このクリエイターの創作の傾向・変化・特徴を
+観察者として静かに言語化してください。
+
+【絶対禁止】
+- 評価（「素晴らしい」「よく頑張りました」）
+- 予言（「続ければ〇〇できます」）
+- 命令（「〇〇しましょう」）
+- 数字による序列化
+- Markdownの使用
+
+【トーン】
+- 観察する・評価しない
+- 短い・余白を残す
+- 丁寧体で統一する
+- 300文字以内
+
+【良い例】
+「カバー曲から始まり、オリジナル曲へと変化しています。」
+「2023年初頭に集中して投稿されています。」
+「タイトルに実験的な言葉が多く見られます。」"""
+
+    user_message = f"動画一覧：\n{videos_text}\nこのチャンネルの創作の傾向・変化・特徴を観察してください。"
+    result = call_claude(system_prompt, user_message, max_tokens=400)
+    if result:
+        return result.strip()
+    return "動画の軌跡を観察しています。"
+
+
 def generate_video_insight(video, logs):
     has_logs = bool(logs and logs.strip())
 
