@@ -157,12 +157,17 @@ def refresh_token_if_needed(user_id):
     # creds.expiry が offset-naive の場合も UTC に統一（google-auth が内部で naive を返す場合の対策）
     creds.expiry = _to_aware(creds.expiry)
 
-    try:
-        needs_refresh = not creds.valid
-    except TypeError:
-        # google-auth バージョンによって naive/aware が混在する場合のフォールバック
-        print(f"[YouTube] TypeError in creds.valid comparison, forcing refresh")
+    # expiry が NULL（初回保存時など）の場合は有効期限不明なので必ずリフレッシュを試みる
+    if expiry is None:
         needs_refresh = True
+        print("[YouTube] token_expiry is NULL, forcing refresh to obtain fresh access token")
+    else:
+        try:
+            needs_refresh = not creds.valid
+        except TypeError:
+            # google-auth バージョンによって naive/aware が混在する場合のフォールバック
+            print("[YouTube] TypeError in creds.valid comparison, forcing refresh")
+            needs_refresh = True
 
     if needs_refresh:
         print(f"[YouTube] token invalid/expired, refreshing... expiry={creds.expiry}")
