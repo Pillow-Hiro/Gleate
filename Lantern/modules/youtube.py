@@ -122,25 +122,16 @@ def delete_tokens(user_id):
     db.table("youtube_tokens").delete().eq("user_id", user_id).execute()
 
 
-def _to_aware(dt):
-    """offset-naive な datetime を UTC の offset-aware に変換するヘルパー。"""
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
 def refresh_token_if_needed(user_id):
     row = get_tokens(user_id)
     if not row or not row.get("refresh_token"):
         return None
 
-    # DB の token_expiry を offset-aware な UTC datetime に変換
+    # DB の token_expiry を datetime に変換（creds.expiry は書き換えない）
     expiry = None
     if row.get("token_expiry"):
         try:
-            expiry = _to_aware(datetime.fromisoformat(row["token_expiry"]))
+            expiry = datetime.fromisoformat(row["token_expiry"])
         except Exception:
             pass
 
@@ -154,26 +145,23 @@ def refresh_token_if_needed(user_id):
         expiry=expiry,
     )
 
-    # creds.expiry が offset-naive の場合も UTC に統一（google-auth が内部で naive を返す場合の対策）
-    creds.expiry = _to_aware(creds.expiry)
-
-    # expiry が NULL（初回保存時など）の場合は有効期限不明なので必ずリフレッシュを試みる
+    # expiry が NULL（初回保存など）は期限不明なので必ずリフレッシュ
     if expiry is None:
         needs_refresh = True
-        print("[YouTube] token_expiry is NULL, forcing refresh to obtain fresh access token")
+        print("[YouTube] token_expiry NULL, forcing refresh")
     else:
         try:
             needs_refresh = not creds.valid
         except TypeError:
-            # google-auth バージョンによって naive/aware が混在する場合のフォールバック
-            print("[YouTube] TypeError in creds.valid comparison, forcing refresh")
-            needs_refresh = True
+            # google-auth の naive/aware 混在を手動 UTC 比較でフォールバック
+            exp_utc = expiry if expiry.tzinfo else expiry.replace(tzinfo=timezone.utc)
+            needs_refresh = datetime.now(timezone.utc) >= exp_utc - timedelta(seconds=300)
+            print(f"[YouTube] TypeError fallback: needs_refresh={needs_refresh}")
 
     if needs_refresh:
-        print(f"[YouTube] token invalid/expired, refreshing... expiry={creds.expiry}")
+        print(f"[YouTube] refreshing token... expiry={expiry}")
         try:
             creds.refresh(Request())
-            creds.expiry = _to_aware(creds.expiry)
             save_tokens(user_id, creds)
             print("[YouTube] token refreshed successfully")
         except Exception as e:
