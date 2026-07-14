@@ -57,6 +57,14 @@ html.dark {
   animation: fadeIn 0.5s ease-in-out;
 }
 
+.scroll-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }

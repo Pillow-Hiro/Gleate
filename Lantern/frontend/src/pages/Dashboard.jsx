@@ -129,9 +129,10 @@ function AnalyticsSection({ activeDays, onChangeDays, data, loading }) {
   )
 }
 
-// ─── 動画タイムライン ────────────────────────────────────────────
+// ─── 動画タイムライン（横スクロール） ───────────────────────────
 function VideoTimeline({ videos }) {
-  const rows = videos ?? []
+  // 古い順（左→右）に並べる
+  const rows = [...(videos ?? [])].reverse()
   const [insightState, setInsightState] = useState({})
 
   async function handleAsk(video) {
@@ -166,7 +167,7 @@ function VideoTimeline({ videos }) {
   }
 
   return (
-    <div>
+    <div className="scroll-container flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
       {rows.map(v => {
         const pub = v.published_at
         const year = pub?.slice(0, 4)
@@ -176,78 +177,79 @@ function VideoTimeline({ videos }) {
         const isDim = v.privacy === 'private' || v.privacy === 'unlisted'
 
         return (
-          <div key={v.id} className="flex gap-5 py-4 border-b border-border last:border-b-0">
-            {/* 左：日付 */}
-            <div className="w-10 shrink-0 text-right">
-              <p className="text-[9px] text-ink-faint tabular-nums leading-tight">{year}</p>
-              <p className="text-[11px] text-ink-soft tabular-nums leading-tight">{month}/{day}</p>
-            </div>
+          <div key={v.id} className="shrink-0 w-[200px] snap-start">
+            {/* 投稿日 */}
+            <p className="text-[11px] text-ink-faint tabular-nums mb-1.5">{year}/{month}/{day}</p>
 
-            {/* 右：動画情報 */}
-            <div className="flex-1 min-w-0">
-              {/* サムネイル */}
-              <a
-                href={`https://www.youtube.com/watch?v=${v.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mb-2.5"
-              >
-                <img
-                  src={v.thumbnail || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`}
-                  alt={v.title}
-                  className="w-full sm:w-40 sm:h-[90px] rounded-lg object-cover hover:opacity-80 transition-opacity"
-                />
-              </a>
-              {/* タイトル */}
-              <a
-                href={`https://www.youtube.com/watch?v=${v.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-sm leading-snug hover:text-accent transition-colors ${isDim ? 'text-ink-soft' : 'text-ink'}`}
-              >
-                {v.title}
-              </a>
-              <div className="flex items-center flex-wrap gap-2.5 mt-1">
-                <p className="text-[11px] text-ink-faint tabular-nums">{v.view_count.toLocaleString()} 回</p>
-                {v.like_count > 0 && (
-                  <p className="text-[11px] text-ink-faint tabular-nums">♡ {v.like_count.toLocaleString()}</p>
-                )}
-                {(v.privacy === 'private' || v.privacy === 'unlisted') && (
-                  <span className="text-[9px] text-ink-faint border border-border px-1.5 py-0.5 rounded-full">
-                    {v.privacy === 'private' ? '非公開' : '限定公開'}
-                  </span>
-                )}
-              </div>
-              <div className="mt-2">
-                <button
-                  onClick={() => handleAsk(v)}
-                  disabled={s.loading}
-                  className={`text-[10px] border px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                    s.visible
-                      ? 'border-accent text-accent bg-accent/10'
-                      : 'border-border text-ink-faint hover:bg-stone/60'
-                  }`}
-                >
-                  {s.loading ? (
-                    <span className="flex items-center gap-1">
-                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      生成中
-                    </span>
-                  ) : 'Lanternに聞く'}
-                </button>
-              </div>
-              {s.visible && s.text && (
-                <p
-                  className="text-xs leading-relaxed px-4 py-3 rounded-lg mt-2"
-                  style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
-                >
-                  {s.text}
-                </p>
+            {/* サムネイル */}
+            <a
+              href={`https://www.youtube.com/watch?v=${v.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <img
+                src={v.thumbnail || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`}
+                alt={v.title}
+                className="w-full aspect-video rounded-lg object-cover hover:opacity-80 transition-opacity"
+              />
+            </a>
+
+            {/* タイトル */}
+            <a
+              href={`https://www.youtube.com/watch?v=${v.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-[13px] leading-snug mt-1.5 block hover:text-accent transition-colors ${isDim ? 'text-ink-soft' : 'text-ink'}`}
+            >
+              {v.title}
+            </a>
+
+            {/* 再生回数・バッジ */}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-[11px] text-ink-faint tabular-nums">{v.view_count.toLocaleString()} 回</p>
+              {v.like_count > 0 && (
+                <p className="text-[11px] text-ink-faint tabular-nums">♡ {v.like_count.toLocaleString()}</p>
+              )}
+              {(v.privacy === 'private' || v.privacy === 'unlisted') && (
+                <span className="text-[9px] text-ink-faint border border-border px-1.5 py-0.5 rounded-full">
+                  {v.privacy === 'private' ? '非公開' : '限定公開'}
+                </span>
               )}
             </div>
+
+            {/* Lanternに聞くボタン */}
+            <div className="mt-2">
+              <button
+                onClick={() => handleAsk(v)}
+                disabled={s.loading}
+                className={`text-[10px] border px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                  s.visible
+                    ? 'border-accent text-accent bg-accent/10'
+                    : 'border-border text-ink-faint hover:bg-stone/60'
+                }`}
+              >
+                {s.loading ? (
+                  <span className="flex items-center gap-1">
+                    <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    生成中
+                  </span>
+                ) : 'Lanternに聞く'}
+              </button>
+            </div>
+
+            {/* Lanternの観察 */}
+            {s.visible && s.text && (
+              <p
+                className="text-xs leading-relaxed px-3 py-2.5 rounded-lg mt-2"
+                style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
+              >
+                {s.text}
+              </p>
+            )}
           </div>
         )
       })}
@@ -258,17 +260,13 @@ function VideoTimeline({ videos }) {
 // ─── スケルトン ─────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="animate-pulse">
+    <div className="scroll-container flex gap-4 overflow-x-auto pb-3">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex gap-5 py-4 border-b border-border">
-          <div className="w-10 space-y-1.5">
-            <div className="h-2 w-6 bg-parchment rounded ml-auto" />
-            <div className="h-3 w-9 bg-parchment rounded ml-auto" />
-          </div>
-          <div className="flex-1 space-y-2">
-            <div className="h-3.5 bg-parchment rounded w-4/5" />
-            <div className="h-2.5 bg-parchment rounded w-1/4" />
-          </div>
+        <div key={i} className="shrink-0 w-[200px] animate-pulse">
+          <div className="h-2.5 w-20 bg-parchment rounded mb-2" />
+          <div className="w-full aspect-video bg-parchment rounded-lg" />
+          <div className="h-3 bg-parchment rounded w-4/5 mt-2" />
+          <div className="h-2.5 bg-parchment rounded w-2/5 mt-1.5" />
         </div>
       ))}
     </div>
