@@ -122,18 +122,25 @@ def delete_tokens(user_id):
     db.table("youtube_tokens").delete().eq("user_id", user_id).execute()
 
 
+def _to_aware(dt):
+    """offset-naive な datetime を UTC の offset-aware に変換するヘルパー。"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def refresh_token_if_needed(user_id):
     row = get_tokens(user_id)
     if not row or not row.get("refresh_token"):
         return None
 
-    # token_expiry を DB から復元（設定しないと creds.expired が常に False になり期限切れを検知できない）
+    # DB の token_expiry を offset-aware な UTC datetime に変換
     expiry = None
     if row.get("token_expiry"):
         try:
-            expiry = datetime.fromisoformat(row["token_expiry"])
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
+            expiry = _to_aware(datetime.fromisoformat(row["token_expiry"]))
         except Exception:
             pass
 
@@ -146,10 +153,22 @@ def refresh_token_if_needed(user_id):
         scopes=_SCOPES,
         expiry=expiry,
     )
-    if not creds.valid:
-        print(f"[YouTube] token invalid/expired, refreshing... expiry={expiry}")
+
+    # creds.expiry が offset-naive の場合も UTC に統一（google-auth が内部で naive を返す場合の対策）
+    creds.expiry = _to_aware(creds.expiry)
+
+    try:
+        needs_refresh = not creds.valid
+    except TypeError:
+        # google-auth バージョンによって naive/aware が混在する場合のフォールバック
+        print(f"[YouTube] TypeError in creds.valid comparison, forcing refresh")
+        needs_refresh = True
+
+    if needs_refresh:
+        print(f"[YouTube] token invalid/expired, refreshing... expiry={creds.expiry}")
         try:
             creds.refresh(Request())
+            creds.expiry = _to_aware(creds.expiry)
             save_tokens(user_id, creds)
             print("[YouTube] token refreshed successfully")
         except Exception as e:
