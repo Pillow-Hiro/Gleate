@@ -585,6 +585,10 @@ def youtube_channel_insight():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
+    # APIパス・デバッグパスはFlaskのルーティングに委ねる（横取り防止）
+    if path.startswith('api/') or path.startswith('debug/'):
+        from flask import abort
+        abort(404)
     file_path = os.path.join(STATIC_DIR, path)
     if path and os.path.isfile(file_path):
         return send_from_directory(STATIC_DIR, path)
