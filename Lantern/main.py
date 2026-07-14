@@ -216,7 +216,38 @@ def goal_interview():
 
 @app.route("/api/debug/version")
 def debug_version():
-    return jsonify({"commit": "ceaac71", "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定")})
+    return jsonify({"commit": "7890d9a", "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定")})
+
+
+@app.route("/api/debug/routes")
+def list_routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            "endpoint": rule.endpoint,
+            "methods": sorted(rule.methods),
+            "path": str(rule),
+        })
+    routes.sort(key=lambda r: r["path"])
+    return jsonify(routes)
+
+
+@app.route("/api/debug/youtube-token")
+@require_auth
+def debug_youtube_token():
+    from modules.youtube import get_tokens, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET
+    row = get_tokens(g.user_id)
+    if not row:
+        return jsonify({"status": "no_tokens"})
+    return jsonify({
+        "status": "found",
+        "has_access_token": bool(row.get("access_token")),
+        "has_refresh_token": bool(row.get("refresh_token")),
+        "token_expiry": row.get("token_expiry"),
+        "channel_name": row.get("channel_name"),
+        "client_id_set": bool(YOUTUBE_CLIENT_ID),
+        "client_secret_set": bool(YOUTUBE_CLIENT_SECRET),
+    })
 
 
 @app.route("/api/debug/youtube-config")
