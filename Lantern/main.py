@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, send_from_directory, g, redirect
+from flask import Flask, request, jsonify, send_from_directory, g, redirect, abort
 from flask_cors import CORS
 import os
 import re
@@ -582,13 +582,29 @@ def youtube_channel_insight():
     return jsonify({"insight": insight})
 
 
+@app.route("/api/debug/static-check")
+def static_check():
+    index_path = os.path.join(STATIC_DIR, 'index.html')
+    return jsonify({
+        "static_dir": STATIC_DIR,
+        "static_dir_exists": os.path.exists(STATIC_DIR),
+        "index_html_exists": os.path.exists(index_path),
+    })
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
-    # APIパス・デバッグパスはFlaskのルーティングに委ねる（横取り防止）
-    if path.startswith('api/') or path.startswith('debug/'):
-        from flask import abort
+    # Flaskで定義済みのルートプレフィックスは横取りしない
+    _api_prefixes = ('api/', 'debug/', 'goals/', 'save')
+    if path.startswith(tuple(p for p in _api_prefixes if p.endswith('/'))) or path in _api_prefixes:
         abort(404)
+
+    index_path = os.path.join(STATIC_DIR, 'index.html')
+    if not os.path.exists(index_path):
+        # Render上でstatic/dist/index.htmlが存在しない場合はAPIサーバーとして動作
+        abort(404)
+
     file_path = os.path.join(STATIC_DIR, path)
     if path and os.path.isfile(file_path):
         return send_from_directory(STATIC_DIR, path)
