@@ -162,11 +162,15 @@ def refresh_token_if_needed(user_id):
         print(f"[YouTube] refreshing token... expiry={expiry}")
         try:
             creds.refresh(Request())
-            save_tokens(user_id, creds)
             print("[YouTube] token refreshed successfully")
         except Exception as e:
-            print(f"[YouTube] token refresh error: {e}")
+            print(f"[YouTube] token refresh FAILED: {type(e).__name__}: {e}")
             return None
+        # トークン保存は別 try に分離（DB エラーでリフレッシュ成功が消えないように）
+        try:
+            save_tokens(user_id, creds)
+        except Exception as e:
+            print(f"[YouTube] token save error (continuing): {type(e).__name__}: {e}")
     return creds
 
 
