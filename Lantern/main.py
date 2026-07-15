@@ -616,14 +616,23 @@ def static_check():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
-    # Flaskで定義済みのルートプレフィックスは横取りしない
+    # 登録済みルートのプレフィックスに一致するパスは横取りしない（動的チェック）
+    # /<path:path> が先にマッチしてしまう場合に備えたフォールバック
+    for rule in app.url_map.iter_rules():
+        if rule.endpoint in ('serve_react', 'static'):
+            continue
+        rule_str = str(rule).lstrip('/')
+        static_prefix = rule_str.split('<')[0]  # 変数部より手前の静的プレフィックスを抽出
+        if static_prefix and path.startswith(static_prefix):
+            abort(404)
+
+    # 明示的プレフィックスチェック（二重防御・将来追加ルートへの安全弁）
     _api_prefixes = ('api/', 'debug/', 'goals/', 'save')
-    if path.startswith(tuple(p for p in _api_prefixes if p.endswith('/'))) or path in _api_prefixes:
+    if any(path.startswith(p) for p in _api_prefixes) or path == 'save':
         abort(404)
 
     index_path = os.path.join(STATIC_DIR, 'index.html')
     if not os.path.exists(index_path):
-        # Render上でstatic/dist/index.htmlが存在しない場合はAPIサーバーとして動作
         abort(404)
 
     file_path = os.path.join(STATIC_DIR, path)
