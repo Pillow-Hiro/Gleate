@@ -91,7 +91,7 @@ def save_tokens(user_id, credentials):
     }
     try:
         from googleapiclient.discovery import build
-        youtube = build("youtube", "v3", credentials=credentials)
+        youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
         response = youtube.channels().list(part="snippet", mine=True).execute()
         if response.get("items"):
             ch = response["items"][0]
@@ -194,7 +194,7 @@ def refresh_token_if_needed(user_id):
 
 def _build_client(credentials):
     from googleapiclient.discovery import build
-    return build("youtube", "v3", credentials=credentials)
+    return build("youtube", "v3", credentials=credentials, cache_discovery=False)
 
 
 def get_channel_stats(user_id):
