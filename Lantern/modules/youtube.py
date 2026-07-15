@@ -81,14 +81,24 @@ def exchange_code_for_token(code, user_id):
 def save_tokens(user_id, credentials):
     db = _get_db()
     if not db:
+        print("[YouTube] save_tokens: no DB connection")
         return
+
+    print(f"[YouTube] save_tokens: user_id={user_id} has_token={bool(credentials.token)} has_refresh={bool(credentials.refresh_token)} expiry={credentials.expiry}")
+
     payload = {
         "user_id": user_id,
         "access_token": credentials.token,
-        "refresh_token": credentials.refresh_token,
         "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    # refresh_token が None の場合は DB の既存値を上書きしない
+    # （creds.refresh() 後は refresh_token が None になる場合がある）
+    if credentials.refresh_token:
+        payload["refresh_token"] = credentials.refresh_token
+    else:
+        print("[YouTube] save_tokens: refresh_token is None → preserving existing DB value")
+
     try:
         from googleapiclient.discovery import build
         youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
@@ -97,14 +107,22 @@ def save_tokens(user_id, credentials):
             ch = response["items"][0]
             payload["channel_id"] = ch["id"]
             payload["channel_name"] = ch["snippet"]["title"]
+            print(f"[YouTube] save_tokens: channel_name={payload['channel_name']}")
     except Exception as e:
-        print(f"[YouTube] channel fetch error: {e}")
+        print(f"[YouTube] save_tokens: channel fetch error (continuing): {e}")
 
     existing = db.table("youtube_tokens").select("id").eq("user_id", user_id).execute()
     if existing.data:
+        print("[YouTube] save_tokens: UPDATE existing row")
         db.table("youtube_tokens").update(payload).eq("user_id", user_id).execute()
+        print("[YouTube] save_tokens: UPDATE done")
     else:
+        if "refresh_token" not in payload:
+            print("[YouTube] save_tokens: INSERT skipped (no refresh_token)")
+            return
+        print("[YouTube] save_tokens: INSERT new row")
         db.table("youtube_tokens").insert(payload).execute()
+        print("[YouTube] save_tokens: INSERT done")
 
 
 def get_tokens(user_id):
