@@ -123,17 +123,26 @@ def delete_tokens(user_id):
 
 
 def refresh_token_if_needed(user_id):
+    print(f"[YouTube] refresh_token_if_needed START user_id={user_id}")
     row = get_tokens(user_id)
-    if not row or not row.get("refresh_token"):
+    if not row:
+        print("[YouTube] ERROR: no tokens found in DB")
         return None
+    if not row.get("refresh_token"):
+        print("[YouTube] ERROR: refresh_token missing in DB row")
+        return None
+
+    print(f"[YouTube] tokens OK: has_access={bool(row.get('access_token'))} token_expiry={row.get('token_expiry')} channel={row.get('channel_name')}")
+    print(f"[YouTube] client_id_set={bool(YOUTUBE_CLIENT_ID)} client_secret_set={bool(YOUTUBE_CLIENT_SECRET)}")
 
     # DB の token_expiry を datetime に変換（creds.expiry は書き換えない）
     expiry = None
     if row.get("token_expiry"):
         try:
             expiry = datetime.fromisoformat(row["token_expiry"])
-        except Exception:
-            pass
+            print(f"[YouTube] expiry parsed: {expiry} tzinfo={expiry.tzinfo}")
+        except Exception as e:
+            print(f"[YouTube] expiry parse FAILED: {e} raw={row.get('token_expiry')!r}")
 
     creds = Credentials(
         token=row["access_token"],
@@ -148,29 +157,38 @@ def refresh_token_if_needed(user_id):
     # expiry が NULL（初回保存など）は期限不明なので必ずリフレッシュ
     if expiry is None:
         needs_refresh = True
-        print("[YouTube] token_expiry NULL, forcing refresh")
+        print("[YouTube] token_expiry NULL → forcing refresh")
     else:
         try:
-            needs_refresh = not creds.valid
-        except TypeError:
+            valid = creds.valid
+            expired = creds.expired
+            needs_refresh = not valid
+            print(f"[YouTube] creds.valid={valid} creds.expired={expired} needs_refresh={needs_refresh}")
+        except TypeError as te:
             # google-auth の naive/aware 混在を手動 UTC 比較でフォールバック
             exp_utc = expiry if expiry.tzinfo else expiry.replace(tzinfo=timezone.utc)
             needs_refresh = datetime.now(timezone.utc) >= exp_utc - timedelta(seconds=300)
-            print(f"[YouTube] TypeError fallback: needs_refresh={needs_refresh}")
+            print(f"[YouTube] TypeError in creds.valid ({te}) → fallback needs_refresh={needs_refresh}")
 
     if needs_refresh:
-        print(f"[YouTube] refreshing token... expiry={expiry}")
+        print(f"[YouTube] refreshing token... current_expiry={expiry}")
         try:
             creds.refresh(Request())
-            print("[YouTube] token refreshed successfully")
+            print(f"[YouTube] token refreshed OK new_expiry={creds.expiry}")
         except Exception as e:
             print(f"[YouTube] token refresh FAILED: {type(e).__name__}: {e}")
+            print(traceback.format_exc())
             return None
         # トークン保存は別 try に分離（DB エラーでリフレッシュ成功が消えないように）
         try:
             save_tokens(user_id, creds)
+            print("[YouTube] tokens saved to DB")
         except Exception as e:
             print(f"[YouTube] token save error (continuing): {type(e).__name__}: {e}")
+    else:
+        print("[YouTube] token still valid, skip refresh")
+
+    print("[YouTube] refresh_token_if_needed END → returning creds")
     return creds
 
 
