@@ -167,7 +167,18 @@ function VideoTimeline({ videos }) {
   }
 
   return (
-    <div className="scroll-container flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
+    <div
+      className="timeline-scroll"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        overflowX: 'auto',
+        gap: '16px',
+        paddingBottom: '16px',
+        scrollSnapType: 'x mandatory',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
       {rows.map(v => {
         const pub = v.published_at
         const year = pub?.slice(0, 4)
@@ -177,7 +188,7 @@ function VideoTimeline({ videos }) {
         const isDim = v.privacy === 'private' || v.privacy === 'unlisted'
 
         return (
-          <div key={v.id} className="shrink-0 w-[200px] snap-start">
+          <div key={v.id} style={{ flexShrink: 0, width: '200px', scrollSnapAlign: 'start' }}>
             {/* 投稿日 */}
             <p className="text-[11px] text-ink-faint tabular-nums mb-1.5">{year}/{month}/{day}</p>
 
@@ -260,9 +271,18 @@ function VideoTimeline({ videos }) {
 // ─── スケルトン ─────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="scroll-container flex gap-4 overflow-x-auto pb-3">
+    <div
+      className="timeline-scroll"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        overflowX: 'auto',
+        gap: '16px',
+        paddingBottom: '16px',
+      }}
+    >
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="shrink-0 w-[200px] animate-pulse">
+        <div key={i} className="animate-pulse" style={{ flexShrink: 0, width: '200px' }}>
           <div className="h-2.5 w-20 bg-parchment rounded mb-2" />
           <div className="w-full aspect-video bg-parchment rounded-lg" />
           <div className="h-3 bg-parchment rounded w-4/5 mt-2" />
