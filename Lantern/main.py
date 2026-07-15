@@ -613,22 +613,37 @@ def static_check():
     })
 
 
+@app.route("/api/debug/serve-react-test")
+def serve_react_test():
+    """serve_reactが各パスをどう処理するかシミュレートする"""
+    _BLOCKED = ('api/', 'debug/', 'goals/', 'save', 'static/')
+    test_paths = [
+        'api/youtube/channel',
+        'api/youtube/videos',
+        'api/youtube/analytics',
+        'api/logs',
+        'debug/db-test',
+        'goals/save',
+        'save',
+        'today',
+        'dashboard',
+        'journal',
+        '',
+    ]
+    results = {}
+    for p in test_paths:
+        blocked = (p == 'save') or any(p.startswith(prefix) for prefix in _BLOCKED)
+        key = f'/{p}' if p else '/'
+        results[key] = 'abort(404)' if blocked else 'serve index.html / static file'
+    return jsonify(results)
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
-    # 登録済みルートのプレフィックスに一致するパスは横取りしない（動的チェック）
-    # /<path:path> が先にマッチしてしまう場合に備えたフォールバック
-    for rule in app.url_map.iter_rules():
-        if rule.endpoint in ('serve_react', 'static'):
-            continue
-        rule_str = str(rule).lstrip('/')
-        static_prefix = rule_str.split('<')[0]  # 変数部より手前の静的プレフィックスを抽出
-        if static_prefix and path.startswith(static_prefix):
-            abort(404)
-
-    # 明示的プレフィックスチェック（二重防御・将来追加ルートへの安全弁）
-    _api_prefixes = ('api/', 'debug/', 'goals/', 'save')
-    if any(path.startswith(p) for p in _api_prefixes) or path == 'save':
+    # シンプルで確実なガード条件（url_map動的チェックより予測可能）
+    _BLOCKED_PREFIXES = ('api/', 'debug/', 'goals/', 'save', 'static/')
+    if path == 'save' or any(path.startswith(p) for p in _BLOCKED_PREFIXES):
         abort(404)
 
     index_path = os.path.join(STATIC_DIR, 'index.html')
