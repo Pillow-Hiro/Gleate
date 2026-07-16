@@ -228,28 +228,36 @@ def _build_client(credentials):
 
 
 def get_channel_stats(user_id):
+    print(f"[YouTube] get_channel_stats START user_id={user_id}")
     creds = refresh_token_if_needed(user_id)
     if not creds:
+        print("[YouTube] get_channel_stats: creds is None → return None")
         return None
     try:
+        print("[YouTube] get_channel_stats: building youtube client...")
         youtube = _build_client(creds)
+        print("[YouTube] get_channel_stats: calling channels().list(mine=True)...")
         response = youtube.channels().list(
             part="statistics,snippet",
             mine=True,
         ).execute()
+        print(f"[YouTube] get_channel_stats: items_count={len(response.get('items', []))}")
         if not response.get("items"):
+            print("[YouTube] get_channel_stats: no items in response → return None")
             return None
         ch = response["items"][0]
         stats = ch.get("statistics", {})
         snippet = ch.get("snippet", {})
-        return {
+        result = {
             "channel_name": snippet.get("title"),
             "subscriber_count": int(stats.get("subscriberCount", 0)),
             "total_view_count": int(stats.get("viewCount", 0)),
             "video_count": int(stats.get("videoCount", 0)),
         }
+        print(f"[YouTube] get_channel_stats OK: channel={result['channel_name']}")
+        return result
     except Exception as e:
-        print(f"[YouTube] get_channel_stats error: {type(e).__name__}: {e}")
+        print(f"[YouTube] get_channel_stats FAILED: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return None
 
