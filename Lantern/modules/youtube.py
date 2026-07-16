@@ -126,11 +126,23 @@ def save_tokens(user_id, credentials):
 
 
 def get_tokens(user_id):
+    print(f"[YouTube] get_tokens: user_id={user_id}")
     db = _get_db()
     if not db:
+        print("[YouTube] get_tokens: DB connection is None")
         return None
-    result = db.table("youtube_tokens").select("*").eq("user_id", user_id).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table("youtube_tokens").select("*").eq("user_id", user_id).execute()
+        print(f"[YouTube] get_tokens: rows_found={len(result.data or [])}")
+        if not result.data:
+            print("[YouTube] get_tokens: NO TOKENS FOUND in DB")
+            return None
+        row = result.data[0]
+        print(f"[YouTube] get_tokens: has_access={bool(row.get('access_token'))} has_refresh={bool(row.get('refresh_token'))} expiry={row.get('token_expiry')}")
+        return row
+    except Exception as e:
+        print(f"[YouTube] get_tokens: DB error {type(e).__name__}: {e}")
+        return None
 
 
 def delete_tokens(user_id):
