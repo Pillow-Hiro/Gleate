@@ -613,6 +613,28 @@ def static_check():
     })
 
 
+@app.route("/api/youtube/channel-test")
+def youtube_channel_test():
+    """認証なしでget_tokens()とget_channel_stats()をテストする（デバッグ用・後で削除）"""
+    from modules.youtube import get_tokens, refresh_token_if_needed, get_channel_stats
+    user_id = "5efc736a-e32c-4904-af2e-98a6b9768032"
+    tokens = get_tokens(user_id)
+    result = {
+        "tokens_found": tokens is not None,
+        "has_access_token": bool(tokens.get("access_token")) if tokens else False,
+        "has_refresh_token": bool(tokens.get("refresh_token")) if tokens else False,
+        "token_expiry": tokens.get("token_expiry") if tokens else None,
+        "channel_name": tokens.get("channel_name") if tokens else None,
+    }
+    if tokens:
+        creds = refresh_token_if_needed(user_id)
+        result["creds_ok"] = creds is not None
+        if creds:
+            stats = get_channel_stats(user_id)
+            result["stats"] = stats
+    return jsonify(result)
+
+
 @app.route("/api/debug/serve-react-test")
 def serve_react_test():
     """serve_reactが各パスをどう処理するかシミュレートする"""
