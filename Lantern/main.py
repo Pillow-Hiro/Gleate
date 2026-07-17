@@ -515,10 +515,16 @@ def youtube_disconnect():
 @require_auth
 def youtube_channel():
     from modules.youtube import get_channel_stats
-    stats = get_channel_stats(g.user_id)
-    if stats is None:
-        return jsonify({"error": "未連携またはトークン取得失敗"}), 404
-    return jsonify(stats)
+    try:
+        stats = get_channel_stats(g.user_id)
+        if stats is None:
+            print(f"[YouTube] youtube_channel: stats is None for user_id={g.user_id}")
+            return jsonify({"error": "チャンネル情報の取得に失敗しました"}), 500
+        return jsonify(stats)
+    except Exception as e:
+        print(f"[YouTube] youtube_channel FAILED: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/youtube/videos")
