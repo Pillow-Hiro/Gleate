@@ -7,5 +7,5 @@ supabase>=2.0.0
 google-auth
 google-auth-oauthlib
 google-api-python-client
-PyJWT
+PyJWT[crypto]
 cryptography
