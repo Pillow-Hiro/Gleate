@@ -229,23 +229,30 @@ def _build_client(credentials):
     return build("youtube", "v3", credentials=credentials, cache_discovery=False)
 
 
+def _log(msg):
+    import sys
+    sys.stdout.write(msg + "\n")
+    sys.stdout.flush()
+
+
 def get_channel_stats(user_id):
-    print(f"[YouTube] get_channel_stats START user_id={user_id}")
+    _log(f"[YouTube] get_channel_stats START user_id={user_id}")
     creds = refresh_token_if_needed(user_id)
+    _log(f"[YouTube] get_channel_stats: creds={creds is not None}")
     if not creds:
-        print("[YouTube] get_channel_stats: creds is None → return None")
+        _log("[YouTube] get_channel_stats: creds is None → return None")
         return None
     try:
-        print("[YouTube] get_channel_stats: building youtube client...")
+        _log("[YouTube] get_channel_stats: building youtube client...")
         youtube = _build_client(creds)
-        print("[YouTube] get_channel_stats: calling channels().list(mine=True)...")
+        _log("[YouTube] get_channel_stats: calling channels().list(mine=True)...")
         response = youtube.channels().list(
             part="statistics,snippet",
             mine=True,
         ).execute()
-        print(f"[YouTube] get_channel_stats: items_count={len(response.get('items', []))}")
+        _log(f"[YouTube] get_channel_stats: response_keys={list(response.keys())} items_count={len(response.get('items', []))}")
         if not response.get("items"):
-            print("[YouTube] get_channel_stats: no items in response → return None")
+            _log("[YouTube] get_channel_stats: no items in response → return None")
             return None
         ch = response["items"][0]
         stats = ch.get("statistics", {})
@@ -256,11 +263,11 @@ def get_channel_stats(user_id):
             "total_view_count": int(stats.get("viewCount", 0)),
             "video_count": int(stats.get("videoCount", 0)),
         }
-        print(f"[YouTube] get_channel_stats OK: channel={result['channel_name']}")
+        _log(f"[YouTube] get_channel_stats OK: channel={result['channel_name']}")
         return result
     except Exception as e:
-        print(f"[YouTube] get_channel_stats FAILED: {type(e).__name__}: {e}")
-        print(traceback.format_exc())
+        _log(f"[YouTube] get_channel_stats FAILED: {type(e).__name__}: {e}")
+        _log(traceback.format_exc())
         return None
 
 
