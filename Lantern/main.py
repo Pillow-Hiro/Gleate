@@ -621,23 +621,47 @@ def static_check():
 
 @app.route("/api/youtube/channel-test")
 def youtube_channel_test():
-    """認証なしでget_tokens()とget_channel_stats()をテストする（デバッグ用・後で削除）"""
-    from modules.youtube import get_tokens, refresh_token_if_needed, get_channel_stats
+    """ステップ別診断エンドポイント（デバッグ用・後で削除）"""
+    from modules.youtube import get_tokens, refresh_token_if_needed
+    from googleapiclient.discovery import build
+    import traceback
+
     user_id = "5efc736a-e32c-4904-af2e-98a6b9768032"
-    tokens = get_tokens(user_id)
+
     result = {
-        "tokens_found": tokens is not None,
-        "has_access_token": bool(tokens.get("access_token")) if tokens else False,
-        "has_refresh_token": bool(tokens.get("refresh_token")) if tokens else False,
-        "token_expiry": tokens.get("token_expiry") if tokens else None,
-        "channel_name": tokens.get("channel_name") if tokens else None,
+        "step1_tokens": False,
+        "step2_creds": False,
+        "step3_youtube_build": False,
+        "step4_api_call": False,
+        "error": None,
+        "api_response": None,
     }
-    if tokens:
+
+    try:
+        tokens = get_tokens(user_id)
+        result["step1_tokens"] = tokens is not None
+
         creds = refresh_token_if_needed(user_id)
-        result["creds_ok"] = creds is not None
-        if creds:
-            stats = get_channel_stats(user_id)
-            result["stats"] = stats
+        result["step2_creds"] = creds is not None
+
+        if not creds:
+            result["error"] = "creds is None"
+            return jsonify(result)
+
+        youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
+        result["step3_youtube_build"] = True
+
+        response = youtube.channels().list(
+            part="snippet,statistics",
+            mine=True,
+        ).execute()
+        result["step4_api_call"] = True
+        result["api_response"] = str(response)
+
+    except Exception as e:
+        result["error"] = f"{type(e).__name__}: {str(e)}"
+        result["traceback"] = traceback.format_exc()
+
     return jsonify(result)
 
 
