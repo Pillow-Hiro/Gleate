@@ -280,6 +280,27 @@ def debug_youtube_config():
     })
 
 
+@app.route("/api/debug/review-test")
+@require_auth
+def review_test():
+    from modules.logs import load_logs
+    from datetime import datetime, timedelta
+
+    end = datetime.now().date()
+    start = end - timedelta(days=7)
+
+    all_logs = load_logs(g.user_id)
+    logs = [l for l in all_logs if str(start) <= l.get("date", "") <= str(end)]
+
+    return jsonify({
+        "user_id": g.user_id,
+        "start": str(start),
+        "end": str(end),
+        "log_count": len(logs),
+        "logs": logs,
+    })
+
+
 @app.route("/debug/db-test")
 @require_auth
 def db_test():
