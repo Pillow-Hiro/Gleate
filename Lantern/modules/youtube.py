@@ -172,6 +172,8 @@ def refresh_token_if_needed(user_id):
     if row.get("token_expiry"):
         try:
             expiry = datetime.fromisoformat(row["token_expiry"])
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
             print(f"[YouTube] expiry parsed: {expiry} tzinfo={expiry.tzinfo}")
         except Exception as e:
             print(f"[YouTube] expiry parse FAILED: {e} raw={row.get('token_expiry')!r}")
