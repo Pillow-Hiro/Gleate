@@ -27,6 +27,19 @@ _LANTERN_CONSTITUTION = """【AI憲法 — 絶対に守るルール】
 評価しない・観察する。余白を残す・短い・押し付けない。
 例：「記録が続いています」「続けることで、見えてくるものがあります」"""
 
+LANTERN_MESSAGES = [
+    "昨日の記録が、ここに残っています。",
+    "書いたことは、消えません。",
+    "今日も、ここから始められる。",
+    "記録が、少しずつ積み重なっています。",
+    "昨日のことが、言葉になっています。",
+    "違う種類のことが、同じ日に並んでいました。",
+    "書いたことの中に、静かな変化があります。",
+    "今日の記録が、明日の灯りになります。",
+    "ここに来た。それだけで十分です。",
+    "昨日は、いくつかの場所に手を伸ばした日だったようです。",
+]
+
 
 def call_claude(system_prompt, user_message, max_tokens=300):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -266,66 +279,71 @@ def get_daily_quote(yesterday_log=None, recent_logs=None):
     """
     import random
 
-    _fallbacks = [
-        "始める前の一歩が、一番遠い。",
-        "記録することは、自分を信じることだ。",
-        "続けることに、やがて意味が宿る。",
-        "小さな記録が、大きな地図になる。",
-        "今日も、ここから始められる。",
-    ]
+    # TODO: AI生成を再開する場合は以下のコメントを外す
+    # ──────────────────────────────────────────────────
+    # _fallbacks = [
+    #     "始める前の一歩が、一番遠い。",
+    #     "記録することは、自分を信じることだ。",
+    #     "続けることに、やがて意味が宿る。",
+    #     "小さな記録が、大きな地図になる。",
+    #     "今日も、ここから始められる。",
+    # ]
+    #
+    # if yesterday_log:
+    #     created = yesterday_log.get("created", "")
+    #     enjoyable = yesterday_log.get("enjoyable", "")
+    #     struggled = yesterday_log.get("struggled", "")
+    #     next_thing = yesterday_log.get("next", "")
+    #
+    #     system_prompt = f"""あなたはLanternです。昨日の活動記録を読んで、今朝届ける一言を書きます。
+    #
+    # {_LANTERN_CONSTITUTION}
+    #
+    # 【書き方】
+    # 昨日の具体的な内容に触れる（一般論にしない）。評価せず、観察する。短く、余白を残す。
+    # 例：「難しいと感じた日も、ちゃんと残っています」
+    # 例：「昨日の記録が、今日の足場になる」
+    # 例：「続けている、それが見えています」
+    #
+    # 40文字以内。自然な日本語の一文のみ。Markdownなし。"""
+    #
+    #     content_lines = []
+    #     if created:
+    #         content_lines.append(f"やったこと: {created}")
+    #     if enjoyable:
+    #         content_lines.append(f"よかったこと: {enjoyable}")
+    #     if struggled:
+    #         content_lines.append(f"詰まったこと: {struggled}")
+    #     if next_thing:
+    #         content_lines.append(f"次にやること: {next_thing}")
+    #
+    #     user_message = "昨日の記録：\n" + "\n".join(content_lines) + "\n\nこの記録を読んで、今朝の一言を。"
+    #     result = call_claude(system_prompt, user_message, max_tokens=70)
+    #     return result.strip() if result else random.choice(_fallbacks)
+    #
+    # if recent_logs:
+    #     logs_text = "\n".join(
+    #         f"- {l['date']}: {l.get('created', '')}"
+    #         for l in recent_logs[-3:] if l.get("created")
+    #     )
+    #     system_prompt = f"""あなたはLanternです。活動記録を読んで、今日の一言を添えます。
+    #
+    # {_LANTERN_CONSTITUTION}
+    #
+    # 静かに照らす一文を。40文字以内。Markdownなし。"""
+    #     result = call_claude(system_prompt, f"記録:\n{logs_text}\n\n今日の一言を。", max_tokens=60)
+    #     return result.strip() if result else random.choice(_fallbacks)
+    #
+    # system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に静かな一言を。
+    #
+    # {_LANTERN_CONSTITUTION}
+    #
+    # 30文字以内。寄り添う。Markdownなし。"""
+    # result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
+    # return result.strip() if result else random.choice(_fallbacks)
+    # ──────────────────────────────────────────────────
 
-    if yesterday_log:
-        created = yesterday_log.get("created", "")
-        enjoyable = yesterday_log.get("enjoyable", "")
-        struggled = yesterday_log.get("struggled", "")
-        next_thing = yesterday_log.get("next", "")
-
-        system_prompt = f"""あなたはLanternです。昨日の活動記録を読んで、今朝届ける一言を書きます。
-
-{_LANTERN_CONSTITUTION}
-
-【書き方】
-昨日の具体的な内容に触れる（一般論にしない）。評価せず、観察する。短く、余白を残す。
-例：「難しいと感じた日も、ちゃんと残っています」
-例：「昨日の記録が、今日の足場になる」
-例：「続けている、それが見えています」
-
-40文字以内。自然な日本語の一文のみ。Markdownなし。"""
-
-        content_lines = []
-        if created:
-            content_lines.append(f"やったこと: {created}")
-        if enjoyable:
-            content_lines.append(f"よかったこと: {enjoyable}")
-        if struggled:
-            content_lines.append(f"詰まったこと: {struggled}")
-        if next_thing:
-            content_lines.append(f"次にやること: {next_thing}")
-
-        user_message = "昨日の記録：\n" + "\n".join(content_lines) + "\n\nこの記録を読んで、今朝の一言を。"
-        result = call_claude(system_prompt, user_message, max_tokens=70)
-        return result.strip() if result else random.choice(_fallbacks)
-
-    if recent_logs:
-        logs_text = "\n".join(
-            f"- {l['date']}: {l.get('created', '')}"
-            for l in recent_logs[-3:] if l.get("created")
-        )
-        system_prompt = f"""あなたはLanternです。活動記録を読んで、今日の一言を添えます。
-
-{_LANTERN_CONSTITUTION}
-
-静かに照らす一文を。40文字以内。Markdownなし。"""
-        result = call_claude(system_prompt, f"記録:\n{logs_text}\n\n今日の一言を。", max_tokens=60)
-        return result.strip() if result else random.choice(_fallbacks)
-
-    system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に静かな一言を。
-
-{_LANTERN_CONSTITUTION}
-
-30文字以内。寄り添う。Markdownなし。"""
-    result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
-    return result.strip() if result else random.choice(_fallbacks)
+    return random.choice(LANTERN_MESSAGES)
 
 
 def get_monthly_review(period_logs, goals, last_month_logs=None):
