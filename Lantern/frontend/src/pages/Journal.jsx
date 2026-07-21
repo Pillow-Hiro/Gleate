@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { authFetch } from '../lib/supabase'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -146,10 +145,12 @@ function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
 }
 
 // ── 記録詳細 ──────────────────────────────────────────────────
-function LogDetail({ log, onDelete }) {
-  const navigate = useNavigate()
+function LogDetail({ log, onDelete, onUpdate }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [saving, setSaving] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -163,16 +164,90 @@ function LogDetail({ log, onDelete }) {
     }
   }
 
-  const fields = [
+  function handleEditStart() {
+    setEditForm({
+      created: log.created || '',
+      enjoyable: log.enjoyable || '',
+      struggled: log.struggled || '',
+      next: log.next || '',
+    })
+    setEditing(true)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const res = await authFetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: log.date, ...editForm }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      const data = await res.json()
+      if (onUpdate) {
+        onUpdate({ ...log, ...editForm, ai_response: data.ai_response ?? log.ai_response })
+      }
+      setEditing(false)
+    } catch {
+      // エラー時は編集状態を維持
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleCancel() {
+    setEditing(false)
+    setEditForm({})
+  }
+
+  const displayFields = [
     { key: 'created', label: 'やったこと' },
     { key: 'enjoyable', label: 'よかったこと' },
     { key: 'struggled', label: '困ったこと' },
     { key: 'next', label: '次にやること' },
   ]
 
+  const editFields = [
+    { field: 'created', label: 'やったこと', placeholder: '今日やったこと' },
+    { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと' },
+    { field: 'struggled', label: '困ったこと', placeholder: '詰まったこと' },
+    { field: 'next', label: '次にやること', placeholder: '次の一歩' },
+  ]
+
+  if (editing) {
+    return (
+      <div className="mt-3 space-y-3 pb-1">
+        {editFields.map(({ field, label, placeholder }) => (
+          <div key={field}>
+            <label className="text-[10px] text-ink-faint tracking-wider uppercase block mb-1">{label}</label>
+            <textarea
+              value={editForm[field]}
+              onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))}
+              placeholder={placeholder}
+              rows={3}
+              className="w-full bg-stone border border-border rounded-lg px-3 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors resize-none"
+            />
+          </div>
+        ))}
+        <div className="flex items-center justify-end gap-4 pt-1">
+          <button onClick={handleCancel} className="text-xs text-ink-faint hover:text-ink transition-colors">
+            キャンセル
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-xs text-forest border border-sage/50 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+          >
+            {saving ? '保存中...' : '保存する'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mt-3 space-y-2.5 pb-1">
-      {fields.map(({ key, label }) =>
+      {displayFields.map(({ key, label }) =>
         log[key] ? (
           <div key={key}>
             <span className="text-[10px] text-ink-faint tracking-wider uppercase">{label}</span>
@@ -199,7 +274,7 @@ function LogDetail({ log, onDelete }) {
           </>
         ) : (
           <>
-            <button onClick={() => navigate(`/?date=${log.date}`)} className="text-xs text-ink-faint hover:text-forest transition-colors">
+            <button onClick={handleEditStart} className="text-xs text-ink-faint hover:text-forest transition-colors">
               編集
             </button>
             <button onClick={() => setConfirmDelete(true)} className="text-xs text-ink-faint hover:text-red-500 transition-colors">
@@ -317,7 +392,7 @@ function ReviewSection({ title, type, description }) {
 }
 
 // ── リストアイテム ─────────────────────────────────────────────
-function LogItem({ log, onDelete }) {
+function LogItem({ log, onDelete, onUpdate }) {
   const [open, setOpen] = useState(false)
   const summary = log.created || log.enjoyable || log.struggled || log.next || '（記録あり）'
 
@@ -341,7 +416,7 @@ function LogItem({ log, onDelete }) {
       </button>
       <div className="grid transition-all duration-300 ease-out" style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
         <div className="overflow-hidden">
-          <LogDetail log={log} onDelete={onDelete} />
+          <LogDetail log={log} onDelete={onDelete} onUpdate={onUpdate} />
         </div>
       </div>
     </div>
@@ -365,6 +440,10 @@ export default function Journal() {
   function handleDelete(date) {
     setLogs(prev => prev.filter(l => l.date !== date))
     if (selectedDate === date) setSelectedDate(null)
+  }
+
+  function handleUpdate(updatedLog) {
+    setLogs(prev => prev.map(l => l.date === updatedLog.date ? updatedLog : l))
   }
 
   const now = new Date()
@@ -413,7 +492,7 @@ export default function Journal() {
         {selectedDate && selectedLog && (
           <div className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
             <p className="text-xs text-ink-faint tracking-wide mb-2">{dateDisplayJa(selectedDate)}</p>
-            <LogDetail log={selectedLog} onDelete={handleDelete} />
+            <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
           </div>
         )}
         {selectedDate && !selectedLog && (
@@ -483,7 +562,7 @@ export default function Journal() {
               </div>
               <div className="bg-stone/40 rounded-xl px-4">
                 {groups[month].map(log => (
-                  <LogItem key={log.date} log={log} onDelete={handleDelete} />
+                  <LogItem key={log.date} log={log} onDelete={handleDelete} onUpdate={handleUpdate} />
                 ))}
               </div>
             </section>
