@@ -625,12 +625,20 @@ def youtube_channel_test():
     from modules.youtube import get_tokens, refresh_token_if_needed
     from googleapiclient.discovery import build
     import traceback
+    import google.auth
+    import google.auth._helpers as ghelpers
 
     user_id = "5efc736a-e32c-4904-af2e-98a6b9768032"
 
+    utcnow_val = ghelpers.utcnow()
     result = {
+        "google_auth_version": google.auth.__version__,
+        "utcnow_aware": utcnow_val.tzinfo is not None,
+        "utcnow_value": str(utcnow_val),
         "step1_tokens": False,
         "step2_creds": False,
+        "creds_expiry": None,
+        "creds_expiry_tzinfo": None,
         "step3_youtube_build": False,
         "step4_api_call": False,
         "error": None,
@@ -647,6 +655,12 @@ def youtube_channel_test():
         if not creds:
             result["error"] = "creds is None"
             return jsonify(result)
+
+        result["creds_expiry"] = str(creds.expiry)
+        result["creds_expiry_tzinfo"] = str(creds.expiry.tzinfo) if creds.expiry else None
+
+        # expiry を None にして google-auth の内部比較を完全にスキップするアプローチ
+        creds.expiry = None
 
         youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
         result["step3_youtube_build"] = True
