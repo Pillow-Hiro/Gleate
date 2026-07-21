@@ -73,6 +73,21 @@ html.dark {
   display: none;
 }
 
+.timeline-grid-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.timeline-grid-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.timeline-grid-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.timeline-grid-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }

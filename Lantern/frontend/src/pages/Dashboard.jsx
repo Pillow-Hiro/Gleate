@@ -168,17 +168,20 @@ function VideoTimeline({ videos }) {
 
   return (
     <div
-      className="timeline-scroll"
+      className="timeline-grid-scroll"
       style={{
-        display: 'flex',
-        flexDirection: 'row',
-        overflowX: 'auto',
-        gap: '16px',
-        paddingBottom: '16px',
-        scrollSnapType: 'x mandatory',
-        WebkitOverflowScrolling: 'touch',
+        maxHeight: '600px',
+        overflowY: 'auto',
+        paddingRight: '4px',
       }}
     >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '16px',
+        }}
+      >
       {rows.map(v => {
         const pub = v.published_at
         const year = pub?.slice(0, 4)
@@ -188,7 +191,7 @@ function VideoTimeline({ videos }) {
         const isDim = v.privacy === 'private' || v.privacy === 'unlisted'
 
         return (
-          <div key={v.id} style={{ flexShrink: 0, width: '200px', scrollSnapAlign: 'start' }}>
+          <div key={v.id}>
             {/* 投稿日 */}
             <p className="text-[11px] text-ink-faint tabular-nums mb-1.5">{year}/{month}/{day}</p>
 
@@ -264,6 +267,7 @@ function VideoTimeline({ videos }) {
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
