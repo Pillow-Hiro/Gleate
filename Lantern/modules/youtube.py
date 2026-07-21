@@ -222,6 +222,11 @@ def refresh_token_if_needed(user_id):
     else:
         print("[YouTube] token still valid, skip refresh")
 
+    # google-auth が refresh 後に creds.expiry を naive datetime で上書きする場合があるため
+    # return 直前に aware 化して Python 3.14+ の offset-naive比較エラーを防ぐ
+    if creds.expiry and creds.expiry.tzinfo is None:
+        creds.expiry = creds.expiry.replace(tzinfo=timezone.utc)
+
     print("[YouTube] refresh_token_if_needed END → returning creds")
     return creds
 
