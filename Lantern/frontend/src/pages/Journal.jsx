@@ -351,7 +351,7 @@ function ReviewSection({ title, type, description }) {
           <p className="text-xs text-ink-faint mt-0.5">{description}</p>
         </div>
         <button onClick={generate} disabled={loading} className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50 shrink-0">
-          {loading ? '生成中...' : patterns !== null ? '再生成' : '振り返る'}
+          {loading ? '生成中...' : '振り返る'}
         </button>
       </div>
 
