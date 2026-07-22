@@ -429,6 +429,7 @@ export default function Journal() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
+  const [activeTab, setActiveTab] = useState('record')
 
   useEffect(() => {
     authFetch('/api/logs')
@@ -461,8 +462,24 @@ export default function Journal() {
   const groups = groupByMonth(filtered)
   const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a))
 
+  function TabButton({ id, label }) {
+    const isActive = activeTab === id
+    return (
+      <button
+        onClick={() => setActiveTab(id)}
+        className={`text-sm px-1 pb-2.5 border-b-2 -mb-px transition-colors ${
+          isActive
+            ? 'text-accent border-accent'
+            : 'text-ink-faint border-transparent hover:text-ink'
+        }`}
+      >
+        {label}
+      </button>
+    )
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* ヘッダー */}
       <div>
         <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-0.5">Journal</p>
@@ -472,101 +489,110 @@ export default function Journal() {
         )}
       </div>
 
-      {/* 今月の灯りバッジ + カレンダー */}
-      <section>
-        {thisMonthCount > 0 && (
-          <div className="flex justify-end mb-3">
-            <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
-              今月の灯り {thisMonthCount}日
-            </span>
-          </div>
-        )}
-        <div className="bg-stone/50 rounded-xl p-4">
-          <ActivityCalendar logs={logs} selectedDate={selectedDate || ''} onDateSelect={setSelectedDate} />
-          {!loading && logs.length === 0 && (
-            <p className="text-[11px] text-ink-faint text-center mt-3">
-              日付をタップして記録を始めましょう
-            </p>
-          )}
-        </div>
-        {selectedDate && selectedLog && (
-          <div className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
-            <p className="text-xs text-ink-faint tracking-wide mb-2">{dateDisplayJa(selectedDate)}</p>
-            <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
-          </div>
-        )}
-        {selectedDate && !selectedLog && (
-          <p className="text-xs text-ink-faint text-center mt-3">この日の記録はありません</p>
-        )}
-      </section>
-
-      <div className="h-px bg-border" />
-
-      <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
-
-      <div className="h-px bg-border" />
-
-      <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
-
-      <div className="h-px bg-border" />
-
-      {/* 検索 */}
-      <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
-          <circle cx="5.5" cy="5.5" r="4" />
-          <line x1="9" y1="9" x2="13" y2="13" />
-        </svg>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="記録を検索"
-          className="w-full bg-stone border border-border rounded-lg pl-8 pr-9 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors"
-        />
-        {search && (
-          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors">
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" viewBox="0 0 13 13">
-              <line x1="2" y1="2" x2="11" y2="11" />
-              <line x1="11" y1="2" x2="2" y2="11" />
-            </svg>
-          </button>
-        )}
+      {/* タブ */}
+      <div className="flex gap-4 border-b border-border">
+        <TabButton id="record" label="記録" />
+        <TabButton id="review" label="振り返り" />
       </div>
 
-      {/* ログ一覧 */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1,2,3].map(i => (
-            <div key={i} className="h-12 bg-stone rounded-lg animate-pulse" />
-          ))}
-        </div>
-      ) : logs.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-3xl mb-4 opacity-40">◇</p>
-          <p className="text-sm text-ink-soft">まだ記録がありません</p>
-          <p className="text-xs text-ink-faint mt-1.5">Homeから今日の記録を始めましょう</p>
-        </div>
-      ) : monthKeys.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-sm text-ink-faint">「{search.trim()}」の記録は見つかりませんでした</p>
-        </div>
-      ) : (
+      {/* 記録タブ */}
+      {activeTab === 'record' && (
         <div className="space-y-8">
-          {monthKeys.map(month => (
-            <section key={month}>
-              <div className="flex items-center gap-2.5 mb-3">
-                <h2 className="text-xs text-ink-soft tracking-wider font-medium">
-                  {monthLabel(groups[month][0].date)}
-                </h2>
-                <span className="text-[10px] text-ink-faint">{groups[month].length}日</span>
+          {/* 今月の灯りバッジ + カレンダー */}
+          <section>
+            {thisMonthCount > 0 && (
+              <div className="flex justify-end mb-3">
+                <span className="text-xs text-amber bg-amber-light border border-amber/20 px-2.5 py-0.5 rounded-full">
+                  今月の灯り {thisMonthCount}日
+                </span>
               </div>
-              <div className="bg-stone/40 rounded-xl px-4">
-                {groups[month].map(log => (
-                  <LogItem key={log.date} log={log} onDelete={handleDelete} onUpdate={handleUpdate} />
-                ))}
+            )}
+            <div className="bg-stone/50 rounded-xl p-4">
+              <ActivityCalendar logs={logs} selectedDate={selectedDate || ''} onDateSelect={setSelectedDate} />
+              {!loading && logs.length === 0 && (
+                <p className="text-[11px] text-ink-faint text-center mt-3">
+                  日付をタップして記録を始めましょう
+                </p>
+              )}
+            </div>
+            {selectedDate && selectedLog && (
+              <div className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
+                <p className="text-xs text-ink-faint tracking-wide mb-2">{dateDisplayJa(selectedDate)}</p>
+                <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
               </div>
-            </section>
-          ))}
+            )}
+            {selectedDate && !selectedLog && (
+              <p className="text-xs text-ink-faint text-center mt-3">この日の記録はありません</p>
+            )}
+          </section>
+
+          {/* 検索 */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
+              <circle cx="5.5" cy="5.5" r="4" />
+              <line x1="9" y1="9" x2="13" y2="13" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="記録を検索"
+              className="w-full bg-stone border border-border rounded-lg pl-8 pr-9 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors">
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" viewBox="0 0 13 13">
+                  <line x1="2" y1="2" x2="11" y2="11" />
+                  <line x1="11" y1="2" x2="2" y2="11" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* ログ一覧 */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-12 bg-stone rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-3xl mb-4 opacity-40">◇</p>
+              <p className="text-sm text-ink-soft">まだ記録がありません</p>
+              <p className="text-xs text-ink-faint mt-1.5">Homeから今日の記録を始めましょう</p>
+            </div>
+          ) : monthKeys.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-ink-faint">「{search.trim()}」の記録は見つかりませんでした</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {monthKeys.map(month => (
+                <section key={month}>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <h2 className="text-xs text-ink-soft tracking-wider font-medium">
+                      {monthLabel(groups[month][0].date)}
+                    </h2>
+                    <span className="text-[10px] text-ink-faint">{groups[month].length}日</span>
+                  </div>
+                  <div className="bg-stone/40 rounded-xl px-4">
+                    {groups[month].map(log => (
+                      <LogItem key={log.date} log={log} onDelete={handleDelete} onUpdate={handleUpdate} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 振り返りタブ */}
+      {activeTab === 'review' && (
+        <div className="space-y-8">
+          <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
+          <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
         </div>
       )}
     </div>
