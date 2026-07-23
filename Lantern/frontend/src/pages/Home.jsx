@@ -393,26 +393,26 @@ export default function Home() {
 
               const observations = []
               const latestEnjoyable = weekLogs.find(l => l.enjoyable)?.enjoyable
-              if (latestEnjoyable) observations.push(`「${snip(latestEnjoyable)}」が楽しかったこととして残っています。何がそうさせているのか、少し深めてみると見えてくるものがありそうです。`)
+              if (latestEnjoyable) observations.push(`「${snip(latestEnjoyable)}」が、今週の記録に残っています。その言葉は、どこから来ているのでしょう。`)
 
               const latestNext = weekLogs.find(l => l.next)?.next
-              if (latestNext) observations.push(`「${snip(latestNext)}」が次の実験として残っています。そこから何かが動き始めるかもしれません。`)
+              if (latestNext) observations.push(`「${snip(latestNext)}」が、この週に記録されています。それを書いた時のことを、今はどう感じますか。`)
 
               const latestStruggled = weekLogs.find(l => l.struggled)?.struggled
-              if (latestStruggled && !latestEnjoyable) observations.push(`「${snip(latestStruggled)}」が今週の記録に残っています。何が難しくさせているのか、視点を変えてみると見えてくることがあるかもしれません。`)
+              if (latestStruggled && !latestEnjoyable) observations.push(`「${snip(latestStruggled)}」が、今週の記録に残っています。その言葉を、今のあなたはどう感じますか。`)
 
               const eveningCount = weekLogs.filter(l => {
                 if (!l.saved_at) return false
                 const h = new Date(l.saved_at).getHours()
                 return h >= 20 || h < 5
               }).length
-              if (eveningCount >= 2) observations.push('夜の時間帯に記録が続いています。朝に書くとどう変わるか、試してみるのも面白いかもしれません。')
+              if (eveningCount >= 2) observations.push(`今週は夜に記録した日が${eveningCount}日ありました。あなたにとって、夜はどんな時間でしょう。`)
 
               if (observations.length === 0) {
                 const latestCreated = weekLogs[0]?.created
                 observations.push(latestCreated
-                  ? `「${snip(latestCreated)}」が記録されています。この先どんな変化があるか、少し意識してみると面白いかもしれません。`
-                  : '記録が続いています。この流れの中でひとつ実験してみると、新しい気づきが生まれるかもしれません。')
+                  ? `「${snip(latestCreated)}」が、この週に記録されています。この記録を、今のあなたはどう感じますか。`
+                  : '今週の記録が、ここに残っています。')
               }
 
               return (
