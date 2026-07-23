@@ -435,6 +435,9 @@ export default function Journal() {
   const [search, setSearch] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
   const [activeTab, setActiveTab] = useState('record')
+  const [modalDate, setModalDate] = useState(null)
+  const [modalForm, setModalForm] = useState({ created: '', enjoyable: '', struggled: '', next: '' })
+  const [modalSaving, setModalSaving] = useState(false)
 
   useEffect(() => {
     authFetch('/api/logs')
@@ -450,6 +453,39 @@ export default function Journal() {
 
   function handleUpdate(updatedLog) {
     setLogs(prev => prev.map(l => l.date === updatedLog.date ? updatedLog : l))
+  }
+
+  function handleDateClick(date) {
+    const existingLog = logs.find(l => l.date === date)
+    if (existingLog) {
+      setSelectedDate(date)
+    } else {
+      setSelectedDate(null)
+      setModalDate(date)
+      setModalForm({ created: '', enjoyable: '', struggled: '', next: '' })
+    }
+  }
+
+  async function handleModalSave() {
+    if (!modalForm.created.trim()) return
+    setModalSaving(true)
+    try {
+      const res = await authFetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: modalDate, ...modalForm }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      const data = await res.json()
+      const newLog = { date: modalDate, ...modalForm, ai_response: data.ai_response }
+      setLogs(prev => [...prev, newLog])
+      setSelectedDate(modalDate)
+      setModalDate(null)
+    } catch {
+      // エラー時はモーダルを維持
+    } finally {
+      setModalSaving(false)
+    }
   }
 
   const now = new Date()
@@ -513,7 +549,7 @@ export default function Journal() {
               </div>
             )}
             <div className="bg-stone/50 rounded-xl p-4">
-              <ActivityCalendar logs={logs} selectedDate={selectedDate || ''} onDateSelect={setSelectedDate} />
+              <ActivityCalendar logs={logs} selectedDate={selectedDate || ''} onDateSelect={handleDateClick} />
               {!loading && logs.length === 0 && (
                 <p className="text-[11px] text-ink-faint text-center mt-3">
                   日付をタップして記録を始めましょう
@@ -598,6 +634,66 @@ export default function Journal() {
         <div className="space-y-8">
           <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
           <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
+        </div>
+      )}
+
+      {/* 記録モーダル */}
+      {modalDate && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center sm:items-center sm:px-4"
+          onClick={() => setModalDate(null)}
+        >
+          <div
+            className="bg-cream w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl px-5 pt-5 pb-8 sm:py-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-ink-faint tracking-wider">{dateDisplayJa(modalDate)}</p>
+              <button
+                onClick={() => setModalDate(null)}
+                className="text-ink-faint hover:text-ink transition-colors p-1 -mr-1"
+                aria-label="閉じる"
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" viewBox="0 0 14 14">
+                  <line x1="2" y1="2" x2="12" y2="12" />
+                  <line x1="12" y1="2" x2="2" y2="12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { field: 'created',   label: 'やったこと',   placeholder: '今日やったこと', rows: 3 },
+                { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと（任意）', rows: 2 },
+                { field: 'struggled', label: '困ったこと',   placeholder: '詰まったこと（任意）', rows: 2 },
+                { field: 'next',      label: '次にやること', placeholder: '次の一歩（任意）', rows: 2 },
+              ].map(({ field, label, placeholder, rows }) => (
+                <div key={field}>
+                  <label className="text-[10px] text-ink-faint tracking-wider uppercase block mb-1">{label}</label>
+                  <textarea
+                    value={modalForm[field]}
+                    onChange={e => setModalForm(f => ({ ...f, [field]: e.target.value }))}
+                    placeholder={placeholder}
+                    rows={rows}
+                    className="w-full bg-stone border border-border rounded-lg px-3 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors resize-none"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-end gap-4 pt-1">
+              <button onClick={() => setModalDate(null)} className="text-xs text-ink-faint hover:text-ink transition-colors">
+                キャンセル
+              </button>
+              <button
+                onClick={handleModalSave}
+                disabled={modalSaving || !modalForm.created.trim()}
+                className="text-xs text-forest border border-sage/50 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+              >
+                {modalSaving ? '保存中...' : '記録する'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
