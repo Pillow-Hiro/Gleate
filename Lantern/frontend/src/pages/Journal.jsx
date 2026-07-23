@@ -42,6 +42,11 @@ function formatAge(isoStr) {
   return `${days}日前`
 }
 
+function truncateTitle(text, maxLength = 20) {
+  if (!text) return ''
+  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
+}
+
 function groupByMonth(logs) {
   const groups = {}
   ;[...logs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
@@ -404,7 +409,7 @@ function LogItem({ log, onDelete, onUpdate }) {
       >
         <div className="flex-1 min-w-0">
           <span className="text-xs text-ink-faint mr-2.5 shrink-0">{dayLabel(log.date)}</span>
-          <span className="text-sm text-ink truncate">{summary}</span>
+          <span className="text-sm text-ink">{truncateTitle(summary)}</span>
         </div>
         <svg
           width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
