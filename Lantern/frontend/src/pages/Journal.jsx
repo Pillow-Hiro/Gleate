@@ -241,7 +241,7 @@ function LogDetail({ log, onDelete, onUpdate }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="text-xs text-forest border border-sage/50 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+            className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
           >
             {saving ? '保存中...' : '保存する'}
           </button>
@@ -688,7 +688,7 @@ export default function Journal() {
               <button
                 onClick={handleModalSave}
                 disabled={modalSaving || !modalForm.created.trim()}
-                className="text-xs text-forest border border-sage/50 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+                className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
               >
                 {modalSaving ? '保存中...' : '記録する'}
               </button>

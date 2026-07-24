@@ -10,7 +10,7 @@ import { authFetch } from '../lib/supabase'
 function ConfirmModal({ onConfirm, onCancel, loading }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
-      <div className="absolute inset-0 bg-black/30" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative bg-cream dark:bg-stone border border-border rounded-2xl px-6 py-6 w-full max-w-xs shadow-sm">
         <p className="text-sm text-ink mb-6 leading-relaxed">YouTubeの連携を解除しますか？</p>
         <div className="flex gap-2 justify-end">
@@ -451,7 +451,7 @@ export default function Dashboard() {
           <button
             onClick={handleYouTubeConnect}
             disabled={youtubeConnecting}
-            className="text-xs text-forest border border-sage/40 px-4 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+            className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
           >
             {youtubeConnecting ? '移動中...' : 'YouTubeを連携する'}
           </button>
@@ -469,7 +469,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={() => setShowDisconnectModal(true)}
-              className="text-xs text-ink-faint border border-border px-3 py-1 rounded-full hover:bg-stone/60 transition-colors"
+              className="text-xs text-ink-faint border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-stone/60 transition-colors"
             >
               連携解除
             </button>
@@ -487,7 +487,7 @@ export default function Dashboard() {
                     <p className="text-sm text-ink-faint">動画の取得に失敗しました。</p>
                     <button
                       onClick={fetchYoutubeData}
-                      className="text-[11px] text-forest border border-sage/40 px-3 py-1 rounded-full hover:bg-sage-light transition-colors"
+                      className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors"
                     >
                       再試行
                     </button>
