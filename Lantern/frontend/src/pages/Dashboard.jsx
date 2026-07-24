@@ -167,21 +167,8 @@ function VideoTimeline({ videos }) {
   }
 
   return (
-    <div
-      className="timeline-grid-scroll"
-      style={{
-        maxHeight: '600px',
-        overflowY: 'auto',
-        paddingRight: '4px',
-      }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px',
-        }}
-      >
+    <div className="timeline-grid-scroll max-h-[600px] overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {rows.map(v => {
         const pub = v.published_at
         const year = pub?.slice(0, 4)
@@ -275,22 +262,12 @@ function VideoTimeline({ videos }) {
 // ─── スケルトン ─────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div
-      className="timeline-scroll"
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        overflowX: 'auto',
-        gap: '16px',
-        paddingBottom: '16px',
-      }}
-    >
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="animate-pulse" style={{ flexShrink: 0, width: '200px' }}>
-          <div className="h-2.5 w-20 bg-parchment rounded mb-2" />
-          <div className="w-full aspect-video bg-parchment rounded-lg" />
-          <div className="h-3 bg-parchment rounded w-4/5 mt-2" />
-          <div className="h-2.5 bg-parchment rounded w-2/5 mt-1.5" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[1, 2, 3, 4, 5, 6].map(i => (
+        <div key={i} className="animate-pulse">
+          <div className="w-full aspect-video bg-parchment rounded-lg mb-2" />
+          <div className="h-3 bg-parchment rounded w-4/5 mb-1.5" />
+          <div className="h-2.5 bg-parchment rounded w-2/5" />
         </div>
       ))}
     </div>
