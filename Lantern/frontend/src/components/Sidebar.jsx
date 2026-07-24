@@ -81,6 +81,7 @@ export default function Sidebar({ isDark, onToggleTheme }) {
         <span className="font-display text-sm tracking-[0.22em] text-ink">
           Lantern
         </span>
+        <p className="text-[10px] tracking-[0.05em] text-ink-faint mt-1">あなたの道は、あなたが照らす。</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">

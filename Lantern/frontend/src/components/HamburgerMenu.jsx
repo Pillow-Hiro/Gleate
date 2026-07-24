@@ -99,9 +99,12 @@ export default function HamburgerMenu({ open, onClose, isDark, onToggleTheme }) 
         }`}
       >
         <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-          <span className="font-display text-sm tracking-[0.22em] text-ink">
-            Lantern
-          </span>
+          <div>
+            <span className="font-display text-sm tracking-[0.22em] text-ink">
+              Lantern
+            </span>
+            <p className="text-[10px] tracking-[0.05em] text-ink-faint mt-1">あなたの道は、あなたが照らす。</p>
+          </div>
           <button
             onClick={onClose}
             className="text-ink-faint hover:text-ink transition-colors p-1"
