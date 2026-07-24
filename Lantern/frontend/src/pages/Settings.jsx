@@ -126,7 +126,7 @@ export default function Settings({ isDark, onToggleTheme }) {
         <SettingsRow label="バージョン">
           <span className="text-xs text-ink-faint">{APP_VERSION}</span>
         </SettingsRow>
-        <SettingsRow label="コンセプト" description="AI伴走者 — 評価しない、決めない、照らすだけ。">
+        <SettingsRow label="コンセプト" description="静かに寄り添う、あなただけの伴走者。">
           <span />
         </SettingsRow>
       </Section>
