@@ -180,7 +180,7 @@ function VideoTimeline({ videos }) {
         return (
           <div key={v.id}>
             {/* 投稿日 */}
-            <p className="text-[11px] text-ink-faint tabular-nums mb-1.5">{year}/{month}/{day}</p>
+            <p className="text-xs text-ink-faint tabular-nums mb-1.5">{year}/{month}/{day}</p>
 
             {/* サムネイル */}
             <a
@@ -201,16 +201,16 @@ function VideoTimeline({ videos }) {
               href={`https://www.youtube.com/watch?v=${v.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`text-[13px] leading-snug mt-1.5 block hover:text-accent transition-colors ${isDim ? 'text-ink-soft' : 'text-ink'}`}
+              className={`text-sm leading-snug mt-1.5 block hover:text-accent transition-colors ${isDim ? 'text-ink-soft' : 'text-ink'}`}
             >
               {v.title}
             </a>
 
             {/* 再生回数・バッジ */}
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <p className="text-[11px] text-ink-faint tabular-nums">{v.view_count.toLocaleString()} 回</p>
+              <p className="text-xs text-ink-faint tabular-nums">{v.view_count.toLocaleString()} 回</p>
               {v.like_count > 0 && (
-                <p className="text-[11px] text-ink-faint tabular-nums">♡ {v.like_count.toLocaleString()}</p>
+                <p className="text-xs text-ink-faint tabular-nums">♡ {v.like_count.toLocaleString()}</p>
               )}
               {(v.privacy === 'private' || v.privacy === 'unlisted') && (
                 <span className="text-[9px] text-ink-faint border border-border px-1.5 py-0.5 rounded-full">
@@ -245,8 +245,7 @@ function VideoTimeline({ videos }) {
             {/* Lanternの観察 */}
             {s.visible && s.text && (
               <p
-                className="text-xs leading-relaxed px-3 py-2.5 rounded-lg mt-2"
-                style={{ backgroundColor: 'var(--color-background-info)', color: 'var(--color-text-info)' }}
+                className="text-xs leading-relaxed px-3 py-2.5 rounded-lg mt-2 bg-background-info text-text-info"
               >
                 {s.text}
               </p>

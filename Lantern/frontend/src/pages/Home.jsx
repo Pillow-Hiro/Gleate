@@ -77,11 +77,7 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
   return (
     <div className="border border-border rounded-lg px-5 py-4 space-y-4">
       {existingLog && (
-        <span className="text-[10px] tracking-[0.1em] px-2 py-0.5 rounded-full"
-          style={{
-            backgroundColor: 'var(--color-sage-light)',
-            color: 'var(--color-sage)'
-          }}>
+        <span className="text-[10px] tracking-[0.1em] px-2 py-0.5 rounded-full bg-sage-light text-sage">
           記録済
         </span>
       )}
@@ -211,7 +207,7 @@ export default function Home() {
         <h1 className="font-display text-xl font-light text-ink tracking-wide">
           {dateJa}
           {streak >= 2 && (
-            <span className="text-[11px] text-ink-faint font-normal tracking-normal ml-2">· {streak}日目</span>
+            <span className="text-xs text-ink-faint font-normal tracking-normal ml-2">· {streak}日目</span>
           )}
         </h1>
       </div>

@@ -24,7 +24,7 @@ function SettingsRow({ label, description, children }) {
 function Section({ title, children }) {
   return (
     <section className="space-y-0">
-      <h2 className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-2">{title}</h2>
+      <h2 className="text-[10px] text-ink-faint tracking-[0.18em] uppercase mb-3">{title}</h2>
       <div className="bg-stone/50 rounded-xl px-4">{children}</div>
     </section>
   )
