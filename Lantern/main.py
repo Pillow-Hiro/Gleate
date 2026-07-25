@@ -683,37 +683,53 @@ def timeline_reflection():
 _MILESTONES = [30, 90, 180]
 
 
-@app.route("/api/milestone")
-@require_auth
-def milestone():
-    all_logs = load_logs(g.user_id)
+def _get_milestone_hit(user_id):
+    """節目判定のみ。AI生成は行わない。hit した場合は (hit_milestone, period_logs) を返す。"""
+    all_logs = load_logs(user_id)
     if not all_logs:
-        return jsonify({"has_milestone": False, "days": 0, "reflection": None})
+        return None, None, 0
 
     first_date = min(l.get("date", "") for l in all_logs)
     try:
         first_dt = datetime.strptime(first_date, "%Y-%m-%d").date()
     except ValueError:
-        return jsonify({"has_milestone": False, "days": 0, "reflection": None})
+        return None, None, 0
 
     today = datetime.now().date()
     days_since_start = (today - first_dt).days
 
-    hit_milestone = None
     for ms in _MILESTONES:
         if ms - 1 <= days_since_start <= ms + 1:
-            hit_milestone = ms
-            break
+            period_logs = [l for l in all_logs if first_dt.isoformat() <= l.get("date", "") <= today.isoformat()]
+            return ms, period_logs, days_since_start
+
+    return None, None, days_since_start
+
+
+@app.route("/api/milestone")
+@require_auth
+def milestone():
+    """節目判定のみ返す。AI生成は /api/milestone/reflection で行う。"""
+    hit_milestone, _, days_since_start = _get_milestone_hit(g.user_id)
 
     if hit_milestone is None:
-        return jsonify({"has_milestone": False, "days": days_since_start, "reflection": None})
+        return jsonify({"has_milestone": False, "days": days_since_start})
 
-    start_str = first_dt.isoformat()
-    end_str = today.isoformat()
-    period_logs = [l for l in all_logs if start_str <= l.get("date", "") <= end_str]
+    return jsonify({"has_milestone": True, "days": hit_milestone})
+
+
+@app.route("/api/milestone/reflection")
+@require_auth
+def milestone_reflection():
+    """節目の振り返りをAI生成して返す（フロントでキャッシュ済みの場合は呼ばない）。"""
+    days_param = request.args.get("days", type=int)
+    hit_milestone, period_logs, _ = _get_milestone_hit(g.user_id)
+
+    if hit_milestone is None or hit_milestone != days_param:
+        return jsonify({"reflection": None})
+
     reflection = generate_milestone_reflection(period_logs, hit_milestone)
-
-    return jsonify({"has_milestone": True, "days": hit_milestone, "reflection": reflection})
+    return jsonify({"reflection": reflection})
 
 
 @app.route("/api/debug/static-check")
