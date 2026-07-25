@@ -233,16 +233,16 @@ export default function Home() {
 
       {/* 節目バナー */}
       {milestone && (
-        <div className="bg-stone/50 border-l-2 border-accent rounded-r-xl px-4 py-3.5 space-y-0">
+        <div className="bg-forest dark:bg-[var(--color-primary)] rounded-xl px-4 py-3.5">
           <button
             onClick={() => setMilestoneOpen(o => !o)}
             className="w-full flex items-center justify-between gap-3 text-left"
           >
-            <p className="text-sm text-ink">記録を始めて{milestone.days}日が経ちました。</p>
+            <p className="text-sm text-cream dark:text-[var(--color-primary-text)]">記録を始めて{milestone.days}日が経ちました。</p>
             <svg
               width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.75"
               strokeLinecap="round" viewBox="0 0 12 12"
-              className={`shrink-0 text-ink-faint transition-transform duration-200 ${milestoneOpen ? 'rotate-180' : ''}`}
+              className={`shrink-0 text-cream/60 transition-transform duration-200 ${milestoneOpen ? 'rotate-180' : ''}`}
             >
               <path d="M2 4l4 4 4-4" />
             </svg>
@@ -251,16 +251,16 @@ export default function Home() {
           <div className={`grid transition-all duration-300 ease-out ${milestoneOpen ? 'grid-rows-[1fr] mt-3' : 'grid-rows-[0fr]'}`}>
             <div className="overflow-hidden space-y-3">
               {milestone.reflection && (
-                <div className="bg-stone/60 rounded-xl px-4 py-3.5 space-y-2">
-                  <p className="text-[10px] text-ink-faint tracking-[0.18em] uppercase">Lantern</p>
-                  <p className="text-sm text-ink leading-relaxed">{milestone.reflection.observation}</p>
-                  <p className="text-sm text-ink-soft italic leading-relaxed">{milestone.reflection.question}</p>
+                <div className="bg-white/10 dark:bg-black/20 rounded-xl px-4 py-3.5 space-y-2">
+                  <p className="text-[10px] text-cream/60 tracking-[0.18em] uppercase">Lantern</p>
+                  <p className="text-sm text-cream dark:text-[var(--color-primary-text)] leading-relaxed">{milestone.reflection.observation}</p>
+                  <p className="text-sm text-cream/80 dark:text-[var(--color-primary-text)]/80 italic leading-relaxed">{milestone.reflection.question}</p>
                 </div>
               )}
               <div className="flex justify-end">
                 <button
                   onClick={handleMilestoneDismiss}
-                  className="text-xs text-ink-faint hover:text-ink-soft transition-colors"
+                  className="text-xs text-cream/60 hover:text-cream/90 transition-colors"
                 >
                   閉じる
                 </button>
