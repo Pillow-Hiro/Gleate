@@ -26,6 +26,7 @@ from modules.ai import (
     get_weekly_review, get_monthly_review,
     call_claude_with_history,
     generate_channel_insight,
+    generate_timeline_reflection,
 )
 from modules.auth import require_auth
 
@@ -628,6 +629,54 @@ def youtube_channel_insight():
         return jsonify({"error": "動画データが必要です"}), 400
     insight = generate_channel_insight(videos)
     return jsonify({"insight": insight})
+
+
+@app.route("/api/timeline-reflection")
+@require_auth
+def timeline_reflection():
+    import calendar as _cal
+
+    try:
+        months_ago = int(request.args.get("months_ago", 1))
+    except ValueError:
+        months_ago = 1
+    months_ago = max(1, min(months_ago, 6))
+
+    today = datetime.now().date()
+
+    # months_ago ヶ月前の日付を計算（月末日をはみ出す場合はその月の末日に丸める）
+    past_month = today.month - months_ago
+    past_year = today.year
+    while past_month <= 0:
+        past_month += 12
+        past_year -= 1
+    try:
+        past_date = today.replace(year=past_year, month=past_month)
+    except ValueError:
+        last_day = _cal.monthrange(past_year, past_month)[1]
+        past_date = today.replace(year=past_year, month=past_month, day=last_day)
+
+    # past_date を含む週（月〜日）
+    week_start = past_date - timedelta(days=past_date.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    # 現在の直近7日
+    current_start = today - timedelta(days=7)
+
+    all_logs = load_logs(g.user_id)
+    past_logs = [l for l in all_logs if week_start.isoformat() <= l.get("date", "") <= week_end.isoformat()]
+    current_logs = [l for l in all_logs if current_start.isoformat() <= l.get("date", "") <= today.isoformat()]
+
+    reflection = generate_timeline_reflection(past_logs, current_logs, months_ago) if past_logs else None
+
+    return jsonify({
+        "past_date": past_date.isoformat(),
+        "past_week_start": week_start.isoformat(),
+        "past_week_end": week_end.isoformat(),
+        "past_logs": past_logs,
+        "current_logs": current_logs,
+        "reflection": reflection,
+    })
 
 
 @app.route("/api/debug/static-check")

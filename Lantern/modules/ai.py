@@ -369,6 +369,58 @@ YouTubeチャンネルの動画一覧から、このクリエイターの創作�
     return "動画の軌跡を観察しています。"
 
 
+def generate_timeline_reflection(past_logs, current_logs, months_ago):
+    """months_ago ヶ月前の同週と現在の記録を比較して観察・問いを生成する。"""
+    import json as _json, re as _re
+
+    system_prompt = LANTERN_IDENTITY + f"""
+
+【タイムライン振り返りの原則】
+- {months_ago}ヶ月前の記録と現在の記録を静かに観察する
+- 変化を評価しない・良い悪いを判断しない
+- ユーザー自身の言葉をそのまま使う
+- 過去を美化しない・現在を過大評価しない
+
+【出力形式】
+JSONのみで返す。前置き不要。Markdownなし。
+{{"observation": "観察テキスト（1〜2文）", "question": "答えを求めない問い（1文）"}}"""
+
+    past_text = _fmt_logs(past_logs) if past_logs else "（記録なし）"
+    current_text = _fmt_logs(current_logs) if current_logs else "（記録なし）"
+
+    user_message = f"""{months_ago}ヶ月前の記録：
+{past_text}
+
+現在の直近の記録：
+{current_text}
+
+過去と現在を観察して、評価せず静かに言語化してください。"""
+
+    raw = call_claude(system_prompt, user_message, max_tokens=200)
+    if not raw:
+        return {"observation": "記録が積み重なっています。", "question": "今、何を感じますか。"}
+
+    raw = raw.strip()
+    raw = _re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = _re.sub(r'\s*```$', '', raw)
+
+    try:
+        parsed = _json.loads(raw)
+        if "observation" in parsed:
+            return parsed
+    except _json.JSONDecodeError:
+        m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if m:
+            try:
+                parsed = _json.loads(m.group())
+                if "observation" in parsed:
+                    return parsed
+            except _json.JSONDecodeError:
+                pass
+
+    return {"observation": "記録が積み重なっています。", "question": "今、何を感じますか。"}
+
+
 def generate_video_insight(video, logs):
     has_logs = bool(logs and logs.strip())
 
