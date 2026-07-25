@@ -467,3 +467,54 @@ def generate_video_insight(video, logs):
         return result.strip()
     return "この動画の記録を観察しています。"
 
+
+def generate_milestone_reflection(logs, days):
+    """days 日間の記録を観察して節目の振り返りを生成する。"""
+    import json as _json, re as _re
+
+    system_prompt = LANTERN_IDENTITY + f"""
+
+【節目の振り返りの原則】
+- {days}日間の記録を静かに観察する
+- 継続を称えない・評価しない
+- ユーザー自身の言葉をそのまま使う
+- 事実とパターンを観察して伝える
+- 問いを1つ添える
+
+【出力形式】
+JSONのみで返す。前置き・Markdownなし。
+{{"observation": "観察テキスト（1〜2文）", "question": "答えを求めない問い（1文）"}}
+
+【禁止】
+「{days}日間、よく続けました」などの継続への称賛・「これからも続けましょう」などの励まし"""
+
+    logs_text = _fmt_logs(logs) if logs else "（記録なし）"
+    user_message = f"""{days}日間の記録：
+{logs_text}
+
+この期間の記録を観察して、評価せず静かに言語化してください。"""
+
+    raw = call_claude(system_prompt, user_message, max_tokens=200)
+    if not raw:
+        return {"observation": "記録が積み重なっています。", "question": "この期間、何が残りましたか。"}
+
+    raw = raw.strip()
+    raw = _re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = _re.sub(r'\s*```$', '', raw)
+
+    try:
+        parsed = _json.loads(raw)
+        if "observation" in parsed:
+            return parsed
+    except _json.JSONDecodeError:
+        m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if m:
+            try:
+                parsed = _json.loads(m.group())
+                if "observation" in parsed:
+                    return parsed
+            except _json.JSONDecodeError:
+                pass
+
+    return {"observation": "記録が積み重なっています。", "question": "この期間、何が残りましたか。"}
+
