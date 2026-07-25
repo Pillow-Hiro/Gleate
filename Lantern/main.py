@@ -27,6 +27,7 @@ from modules.ai import (
     call_claude_with_history,
     generate_channel_insight,
     generate_timeline_reflection,
+    generate_milestone_reflection,
 )
 from modules.auth import require_auth
 
@@ -677,6 +678,42 @@ def timeline_reflection():
         "current_logs": current_logs,
         "reflection": reflection,
     })
+
+
+_MILESTONES = [30, 90, 180]
+
+
+@app.route("/api/milestone")
+@require_auth
+def milestone():
+    all_logs = load_logs(g.user_id)
+    if not all_logs:
+        return jsonify({"has_milestone": False, "days": 0, "reflection": None})
+
+    first_date = min(l.get("date", "") for l in all_logs)
+    try:
+        first_dt = datetime.strptime(first_date, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"has_milestone": False, "days": 0, "reflection": None})
+
+    today = datetime.now().date()
+    days_since_start = (today - first_dt).days
+
+    hit_milestone = None
+    for ms in _MILESTONES:
+        if ms - 1 <= days_since_start <= ms + 1:
+            hit_milestone = ms
+            break
+
+    if hit_milestone is None:
+        return jsonify({"has_milestone": False, "days": days_since_start, "reflection": None})
+
+    start_str = first_dt.isoformat()
+    end_str = today.isoformat()
+    period_logs = [l for l in all_logs if start_str <= l.get("date", "") <= end_str]
+    reflection = generate_milestone_reflection(period_logs, hit_milestone)
+
+    return jsonify({"has_milestone": True, "days": hit_milestone, "reflection": reflection})
 
 
 @app.route("/api/debug/static-check")
