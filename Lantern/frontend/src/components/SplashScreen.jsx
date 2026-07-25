@@ -4,11 +4,11 @@ const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
 const FALLBACKS = [
-  '小さな一歩が、大きな旅になる。',
-  '続けることに、やがて意味が宿る。',
-  '昨日より少しでも前へ、それで十分。',
-  '迷いながら進む人が、一番遠くへ行く。',
-  '今日も記録することが、すでに答えだ。',
+  'あなたの記録が、あなたの灯りになる。',
+  '書いた言葉は、ここに残っている。',
+  '灯りは、外から来るのではない。',
+  '自分の言葉で、自分の道を照らす。',
+  '今日のことが、言葉になる。',
 ]
 
 function localDateStr(date = new Date()) {
