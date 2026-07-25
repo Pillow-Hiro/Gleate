@@ -160,15 +160,36 @@ export default function Home() {
   function refreshData() { setRefreshTick(t => t + 1) }
 
   useEffect(() => {
-    authFetch('/api/milestone')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.has_milestone) {
-          const seen = localStorage.getItem(`milestone_seen_${data.days}`)
-          if (!seen) setMilestone(data)
+    ;(async () => {
+      try {
+        const res = await authFetch('/api/milestone')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!data.has_milestone) return
+
+        const { days } = data
+        const seenKey = `milestone_seen_${days}`
+        if (localStorage.getItem(seenKey)) return
+
+        // reflection はキャッシュがあれば再利用、なければ1回だけ生成
+        const cacheKey = `milestone_reflection_${days}`
+        const cached = localStorage.getItem(cacheKey)
+        if (cached) {
+          setMilestone({ days, reflection: JSON.parse(cached) })
+          return
         }
-      })
-      .catch(() => {})
+
+        const rRes = await authFetch(`/api/milestone/reflection?days=${days}`)
+        if (!rRes.ok) return
+        const rData = await rRes.json()
+        if (rData.reflection) {
+          localStorage.setItem(cacheKey, JSON.stringify(rData.reflection))
+        }
+        setMilestone({ days, reflection: rData.reflection })
+      } catch {
+        // ネットワーク失敗時はバナー非表示のままにする
+      }
+    })()
   }, [])
 
   function handleMilestoneDismiss() {
@@ -278,7 +299,7 @@ export default function Home() {
             <div className="w-32 h-4 bg-white/20 rounded animate-pulse" />
           ) : (
             <p className="font-display text-cream dark:text-[var(--color-primary-text)] text-base font-light leading-relaxed tracking-wide">
-              {quote || '今日も記録することが、すでに答えだ。'}
+              {quote || '今日の記録が、ここに残る。'}
             </p>
           )}
         </div>
