@@ -125,7 +125,7 @@ function LogDetail({ log, onDelete, onUpdate }) {
     { field: 'created', label: 'やったこと', placeholder: '今日やったこと' },
     { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと' },
     { field: 'struggled', label: '困ったこと', placeholder: '詰まったこと' },
-    { field: 'next', label: '次にやること', placeholder: '次の一歩' },
+    { field: 'next', label: '次にやること', placeholder: '（任意）' },
   ]
 
   if (editing) {
@@ -170,8 +170,8 @@ function LogDetail({ log, onDelete, onUpdate }) {
         ) : null
       )}
       {log.ai_response && (
-        <div className="bg-sage-light rounded-lg px-3.5 py-3 mt-3">
-          <span className="text-[10px] text-sage tracking-wider uppercase block mb-1">Lantern</span>
+        <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 space-y-1.5 mt-3">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-sage">Lantern</p>
           <p className="text-sm text-forest leading-relaxed">{log.ai_response}</p>
         </div>
       )}
@@ -689,7 +689,7 @@ export default function Journal() {
                 { field: 'created',   label: 'やったこと',   placeholder: '今日やったこと', rows: 3 },
                 { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと（任意）', rows: 2 },
                 { field: 'struggled', label: '困ったこと',   placeholder: '詰まったこと（任意）', rows: 2 },
-                { field: 'next',      label: '次にやること', placeholder: '次の一歩（任意）', rows: 2 },
+                { field: 'next',      label: '次にやること', placeholder: '（任意）', rows: 2 },
               ].map(({ field, label, placeholder, rows }) => (
                 <div key={field}>
                   <label className="text-[10px] text-ink-faint tracking-wider uppercase block mb-1">{label}</label>

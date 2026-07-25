@@ -42,12 +42,13 @@ export default function Settings({ isDark, onToggleTheme }) {
   }, [])
 
   const streak = (() => {
-    let count = 0
-    const check = new Date()
     const logSet = new Set(logs.map(l => l.date))
+    const start = new Date()
+    if (!logSet.has(localDateStr())) start.setDate(start.getDate() - 1)
+    let count = 0
+    const check = new Date(start)
     for (let i = 0; i < 365; i++) {
-      const d = localDateStr(check)
-      if (!logSet.has(d)) break
+      if (!logSet.has(localDateStr(check))) break
       count++
       check.setDate(check.getDate() - 1)
     }
