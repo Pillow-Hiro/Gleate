@@ -281,7 +281,7 @@ Lantern/
         │   ├── HamburgerMenu.jsx ← モバイル用
         │   └── SplashScreen.jsx  ← 起動画面
         └── pages/
-            ├── Home.jsx          ← 今日の灯り・カレンダー・CTA
+            ├── Home.jsx          ← 今日の灯り・CTA
             ├── Journal.jsx       ← 記録一覧・詳細
             ├── Insights.jsx      ← 週次・月次・強み
             └── Settings.jsx      ← 設定
@@ -293,18 +293,19 @@ Lantern/
 
 ### Home（最重要）
 1. 今日の灯り（AIが生成・短い・余白を残す）
-2. 創作カレンダー（GitHub草風・4色・濃淡なし）
-   - 🟩 創作した
-   - 🟦 投稿した
-   - 🟨 振り返りした
-   - 🟪 実験した
-3. 今週の発見（AIが観察・評価しない）
-4. 今日の記録CTA
+2. 今週の発見（AIが観察・評価しない）
+3. 今日の記録CTA
+
+※ カレンダーはJournalページに実装済み（ActivityCalendar.jsx）。Homeには表示しない。
 
 ### Journal
 - 月別・日付順
 - タップで詳細表示
 - 検索機能
+- 創作カレンダー（ActivityCalendar.jsx）
+  - 現状は2状態のみ：記録あり（amber）/ 記録なし（neutral）
+  - 4色分類（創作した/投稿した/振り返りした/実験した）は将来構想
+  - 現在のlogsテーブル構造（フリーテキスト4項目）では活動種別の自動判定が困難なため、実装には別途スキーマ設計が必要
 
 ### Insights
 - 週次レビュー（できたこと・学んだこと・来週試したいこと）
