@@ -235,7 +235,21 @@ Lanternにおける「習慣化」とは、
 | AI | Anthropic Claude API（claude-sonnet-4-6） |
 | データ保存 | Supabase PostgreSQL |
 | デプロイ | Render |
-| 将来 | React Native（iOS/Android） |
+
+---
+
+## 将来ロードマップ（React Native移行）
+
+| フェーズ | 内容 | 前提条件 |
+|---|---|---|
+| 現行 | React + Vite（Web） | — |
+| フェーズA | React Native化（iOS/Android） | Web版の思想・UI・AI憲法確定後 |
+| フェーズB | Journaling Suggestions API導入（iOS限定） | フェーズA完了後 |
+
+注記：
+Journaling Suggestions FrameworkはApple純正のオンデバイスAPIであり、iOS専用。
+Android版は別途独自実装が必要になる（コスト高のため後回し可）。
+Web版（React + Vite）では利用不可のため、導入はReact Native化後のiOS版に限定される。
 
 ---
 
