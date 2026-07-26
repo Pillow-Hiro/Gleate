@@ -153,7 +153,7 @@ AIの役割は以下の4つのみ：
 | スタイリング | Tailwind CSS |
 | バックエンド | Flask（API専用） |
 | AI | Anthropic Claude API（claude-sonnet-4-6） |
-| データ保存 | JSONファイル（v0.5でDB移行） |
+| データ保存 | Supabase PostgreSQL |
 | デプロイ | Render |
 | 将来 | React Native（iOS/Android） |
 
