@@ -249,78 +249,56 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     return _parse_patterns_json(result)
 
 
-def get_daily_quote(yesterday_log=None, recent_logs=None):
-    """今日の灯りを生成。
-    - 前日の記録がある → 前日の内容を読んで今朝の一言を生成
-    - 前日の記録がない → 直近記録または汎用の言葉
+_DAILY_QUOTE_SYSTEM = LANTERN_IDENTITY + """
+
+【この応答について】
+昨日の記録を読んで、今朝そっと置く一言を書きます。
+
+書き方：
+- 昨日の記録の具体的な内容に触れる（一般論にしない）
+- 評価せず、観察する。または答えを求めない問いを置く
+- 記録がなかった日・空いた期間には一切触れない
+- 40文字以内。自然な日本語の一文のみ。前置きも引用符も付けない
+
+例：「難しいと感じたことも、記録に残っています。」
+例：「昨日書いた言葉が、ここにあります。」
+例：「あなたにとって、あの時間はどんな時間でしたか。」"""
+
+
+def get_daily_quote(yesterday_log=None):
+    """今日の灯りを生成し、(quote, source) を返す。
+
+    - 前日の記録がある → その内容を読んでAIが一言を生成（source='ai'）
+    - 前日の記録がない → LANTERN_MESSAGES から返す（source='fallback'・AI呼び出しなし）
+
+    離脱期間への言及を構造的に避けるため、前日以外のログはAIに渡さない。
     """
     import random
 
-    # TODO: AI生成を再開する場合は以下のコメントを外す
-    # ──────────────────────────────────────────────────
-    # _fallbacks = [
-    #     "あなたの記録が、ここに残っている。",
-    #     "書いた言葉は、消えない。",
-    #     "今日のことが、言葉になる。",
-    #     "灯りは、外から来るのではない。",
-    #     "自分の言葉で、自分の道を照らす。",
-    # ]
-    #
-    # if yesterday_log:
-    #     created = yesterday_log.get("created", "")
-    #     enjoyable = yesterday_log.get("enjoyable", "")
-    #     struggled = yesterday_log.get("struggled", "")
-    #     next_thing = yesterday_log.get("next", "")
-    #
-    #     system_prompt = f"""あなたはLanternです。昨日の活動記録を読んで、今朝届ける一言を書きます。
-    #
-    # {_LANTERN_CONSTITUTION}
-    #
-    # 【書き方】
-    # 昨日の具体的な内容に触れる（一般論にしない）。評価せず、観察する。短く、余白を残す。
-    # 例：「難しいと感じた日も、ちゃんと残っています」
-    # 例：「昨日の記録が、今日の足場になる」
-    # 例：「続けている、それが見えています」
-    #
-    # 40文字以内。自然な日本語の一文のみ。Markdownなし。"""
-    #
-    #     content_lines = []
-    #     if created:
-    #         content_lines.append(f"やったこと: {created}")
-    #     if enjoyable:
-    #         content_lines.append(f"よかったこと: {enjoyable}")
-    #     if struggled:
-    #         content_lines.append(f"詰まったこと: {struggled}")
-    #     if next_thing:
-    #         content_lines.append(f"次にやること: {next_thing}")
-    #
-    #     user_message = "昨日の記録：\n" + "\n".join(content_lines) + "\n\nこの記録を読んで、今朝の一言を。"
-    #     result = call_claude(system_prompt, user_message, max_tokens=70)
-    #     return result.strip() if result else random.choice(_fallbacks)
-    #
-    # if recent_logs:
-    #     logs_text = "\n".join(
-    #         f"- {l['date']}: {l.get('created', '')}"
-    #         for l in recent_logs[-3:] if l.get("created")
-    #     )
-    #     system_prompt = f"""あなたはLanternです。活動記録を読んで、今日の一言を添えます。
-    #
-    # {_LANTERN_CONSTITUTION}
-    #
-    # 静かに照らす一文を。40文字以内。Markdownなし。"""
-    #     result = call_claude(system_prompt, f"記録:\n{logs_text}\n\n今日の一言を。", max_tokens=60)
-    #     return result.strip() if result else random.choice(_fallbacks)
-    #
-    # system_prompt = f"""あなたはLanternです。まだ記録を始めていない人に静かな一言を。
-    #
-    # {_LANTERN_CONSTITUTION}
-    #
-    # 30文字以内。寄り添う。Markdownなし。"""
-    # result = call_claude(system_prompt, "今日の一言をください。", max_tokens=50)
-    # return result.strip() if result else random.choice(_fallbacks)
-    # ──────────────────────────────────────────────────
+    if not yesterday_log:
+        return random.choice(LANTERN_MESSAGES), "fallback"
 
-    return random.choice(LANTERN_MESSAGES)
+    fields = [
+        ("やったこと", yesterday_log.get("created", "")),
+        ("よかったこと", yesterday_log.get("enjoyable", "")),
+        ("詰まったこと", yesterday_log.get("struggled", "")),
+        ("次にやること", yesterday_log.get("next", "")),
+    ]
+    content_lines = [f"{label}: {value}" for label, value in fields if value]
+    if not content_lines:
+        return random.choice(LANTERN_MESSAGES), "fallback"
+
+    user_message = "昨日の記録：\n" + "\n".join(content_lines) + "\n\nこの記録を読んで、今朝の一言を。"
+    result = call_claude(_DAILY_QUOTE_SYSTEM, user_message, max_tokens=70)
+
+    # call_claude はタイムアウト時にユーザー向けの文言を返すため、灯りとして表示させない
+    if not result or result == _TIMEOUT_MESSAGE:
+        return random.choice(LANTERN_MESSAGES), "fallback"
+
+    quote = result.strip().strip("「」\"'")
+    if not quote:
+        return random.choice(LANTERN_MESSAGES), "fallback"
+    return quote, "ai"
 
 
 def get_monthly_review(period_logs, goals, last_month_logs=None):

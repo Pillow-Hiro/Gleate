@@ -90,6 +90,45 @@ def delete_log_by_date(date, user_id=None):
     q.execute()
 
 
+# ── 今日の灯り（日次キャッシュ） ──────────────────────────────────
+
+def load_daily_quote(user_id, date):
+    """その日の灯りが保存済みならテキストを返す。なければ None。"""
+    if not supabase or not user_id:
+        return None
+    try:
+        result = (
+            supabase.table("daily_quotes")
+            .select("quote")
+            .eq("user_id", user_id)
+            .eq("date", date)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            return result.data[0].get("quote") or None
+    except Exception as e:
+        print(f"[Supabase] load_daily_quote error: {e}")
+    return None
+
+
+def save_daily_quote(user_id, date, quote, source):
+    """その日の灯りを保存する。保存に失敗しても表示は妨げない。"""
+    if not supabase or not user_id or not quote:
+        return
+    try:
+        supabase.table("daily_quotes").insert({
+            "user_id": user_id,
+            "date": date,
+            "quote": quote,
+            "source": source,
+        }).execute()
+        print(f"[Supabase] daily_quote saved: {date} source={source}")
+    except Exception as e:
+        # (user_id, date) の unique 制約違反 = 別リクエストが先に保存した場合を含む
+        print(f"[Supabase] save_daily_quote error: {e}")
+
+
 # ── 目標 ─────────────────────────────────────────────────────────
 
 def load_goals():
