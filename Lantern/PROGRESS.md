@@ -167,6 +167,48 @@
 
 ---
 
+### 2026/07/27（品質固め）
+
+**今日の灯り AI生成の再開（REVIEW_v1.2 C2）**
+- [x] `get_daily_quote()` を再実装（modules/ai.py）。戻り値を `(quote, source)` に変更
+  - 前日の記録がある日のみAI生成する。前日記録がない日は `LANTERN_MESSAGES` を返し、AIを呼ばない
+  - 理由：離脱期間への言及（「〇日ぶりですね」等）を、プロンプトの指示ではなく**入力データの構造**で禁止するため。前日以外のログをAIに渡さない
+  - `call_claude()` はタイムアウト時に「AIの応答に時間がかかっています…」を返すため、この文言が灯りとして表示されないようガードを追加
+  - 存在しない `_LANTERN_CONSTITUTION` を参照していた旧コメント（L259–321）を削除。コメントを外すだけでは `NameError` になる状態だった
+- [x] Supabase `daily_quotes` テーブルを新設し、1ユーザー×1日1回だけ生成する構成に変更
+  - `load_daily_quote()` / `save_daily_quote()` を modules/logs.py に追加
+  - `/api/daily/quote` を「①キャッシュを引く ②なければ生成して保存」の順に変更（main.py）
+  - レスポンスは `quote` キーを維持したまま `cached` を追加したため、フロント側は無改修
+  - `unique (user_id, date)` により同日二重生成をDB側で防ぐ。制約違反は握り潰さずログに出し、表示は妨げない
+
+```sql
+create table public.daily_quotes (
+  id         bigserial primary key,
+  user_id    uuid        not null,
+  date       date        not null,
+  quote      text        not null,
+  source     text        not null default 'fallback',
+  created_at timestamptz not null default now(),
+  constraint daily_quotes_user_date_unique unique (user_id, date),
+  constraint daily_quotes_source_check check (source in ('ai', 'fallback'))
+);
+create index daily_quotes_user_date_idx on public.daily_quotes (user_id, date desc);
+alter table public.daily_quotes enable row level security;
+```
+
+**日付・継続日数ロジックの共通化（REVIEW_v1.2 C1・S1）**
+- [x] `frontend/src/lib/date.js` を新規作成（`localDateStr` / `todayStr` / `calcStreak`）
+- [x] 6ファイルの重複定義を削除しimportに置換（ActivityCalendar・SplashScreen・Home・Insights・Journal・Settings）
+- [x] streak計算を Home・Settings 双方から `calcStreak()` 呼び出しに統一
+- [x] Journal.jsx の `localDateStr` / `todayStr` はどこからも呼ばれていないデッドコードだったため削除（ESLint `no-unused-vars` が1件解消）
+
+**REVIEW_v1.2 の記載が実態と異なっていた項目（対応不要と判断）**
+- [−] S1 streak数値の不一致：既に修正済みだった（Settings.jsx にHomeと同一の「今日未記録なら昨日起点」処理あり）。ただし実装の二重化は残っていたため上記で共通化した
+- [−] S2 カードスタイル不一致：既に修正済みだった（LogDetail と PatternCard は同一クラス）
+- [−] C3 インラインスタイル残留：レビューの前提が誤り。`gridTemplateRows` は Dashboard・Journal・Home の3箇所で一貫して使われており、開閉アニメの動的値のためインラインが妥当
+
+---
+
 ## 進行中
 
 ---

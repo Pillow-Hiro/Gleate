@@ -20,6 +20,7 @@ from modules.logs import (
     get_week_str, get_month_str, get_month_display_str, get_week_display_str,
     get_current_weekly_goal, get_current_monthly_goal,
     delete_log_by_date,
+    load_daily_quote, save_daily_quote,
 )
 from modules.ai import (
     get_ai_response,
@@ -413,13 +414,20 @@ def generate_review():
 @app.route("/api/daily/quote")
 @require_auth
 def daily_quote():
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    cached = load_daily_quote(g.user_id, today)
+    if cached:
+        return jsonify({"quote": cached, "cached": True})
+
     logs = load_logs(g.user_id)
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     yesterday_log = next((l for l in logs if l.get("date") == yesterday), None)
-    recent_logs = logs[-7:] if logs else None
+
     from modules.ai import get_daily_quote
-    quote = get_daily_quote(yesterday_log=yesterday_log, recent_logs=recent_logs)
-    return jsonify({"quote": quote})
+    quote, source = get_daily_quote(yesterday_log=yesterday_log)
+    save_daily_quote(g.user_id, today, quote, source)
+    return jsonify({"quote": quote, "cached": False})
 
 
 @app.route("/api/splash/content")

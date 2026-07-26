@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, authFetch } from '../lib/supabase'
 import { APP_VERSION } from '../constants'
-
-function localDateStr(date = new Date()) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
+import { calcStreak } from '../lib/date'
 
 function SettingsRow({ label, description, children }) {
   return (
@@ -41,19 +35,7 @@ export default function Settings({ isDark, onToggleTheme }) {
       .catch(() => {})
   }, [])
 
-  const streak = (() => {
-    const logSet = new Set(logs.map(l => l.date))
-    const start = new Date()
-    if (!logSet.has(localDateStr())) start.setDate(start.getDate() - 1)
-    let count = 0
-    const check = new Date(start)
-    for (let i = 0; i < 365; i++) {
-      if (!logSet.has(localDateStr(check))) break
-      count++
-      check.setDate(check.getDate() - 1)
-    }
-    return count
-  })()
+  const streak = calcStreak(logs)
 
   async function handleSignOut() {
     setSigningOut(true)

@@ -9,15 +9,6 @@ function parseDate(dateStr) {
   return new Date(y, m - 1, d)
 }
 
-function localDateStr(date = new Date()) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function todayStr() { return localDateStr() }
-
 function monthLabel(dateStr) {
   const [y, m] = dateStr.split('-')
   return `${y}年${Number(m)}月`

@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { authFetch } from '../lib/supabase'
+import { localDateStr, todayStr, calcStreak } from '../lib/date'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
-
-function localDateStr(date = new Date()) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function todayStr() {
-  return localDateStr()
-}
 
 function formatDateJa(date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${WEEKDAYS_JA[date.getDay()]}曜日`
@@ -224,20 +214,7 @@ export default function Home() {
 
   const existingLog = logs.find(l => l.date === targetDate) || null
 
-  const streak = (() => {
-    const logSet = new Set(logs.map(l => l.date))
-    // 今日に記録があればそこから、なければ昨日から遡る
-    const start = new Date()
-    if (!logSet.has(todayStr())) start.setDate(start.getDate() - 1)
-    let count = 0
-    const check = new Date(start)
-    for (let i = 0; i < 365; i++) {
-      if (!logSet.has(localDateStr(check))) break
-      count++
-      check.setDate(check.getDate() - 1)
-    }
-    return count
-  })()
+  const streak = calcStreak(logs)
 
   return (
     <div className="space-y-8">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { localDateStr } from '../lib/date'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const API_BASE = import.meta.env.VITE_API_URL || ''
@@ -10,13 +11,6 @@ const FALLBACKS = [
   '自分の言葉で、自分の道を照らす。',
   '今日のことが、言葉になる。',
 ]
-
-function localDateStr(date = new Date()) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
 
 export default function SplashScreen({ onClose }) {
   const now = new Date()
