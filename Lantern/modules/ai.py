@@ -518,3 +518,62 @@ JSONのみで返す。前置き・Markdownなし。
 
     return {"observation": "記録が積み重なっています。", "question": "この期間、何が残りましたか。"}
 
+
+def generate_keyword_frequency(logs_text):
+    """ログテキストから頻出単語と出現回数を抽出して返す。感情分類・評価は行わない。"""
+    import json as _json, re as _re
+
+    if not logs_text.strip():
+        return []
+
+    system_prompt = """あなたはテキスト処理ツールです。与えられたログテキストから頻出単語を抽出し、出現回数をカウントします。
+
+【絶対に行ってはいけないこと】
+- 感情・評価（ポジティブ/ネガティブ）の分類
+- 変化・成長・傾向へのコメント
+- 自由文・解釈・説明の出力
+
+【出力形式】
+JSONのみ。前置き・説明・Markdownは一切不要。
+{"keywords": [{"word": "単語", "count": 数値}, ...]}
+
+【抽出ルール】
+- 名詞・動詞・形容詞を対象にする（助詞・助動詞・記号は除外）
+- 固有名詞（人名・地名・ツール名・作品名）も含める
+- 出現回数の多い順に最大10件を返す
+- 出現回数が1回のみの単語は含めない
+- 記録が少ない場合は {"keywords": []} を返す"""
+
+    user_message = f"以下のログテキストから頻出単語を抽出してください。\n\n{logs_text}"
+
+    raw = call_claude(system_prompt, user_message, max_tokens=400)
+    if not raw:
+        return []
+
+    raw = raw.strip()
+    raw = _re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = _re.sub(r'\s*```$', '', raw)
+
+    try:
+        parsed = _json.loads(raw)
+        if "keywords" in parsed and isinstance(parsed["keywords"], list):
+            return [
+                {"word": str(k.get("word", "")), "count": int(k.get("count", 1))}
+                for k in parsed["keywords"]
+                if k.get("word") and k.get("count", 0) > 1
+            ]
+    except (_json.JSONDecodeError, TypeError, ValueError):
+        m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if m:
+            try:
+                parsed = _json.loads(m.group())
+                if "keywords" in parsed and isinstance(parsed["keywords"], list):
+                    return [
+                        {"word": str(k.get("word", "")), "count": int(k.get("count", 1))}
+                        for k in parsed["keywords"]
+                        if k.get("word") and k.get("count", 0) > 1
+                    ]
+            except Exception:
+                pass
+
+    return []

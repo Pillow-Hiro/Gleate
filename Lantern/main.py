@@ -28,6 +28,7 @@ from modules.ai import (
     generate_channel_insight,
     generate_timeline_reflection,
     generate_milestone_reflection,
+    generate_keyword_frequency,
 )
 from modules.auth import require_auth
 
@@ -730,6 +731,47 @@ def milestone_reflection():
 
     reflection = generate_milestone_reflection(period_logs, hit_milestone)
     return jsonify({"reflection": reflection})
+
+
+@app.route("/api/insights/keywords")
+@require_auth
+def insights_keywords():
+    """指定期間のログから頻出キーワードを抽出して返す。キャッシュはフロントエンドで管理。"""
+    import calendar as _cal
+
+    period = request.args.get("period", "1m")
+    period_map = {"1m": 1, "3m": 3, "6m": 6}
+    months = period_map.get(period)
+    if months is None:
+        return jsonify({"error": "invalid period"}), 400
+
+    today = datetime.now().date()
+    year = today.year
+    month = today.month - months
+    while month <= 0:
+        month += 12
+        year -= 1
+    last_day = _cal.monthrange(year, month)[1]
+    cutoff = datetime(year, month, min(today.day, last_day)).date()
+
+    all_logs = load_logs(g.user_id)
+    period_logs = [l for l in all_logs if l.get("date", "") >= cutoff.isoformat()]
+
+    if not period_logs:
+        return jsonify({"keywords": [], "period": period})
+
+    logs_text = "\n".join(
+        " ".join(filter(None, [
+            l.get("created", ""),
+            l.get("enjoyable", ""),
+            l.get("struggled", ""),
+            l.get("next", ""),
+        ]))
+        for l in period_logs
+    )
+
+    keywords = generate_keyword_frequency(logs_text)
+    return jsonify({"keywords": keywords, "period": period})
 
 
 @app.route("/api/debug/static-check")
