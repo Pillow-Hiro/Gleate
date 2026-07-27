@@ -35,16 +35,38 @@ npx expo export --platform web
 
 ## EAS ビルド（iOS / Android）
 
-`.env` は EAS Build に渡らないため、環境変数は EAS 側に登録する必要がある。
+### 1. ログインとプロジェクト作成
 
 ```bash
 npx eas-cli login
-npx eas-cli env:create --scope project --name EXPO_PUBLIC_API_URL --value <値>
-npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value <値>
-npx eas-cli env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <値>
+npx eas-cli init
+```
+
+`eas init` は Expo 上にプロジェクトを作り、`app.json` に `extra.eas.projectId` を書き込む。
+生成された projectId はコミットしてよい（秘密情報ではない）。
+
+### 2. 環境変数の登録
+
+`.env` は gitignore されており EAS Build には渡らないため、EAS 側に登録する。
+既存の `.env` をそのまま3環境へ流し込むのが早い。
+
+```bash
+npx eas-cli env:push production --path .env
+npx eas-cli env:push preview --path .env
+npx eas-cli env:push development --path .env
+```
+
+個別に設定する場合は次の形式（EAS CLI 21 系では `env:create` ではなく `env:set`）。
+
+```bash
+npx eas-cli env:set production --name EXPO_PUBLIC_API_URL --value <値> --visibility plaintext
 ```
 
 値を `eas.json` に直接書かないのは、リポジトリに残さないため。
+`EXPO_PUBLIC_` 接頭辞の変数はクライアントバンドルに埋め込まれるため、
+`visibility` は `plaintext` でよい（`secret` にするとビルド時に読めない）。
+
+### 3. ビルド
 
 ```bash
 npx eas-cli build --profile preview --platform android   # 内部配布用APK
