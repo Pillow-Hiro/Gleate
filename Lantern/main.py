@@ -483,6 +483,17 @@ def splash_content_api():
 
 
 _FRONTEND_ORIGIN = "https://lantern-inky-three.vercel.app"
+# ネイティブアプリ（Expo）の復帰先。app.json の scheme と一致させること。
+_APP_SCHEME_ORIGIN = "lantern://dashboard"
+
+
+def _youtube_redirect_target(platform, status):
+    """連携完了後の戻り先を返す。
+    ネイティブアプリはブラウザから直接アプリへ戻す必要があるためスキームURLを使う。
+    """
+    if platform == "app":
+        return f"{_APP_SCHEME_ORIGIN}?youtube={status}"
+    return f"{_FRONTEND_ORIGIN}/dashboard?youtube={status}"
 
 
 @app.route("/api/youtube/auth-url")
@@ -492,8 +503,10 @@ def youtube_auth_url():
     print(f"[YouTube] REDIRECT_URI={REDIRECT_URI}")
     if not YOUTUBE_CLIENT_ID:
         return jsonify({"error": "YouTube API未設定"}), 503
-    url = get_auth_url(g.user_id)
-    print(f"[YouTube] auth_url先頭={url[:80]}")
+    # 未指定なら従来通りWeb扱い。既存のWebフロントは変更不要。
+    platform = "app" if request.args.get("platform") == "app" else "web"
+    url = get_auth_url(g.user_id, platform)
+    print(f"[YouTube] platform={platform} auth_url先頭={url[:80]}")
     return jsonify({"url": url})
 
 
@@ -502,26 +515,26 @@ def youtube_callback():
     logger.info(f"[YouTube-CB] ALL ARGS: {dict(request.args)}")
     logger.info(f"[YouTube-CB] REQUEST URL: {request.url}")
 
-    from modules.youtube import exchange_code_for_token, save_tokens
+    from modules.youtube import exchange_code_for_token, save_tokens, parse_state
     error = request.args.get("error")
     code = request.args.get("code")
-    user_id = request.args.get("state")
+    user_id, platform = parse_state(request.args.get("state"))
 
-    logger.info(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id}")
+    logger.info(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id} platform={platform}")
 
     if error or not code or not user_id:
         logger.info(f"[YouTube-CB] guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
-        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=error")
+        return redirect(_youtube_redirect_target(platform, "error"))
 
     try:
         credentials = exchange_code_for_token(code, user_id)
         save_tokens(user_id, credentials)
-        logger.info("[YouTube-CB] success -> connected")
-        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=connected")
+        logger.info(f"[YouTube-CB] success -> connected (platform={platform})")
+        return redirect(_youtube_redirect_target(platform, "connected"))
     except Exception as e:
         logger.error(f"[YouTube-CB] FAILED: {type(e).__name__}: {e}")
         logger.error(traceback.format_exc())
-        return redirect(f"{_FRONTEND_ORIGIN}/dashboard?youtube=error")
+        return redirect(_youtube_redirect_target(platform, "error"))
 
 
 @app.route("/api/youtube/status")

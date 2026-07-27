@@ -316,11 +316,36 @@ alter table public.daily_quotes enable row level security;
 
 ---
 
+### 2026/07/27（React Native移行 A6：Dashboard・YouTube連携）
+
+**OAuthのディープリンク対応（Google Cloud Console の変更は不要）**
+- [x] `state` を `user_id|platform` 形式に変更（`build_state` / `parse_state` を youtube.py に追加）
+- [x] `/api/youtube/auth-url?platform=app` でアプリからの開始を示す
+- [x] コールバックが platform を見て戻り先を切り替える（Web=Vercel / アプリ=`lantern://dashboard`）
+- [x] GoogleへのリダイレクトURIはFlaskのまま変更しないため、Console側の設定変更が不要
+- [x] platform を含まない旧形式の state は web として扱い、既存Webフロントは無改修
+
+**mobile側**
+- [x] `expo-web-browser` の `openAuthSessionAsync` で認証セッションを開き、`lantern://dashboard`
+      への復帰を戻り値で受け取る
+- [x] 接続・連携解除・チャンネル情報・サマリーカード
+- [x] `components/ViewsChart.jsx`：recharts はRN非対応のため `react-native-svg` で折れ線を自前描画
+- [x] `components/VideoTimeline.jsx`：動画一覧と1本ごとのAI観察。Web版は最大3カラムだが
+      モバイルは1カラム固定
+
+**テスト結果**
+- state の往復・旧形式の後方互換・リダイレクト先の切り替えをローカルで検証（全パターンOK）
+- クリーン本番ビルド成功（900モジュール／1,529KB）
+- A1〜A6の全20項目がバンドルに含まれることを確認
+- 開発サーバーでコンソールエラーなし
+- 未実施: 実機でのYouTube連携往復（`lantern://` はブラウザでは復帰しないため実機確認が必要）
+
+---
+
 ## 進行中
 
-- React Native移行 フェーズA。A1〜A5完了。残りは A6（Dashboard・YouTube OAuth）と
-  A7（Expo Web統一・EASビルド・配布）。
-- A6はYouTube OAuthのリダイレクトURIがWeb前提のため、ディープリンク対応の設計が別途必要。
+- React Native移行 フェーズA。A1〜A6完了。残りは A7（Expo Web統一・EASビルド・配布）。
+- A7では Apple Developer Program（$99/年）と Google Play Console（$25）の登録が必要。
 
 ---
 

@@ -45,7 +45,28 @@ def generate_code_challenge(verifier):
     return base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
 
 
-def get_auth_url(user_id):
+# state に user_id とクライアント種別を載せる。
+# GoogleへのリダイレクトURIはFlaskのままにし、コールバック側で
+# Web（Vercel）へ戻すかネイティブアプリ（lantern://）へ戻すかを切り替えるため。
+# これにより Google Cloud Console 側のリダイレクトURI設定を変更せずに済む。
+_STATE_SEPARATOR = "|"
+
+
+def build_state(user_id, platform="web"):
+    return f"{user_id}{_STATE_SEPARATOR}{platform}"
+
+
+def parse_state(state):
+    """state を (user_id, platform) に分解する。
+    platform を含まない古い形式の state もそのまま web として扱う。
+    """
+    if not state:
+        return None, "web"
+    user_id, _, platform = state.partition(_STATE_SEPARATOR)
+    return user_id or None, platform or "web"
+
+
+def get_auth_url(user_id, platform="web"):
     flow = _make_flow()
     code_verifier = generate_code_verifier()
     code_challenge = generate_code_challenge(code_verifier)
@@ -53,7 +74,7 @@ def get_auth_url(user_id):
     auth_url, _ = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
-        state=user_id,
+        state=build_state(user_id, platform),
         prompt="consent",
         code_challenge=code_challenge,
         code_challenge_method="S256",
