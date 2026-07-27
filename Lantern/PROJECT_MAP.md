@@ -106,7 +106,8 @@ YouTube連携専用ページ。記録との接点はAPIが/api/logsを参照す�
 
 ### Login.jsx　— ルート（未認証時）
 
-Supabase Auth メールOTPフロー。メールアドレス入力→OTPコード入力の2ステップ。
+Supabase Auth のメールアドレス＋パスワード認証（`signInWithPassword` / `signUp`）。
+ログインと新規登録をボタンで切り替える1画面構成。
 
 ---
 

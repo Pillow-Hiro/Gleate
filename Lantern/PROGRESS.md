@@ -120,7 +120,7 @@
 **React + Vite フロントエンド移行（v0.2〜v1.0）**
 - [x] React + Vite + Tailwind CSS v4 へ全面移行
 - [x] Supabase PostgreSQL へデータ移行（JSONファイル廃止）
-- [x] Supabase Auth 導入（メールOTP認証）
+- [x] Supabase Auth 導入（メールアドレス＋パスワード認証）
 - [x] Flask を API サーバー専用に再設計
 - [x] Vercel フロントエンドデプロイ（lantern-inky-three.vercel.app）
 - [x] Sidebar / HamburgerMenu / SplashScreen コンポーネント実装
@@ -252,9 +252,41 @@ alter table public.daily_quotes enable row level security;
 
 ---
 
+### 2026/07/27（React Native移行 A2・A3）
+
+**A2：Home画面**
+- [x] RecordForm / MilestoneBanner / WeeklyDiscovery に分割して移植。文言・API・観察文の生成規則は変更なし
+- [x] 動作確認済み（ログイン・今日の灯り表示・記録の保存）
+
+**A3：Journal画面（移植元715行）**
+- [x] ActivityCalendar（RNには ring がないため border に置換）
+- [x] LogItem / LogDetail（表示・編集・削除）
+- [x] ReviewSection（週次・月次）／ TimelineSection（過去との対話）
+- [x] Journal本体：タブ切替・今月の灯りバッジ・検索・月別一覧・記録モーダル
+- [x] lib/format.js を新設（日付表示・月グループ化などWeb版で Journal.jsx 内にあった関数を集約）
+
+**RN移植で共通して変えた点**
+- CSS grid の開閉アニメーションは条件付きレンダリングに置換
+- localStorage → AsyncStorage。同期的に初期値を読めないため、ReviewSection は
+  初期値を null 固定にして useEffect で復元する方式に変更
+- モーダルは fixed 配置ではなく RN の Modal コンポーネント
+- SVGアイコンはグリフに置換（react-native-svg を増やさない判断）
+
+**ドキュメント修正**
+- [x] CLAUDE.md・PROGRESS.md・PROJECT_MAP.md の「メールOTP認証」を実態
+      （メールアドレス＋パスワード）に修正
+
+**テスト結果**
+- クリーン本番ビルド成功（870モジュール／1,449KB）
+- A1〜A3の全18コンポーネントがバンドルに含まれることを確認
+- 開発サーバーでコンソールエラーなし
+- 未実施: ログイン後のJournal画面の操作確認（手動確認が必要）
+
+---
+
 ## 進行中
 
-- React Native移行 フェーズA。A1（土台）完了、A2（Home）以降が未着手。
+- React Native移行 フェーズA。A1〜A3完了、A4（Insights）以降が未着手。
 
 ---
 
