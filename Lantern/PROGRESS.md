@@ -342,10 +342,32 @@ alter table public.daily_quotes enable row level security;
 
 ---
 
+### 2026/07/27（React Native移行 A7 前半：EAS設定とExpo Webビルド確認）
+
+- [x] `mobile/eas.json` を作成（development / preview / production の3プロファイル）
+- [x] `mobile/README.md` を作成（セットアップ・EAS環境変数・実機確認の注意点）
+- [x] Expo Web の本番ビルドを実際に配信して描画を確認
+      （Splash→Login表示、テーマ適用、コンソールエラーなし）
+
+**EASの環境変数について**
+`.env` は gitignore されており EAS Build には渡らない。値を `eas.json` に直接書くと
+リポジトリに残るため、`eas env:create` でEAS側に登録する方針とした。手順は
+mobile/README.md に記載。
+
+**A7の残作業（いずれも要ユーザー操作）**
+- [ ] Expoアカウント作成と `eas login`
+- [ ] EAS環境変数の登録（EXPO_PUBLIC_API_URL / SUPABASE_URL / SUPABASE_ANON_KEY）
+- [ ] Apple Developer Program（$99/年）・Google Play Console（$25）の登録
+- [ ] 実機でのYouTube連携往復の確認（`lantern://` はブラウザでは復帰しないため）
+- [ ] Vercelの配信元を frontend/ から mobile/ のExpo Web出力へ切り替え
+- [ ] 切り替え後に frontend/ を廃止し、lib/date.js の重複を解消
+
+---
+
 ## 進行中
 
-- React Native移行 フェーズA。A1〜A6完了。残りは A7（Expo Web統一・EASビルド・配布）。
-- A7では Apple Developer Program（$99/年）と Google Play Console（$25）の登録が必要。
+- React Native移行 フェーズA。A1〜A6と A7前半が完了。
+  残りは配布まわり（アカウント登録・EASビルド・Vercel切り替え）で、いずれも要ユーザー操作。
 
 ---
 
