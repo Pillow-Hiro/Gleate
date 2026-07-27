@@ -29,6 +29,13 @@
       "expo-router",
       "expo-sharing",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "04815106-2180-4a87-b6e7-a17eb558d470"
+      }
+    },
+    "owner": "pillow_hiro"
   }
 }
