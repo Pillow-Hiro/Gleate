@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, SafeAreaView, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 
 // A1では認証ガードの往復を確認するためログアウトのみ実装する。

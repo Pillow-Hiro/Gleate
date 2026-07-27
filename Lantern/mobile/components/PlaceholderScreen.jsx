@@ -1,4 +1,5 @@
-import { SafeAreaView, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 // A1（土台）用の仮画面。A2以降で各画面の実装に置き換える。
 export default function PlaceholderScreen({ label, title, phase }) {
