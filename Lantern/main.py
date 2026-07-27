@@ -16,16 +16,13 @@ logger = logging.getLogger(__name__)
 
 from modules.logs import (
     load_logs, save_logs,
-    load_goals, save_goals_data,
-    get_week_str, get_month_str, get_month_display_str, get_week_display_str,
-    get_current_weekly_goal, get_current_monthly_goal,
+    load_goals,
     delete_log_by_date,
     load_daily_quote, save_daily_quote,
 )
 from modules.ai import (
     get_ai_response,
     get_weekly_review, get_monthly_review,
-    call_claude_with_history,
     generate_channel_insight,
     generate_timeline_reflection,
     generate_milestone_reflection,
@@ -99,130 +96,17 @@ def save():
     return jsonify({"status": "ok", "ai_response": ai_response})
 
 
-@app.route("/goals/save", methods=["POST"])
-@require_auth
-def save_goal():
-    data = request.json
-    goals = load_goals()
-
-    goal_type = data.get("type")
-    if goal_type == "vision":
-        goals["vision"] = data.get("vision", "")
-    elif goal_type == "monthly":
-        month = get_month_str()
-        goals.setdefault("monthly_goals", [])
-        goals["monthly_goals"] = [gl for gl in goals["monthly_goals"] if gl.get("month") != month]
-        if data.get("goal", "").strip():
-            goals["monthly_goals"].append({
-                "month": month,
-                "goal": data.get("goal", ""),
-                "set_at": datetime.now().isoformat(),
-            })
-    elif goal_type == "weekly":
-        week = get_week_str()
-        goals.setdefault("weekly_goals", [])
-        goals["weekly_goals"] = [gl for gl in goals["weekly_goals"] if gl.get("week") != week]
-        if data.get("goal", "").strip():
-            goals["weekly_goals"].append({
-                "week": week,
-                "goal": data.get("goal", ""),
-                "set_at": datetime.now().isoformat(),
-            })
-
-    save_goals_data(goals)
-    return jsonify({"status": "ok"})
-
-
-@app.route("/goals/suggest", methods=["POST"])
-@require_auth
-def suggest_goal():
-    data = request.json
-    goal_type = data.get("type", "weekly")
-    goals = load_goals()
-    logs = load_logs(g.user_id)
-
-    vision = goals.get("vision", "")
-    monthly_goal = get_current_monthly_goal(goals)
-    recent_logs = logs[-10:]
-
-    logs_summary = ""
-    for log in recent_logs[-5:]:
-        logs_summary += f"\n- {log['date']}: {log.get('created', '')}"
-
-    from modules.ai import call_claude
-    if goal_type == "monthly":
-        system_prompt = """あなたはLanternです。クリエイターの今月の目標を提案します。
-
-月レベルの目標：方向性・テーマ・今月挑戦したいこと（30日スパン）。
-ビジョンに向かって今月どんな実験や取り組みをするか、自然な1文で提案してください。
-マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
-50文字以内。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
-        user_message = f"""ビジョン: {vision if vision else '（未設定）'}
-直近の活動:{logs_summary if logs_summary else '（記録なし）'}
-
-今月（30日間）の目標を1文で提案してください。"""
-    else:
-        system_prompt = """あなたはLanternです。クリエイターの今週の目標を提案します。
-
-週レベルの目標：今週できる具体的な行動（5〜7日スパン）。
-今月の目標に向けて、今週何を試すか・作るか・続けるかを、自然な1文で提案してください。
-マークダウン記法・見出し・ラベル（「目標:」「理由:」など）・区切り線は一切使わない。
-50文字以内。才能や価値を評価せず、流行への迎合を勧めず、最終決定はクリエイター本人に委ねる。"""
-        context = f"今月の目標: {monthly_goal}" if monthly_goal else ""
-        user_message = f"""ビジョン: {vision if vision else '（未設定）'}
-{context}
-直近の活動:{logs_summary if logs_summary else '（記録なし）'}
-
-今週（5〜7日間）の具体的な行動目標を1文で提案してください。"""
-
-    result = call_claude(system_prompt, user_message, max_tokens=80)
-    if result:
-        return jsonify({"suggestion": result})
-
-    fallback = "今月は、一つのことに集中してみてはどうでしょう。小さな完成体験が積み重なります。" if goal_type == "monthly" else "今週は、一つ試せることを実行してみましょう。小さく始めるほど続きやすいものです。"
-    return jsonify({"suggestion": fallback})
-
-
-@app.route("/goals/interview", methods=["POST"])
-@require_auth
-def goal_interview():
-    data = request.json
-    messages = data.get("messages", [])
-
-    system_prompt = """あなたはLanternです。会話の流れを読みながら、クリエイターが自分のビジョンを言語化するのをサポートします。
-
-【ヒアリングの原則】
-- 会話履歴を必ず踏まえて、次の問いを自然に決める
-- 最初は現在の活動・取り組みを聞く
-- 次に将来の状態や、誰かに届いたときの気持ちを掘り下げる
-- 3〜4往復の会話でビジョン文（「〜でありたい」「〜したい」形）を提案する
-- ビジョンが固まったら、文末に【ビジョン:（提案文）】を付ける
-
-各メッセージは短く（100文字以内）。押しつけず、相手の言葉を引き出す。決めるのは本人。"""
-
-    if not messages:
-        return jsonify({
-            "response": "こんにちは。一緒にあなたのビジョンを言葉にしていきましょう。\n\n今、どんな活動に取り組んでいますか？",
-            "step": 0,
-        })
-
-    if messages[0]["role"] == "assistant":
-        messages = [{"role": "user", "content": "ビジョンヒアリングを始めてください"}] + messages
-
-    result = call_claude_with_history(system_prompt, messages, max_tokens=200)
-    if result:
-        vision_match = re.search(r'【ビジョン[:：](.+?)】', result)
-        vision = vision_match.group(1).strip() if vision_match else None
-        return jsonify({"response": result, "vision": vision, "step": len(messages)})
-
-    return jsonify({
-        "response": "もう少し教えてください。あなたの取り組みについて、どんなことが好きですか？",
-        "step": len(messages),
-    })
-
+# --- 診断用エンドポイント ---
+# デバッグ経路は本番の攻撃面になるため、以下の2つ以外は削除した。
+# 追加するときは必ず @require_auth を付け、g.user_id で対象を絞ること。
+# 特に service_role キーを使う Supabase クエリは user_id で必ずフィルタする
+# （フィルタ漏れは他ユーザーのデータ漏洩に直結する）。
 
 @app.route("/api/debug/version")
 def debug_version():
+    # 認証なしで残している。デプロイ後の稼働バージョン確認を curl 一発でやるため。
+    # 返すのは commit / branch / OAuth のリダイレクトURI のみで、いずれも機密ではない
+    # （リダイレクトURIは OAuth 中にユーザーのブラウザから見える値）。
     # コミットはハードコードしない。以前は固定文字列を返していたため、
     # 何をデプロイしても同じ値が返り、稼働バージョンの判定を誤らせた。
     # RENDER_GIT_COMMIT は Render が自動で設定する。ローカルでは未設定になる。
@@ -233,22 +117,10 @@ def debug_version():
     })
 
 
-@app.route("/api/debug/routes")
-def list_routes():
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            "endpoint": rule.endpoint,
-            "methods": sorted(rule.methods),
-            "path": str(rule),
-        })
-    routes.sort(key=lambda r: r["path"])
-    return jsonify(routes)
-
-
 @app.route("/api/debug/youtube-token")
 @require_auth
 def debug_youtube_token():
+    # 認証必須・g.user_id の範囲だけを返す。実機でのYouTube連携の切り分けに使う。
     from modules.youtube import get_tokens, refresh_token_if_needed, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET
     row = get_tokens(g.user_id)
     if not row:
@@ -285,92 +157,11 @@ def debug_youtube_token():
     return jsonify(result)
 
 
-@app.route("/api/debug/youtube-config")
-def debug_youtube_config():
-    from modules.youtube import REDIRECT_URI, YOUTUBE_CLIENT_ID
-    return jsonify({
-        "redirect_uri": REDIRECT_URI,
-        "client_id_set": bool(YOUTUBE_CLIENT_ID)
-    })
-
-
-@app.route("/api/debug/review-test")
-@require_auth
-def review_test():
-    from modules.logs import load_logs
-    from datetime import datetime, timedelta
-
-    end = datetime.now().date()
-    start = end - timedelta(days=7)
-
-    all_logs = load_logs(g.user_id)
-    logs = [l for l in all_logs if str(start) <= l.get("date", "") <= str(end)]
-
-    return jsonify({
-        "user_id": g.user_id,
-        "start": str(start),
-        "end": str(end),
-        "log_count": len(logs),
-        "logs": logs,
-    })
-
-
-@app.route("/debug/db-test")
-@require_auth
-def db_test():
-    from modules.logs import supabase
-    try:
-        result = supabase.table("logs").select("id, date, user_id").limit(3).execute()
-        return jsonify({"status": "ok", "rows": result.data, "count": len(result.data or [])})
-    except Exception as e:
-        import traceback
-        return jsonify({"status": "error", "error": str(e), "traceback": traceback.format_exc()}), 500
-
-
-@app.route("/debug/insert-test")
-@require_auth
-def insert_test():
-    from modules.logs import supabase, _to_db
-    from datetime import datetime
-    dummy = {
-        "date": "1970-01-01",
-        "created": "debug test",
-        "enjoyable": "", "struggled": "", "next": "",
-        "saved_at": datetime.now().isoformat(),
-    }
-    row = _to_db(dummy, g.user_id)
-    try:
-        supabase.table("logs").delete().eq("date", "1970-01-01").eq("user_id", g.user_id).execute()
-        result = supabase.table("logs").insert(row).execute()
-        supabase.table("logs").delete().eq("date", "1970-01-01").eq("user_id", g.user_id).execute()
-        return jsonify({"status": "ok", "inserted": result.data})
-    except Exception as e:
-        import traceback
-        return jsonify({"status": "error", "error": str(e), "traceback": traceback.format_exc()}), 500
-
-
 @app.route("/api/logs", methods=["GET"])
 @require_auth
 def get_logs_api():
     logs = load_logs(g.user_id)
     return jsonify(logs)
-
-
-@app.route("/api/vision", methods=["GET"])
-@require_auth
-def get_vision():
-    goals = load_goals()
-    return jsonify({"vision": goals.get("vision", "")})
-
-
-@app.route("/api/vision", methods=["POST"])
-@require_auth
-def save_vision_api():
-    data = request.json
-    goals = load_goals()
-    goals["vision"] = data.get("vision", "")
-    save_goals_data(goals)
-    return jsonify({"status": "ok"})
 
 
 @app.route("/api/logs/<date>", methods=["DELETE"])
@@ -803,101 +594,6 @@ def insights_keywords():
 
     keywords = generate_keyword_frequency(logs_text)
     return jsonify({"keywords": keywords, "period": period})
-
-
-@app.route("/api/debug/static-check")
-def static_check():
-    index_path = os.path.join(STATIC_DIR, 'index.html')
-    return jsonify({
-        "static_dir": STATIC_DIR,
-        "static_dir_exists": os.path.exists(STATIC_DIR),
-        "index_html_exists": os.path.exists(index_path),
-    })
-
-
-@app.route("/api/youtube/channel-test")
-def youtube_channel_test():
-    """ステップ別診断エンドポイント（デバッグ用・後で削除）"""
-    from modules.youtube import get_tokens, refresh_token_if_needed
-    from googleapiclient.discovery import build
-    import traceback
-    import google.auth
-    import google.auth._helpers as ghelpers
-
-    user_id = "5efc736a-e32c-4904-af2e-98a6b9768032"
-
-    utcnow_val = ghelpers.utcnow()
-    result = {
-        "google_auth_version": google.auth.__version__,
-        "utcnow_aware": utcnow_val.tzinfo is not None,
-        "utcnow_value": str(utcnow_val),
-        "step1_tokens": False,
-        "step2_creds": False,
-        "creds_expiry": None,
-        "creds_expiry_tzinfo": None,
-        "step3_youtube_build": False,
-        "step4_api_call": False,
-        "error": None,
-        "api_response": None,
-    }
-
-    try:
-        tokens = get_tokens(user_id)
-        result["step1_tokens"] = tokens is not None
-
-        creds = refresh_token_if_needed(user_id)
-        result["step2_creds"] = creds is not None
-
-        if not creds:
-            result["error"] = "creds is None"
-            return jsonify(result)
-
-        result["creds_expiry"] = str(creds.expiry)
-        result["creds_expiry_tzinfo"] = str(creds.expiry.tzinfo) if creds.expiry else None
-
-        # expiry を None にして google-auth の内部比較を完全にスキップするアプローチ
-        creds.expiry = None
-
-        youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
-        result["step3_youtube_build"] = True
-
-        response = youtube.channels().list(
-            part="snippet,statistics",
-            mine=True,
-        ).execute()
-        result["step4_api_call"] = True
-        result["api_response"] = str(response)
-
-    except Exception as e:
-        result["error"] = f"{type(e).__name__}: {str(e)}"
-        result["traceback"] = traceback.format_exc()
-
-    return jsonify(result)
-
-
-@app.route("/api/debug/serve-react-test")
-def serve_react_test():
-    """serve_reactが各パスをどう処理するかシミュレートする"""
-    _BLOCKED = ('api/', 'debug/', 'goals/', 'save', 'static/')
-    test_paths = [
-        'api/youtube/channel',
-        'api/youtube/videos',
-        'api/youtube/analytics',
-        'api/logs',
-        'debug/db-test',
-        'goals/save',
-        'save',
-        'today',
-        'dashboard',
-        'journal',
-        '',
-    ]
-    results = {}
-    for p in test_paths:
-        blocked = (p == 'save') or any(p.startswith(prefix) for prefix in _BLOCKED)
-        key = f'/{p}' if p else '/'
-        results[key] = 'abort(404)' if blocked else 'serve index.html / static file'
-    return jsonify(results)
 
 
 @app.route('/', defaults={'path': ''})

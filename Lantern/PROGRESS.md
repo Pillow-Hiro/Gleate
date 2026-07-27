@@ -364,6 +364,51 @@ mobile/README.md に記載。
 
 ---
 
+### 2026/07/28（本番デバッグ経路の削除と死んだルートの整理）
+
+**セキュリティ修正**
+
+- [x] `/api/youtube/channel-test` を削除
+      `@require_auth` がなく実ユーザーUUIDがハードコードされていた。
+      本番で誰でも叩け、保存済みOAuthトークンでYouTubeチャンネル情報を返していた。
+- [x] `/debug/db-test` を削除
+      `@require_auth` はあったが、`logs` を user_id フィルタなしで service_role 取得
+      していたため、他ユーザーのUUIDが認証済みユーザー全員に見えていた。
+
+**不要ルートの削除**
+
+- [x] debug経路の整理：`/api/debug/routes` `/api/debug/youtube-config`
+      `/api/debug/review-test` `/debug/insert-test` `/api/debug/static-check`
+      `/api/debug/serve-react-test` を削除
+- [x] 死んだ `goals` / `vision` ルート5個を削除
+      （`/goals/save` `/goals/suggest` `/goals/interview` `/api/vision` GET/POST）
+      参照元は `templates/goals.html` のみで、`render_template` がコード上に存在せず
+      templates/ は配信されていない（v0.x時代の遺産）。
+- [x] 不要になったimportを整理（`save_goals_data` `get_week_str` `get_month_str`
+      `get_month_display_str` `get_week_display_str` `get_current_weekly_goal`
+      `get_current_monthly_goal` `call_claude_with_history`）
+
+main.py 923行 → 618行（-305行）
+
+**残した診断エンドポイントと理由**
+
+| ルート | 認証 | 理由 |
+|---|---|---|
+| `/api/debug/version` | なし | デプロイ後の稼働バージョン確認に使う。返すのは commit / branch / OAuthリダイレクトURI のみで機密なし |
+| `/api/debug/youtube-token` | あり | `g.user_id` の範囲だけを返す。A7の実機YouTube検証で必要 |
+
+**検証結果: OK**
+
+- 削除した13ルートすべてGETで404を返すことを確認
+- 残したルートが401（＝生存・認証必須）を返すことを確認
+- `/api/debug/version` が200を返すことを確認
+- frontend/mobile が実際に呼ぶ18エンドポイントが全て残存していることを確認
+- pyflakes クリーン（未使用import・未定義名なし）
+- 認証なしで残るルートは `/` `/<path>` `/api/debug/version` `/api/splash/content`
+  `/api/youtube/callback` の5つのみ。ユーザーデータを返すルートは全て認証必須
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。
