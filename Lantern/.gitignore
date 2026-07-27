@@ -4,3 +4,9 @@ __pycache__/
 MCP_API.txt
 static/dist/
 static/
+
+# git worktree の実体（node_modules と別チェックアウトを含むため追跡しない）
+.claude/worktrees/
+
+# Windows の `> nul` リダイレクトで生成されるゴミファイル
+nul
