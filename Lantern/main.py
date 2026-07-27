@@ -223,7 +223,14 @@ def goal_interview():
 
 @app.route("/api/debug/version")
 def debug_version():
-    return jsonify({"commit": "7890d9a", "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定")})
+    # コミットはハードコードしない。以前は固定文字列を返していたため、
+    # 何をデプロイしても同じ値が返り、稼働バージョンの判定を誤らせた。
+    # RENDER_GIT_COMMIT は Render が自動で設定する。ローカルでは未設定になる。
+    return jsonify({
+        "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
+        "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
+        "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定"),
+    })
 
 
 @app.route("/api/debug/routes")
