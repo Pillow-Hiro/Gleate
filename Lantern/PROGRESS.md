@@ -284,9 +284,43 @@ alter table public.daily_quotes enable row level security;
 
 ---
 
+### 2026/07/27（React Native移行 A4・A5）
+
+**A4：Insights画面**
+- [x] 記録密度マップ（ActivityCalendarを読み取り専用で表示）
+- [x] 過去記録との比較（1/3/6/12ヶ月前の最近傍ログ）
+- [x] キーワードの変化（KeywordSection・AsyncStorageで1日TTLキャッシュ）
+- [−] 過去との比較はWeb版が sm 以上で横並びだったが、モバイルでは常に縦並びにした。
+      横並びだと1カラムの幅が狭すぎて記録本文が読めないため
+
+**A5：Settings・SplashScreen**
+- [x] Settings：アクティビティ／テーマ切替／エクスポート／ログアウト／バージョン
+- [x] SplashScreen：Animated APIでフェードイン、タップで閉じる
+- [x] lib/theme.js を新設。Web版が localStorage + html.dark でやっていたテーマ管理を
+      NativeWind の colorScheme API + AsyncStorage に置き換えた
+- [x] constants.js（APP_VERSION）を移植
+
+**つまずいた点**
+- `expo-file-system` がWeb向けに解決できないモジュール（`pathUtilities`）を参照しており、
+  Expo Webのバンドルが失敗した。`lib/exportLogs.js`（ネイティブ＝共有シート）と
+  `lib/exportLogs.web.js`（Web＝Blobダウンロード）に分け、Metroのプラットフォーム別解決で
+  切り替える方式にして解消。Webバンドルから `expo-file-system` が完全に消えることを確認済み
+- SplashScreenの暗幕 `View` がタップを奪い、画面を閉じられなかった。`pointerEvents="none"` で解消
+
+**テスト結果**
+- クリーン本番ビルド成功（875モジュール／1,461KB）
+- A1〜A5の全18項目がバンドルに含まれることを確認
+- Webバンドルに `expo-file-system` が含まれないことを確認（0件）
+- 開発サーバーでSplashScreenの描画とタップでの遷移を確認、コンソールエラーなし
+- 未実施: ログイン後のSettings操作（テーマ切替・エクスポート）の確認
+
+---
+
 ## 進行中
 
-- React Native移行 フェーズA。A1〜A3完了、A4（Insights）以降が未着手。
+- React Native移行 フェーズA。A1〜A5完了。残りは A6（Dashboard・YouTube OAuth）と
+  A7（Expo Web統一・EASビルド・配布）。
+- A6はYouTube OAuthのリダイレクトURIがWeb前提のため、ディープリンク対応の設計が別途必要。
 
 ---
 

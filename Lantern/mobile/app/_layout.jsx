@@ -6,12 +6,16 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { supabase } from '../lib/supabase'
+import { ThemeProvider, useThemeContext } from '../lib/theme'
+import SplashScreen from '../components/SplashScreen'
 
-export default function RootLayout() {
+function RootNavigator() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showSplash, setShowSplash] = useState(true)
   const segments = useSegments()
   const router = useRouter()
+  const { isDark } = useThemeContext()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,12 +50,23 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
+    <>
+      <StatusBar style={isDark ? 'light' : 'auto'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
       </Stack>
-    </SafeAreaProvider>
+      {showSplash ? <SplashScreen onClose={() => setShowSplash(false)} /> : null}
+    </>
+  )
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <RootNavigator />
+      </SafeAreaProvider>
+    </ThemeProvider>
   )
 }
