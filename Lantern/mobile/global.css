@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* frontend/src/index.css の @theme と同じ値。
+   NativeWind は rgb(var(--x) / <alpha-value>) 形式で不透明度指定を解決するため、
+   色は空白区切りのRGB三値で持つ。 */
+@layer base {
+  :root {
+    --color-cream: 250 249 247;
+    --color-stone: 240 238 234;
+    --color-parchment: 232 228 220;
+    --color-forest: 45 74 62;
+    --color-sage: 74 124 104;
+    --color-sage-light: 232 240 236;
+    --color-ink: 26 26 26;
+    --color-ink-soft: 102 102 102;
+    --color-ink-faint: 153 153 153;
+    --color-amber: 146 104 10;
+    --color-amber-light: 253 242 224;
+    --color-accent: 196 168 130;
+    --color-lantern: 212 149 106;
+    --color-background-info: 245 237 224;
+    --color-text-info: 122 92 58;
+    --color-border: rgba(0, 0, 0, 0.08);
+
+    /* Web版ではダーク専用だが、クラスが解決できるようライトにも定義する */
+    --color-primary: 45 74 62;
+    --color-primary-hover: 74 124 104;
+    --color-primary-text: 250 249 247;
+  }
+
+  .dark:root {
+    --color-cream: 28 28 30;
+    --color-stone: 44 44 46;
+    --color-parchment: 58 58 60;
+    --color-forest: 95 168 130;
+    --color-sage: 78 148 112;
+    --color-sage-light: 30 45 38;
+    --color-ink: 242 242 247;
+    --color-ink-soft: 174 174 178;
+    --color-ink-faint: 99 99 102;
+    --color-amber: 232 160 32;
+    --color-amber-light: 46 32 8;
+    --color-accent: 196 168 130;
+    --color-lantern: 212 149 106;
+    --color-background-info: 38 26 9;
+    --color-text-info: 196 168 130;
+    --color-border: rgba(255, 255, 255, 0.1);
+
+    /* 夜の書斎テーマ — カード・ボタン専用 */
+    --color-primary: 47 68 56;
+    --color-primary-hover: 58 84 69;
+    --color-primary-text: 232 224 208;
+  }
+}

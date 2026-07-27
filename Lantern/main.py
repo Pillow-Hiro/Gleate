@@ -38,6 +38,9 @@ CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
     re.compile(r'https://lantern-.*\.vercel\.app'),
     'http://localhost:5173',
+    # Expo Web の開発サーバー（React Nativeのネイティブfetchはブラウザではないため
+    # CORSの対象外だが、Expo Web はブラウザ実行なので許可が必要）
+    'http://localhost:8081',
 ])
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')

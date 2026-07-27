@@ -209,7 +209,52 @@ alter table public.daily_quotes enable row level security;
 
 ---
 
+### 2026/07/27（React Native移行 フェーズA-1：土台）
+
+**方針決定**
+- [x] Expo を採用（開発環境がWindowsのため、iOSビルドにmacOS実機が不要なEAS Buildが必須要件になる）
+- [x] Expo Router（ファイルベース）・NativeWind v4 を採用
+- [x] Web版は最終的にExpo Web出力へ統一する（現行 frontend/ はA7完了まで維持）
+- [x] 同一リポジトリに mobile/ を追加する構成
+- [x] DESIGN_react_native_v2.0.md 作成
+
+**A1 実装**
+- [x] mobile/ に Expo プロジェクト作成（SDK 57 / React Native 0.86 / React 19.2.3）
+- [x] NativeWind v4 + Tailwind v3 設定。frontend/src/index.css の20トークンを global.css の
+      CSS変数として移植し、ライト/ダーク両方を再現。クラス名はWeb版と同一
+- [x] lib/supabase.js：AsyncStorage・detectSessionInUrl:false・RN向け authFetch
+- [x] lib/date.js を frontend から移植（frontend/ 廃止まで重複する）
+- [x] Expo Router：ルート認証ガード + 5タブ（今日/記録/振り返り/ダッシュボード/設定）
+- [x] Login画面をWeb版の文言・認証方式のまま移植
+- [x] Settings にログアウトのみ実装（認証ガードの往復確認用）
+- [x] main.py の CORS に http://localhost:8081 を追加（Expo Webはブラウザ実行のため必要。
+      RNのネイティブfetchはCORS対象外）
+
+**判明した既存ドキュメントの誤り**
+- CLAUDE.md・PROGRESS.md の「Supabase Auth（メールOTP認証）」は誤り。実装は
+  signInWithPassword / signUp を使ったメールアドレス＋パスワード認証。mobile側は実装に合わせた
+- `goals` テーブルは本番Supabaseに存在しない。`/goals/save` `/goals/suggest` `/goals/interview`
+  `/api/vision` は参照先が無いまま例外を握り潰しており実質動作していない。移行対象外とする
+- DESIGN_multimodal_v1.3.md は goals テーブルが存在する前提で書かれている
+
+**つまずいた点**
+- blankテンプレートに babel-preset-expo が同梱されておらず、babel.config.js を追加した時点で
+  Metroが起動しなくなった。devDependency として明示的に追加して解決
+
+**A1 テスト結果**
+- Web bundle 成功（948モジュール・エラーゼロ）
+- 未認証時に /login へ振り替わることを確認
+- NativeWindのトークン適用を確認（bg-stone→rgb(240,238,234)、border-border→rgba(0,0,0,0.08)、
+  bg-forest→rgb(45,74,62)、rounded-full→9999px）
+- ダークモードのCSS変数切替を確認（cream 250 249 247 → 28 28 30）
+- ブラウザコンソールエラーなし
+- **未実施：実際のログインとタブ切替**（認証情報の入力が必要なため要手動確認）
+
+---
+
 ## 進行中
+
+- React Native移行 フェーズA。A1（土台）完了、A2（Home）以降が未着手。
 
 ---
 
