@@ -64,28 +64,35 @@
 
 ## 3. 次にやること（優先度順）
 
-### 最優先：セキュリティ
+> **2026-07-29 追記**：以下の「最優先」「高」「中」は対応済み。
+> 詳細は PROGRESS.md の 2026/07/28・2026/07/29 の項を参照。
+> 未着手で残っているのは A7（配布）と、その下の「まだ残っている課題」。
 
-**`/api/youtube/channel-test`（main.py 787行付近）を削除する。**
-`@require_auth` がなく、実ユーザーID `5efc736a-e32c-4904-af2e-98a6b9768032` が
-ハードコードされている。本番で誰でも叩け、保存済みOAuthトークンを使って
-ユーザーのYouTubeチャンネル情報を返す。コード内に「デバッグ用・後で削除」とある。
+### ~~最優先：セキュリティ~~ → 完了（`de2b47e`）
+
+~~`/api/youtube/channel-test` を削除する。~~
+削除済み。加えて `/debug/db-test` も削除した（`@require_auth` はあったが
+`logs` を user_id フィルタなしで service_role 取得しており、
+他ユーザーのUUIDが認証済みユーザー全員に見えていた）。
+
+### ~~高：不要コードの整理~~ → 完了（`de2b47e`）
+
+debug経路は `/api/debug/version`（認証なし・機密なし）と
+`/api/debug/youtube-token`（認証あり・自ユーザーのみ）の2つだけ残した。
+死んだ `goals` / `vision` ルート5個も削除。main.py は 923行 → 618行。
+
+### ~~中：テスト~~ → 完了（`bec4f71`）
+
+pytest 20件（`build_state` / `parse_state` / PKCE）と
+vitest 29件（`localDateStr` / `calcStreak` / `monthsAgoStr` / `findNearestLog`）。
+`monthsAgoStr` と `findNearestLog` はWeb版とmobile版で重複していたため
+`lib/date.js` に寄せた。`calcStreak` / `monthsAgoStr` には `now` の任意引数を
+追加してテストを決定的にしている（呼び出し側は無改修）。
 
 ```bash
-curl https://creator-companion.onrender.com/api/youtube/channel-test
+python -m pytest -q          # Lantern/ で実行
+cd frontend && npm test
 ```
-
-### 高：不要コードの整理
-
-- debug/testルート10個の整理（うち認証なし6個）。残すなら全てに `@require_auth`
-- 死んだ `goals` / `vision` ルート5個の削除
-  （`/goals/save` `/goals/suggest` `/goals/interview` `/api/vision` GET/POST）
-  参照先の `goals` テーブルは本番Supabaseに存在せず、例外を握り潰して静かに失敗している
-
-### 中：テスト
-
-プロジェクト全体（約7,600行）にテストが1つもない。
-まず純粋関数から: `calcStreak` / `monthsAgoStr` / `parse_state` / `build_state`
 
 ### 残り：A7（配布）
 
