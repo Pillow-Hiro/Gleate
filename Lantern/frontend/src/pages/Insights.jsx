@@ -1,31 +1,7 @@
 import { useState, useEffect } from 'react'
 import { authFetch } from '../lib/supabase'
 import ActivityCalendar from '../components/ActivityCalendar'
-import { localDateStr } from '../lib/date'
-
-function monthsAgoStr(months) {
-  const now = new Date()
-  const day = now.getDate()
-  const target = new Date(now.getFullYear(), now.getMonth() - months, day)
-  // 月末日オーバーフロー対応（例：3月31日 - 1ヶ月 → 2月31日 → 2月28日）
-  if (target.getDate() !== day) target.setDate(0)
-  return localDateStr(target)
-}
-
-function findNearestLog(logs, targetStr, rangeInDays = 3) {
-  let best = null
-  let bestDiff = Infinity
-  for (const log of logs) {
-    const diff = Math.abs(
-      (new Date(log.date) - new Date(targetStr)) / (1000 * 60 * 60 * 24)
-    )
-    if (diff <= rangeInDays && diff < bestDiff) {
-      best = log
-      bestDiff = diff
-    }
-  }
-  return best
-}
+import { localDateStr, monthsAgoStr, findNearestLog } from '../lib/date'
 
 function LogSnapshot({ log, dateHint, isToday }) {
   const fields = [

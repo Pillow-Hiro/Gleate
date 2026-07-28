@@ -409,6 +409,61 @@ main.py 923行 → 618行（-305行）
 
 ---
 
+### 2026/07/29（テスト基盤の導入・純粋関数のテスト）
+
+プロジェクト全体でテストゼロだった状態を解消。まず純粋関数から着手した。
+
+**Python（pytest）**
+
+- [x] `pytest.ini` `conftest.py` を追加
+- [x] `tests/test_youtube_state.py`（20件）
+      `build_state` / `parse_state` / `generate_code_verifier` /
+      `generate_code_challenge` を対象にした。
+      state の形式は「Google Cloud Console のリダイレクトURI設定を変えずに
+      WebとネイティブアプリをOAuth後に出し分ける」ための要で、
+      壊れると実機でしか気づけないため最優先でテストした。
+      PKCEは RFC 7636 付録B のテストベクタで検証している。
+
+**JavaScript（vitest）**
+
+- [x] `frontend` に vitest を導入（`npm test`）
+- [x] `frontend/src/lib/date.test.js`（29件）
+      `localDateStr` / `todayStr` / `calcStreak` / `monthsAgoStr` / `findNearestLog`
+
+**テストのためのリファクタリング**
+
+- [x] `monthsAgoStr` `findNearestLog` を `lib/date.js` に移動
+      Insights.jsx（Web）と insights.jsx（mobile）に同じ実装が重複していた。
+      `lib/date.js` を作った目的そのものなので、そこへ寄せた。
+- [x] `calcStreak(logs, now)` `monthsAgoStr(months, now)` に `now` の任意引数を追加
+      内部の `new Date()` を注入可能にしてテストを決定的にした。
+      呼び出し側は第1引数だけを渡すため既存の呼び出しは無改修。
+
+**検証結果: OK**
+
+- pytest 20件パス / vitest 29件パス
+- 変異テストで「テストが実際に退行を捕まえる」ことを確認した
+  （空振りするテストを書いていないかの確認）
+  - `parse_state` の web フォールバックを外す → 2件失敗
+  - PKCE challenge のパディング除去をやめる → 3件失敗
+  - `calcStreak` の「当日未記録なら昨日を起点」を外す → 2件失敗
+  - `monthsAgoStr` の月末オーバーフロー補正を外す → 4件失敗
+  - いずれも復元後に全件パスすることを確認
+- `npm run build`（Vite）成功
+- `npx expo export --platform web --clear` 成功。
+  バンドルの `\uXXXX` を復元してInsights画面の文字列が含まれることを確認
+- eslint：`Insights.jsx` に `no-empty` 2件が残るが、
+  HEADの同ファイルにも同じ2件があり今回の変更由来ではない（`catch {}` の握り潰し）
+
+**date.js の二重保守について**
+
+`frontend/src/lib/date.js` と `mobile/lib/date.js` は同一内容を保つ必要がある。
+片方だけ直す事故を防ぐため、2ファイルの一致を検証するテストを入れた。
+Vercelの配信元をExpo Web出力へ切り替えて `frontend/` を廃止したら、
+このテストごと削除してよい。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。
