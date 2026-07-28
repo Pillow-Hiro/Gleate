@@ -61,16 +61,26 @@ function KeywordSection() {
       try {
         setData(d => ({ ...d, [period]: JSON.parse(cached) }))
         return
-      } catch {}
+      } catch (e) {
+        // 壊れたキャッシュは捨てて取得し直す。残すと毎日同じ日付キーで失敗し続ける。
+        console.warn('[Insights] キーワードキャッシュの解析に失敗', e)
+        localStorage.removeItem(cacheKey)
+      }
     }
     setFetching(f => ({ ...f, [period]: true }))
     try {
       const res = await authFetch(`/api/insights/keywords?period=${period}`)
-      if (!res.ok) return
+      if (!res.ok) {
+        console.warn(`[Insights] キーワード取得が ${res.status} を返した (period=${period})`)
+        return
+      }
       const json = await res.json()
       localStorage.setItem(cacheKey, JSON.stringify(json.keywords))
       setData(d => ({ ...d, [period]: json.keywords }))
-    } catch {}
+    } catch (e) {
+      // 画面には何も出さない（AI憲法：必要以上に話さない）。原因追跡のためログだけ残す。
+      console.warn('[Insights] キーワード取得に失敗', e)
+    }
     finally {
       setFetching(f => ({ ...f, [period]: false }))
     }

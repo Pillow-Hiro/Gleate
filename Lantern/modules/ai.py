@@ -216,6 +216,9 @@ def _parse_patterns_json(raw):
                 return m.group()
             except _json.JSONDecodeError:
                 pass
+    # ここに来るのはAI出力がJSONとして読めなかった時だけ。
+    # 空のフォールバックを黙って返すとUI上は「パターンなし」と区別がつかないため記録する。
+    print(f"[AI] JSON解析に失敗（patterns）。先頭200文字: {raw[:200]!r}")
     return '{"patterns": []}'
 
 
@@ -396,6 +399,9 @@ JSONのみで返す。前置き不要。Markdownなし。
             except _json.JSONDecodeError:
                 pass
 
+    # AI出力がJSONとして読めなかったか、observation キーが欠けていた場合。
+    # 固定文言のフォールバックはAI生成と見分けがつかないため記録する。
+    print(f"[AI] JSON解析に失敗（timeline_reflection）。先頭200文字: {raw[:200]!r}")
     return {"observation": "記録が積み重なっています。", "question": "今、何を感じますか。"}
 
 
@@ -494,6 +500,8 @@ JSONのみで返す。前置き・Markdownなし。
             except _json.JSONDecodeError:
                 pass
 
+    # AI出力がJSONとして読めなかったか、observation キーが欠けていた場合。
+    print(f"[AI] JSON解析に失敗（milestone_reflection）。先頭200文字: {raw[:200]!r}")
     return {"observation": "記録が積み重なっています。", "question": "この期間、何が残りましたか。"}
 
 
@@ -551,7 +559,9 @@ JSONのみ。前置き・説明・Markdownは一切不要。
                         for k in parsed["keywords"]
                         if k.get("word") and k.get("count", 0) > 1
                     ]
-            except Exception:
+            except (_json.JSONDecodeError, TypeError, ValueError):
                 pass
 
+    # 空リストは「頻出語なし」と見分けがつかないため、解析失敗として記録する。
+    print(f"[AI] JSON解析に失敗（keywords）。先頭200文字: {raw[:200]!r}")
     return []

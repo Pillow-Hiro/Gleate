@@ -464,6 +464,68 @@ Vercelの配信元をExpo Web出力へ切り替えて `frontend/` を廃止し�
 
 ---
 
+### 2026/07/29（死んだテンプレートの削除・例外の握り潰し解消・テスト拡充）
+
+**死んだ `templates/` を削除**
+
+- [x] `base.html` `goals.html` `index.html` `logs.html` `review.html` `splash.html`
+      v0.x（React移行前）のJinja2テンプレート。`render_template` がコード上に
+      一切存在せず、実行経路がなかった。`goals.html` は前日に削除した
+      `/goals/*` ルートを呼んでおり、残すと将来の誤読の元になる。
+
+**例外の握り潰しを解消**
+
+握り潰しは全部で7箇所だった（レビューの「15箇所」は `print` でログが
+出ている箇所を含んだ数）。挙動は変えず、観測できるようにしただけ。
+
+- [x] `modules/ai.py` 4箇所
+      AI出力のJSON解析に失敗したとき、固定文言のフォールバックを黙って
+      返していた。画面上はAI生成と見分けがつかず、静かに劣化していた。
+      失敗時に `[AI] JSON解析に失敗（...）` と出力の先頭200文字を記録する。
+      キーワード抽出の内側の `except Exception` は外側と同じ
+      `(JSONDecodeError, TypeError, ValueError)` に狭めた。
+- [x] `frontend/src/pages/Insights.jsx` 2箇所 / `mobile/components/KeywordSection.jsx`
+      `catch {}` を `console.warn` に置き換え。あわせて、壊れたキャッシュを
+      `removeItem` で捨てるようにした。これまでは壊れたまま残り、
+      同じ日付キーで失敗し続けていた。
+      画面には何も出さない方針は変えていない（AI憲法「必要以上に話さない」）。
+
+**テストの拡充（Python 20件 → 82件）**
+
+- [x] `tests/test_route_auth.py`（20件）— **最重要**
+      認証なしで公開してよいルートを理由つきの許可リストで固定した。
+      新しいルートを認証なしで追加すると落ちる。前日に削除した
+      デバッグ経路が復活していないことも確認する。
+- [x] `tests/test_logs_mapping.py`（23件）
+      `_from_db` / `_to_db`。Supabaseのカラム名とアプリのフィールド名が
+      異なるため、ずれると保存はできても読み出しで内容が消える。
+      例外が出ず「記録が空になった」ように見えるだけなので固定した。
+- [x] `tests/test_ai_parsing.py`（19件）
+      `_parse_patterns_json` / `_fmt_logs`。コードブロックや前置き付きの
+      AI出力からJSONを救い出せること、失敗時にログが出ることを確認する。
+
+**検証結果: OK**
+
+- pytest 82件 / vitest 29件パス
+- 変異テストで実効性を確認
+  - 認証なしルートを新規追加 → 許可リストのテストが失敗
+  - `/api/logs` から `@require_auth` を外す → 同上が失敗
+  - `_from_db` のカラム名を取り違える → 3件失敗
+  - いずれも復元後に全件パス
+- `npm run build`（Vite）成功 / `npx expo export --platform web --clear` 成功
+- eslint の `no-empty` 2件が解消（残存ゼロ）
+- Flaskアプリ起動確認（ルート数24）
+
+**未処理として残した判断**
+
+`modules/summary.py`（`get_weekly_summary` / `get_streak` / `get_recent_activity`）は
+どこからも import されていない。削除した Jinja2 テンプレートに
+サーバーサイドで streak と recent_activity を渡すためのモジュールだったため、
+`templates/` の削除で完全に死んだ。ただし CLAUDE.md のディレクトリ構成に
+設計要素として記載があるため、独断では削除せず判断を仰ぐこととした。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。
