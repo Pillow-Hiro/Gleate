@@ -313,36 +313,41 @@ Web版（React + Vite）では利用不可のため、導入はReact Native化�
 
 ## ディレクトリ構成
 
+行番号つきの詳細は PROJECT_MAP.md を参照。ここは全体像のみ。
+
 ```
-Lantern/
+Lantern/                      ← .git はさらに1つ上の apps/ にある
 ├── CLAUDE.md
 ├── .env                     ← APIキー（GitHubに上げない）
-├── .gitignore
-├── README.md
-├── backend/
-│   ├── main.py              ← Flaskアプリ（APIのみ）
-│   ├── requirements.txt
-│   ├── Procfile
-│   ├── modules/
-│   │   ├── ai.py            ← AI応答・プロンプト処理
-│   │   ├── logs.py          ← ログの読み書き
-│   │   └── summary.py       ← 週次・月次まとめ
-└── frontend/
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
-    └── src/
-        ├── main.jsx
-        ├── App.jsx
-        ├── components/
-        │   ├── Sidebar.jsx       ← サイドナビ（PC/タブレット）
-        │   ├── HamburgerMenu.jsx ← モバイル用
-        │   └── SplashScreen.jsx  ← 起動画面
-        └── pages/
-            ├── Home.jsx          ← 今日の灯り・CTA
-            ├── Journal.jsx       ← 記録一覧・詳細
-            ├── Insights.jsx      ← 週次・月次・強み
-            └── Settings.jsx      ← 設定
+├── main.py                  ← Flaskアプリ（APIのみ・ルートは全てここ）
+├── requirements.txt
+├── Procfile
+├── pytest.ini / conftest.py
+├── modules/
+│   ├── ai.py                ← AI応答・プロンプト処理
+│   ├── logs.py              ← ログの読み書き・Supabaseカラム変換
+│   ├── auth.py              ← require_auth（Supabase JWT検証）
+│   └── youtube.py           ← YouTube OAuth・API
+├── tests/                   ← pytest
+│   ├── test_route_auth.py   ← 認証ガードの回帰テスト
+│   ├── test_logs_mapping.py
+│   ├── test_ai_parsing.py
+│   └── test_youtube_state.py
+├── frontend/                ← React + Vite（Web・Vercel配信）
+│   └── src/
+│       ├── components/      ← Sidebar / HamburgerMenu / SplashScreen /
+│       │                       ActivityCalendar
+│       ├── lib/             ← date.js（+ date.test.js）/ supabase.js
+│       └── pages/
+│           ├── Home.jsx      ← 今日の灯り・CTA
+│           ├── Journal.jsx   ← 記録一覧・詳細・振り返り
+│           ├── Insights.jsx  ← 記録密度・過去比較・キーワード
+│           ├── Dashboard.jsx ← YouTube連携
+│           └── Settings.jsx  ← 設定
+└── mobile/                  ← Expo（React Native・フェーズA）
+    ├── app/(tabs)/          ← index / journal / insights / dashboard / settings
+    ├── components/
+    └── lib/                 ← date.js は frontend 側と同一内容を保つこと
 ```
 
 ---
