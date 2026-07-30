@@ -4,7 +4,9 @@ import ActivityCalendar from '../components/ActivityCalendar'
 import ReviewSection from '../components/ReviewSection'
 import TimelineSection from '../components/TimelineSection'
 import KeywordSection from '../components/KeywordSection'
-import { dateDisplayJa, dayLabel, groupByMonth, monthLabel, truncateTitle } from '../lib/format'
+import LogDetail from '../components/LogDetail'
+import LogItem from '../components/LogItem'
+import { dateDisplayJa, groupByMonth, monthLabel } from '../lib/format'
 
 // タブ切り替えボタン。
 // Journal() の内側で定義すると再レンダリングのたびに別コンポーネント扱いになり、
@@ -22,181 +24,6 @@ function TabButton({ id, label, activeTab, onSelect }) {
     >
       {label}
     </button>
-  )
-}
-
-// ── 記録詳細 ──────────────────────────────────────────────────
-function LogDetail({ log, onDelete, onUpdate }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState({})
-  const [saving, setSaving] = useState(false)
-
-  async function handleDelete() {
-    setDeleting(true)
-    try {
-      await authFetch(`/api/logs/${log.date}`, { method: 'DELETE' })
-      if (onDelete) onDelete(log.date)
-    } catch {
-      setConfirmDelete(false)
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  function handleEditStart() {
-    setEditForm({
-      created: log.created || '',
-      enjoyable: log.enjoyable || '',
-      struggled: log.struggled || '',
-      next: log.next || '',
-    })
-    setEditing(true)
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    try {
-      const res = await authFetch('/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: log.date, ...editForm }),
-      })
-      if (!res.ok) throw new Error('save failed')
-      const data = await res.json()
-      if (onUpdate) {
-        onUpdate({ ...log, ...editForm, ai_response: data.ai_response ?? log.ai_response })
-      }
-      setEditing(false)
-    } catch {
-      // エラー時は編集状態を維持
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  function handleCancel() {
-    setEditing(false)
-    setEditForm({})
-  }
-
-  const displayFields = [
-    { key: 'created', label: 'やったこと' },
-    { key: 'enjoyable', label: 'よかったこと' },
-    { key: 'struggled', label: '困ったこと' },
-    { key: 'next', label: '次にやること' },
-  ]
-
-  const editFields = [
-    { field: 'created', label: 'やったこと', placeholder: '今日やったこと' },
-    { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと' },
-    { field: 'struggled', label: '困ったこと', placeholder: '詰まったこと' },
-    { field: 'next', label: '次にやること', placeholder: '（任意）' },
-  ]
-
-  if (editing) {
-    return (
-      <div className="mt-3 space-y-3 pb-1">
-        {editFields.map(({ field, label, placeholder }) => (
-          <div key={field}>
-            <label className="text-[10px] text-ink-faint tracking-wider uppercase block mb-1">{label}</label>
-            <textarea
-              value={editForm[field]}
-              onChange={e => setEditForm(f => ({ ...f, [field]: e.target.value }))}
-              placeholder={placeholder}
-              rows={3}
-              className="w-full bg-stone border border-border rounded-lg px-3 py-2.5 text-sm text-ink placeholder-ink-faint focus:outline-none focus:border-sage/50 transition-colors resize-none"
-            />
-          </div>
-        ))}
-        <div className="flex items-center justify-end gap-4 pt-1">
-          <button onClick={handleCancel} className="text-xs text-ink-faint hover:text-ink transition-colors">
-            キャンセル
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
-          >
-            {saving ? '保存中...' : '保存する'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="mt-3 space-y-2.5 pb-1">
-      {displayFields.map(({ key, label }) =>
-        log[key] ? (
-          <div key={key}>
-            <span className="text-[10px] text-ink-faint tracking-wider uppercase">{label}</span>
-            <p className="text-sm text-ink leading-relaxed mt-0.5">{log[key]}</p>
-          </div>
-        ) : null
-      )}
-      {log.ai_response && (
-        <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 space-y-1.5 mt-3">
-          <p className="text-[10px] tracking-[0.18em] uppercase text-sage">Lantern</p>
-          <p className="text-sm text-forest leading-relaxed">{log.ai_response}</p>
-        </div>
-      )}
-      <div className="pt-1 flex justify-end items-center gap-3">
-        {confirmDelete ? (
-          <>
-            <span className="text-xs text-ink-faint">削除しますか？</span>
-            <button onClick={() => setConfirmDelete(false)} className="text-xs text-ink-faint hover:text-ink transition-colors">
-              キャンセル
-            </button>
-            <button onClick={handleDelete} disabled={deleting} className="text-xs text-red-500 hover:text-red-600 transition-colors disabled:opacity-50">
-              {deleting ? '削除中...' : '削除する'}
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={handleEditStart} className="text-xs text-ink-faint hover:text-forest transition-colors">
-              編集
-            </button>
-            <button onClick={() => setConfirmDelete(true)} className="text-xs text-ink-faint hover:text-red-500 transition-colors">
-              削除
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── リストアイテム ─────────────────────────────────────────────
-function LogItem({ log, onDelete, onUpdate }) {
-  const [open, setOpen] = useState(false)
-  const summary = log.created || log.enjoyable || log.struggled || log.next || '（記録あり）'
-
-  return (
-    <div className="border-b border-border last:border-b-0">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full text-left py-3.5 flex items-center justify-between gap-3 hover:bg-stone/40 -mx-4 px-4 transition-colors"
-      >
-        <div className="flex-1 min-w-0">
-          <span className="text-xs text-ink-faint mr-2.5 shrink-0">{dayLabel(log.date)}</span>
-          <span className="text-sm text-ink">{truncateTitle(summary)}</span>
-        </div>
-        <svg
-          width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
-          viewBox="0 0 14 14"
-          className={`shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        >
-          <path d="M2.5 5l4.5 4 4.5-4" />
-        </svg>
-      </button>
-      <div className="grid transition-all duration-300 ease-out" style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
-        <div className="overflow-hidden">
-          <LogDetail log={log} onDelete={onDelete} onUpdate={onUpdate} />
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -253,8 +80,9 @@ export default function Journal() {
       setLogs(prev => [...prev, newLog])
       setSelectedDate(modalDate)
       setModalDate(null)
-    } catch {
-      // エラー時はモーダルを維持
+    } catch (e) {
+      // エラー時はモーダルを維持し、入力を捨てない
+      console.warn(`[Journal] ${modalDate} の保存に失敗`, e)
     } finally {
       setModalSaving(false)
     }
