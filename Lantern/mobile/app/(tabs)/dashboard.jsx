@@ -39,6 +39,8 @@ export default function Dashboard() {
   const [analyticsDays, setAnalyticsDays] = useState(30)
   const [analyticsData, setAnalyticsData] = useState(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [channelInsight, setChannelInsight] = useState('')
+  const [channelInsightLoading, setChannelInsightLoading] = useState(false)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -72,6 +74,39 @@ export default function Dashboard() {
       setDataLoading(false)
     }
   }, [])
+
+  // チャンネル全体の観察。Web版 Dashboard.jsx の handleChannelInsight と同じ仕様。
+  // 数字で評価せず、タイトルや投稿時期から読み取れる傾向だけを返す
+  // （プロンプト側で担保。modules/ai.py の generate_channel_insight を参照）。
+  const handleChannelInsight = useCallback(async () => {
+    if (!videos?.length) return
+    setChannelInsightLoading(true)
+    setChannelInsight('')
+    try {
+      const res = await authFetch('/api/youtube/channel-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videos: videos.map((v) => ({
+            title: v.title,
+            published_at: v.published_at,
+            view_count: v.view_count,
+            like_count: v.like_count,
+          })),
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setChannelInsight(data.insight || '')
+      } else {
+        console.warn(`[Dashboard] channel-insight が ${res.status} を返した`)
+      }
+    } catch (e) {
+      console.warn('[Dashboard] チャンネル観察の取得に失敗', e)
+    } finally {
+      setChannelInsightLoading(false)
+    }
+  }, [videos])
 
   const fetchAnalytics = useCallback(async (days) => {
     setAnalyticsLoading(true)
@@ -213,13 +248,13 @@ export default function Dashboard() {
               )}
             </View>
 
-            {/* サマリー */}
+            {/* サマリー。項目はWeb版 Dashboard.jsx と揃える。
+                /api/youtube/channel が返すキーは total_view_count（view_count ではない） */}
             {channelStats ? (
               <View className="flex-row gap-3">
-                {/* /api/youtube/channel が返すキーは total_view_count。
-                    view_count を読んでいたため常に0が出ていた */}
-                <SummaryCard label="総再生数" value={channelStats.total_view_count ?? 0} />
-                <SummaryCard label="動画数" value={channelStats.video_count ?? 0} />
+                <SummaryCard label="登録者数" value={channelStats.subscriber_count ?? 0} />
+                <SummaryCard label="総再生回数" value={channelStats.total_view_count ?? 0} />
+                <SummaryCard label="総動画数" value={channelStats.video_count ?? 0} />
               </View>
             ) : null}
 
@@ -276,6 +311,37 @@ export default function Dashboard() {
               ) : (
                 <VideoTimeline videos={videos} />
               )}
+            </View>
+
+            {/* AIの観察（チャンネル全体）。Web版と同じ位置・同じ挙動 */}
+            <View>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-[10px] text-ink-faint tracking-[2px]">AIの観察</Text>
+                <Pressable
+                  onPress={handleChannelInsight}
+                  disabled={channelInsightLoading || !videos?.length}
+                  className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+                >
+                  <Text className="text-xs text-forest">
+                    {channelInsightLoading ? '生成中...' : channelInsight ? '再生成' : 'Lanternに聞く'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              {channelInsightLoading ? (
+                <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2">
+                  <View className="h-3 bg-sage/20 rounded w-full" />
+                  <View className="h-3 bg-sage/20 rounded w-4/5" />
+                  <View className="h-3 bg-sage/20 rounded w-2/3" />
+                </View>
+              ) : null}
+
+              {!channelInsightLoading && channelInsight ? (
+                <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
+                  <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
+                  <Text className="text-sm leading-relaxed text-forest">{channelInsight}</Text>
+                </View>
+              ) : null}
             </View>
           </>
         )}
