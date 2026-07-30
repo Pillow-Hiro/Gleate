@@ -216,7 +216,9 @@ export default function Dashboard() {
             {/* サマリー */}
             {channelStats ? (
               <View className="flex-row gap-3">
-                <SummaryCard label="総再生数" value={channelStats.view_count ?? 0} />
+                {/* /api/youtube/channel が返すキーは total_view_count。
+                    view_count を読んでいたため常に0が出ていた */}
+                <SummaryCard label="総再生数" value={channelStats.total_view_count ?? 0} />
                 <SummaryCard label="動画数" value={channelStats.video_count ?? 0} />
               </View>
             ) : null}
