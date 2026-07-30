@@ -16,6 +16,13 @@ const PERIODS = [
   { label: '1年前', months: 12 },
 ]
 
+// AIの観察の出典表示用。曜日は不要なので lib/format.js の dateDisplayJa は使わない。
+function formatPastDate(dateStr) {
+  if (!dateStr) return ''
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return `${y}年${m}月${d}日`
+}
+
 export default function TimelineSection({ logs = [] }) {
   const [months, setMonths] = useState(1)
   const [data, setData] = useState(null)
@@ -94,10 +101,20 @@ export default function TimelineSection({ logs = [] }) {
       ) : null}
 
       {!loading && data?.reflection ? (
-        <PatternCard
-          observation={data.reflection.observation}
-          question={data.reflection.question}
-        />
+        <View className="gap-1.5">
+          {/* 上に並べているのは最も近い1件だが、AIは past_date を含む週の全記録を
+              根拠に観察している。画面にない記録に言及しうるため出典を明示する。
+              事実の提示のみで、評価や意味づけは含めない。 */}
+          {data.past_date ? (
+            <Text className="text-[10px] text-ink-faint">
+              {formatPastDate(data.past_date)}を含む週の記録から
+            </Text>
+          ) : null}
+          <PatternCard
+            observation={data.reflection.observation}
+            question={data.reflection.question}
+          />
+        </View>
       ) : null}
     </View>
   )

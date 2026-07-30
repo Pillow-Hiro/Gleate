@@ -1,16 +1,7 @@
 import { useState } from 'react'
 import { authFetch } from '../lib/supabase'
 import PatternCard from './PatternCard'
-
-// 生成からの経過時間。ReviewSection でしか使わないためここに置く。
-function formatAge(isoStr) {
-  const diff = Date.now() - new Date(isoStr).getTime()
-  const hours = Math.floor(diff / 3600000)
-  if (hours < 1) return '1時間以内'
-  if (hours < 24) return `${hours}時間前`
-  const days = Math.floor(hours / 24)
-  return `${days}日前`
-}
+import { formatAge } from '../lib/format'
 
 // 今週・今月の振り返り。結果は localStorage に持たせて開き直しても残るようにしている。
 export default function ReviewSection({ title, type, description }) {

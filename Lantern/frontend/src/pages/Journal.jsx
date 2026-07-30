@@ -4,44 +4,7 @@ import ActivityCalendar from '../components/ActivityCalendar'
 import ReviewSection from '../components/ReviewSection'
 import TimelineSection from '../components/TimelineSection'
 import KeywordSection from '../components/KeywordSection'
-
-const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
-
-function parseDate(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-function monthLabel(dateStr) {
-  const [y, m] = dateStr.split('-')
-  return `${y}年${Number(m)}月`
-}
-
-function dayLabel(dateStr) {
-  const d = parseDate(dateStr)
-  return `${d.getDate()}日 ${WEEKDAYS_JA[d.getDay()]}`
-}
-
-function dateDisplayJa(dateStr) {
-  const [, m, d] = dateStr.split('-').map(Number)
-  const dt = parseDate(dateStr)
-  return `${m}月${d}日 ${WEEKDAYS_JA[dt.getDay()]}曜日`
-}
-
-function truncateTitle(text, maxLength = 20) {
-  if (!text) return ''
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
-}
-
-function groupByMonth(logs) {
-  const groups = {}
-  ;[...logs].sort((a, b) => b.date.localeCompare(a.date)).forEach(log => {
-    const key = log.date.slice(0, 7)
-    if (!groups[key]) groups[key] = []
-    groups[key].push(log)
-  })
-  return groups
-}
+import { dateDisplayJa, dayLabel, groupByMonth, monthLabel, truncateTitle } from '../lib/format'
 
 // ── 記録詳細 ──────────────────────────────────────────────────
 function LogDetail({ log, onDelete, onUpdate }) {
