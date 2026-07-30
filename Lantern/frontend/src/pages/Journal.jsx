@@ -3,6 +3,7 @@ import { authFetch } from '../lib/supabase'
 import ActivityCalendar from '../components/ActivityCalendar'
 import ReviewSection from '../components/ReviewSection'
 import TimelineSection from '../components/TimelineSection'
+import KeywordSection from '../components/KeywordSection'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 
@@ -423,7 +424,8 @@ export default function Journal() {
         <div className="space-y-8">
           <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
           <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
-          <TimelineSection />
+          <TimelineSection logs={logs} />
+          <KeywordSection />
         </div>
       )}
 

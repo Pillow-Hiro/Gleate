@@ -9,7 +9,6 @@ import Home from './pages/Home'
 import Journal from './pages/Journal'
 import Settings from './pages/Settings'
 import Dashboard from './pages/Dashboard'
-import Insights from './pages/Insights'
 
 function Layout({ onSplashOpen, isDark, onToggleTheme }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -50,7 +49,9 @@ function Layout({ onSplashOpen, isDark, onToggleTheme }) {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/journal" element={<Journal />} />
-            <Route path="/insights" element={<Insights />} />
+            {/* Insights は Journal の振り返りタブへ統合した。
+                既存のブックマークや履歴からの遷移を拾うためリダイレクトを残す。 */}
+            <Route path="/insights" element={<Navigate to="/journal" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings isDark={isDark} onToggleTheme={onToggleTheme} />} />
             <Route path="*" element={<Navigate to="/" replace />} />

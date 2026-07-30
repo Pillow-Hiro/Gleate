@@ -526,6 +526,67 @@ Vercelの配信元をExpo Web出力へ切り替えて `frontend/` を廃止し�
 
 ---
 
+### 2026/07/30（Insights を Journal の振り返りタブへ統合）
+
+設計は `docs/superpowers/specs/2026-07-30-insights-journal-integration-design.md`。
+
+**動機**
+
+「振り返り」という名前の場所が2つあった（ナビの Insights ページと、
+Journal 内のタブ）。さらに中身も重複していた。
+
+- カレンダー：記録タブと Insights「記録密度」で同じ `ActivityCalendar`
+- 過去比較：Journal「過去との対話」（週の全記録＋AI）と
+  Insights「過去との比較」（最近傍1件の左右対比・AIなし）
+
+**変更内容**
+
+- [x] E: `main.py` の `months_ago` クランプを `_clamp_months_ago()` に切り出し、
+      上限を 6 → 12 に。1年前の比較を可能にした。既存の1/3/6は挙動不変で後方互換
+- [x] D: Web を mobile と同じ構造に揃えた。`components/` に
+      `PatternCard` `ReviewSection` `TimelineSection` `LogSnapshot` `KeywordSection`
+      を新設。`Journal.jsx` 715行 → 493行
+- [x] C: `TimelineSection` を統合版に改修。期間は1/3/6/12ヶ月前の4つ。
+      常時は「その頃の記録」と「今日の記録」を左右に並べるだけで、
+      「振り返る」を押したときだけAIの観察と問いが加わる。
+      `logs` は Journal が持っているものを props で渡し、API取得の重複を解消
+- [x] B: 振り返りタブを「今週／今月／過去との対話／キーワード」の4節に。
+      「記録密度」は削除し、カレンダーは記録タブに一本化
+- [x] A: ナビを5→4項目に。Web は Sidebar と HamburgerMenu の両方から削除し、
+      `/insights` は `<Navigate to="/journal" replace />` でリダイレクト。
+      mobile は `_layout.jsx` の `Tabs.Screen` と `insights.jsx` の両方を削除
+      （SDK 57 ではタブは自動生成されず宣言が必要だが、ファイルが残ると
+      ルートとしては到達可能なため両方落とす）
+- [x] `vite.config.js` の proxy から、先日削除した `/goals` を除去
+- [x] CLAUDE.md のディレクトリ構成・画面設計・Insights AI憲法の位置づけを更新
+
+**検証結果: OK**
+
+- pytest 105件 / vitest 29件パス
+- 変異テストで `_MONTHS_AGO_MAX` を6に戻すと7件失敗、復元後に全件パス
+- `npm run build` 成功 / `npx expo export --platform web --clear` 成功
+- mobileバンドルの `\uXXXX` を復元して照合：「過去との対話」「1年前」「キーワード」
+  「この時期の記録はありません。」が含まれ、「記録密度」「INSIGHTS」が消えていることを確認
+- ナビ項目数：Sidebar 4 / HamburgerMenu 4 / mobile tabs 4
+- `記録密度` `pages/Insights` `tabs/insights` への参照が全てゼロ
+- ローカルでWebを起動し、コンソールエラーなしで表示されることを確認
+- eslint の新規エラーは0件（残る3エラー1警告はいずれもHEADに既存）
+
+**未検証（要ユーザー確認）**
+
+ログイン後の画面の目視確認は未実施。認証情報を扱えないため、
+振り返りタブの4節の並びと左右対比の見た目、`/insights` から `/journal` への
+リダイレクト実動作は確認をお願いしたい。
+
+**保留**
+
+- `frontend/src/lib/format.js` の抽出（`Journal.jsx` 5-42行が
+  `mobile/lib/format.js` と同一）。保留のため Journal.jsx は493行に留まる
+- AIカードへの出典行「{past_date}を含む週の記録から」。
+  画面に出る過去記録は1件だがAIは週の全記録を根拠にしている点が未解決
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。

@@ -28,17 +28,6 @@ const navItems = [
     ),
   },
   {
-    to: '/insights',
-    label: '振り返り',
-    icon: (
-      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 15 15">
-        <circle cx="7.5" cy="7.5" r="5.5" />
-        <line x1="7.5" y1="4.5" x2="7.5" y2="7.5" />
-        <line x1="7.5" y1="7.5" x2="10" y2="9.5" />
-      </svg>
-    ),
-  },
-  {
     to: '/dashboard',
     label: 'ダッシュボード',
     icon: (

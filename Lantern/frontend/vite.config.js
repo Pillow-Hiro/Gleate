@@ -12,10 +12,11 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    // VITE_API_URL を空にしてAPIパスを相対にしているため、
+    // 開発時はここでローカルのFlask（main.py / :5000）へ転送する。
     proxy: {
       '/api': 'http://localhost:5000',
       '/save': 'http://localhost:5000',
-      '/goals': 'http://localhost:5000',
     },
   },
 })

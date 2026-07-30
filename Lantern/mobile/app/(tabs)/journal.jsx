@@ -8,6 +8,7 @@ import LogDetail from '../../components/LogDetail'
 import LogItem from '../../components/LogItem'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
+import KeywordSection from '../../components/KeywordSection'
 
 const MODAL_FIELDS = [
   { field: 'created', label: 'やったこと', placeholder: '今日やったこと', minHeight: 84 },
@@ -230,7 +231,8 @@ export default function Journal() {
           <View className="gap-8">
             <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
             <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
-            <TimelineSection />
+            <TimelineSection logs={logs} />
+            <KeywordSection />
           </View>
         )}
       </ScrollView>

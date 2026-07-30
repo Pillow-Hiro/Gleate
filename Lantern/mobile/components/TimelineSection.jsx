@@ -1,32 +1,43 @@
 import { useEffect, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { authFetch } from '../lib/supabase'
+import { localDateStr, monthsAgoStr, findNearestLog } from '../lib/date'
 import { PatternCard } from './ReviewSection'
+import LogSnapshot from './LogSnapshot'
 
-const MONTHS_OPTIONS = [1, 3, 6]
+// 過去との対話。Web版 components/TimelineSection.jsx と同じ仕様。
+// 常時は「その頃の記録」と「今日の記録」を並べるだけ（事実の提示）。
+// 「振り返る」を押したときだけAIの観察と問いが加わる。
+// Insights AI憲法の①記録を並べる ②差分を提示する までで止め、③意味づけはしない。
+const PERIODS = [
+  { label: '1ヶ月前', months: 1 },
+  { label: '3ヶ月前', months: 3 },
+  { label: '半年前', months: 6 },
+  { label: '1年前', months: 12 },
+]
 
-function formatPastDate(dateStr) {
-  if (!dateStr) return ''
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return `${y}年${m}月${d}日`
-}
-
-// Web版 Journal.jsx の TimelineSection（過去との対話）を移植したもの。
-// 期間を切り替えたら結果をリセットする挙動も維持している。
-export default function TimelineSection() {
+export default function TimelineSection({ logs = [] }) {
   const [months, setMonths] = useState(1)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  // 期間を切り替えたらAIの観察は破棄する。別の期間の観察が残ると事実とずれる。
   useEffect(() => { setData(null) }, [months])
+
+  const today = localDateStr()
+  const todayLog = logs.find((l) => l.date === today) || null
+  const target = monthsAgoStr(months)
+  const pastLog = findNearestLog(logs, target)
+  const currentLabel = PERIODS.find((p) => p.months === months)?.label
 
   async function handleReflect() {
     setLoading(true)
     try {
       const res = await authFetch(`/api/timeline-reflection?months_ago=${months}`)
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(`timeline-reflection returned ${res.status}`)
       setData(await res.json())
-    } catch {
+    } catch (e) {
+      console.warn('[Timeline] 過去との対話の取得に失敗', e)
       setData(null)
     } finally {
       setLoading(false)
@@ -49,18 +60,26 @@ export default function TimelineSection() {
         </Pressable>
       </View>
 
+      {/* 期間タブ */}
       <View className="flex-row gap-1 border-b border-border">
-        {MONTHS_OPTIONS.map((m) => (
+        {PERIODS.map(({ label, months: m }) => (
           <Pressable
             key={m}
             onPress={() => setMonths(m)}
             className={`px-3 py-1.5 border-b-2 ${months === m ? 'border-accent' : 'border-transparent'}`}
           >
-            <Text className={`text-xs ${months === m ? 'text-accent' : 'text-ink-faint'}`}>{m}ヶ月前</Text>
+            <Text className={`text-xs ${months === m ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
           </Pressable>
         ))}
       </View>
 
+      {/* 常時表示：その頃の記録と今日の記録を並べる */}
+      <View className="gap-3">
+        <LogSnapshot log={pastLog} dateHint={target} isToday={false} />
+        <LogSnapshot log={todayLog} dateHint={today} isToday={true} />
+      </View>
+
+      {/* AIの観察 */}
       {loading ? (
         <View className="bg-stone/60 rounded-xl px-5 py-4 gap-2.5">
           <View className="h-3.5 bg-parchment rounded w-3/4" />
@@ -68,45 +87,17 @@ export default function TimelineSection() {
         </View>
       ) : null}
 
-      {!loading && data === null ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
-          <Text className="text-sm text-ink-faint text-center">
-            「振り返る」を押すと、{months}ヶ月前の記録と今を照らし合わせます
-          </Text>
-        </View>
-      ) : null}
-
       {!loading && data !== null && data.past_logs.length === 0 ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
-          <Text className="text-sm text-ink-faint text-center">{months}ヶ月前の記録はありません。</Text>
+          <Text className="text-sm text-ink-faint text-center">{currentLabel}の記録はありません。</Text>
         </View>
       ) : null}
 
-      {!loading && data !== null && data.past_logs.length > 0 ? (
-        <View className="gap-3">
-          <Text className="text-[10px] text-ink-faint">{formatPastDate(data.past_date)}の週</Text>
-          <View className="gap-2">
-            {data.past_logs.map((log, i) => (
-              <View key={i} className="bg-stone/40 rounded-lg px-4 py-3 gap-1">
-                <Text className="text-[10px] text-ink-faint">{log.date}</Text>
-                <Text className="text-sm text-ink leading-relaxed">{log.created || '（記録あり）'}</Text>
-                {log.enjoyable ? (
-                  <Text className="text-xs text-ink-soft">よかったこと：{log.enjoyable}</Text>
-                ) : null}
-                {log.struggled ? (
-                  <Text className="text-xs text-ink-soft">詰まったこと：{log.struggled}</Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
-
-          {data.reflection ? (
-            <PatternCard
-              observation={data.reflection.observation}
-              question={data.reflection.question}
-            />
-          ) : null}
-        </View>
+      {!loading && data?.reflection ? (
+        <PatternCard
+          observation={data.reflection.observation}
+          question={data.reflection.question}
+        />
       ) : null}
     </View>
   )
