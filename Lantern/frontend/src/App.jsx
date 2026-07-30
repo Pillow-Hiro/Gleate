@@ -71,10 +71,12 @@ export default function App() {
   // undefined = 確認中, null = 未ログイン, object = ログイン済み
   const [session, setSession] = useState(undefined)
 
+  // テーマは isDark の変化に追従させる。初期適用と切り替えをここ1箇所にまとめる。
   useEffect(() => {
-    // ダークモード初期適用
     document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
 
+  useEffect(() => {
     // 現在のセッションを取得
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -96,8 +98,12 @@ export default function App() {
   function toggleTheme() {
     const next = !isDark
     setIsDark(next)
-    try { localStorage.setItem('lantern-theme', next ? 'dark' : 'light') } catch { /* localStorage unavailable */ }
-    document.documentElement.classList.toggle('dark', next)
+    // DOMへの反映は isDark を見る useEffect が行う。ここでは触らない。
+    try {
+      localStorage.setItem('lantern-theme', next ? 'dark' : 'light')
+    } catch (e) {
+      console.warn('[Theme] テーマの保存に失敗', e)
+    }
   }
 
   // セッション確認中

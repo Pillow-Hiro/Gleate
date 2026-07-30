@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { authFetch } from '../lib/supabase'
 import { localDateStr, monthsAgoStr, findNearestLog } from '../lib/date'
 import PatternCard from './PatternCard'
@@ -24,11 +24,13 @@ function formatPastDate(dateStr) {
 
 export default function TimelineSection({ logs = [] }) {
   const [months, setMonths] = useState(1)
-  const [data, setData] = useState(null)
+  // AIの観察はどの期間に対するものかを一緒に持つ。
+  // 期間を切り替えたら別期間の観察は表示しない（事実とずれるため）。
+  // useEffect で消すのではなく描画時に導出することで、余分な再レンダリングを避ける。
+  const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  // 期間を切り替えたらAIの観察は破棄する。別の期間の観察が残ると事実とずれる。
-  useEffect(() => { setData(null) }, [months])
+  const data = result?.months === months ? result.data : null
 
   const today = localDateStr()
   const todayLog = logs.find(l => l.date === today) || null
@@ -40,10 +42,10 @@ export default function TimelineSection({ logs = [] }) {
     try {
       const res = await authFetch(`/api/timeline-reflection?months_ago=${months}`)
       if (!res.ok) throw new Error(`timeline-reflection returned ${res.status}`)
-      setData(await res.json())
+      setResult({ months, data: await res.json() })
     } catch (e) {
       console.warn('[Timeline] 過去との対話の取得に失敗', e)
-      setData(null)
+      setResult(null)
     } finally {
       setLoading(false)
     }

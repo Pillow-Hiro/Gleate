@@ -278,7 +278,13 @@ export default function Dashboard() {
   const [youtubeStatus, setYoutubeStatus] = useState({ connected: false, channel_name: null })
   const [youtubeConnecting, setYoutubeConnecting] = useState(false)
   const [youtubeDisconnecting, setYoutubeDisconnecting] = useState(false)
-  const [youtubeMessage, setYoutubeMessage] = useState('')
+  // OAuthから戻った直後かどうかはURLで決まるため初期値として導出する。
+  // useEffect の中で同期的に setState すると、マウント時に余分な再レンダリングが起きる。
+  const [youtubeMessage, setYoutubeMessage] = useState(
+    () => new URLSearchParams(window.location.search).get('youtube') === 'connected'
+      ? 'YouTubeと繋がりました。'
+      : ''
+  )
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [channelStats, setChannelStats] = useState(null)
   const [videos, setVideos] = useState(null)
@@ -341,25 +347,24 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('youtube') === 'connected') {
-      setYoutubeMessage('YouTubeと繋がりました。')
+    const justConnected =
+      new URLSearchParams(window.location.search).get('youtube') === 'connected'
+
+    // クエリを残したままにするとリロードのたびに接続完了扱いになる
+    if (justConnected) {
       window.history.replaceState({}, '', '/dashboard')
-      fetchYoutubeStatus().then(s => {
-        if (s.connected) {
-          fetchYoutubeData()
-          fetchAnalytics(30)
-        }
-      })
+    }
+
+    fetchYoutubeStatus().then(s => {
+      if (s.connected) {
+        fetchYoutubeData()
+        fetchAnalytics(30)
+      }
+    })
+
+    if (justConnected) {
       const timer = setTimeout(() => setYoutubeMessage(''), 4000)
       return () => clearTimeout(timer)
-    } else {
-      fetchYoutubeStatus().then(s => {
-        if (s.connected) {
-          fetchYoutubeData()
-          fetchAnalytics(30)
-        }
-      })
     }
   }, [])
 

@@ -6,6 +6,25 @@ import TimelineSection from '../components/TimelineSection'
 import KeywordSection from '../components/KeywordSection'
 import { dateDisplayJa, dayLabel, groupByMonth, monthLabel, truncateTitle } from '../lib/format'
 
+// タブ切り替えボタン。
+// Journal() の内側で定義すると再レンダリングのたびに別コンポーネント扱いになり、
+// Reactが中身を作り直してしまうためモジュールレベルに置く。
+function TabButton({ id, label, activeTab, onSelect }) {
+  const isActive = activeTab === id
+  return (
+    <button
+      onClick={() => onSelect(id)}
+      className={`text-sm px-1 pb-2.5 border-b-2 -mb-px transition-colors ${
+        isActive
+          ? 'text-accent border-accent'
+          : 'text-ink-faint border-transparent hover:text-ink'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
 // ── 記録詳細 ──────────────────────────────────────────────────
 function LogDetail({ log, onDelete, onUpdate }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -256,22 +275,6 @@ export default function Journal() {
   const groups = groupByMonth(filtered)
   const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a))
 
-  function TabButton({ id, label }) {
-    const isActive = activeTab === id
-    return (
-      <button
-        onClick={() => setActiveTab(id)}
-        className={`text-sm px-1 pb-2.5 border-b-2 -mb-px transition-colors ${
-          isActive
-            ? 'text-accent border-accent'
-            : 'text-ink-faint border-transparent hover:text-ink'
-        }`}
-      >
-        {label}
-      </button>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
@@ -285,8 +288,8 @@ export default function Journal() {
 
       {/* タブ */}
       <div className="flex gap-4 border-b border-border">
-        <TabButton id="record" label="記録" />
-        <TabButton id="review" label="振り返り" />
+        <TabButton id="record" label="記録" activeTab={activeTab} onSelect={setActiveTab} />
+        <TabButton id="review" label="振り返り" activeTab={activeTab} onSelect={setActiveTab} />
       </div>
 
       {/* 記録タブ */}
