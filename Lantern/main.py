@@ -455,16 +455,29 @@ def youtube_channel_insight():
     return jsonify({"insight": insight})
 
 
+_MONTHS_AGO_MIN = 1
+_MONTHS_AGO_MAX = 12
+
+
+def _clamp_months_ago(raw):
+    """クエリ文字列の months_ago を 1〜12 に収める。
+
+    上限は Journal の振り返りタブが出す期間（1・3・6・12ヶ月前）の最大値に合わせている。
+    数値として読めない値・未指定は 1 として扱い、例外にはしない。
+    """
+    try:
+        months_ago = int(raw)
+    except (TypeError, ValueError):
+        return _MONTHS_AGO_MIN
+    return max(_MONTHS_AGO_MIN, min(months_ago, _MONTHS_AGO_MAX))
+
+
 @app.route("/api/timeline-reflection")
 @require_auth
 def timeline_reflection():
     import calendar as _cal
 
-    try:
-        months_ago = int(request.args.get("months_ago", 1))
-    except ValueError:
-        months_ago = 1
-    months_ago = max(1, min(months_ago, 6))
+    months_ago = _clamp_months_ago(request.args.get("months_ago"))
 
     today = datetime.now().date()
 
