@@ -29,7 +29,8 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     try {
       await authFetch(`/api/logs/${log.date}`, { method: 'DELETE' })
       if (onDelete) onDelete(log.date)
-    } catch {
+    } catch (e) {
+      console.warn(`[Journal] ${log.date} の削除に失敗`, e)
       setConfirmDelete(false)
     } finally {
       setDeleting(false)
@@ -59,8 +60,9 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
         onUpdate({ ...log, ...editForm, ai_response: data.ai_response ?? log.ai_response })
       }
       setEditing(false)
-    } catch {
-      // エラー時は編集状態を維持
+    } catch (e) {
+      // エラー時は編集状態を維持し、入力を捨てない
+      console.warn(`[Journal] ${log.date} の保存に失敗`, e)
     } finally {
       setSaving(false)
     }

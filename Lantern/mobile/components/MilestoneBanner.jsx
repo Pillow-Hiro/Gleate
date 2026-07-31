@@ -37,8 +37,9 @@ export default function MilestoneBanner() {
           await AsyncStorage.setItem(cacheKey, JSON.stringify(rData.reflection))
         }
         if (!cancelled) setMilestone({ days, reflection: rData.reflection })
-      } catch {
+      } catch (e) {
         // ネットワーク失敗時はバナー非表示のままにする
+        console.warn('[Home] 節目の振り返りの取得に失敗', e)
       }
     })()
 

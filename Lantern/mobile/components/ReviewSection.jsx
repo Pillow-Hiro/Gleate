@@ -33,8 +33,9 @@ export default function ReviewSection({ title, type, description }) {
           setPatterns(stored?.patterns ?? null)
           setGeneratedAt(stored?.generatedAt || '')
         }
-      } catch {
+      } catch (e) {
         // キャッシュが壊れていても初期状態として扱う
+        console.warn('[Review] 振り返りキャッシュの読み込みに失敗', e)
       } finally {
         if (!cancelled) setRestored(true)
       }
@@ -57,7 +58,8 @@ export default function ReviewSection({ title, type, description }) {
       setPatterns(newPatterns)
       setGeneratedAt(now)
       await AsyncStorage.setItem(storageKey, JSON.stringify({ patterns: newPatterns, generatedAt: now }))
-    } catch {
+    } catch (e) {
+      console.warn(`[Review] ${type} の生成に失敗`, e)
       setPatterns([])
     } finally {
       setLoading(false)

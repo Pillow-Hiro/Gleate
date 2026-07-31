@@ -44,8 +44,9 @@ export default function Settings() {
         const res = await authFetch('/api/logs')
         const data = await res.json()
         if (!cancelled) setLogs(data)
-      } catch {
+      } catch (e) {
         // 取得失敗時は0件表示のままにする
+        console.warn('[Settings] 記録の取得に失敗', e)
       }
     })()
     return () => { cancelled = true }

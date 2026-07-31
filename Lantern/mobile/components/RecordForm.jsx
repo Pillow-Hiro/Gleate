@@ -31,7 +31,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved }) {
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
-    } catch {
+    } catch (e) {
+      // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
+      console.warn('[Home] 記録の保存に失敗', e)
       setSaveError('保存に失敗しました。接続を確認してください。')
     } finally {
       setLoading(false)

@@ -48,7 +48,8 @@ export default function Dashboard() {
       const data = await res.json()
       setStatus(data)
       return data
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] 連携状態の取得に失敗', e)
       return { connected: false }
     }
   }, [])
@@ -68,7 +69,8 @@ export default function Dashboard() {
       } else {
         setVideosError(true)
       }
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] チャンネル情報・動画一覧の取得に失敗', e)
       setVideosError(true)
     } finally {
       setDataLoading(false)
@@ -116,8 +118,9 @@ export default function Dashboard() {
         const data = await res.json()
         setAnalyticsData(data.videos ?? [])
       }
-    } catch {
-      // サイレント
+    } catch (e) {
+      // 画面には出さない。原因追跡のためログだけ残す
+      console.warn('[Dashboard] アナリティクスの取得に失敗', e)
     } finally {
       setAnalyticsLoading(false)
     }
@@ -158,7 +161,8 @@ export default function Dashboard() {
         setTimeout(() => setMessage(''), 4000)
       }
       // result.type === 'cancel' はユーザーが閉じただけなので何も表示しない
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] YouTube連携に失敗', e)
       setMessage('連携できませんでした。')
       setTimeout(() => setMessage(''), 4000)
     } finally {
@@ -178,8 +182,9 @@ export default function Dashboard() {
       setConfirmDisconnect(false)
       setMessage('YouTubeの連携を解除しました。')
       setTimeout(() => setMessage(''), 4000)
-    } catch {
-      // サイレント
+    } catch (e) {
+      // 画面には出さない。原因追跡のためログだけ残す
+      console.warn('[Dashboard] 連携解除に失敗', e)
     } finally {
       setDisconnecting(false)
     }

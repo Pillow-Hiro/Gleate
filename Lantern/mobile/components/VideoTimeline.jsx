@@ -33,7 +33,8 @@ export default function VideoTimeline({ videos }) {
         ...prev,
         [id]: { loading: false, text: data.insight ?? '', visible: true },
       }))
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] 動画の観察の取得に失敗', e)
       setInsightState((prev) => ({ ...prev, [id]: { loading: false, text: null, visible: false } }))
     }
   }

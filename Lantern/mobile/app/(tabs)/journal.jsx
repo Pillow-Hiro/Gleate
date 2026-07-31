@@ -36,8 +36,9 @@ export default function Journal() {
         const res = await authFetch('/api/logs')
         const data = await res.json()
         if (!cancelled) setLogs(data)
-      } catch {
+      } catch (e) {
         // 取得失敗時は空一覧のままにする
+        console.warn('[Journal] 記録の取得に失敗', e)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -79,8 +80,9 @@ export default function Journal() {
       setLogs((prev) => [...prev, newLog])
       setSelectedDate(modalDate)
       setModalDate(null)
-    } catch {
-      // エラー時はモーダルを維持
+    } catch (e) {
+      // エラー時はモーダルを維持し、入力を捨てない
+      console.warn(`[Journal] ${modalDate} の保存に失敗`, e)
     } finally {
       setModalSaving(false)
     }

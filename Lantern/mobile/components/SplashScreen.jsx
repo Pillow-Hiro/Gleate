@@ -52,8 +52,9 @@ export default function SplashScreen({ onClose }) {
         if (cancelled) return
         if (data.quote) setQuote(data.quote)
         setPhotoUrl(data.photo_url || `https://picsum.photos/seed/${localDateStr()}/800/1400`)
-      } catch {
+      } catch (e) {
         // 取得失敗時はグラデーション背景とフォールバック文言のままにする
+        console.warn('[Splash] 起動画面コンテンツの取得に失敗', e)
       }
     })()
     return () => { cancelled = true }

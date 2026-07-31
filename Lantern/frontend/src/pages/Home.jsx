@@ -42,7 +42,9 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
-    } catch {
+    } catch (e) {
+      // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
+      console.warn('[Home] 記録の保存に失敗', e)
       setSaveError('保存に失敗しました。接続を確認してください。')
     } finally {
       setLoading(false)
@@ -176,8 +178,9 @@ export default function Home() {
           localStorage.setItem(cacheKey, JSON.stringify(rData.reflection))
         }
         setMilestone({ days, reflection: rData.reflection })
-      } catch {
+      } catch (e) {
         // ネットワーク失敗時はバナー非表示のままにする
+        console.warn('[Home] 節目の振り返りの取得に失敗', e)
       }
     })()
   }, [])
@@ -204,8 +207,9 @@ export default function Home() {
           const quoteData = await quoteRes.json()
           setQuote(quoteData.quote || '')
         }
-      } catch {
-        // fallback — keep empty state
+      } catch (e) {
+        // 取得できなければ空のまま表示する
+        console.warn('[Home] 記録・今日の灯りの取得に失敗', e)
       } finally {
         setLoading(false)
       }

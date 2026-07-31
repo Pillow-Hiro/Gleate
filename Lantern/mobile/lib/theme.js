@@ -25,8 +25,9 @@ export function ThemeProvider({ children }) {
           setIsDark(dark)
           colorScheme.set(dark ? 'dark' : 'light')
         }
-      } catch {
+      } catch (e) {
         // 読めなければライトのままにする
+        console.warn('[Theme] テーマ設定の読み込みに失敗', e)
       }
     })()
     return () => { cancelled = true }

@@ -157,7 +157,8 @@ function VideoTimeline({ videos }) {
       })
       const data = await res.json()
       setInsightState(prev => ({ ...prev, [id]: { loading: false, text: data.insight ?? '', visible: true } }))
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] 動画の観察の取得に失敗', e)
       setInsightState(prev => ({ ...prev, [id]: { loading: false, text: null, visible: false } }))
     }
   }
@@ -319,7 +320,8 @@ export default function Dashboard() {
       } else {
         setVideosError(true)
       }
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] チャンネル情報・動画一覧の取得に失敗', e)
       setVideosError(true)
     } finally {
       setDataLoading(false)
@@ -333,9 +335,12 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json()
         setAnalyticsData(data.videos ?? [])
+      } else {
+        console.warn(`[Dashboard] analytics が ${res.status} を返した (days=${days})`)
       }
-    } catch {
-      // サイレント
+    } catch (e) {
+      // 画面には出さない。原因追跡のためログだけ残す
+      console.warn('[Dashboard] アナリティクスの取得に失敗', e)
     } finally {
       setAnalyticsLoading(false)
     }
@@ -380,8 +385,9 @@ export default function Dashboard() {
       setShowDisconnectModal(false)
       setYoutubeMessage('YouTubeの連携を解除しました。')
       setTimeout(() => setYoutubeMessage(''), 4000)
-    } catch {
-      // サイレント
+    } catch (e) {
+      // 画面には出さない。原因追跡のためログだけ残す
+      console.warn('[Dashboard] 連携解除に失敗', e)
     } finally {
       setYoutubeDisconnecting(false)
     }
@@ -393,7 +399,8 @@ export default function Dashboard() {
       const res = await authFetch('/api/youtube/auth-url')
       const data = await res.json()
       if (data.url) window.location.href = data.url
-    } catch {
+    } catch (e) {
+      console.warn('[Dashboard] 認可URLの取得に失敗', e)
       setYoutubeConnecting(false)
     }
   }
@@ -418,9 +425,12 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json()
         setChannelInsight(data.insight || '')
+      } else {
+        console.warn(`[Dashboard] channel-insight が ${res.status} を返した`)
       }
-    } catch {
-      // サイレント
+    } catch (e) {
+      // 画面には出さない。原因追跡のためログだけ残す
+      console.warn('[Dashboard] チャンネル観察の取得に失敗', e)
     } finally {
       setChannelInsightLoading(false)
     }

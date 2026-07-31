@@ -56,8 +56,9 @@ export default function Home() {
           const quoteData = await quoteRes.json()
           if (!cancelled) setQuote(quoteData.quote || '')
         }
-      } catch {
-        // fallback — 空のまま表示する
+      } catch (e) {
+        // 取得できなければ空のまま表示する
+        console.warn('[Home] 記録・今日の灯りの取得に失敗', e)
       } finally {
         if (!cancelled) setLoading(false)
       }
