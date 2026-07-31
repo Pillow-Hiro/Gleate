@@ -11,7 +11,15 @@ from google.auth.transport.requests import Request
 
 YOUTUBE_CLIENT_ID = os.environ.get("YOUTUBE_CLIENT_ID")
 YOUTUBE_CLIENT_SECRET = os.environ.get("YOUTUBE_CLIENT_SECRET")
-REDIRECT_URI = os.environ.get("YOUTUBE_REDIRECT_URI", "http://localhost:5173/youtube/callback")
+# Google に渡すリダイレクト先。必ず下の /api/youtube/callback ルートと一致させること。
+# 既定値はローカルのFlask。以前は http://localhost:5173/youtube/callback だったが、
+# 5173 は Vite で、そのパスは Flask へプロキシされない（/api と /save のみ転送）ため
+# 認可コードが届かず、Google Cloud Console にも登録できない値だった。
+# 本番は Render の環境変数 YOUTUBE_REDIRECT_URI で上書きしている。
+REDIRECT_URI = os.environ.get(
+    "YOUTUBE_REDIRECT_URI",
+    "http://localhost:5000/api/youtube/callback",
+)
 _SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 # user_id -> code_verifier の一時ストア（OAuth フロー完了まで保持）

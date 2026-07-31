@@ -587,6 +587,68 @@ Journal 内のタブ）。さらに中身も重複していた。
 
 ---
 
+### 2026/07/31（ローカルのYouTube連携が redirect_uri_mismatch になる不具合）
+
+**症状**
+
+ローカル（localhost:5173）でYouTube連携すると Google が
+「エラー 400: redirect_uri_mismatch」を返し、連携できない。
+
+**原因**
+
+`Lantern/.env` に `YOUTUBE_REDIRECT_URI` がなく、
+`modules/youtube.py` のハードコードされた既定値
+`http://localhost:5173/youtube/callback` が使われていた。
+この既定値は二重に誤っていた。
+
+1. Google Cloud Console に登録しようのない値だった
+2. ポート5173はViteで、パスも `/youtube/callback`。
+   実際のハンドラは Flask（5000）の `/api/youtube/callback` であり、
+   Viteのプロキシは `/api` と `/save` しか転送しないため
+   仮に登録できても認可コードがFlaskに届かない
+
+さらに、コールバック後の戻り先 `_FRONTEND_ORIGIN` が
+Vercel本番URLにハードコードされており、ローカルで認証しても
+本番サイトへ飛ばされる状態だった。
+
+前セッションの `7792eac`（A6）時点から誤っていたが、
+ローカルでYouTube連携を試したのが初めてだったため顕在化していなかった。
+
+**修正**
+
+- [x] `modules/youtube.py` の既定値を `http://localhost:5000/api/youtube/callback` に変更
+- [x] `main.py` の `_FRONTEND_ORIGIN` を環境変数 `FRONTEND_ORIGIN` で
+      上書き可能にした。未設定時は本番Vercelを使うため Render 側は変更不要
+- [x] 解決処理を `_resolve_frontend_origin()` に切り出してテスト可能にした
+- [x] `tests/test_youtube_redirect.py` を追加（18件）
+      既定値が**実在するFlaskルートと一致すること**を
+      `app.url_map` と突き合わせて検証する。5173を指さないことも固定した
+- [x] ローカルの `.env` に `YOUTUBE_REDIRECT_URI` と `FRONTEND_ORIGIN` を追記
+      （.envはgitignore対象のためコミットには含まれない）
+
+**ユーザー側で必要だった作業**
+
+Google Cloud Console の OAuth クライアントの「承認済みのリダイレクト URI」に
+`http://localhost:5000/api/youtube/callback` を追加（登録済みを確認）。
+
+**検証結果: OK**
+
+- pytest 123件パス
+- 変異テストで既定値を元の5173に戻すと3件失敗、復元後に全件パス
+- ローカルFlaskを再起動し `/api/debug/version` が
+  `http://localhost:5000/api/youtube/callback` を返すことを確認
+- 認可URLを実際に生成し、Googleに送られる `redirect_uri` が
+  同じ値になることを確認
+
+**検証時の落とし穴（メモ）**
+
+`.env` を編集する前に起動していたFlaskプロセスがポート5000を掴んだままで、
+新しいプロセスを起動しても古い方が応答し `未設定` と誤った結果を読んだ。
+Windowsでは同じポートに複数プロセスが並存しうる。
+設定変更後の確認は、必ず既存プロセスを完全に停止してから行うこと。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。
