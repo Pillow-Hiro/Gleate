@@ -40,3 +40,61 @@ def build_photo_path(user_id, date):
 def build_thumb_path(user_id, date):
     _validate(user_id, date)
     return f"{user_id}/{date}_thumb.jpg"
+
+
+_SIGNED_URL_TTL_SECONDS = 3600
+
+
+def _client():
+    """Supabase クライアントを返す。テストで差し替えられるよう関数にしている。"""
+    from modules.logs import supabase
+    return supabase
+
+
+def save_photo(user_id, date, photo_bytes, thumb_bytes):
+    """本体とサムネイルを保存し (本体パス, サムネイルパス) を返す。
+
+    失敗は握り潰さない。呼び出し元がユーザーにエラーを返す必要がある。
+    """
+    photo_path = build_photo_path(user_id, date)
+    thumb_path = build_thumb_path(user_id, date)
+
+    # 1記録1枚なので同じパスへの上書きが正常系。
+    # content-type はバケットが image/jpeg のみ許可しているため必須。
+    options = {"content-type": "image/jpeg", "upsert": "true"}
+
+    bucket = _client().storage.from_(BUCKET)
+    bucket.upload(photo_path, photo_bytes, file_options=options)
+    bucket.upload(thumb_path, thumb_bytes, file_options=options)
+    return photo_path, thumb_path
+
+
+def delete_photo(user_id, date):
+    """本体とサムネイルを削除する。
+
+    記録の削除に巻き込まれて500にならないよう、失敗しても例外は外に出さない。
+    ただしログには残す（孤児ファイルに気づけるようにするため）。
+    """
+    try:
+        paths = [build_photo_path(user_id, date), build_thumb_path(user_id, date)]
+        _client().storage.from_(BUCKET).remove(paths)
+    except Exception as e:
+        print(f"[Photo] 写真の削除に失敗 user={user_id} date={date}: {type(e).__name__}: {e}")
+
+
+def signed_url(path):
+    """署名付きURLを発行する。パスが無ければ None。
+
+    URLはDBに保存しない。期限が切れて壊れるため、読み出しのたびに発行する。
+    1枚のURLが出せなくても記録一覧全体を落とさないよう、失敗時は None を返す。
+    """
+    if not path:
+        return None
+    try:
+        res = _client().storage.from_(BUCKET).create_signed_url(path, _SIGNED_URL_TTL_SECONDS)
+        if isinstance(res, dict):
+            return res.get("signedURL") or res.get("signedUrl")
+        return getattr(res, "signedURL", None)
+    except Exception as e:
+        print(f"[Photo] 署名付きURLの発行に失敗 path={path}: {type(e).__name__}: {e}")
+        return None
