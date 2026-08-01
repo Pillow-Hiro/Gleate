@@ -11,3 +11,4 @@ static/
 # Windows の `> nul` リダイレクトで生成されるゴミファイル
 nul
 .superpowers/
+_ul
