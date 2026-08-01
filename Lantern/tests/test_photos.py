@@ -37,19 +37,25 @@ class TestBuildPath:
         with pytest.raises(ValueError):
             build_photo_path("abc-123", "2026-8-1")
 
+    @pytest.mark.parametrize("bad_date", ["20260801", "2026W011", "2026-W01-1"])
+    def test_ハイフン区切り以外のISO形式を拒否する(self, bad_date):
+        # date.fromisoformat はこれらも日付として受け付けてしまう。
+        # 通すと同じ日の写真が別パスに保存され、logsテーブルのDATE列と対応が取れなくなる。
+        with pytest.raises(ValueError):
+            build_photo_path("abc-123", bad_date)
+
     @pytest.mark.parametrize("bad_date", ["2026-08-01\n", "2026-08-01\r\n"])
     def test_末尾の改行を拒否する(self, bad_date):
-        # Python の $ は末尾の改行の直前にもマッチするため \Z を使う必要がある
         with pytest.raises(ValueError):
             build_photo_path("abc-123", bad_date)
 
     def test_user_idの末尾の改行も拒否する(self):
+        # Python の $ は末尾の改行の直前にもマッチするため \Z が要る（ここだけが実際に効く）
         with pytest.raises(ValueError):
             build_photo_path("abc-123\n", "2026-08-01")
 
     @pytest.mark.parametrize("bad_date", ["２０２６-０８-０１", "٢٠٢٦-٠٨-٠١"])
     def test_ASCII以外の数字を拒否する(self, bad_date):
-        # \d は Unicode の数字全般にマッチするため [0-9] で固定する必要がある
         with pytest.raises(ValueError):
             build_photo_path("abc-123", bad_date)
 
