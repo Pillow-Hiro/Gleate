@@ -246,3 +246,67 @@ class TestDbSelectCoversFromDb:
         selected = {c.strip() for c in _DB_SELECT.split(",")}
         assert "photo_path" in selected
         assert "photo_thumb_path" in selected
+
+
+class TestDeleteLogRemovesPhoto:
+    """記録を削除したら Storage の写真も消す。
+
+    ON DELETE CASCADE はDBの行しか消さない。Storage を消さないと
+    消したはずの写真が容量を食い続ける（孤児ファイル）。
+    """
+
+    def test_記録を削除するとStorageの写真も消す(self, monkeypatch):
+        from modules import logs as logs_mod
+        called = []
+        monkeypatch.setattr(logs_mod, "supabase", None)
+        monkeypatch.setattr(
+            "modules.photos.delete_photo",
+            lambda user_id, date: called.append((user_id, date)),
+        )
+
+        logs_mod.delete_log_by_date("2026-08-01", "abc-123")
+
+        assert called == [("abc-123", "2026-08-01")]
+
+    def test_user_idが無ければStorageには触らない(self, monkeypatch):
+        # パスが組み立てられないため。呼ぶと ValueError になる
+        from modules import logs as logs_mod
+        called = []
+        monkeypatch.setattr(logs_mod, "supabase", None)
+        monkeypatch.setattr(
+            "modules.photos.delete_photo",
+            lambda user_id, date: called.append((user_id, date)),
+        )
+
+        logs_mod.delete_log_by_date("2026-08-01", None)
+
+        assert called == []
+
+    def test_写真の削除に失敗してもDB削除は続行する(self, monkeypatch):
+        # 孤児ファイルは残るが、記録が消せないほうが困る
+        from modules import logs as logs_mod
+        deleted = []
+
+        class _FakeQuery:
+            def delete(self):
+                return self
+
+            def eq(self, *args):
+                return self
+
+            def execute(self):
+                deleted.append(True)
+
+        class _FakeSupabase:
+            def table(self, name):
+                return _FakeQuery()
+
+        monkeypatch.setattr(logs_mod, "supabase", _FakeSupabase())
+        monkeypatch.setattr(
+            "modules.photos.delete_photo",
+            lambda user_id, date: (_ for _ in ()).throw(RuntimeError("storage down")),
+        )
+
+        logs_mod.delete_log_by_date("2026-08-01", "abc-123")
+
+        assert deleted == [True]

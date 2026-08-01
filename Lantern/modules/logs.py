@@ -91,6 +91,19 @@ def save_logs(logs, user_id=None):
 
 
 def delete_log_by_date(date, user_id=None):
+    # Storage のファイルは DB の CASCADE では消えないため明示的に削除する。
+    # 消し忘れると、消したはずの写真が容量を食い続ける。
+    # user_id が無いとパスを組み立てられないため、あるときだけ呼ぶ。
+    # import を関数内で行うのは modules.photos が modules.logs を参照するため（循環回避）。
+    if user_id:
+        try:
+            from modules.photos import delete_photo
+            delete_photo(user_id, date)
+        except Exception as e:
+            # 孤児ファイルは残るが、記録そのものが消せないほうが困る。
+            # 気づけるようにログには残す。
+            print(f"[Photo] 記録削除時の写真削除に失敗 user={user_id} date={date}: {type(e).__name__}: {e}")
+
     if not supabase:
         return
     q = supabase.table("logs").delete().eq("date", date)
