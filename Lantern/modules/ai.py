@@ -188,6 +188,10 @@ def get_ai_response(log_entry, past_logs, goals=None):
 def _fmt_logs(logs):
     text = ""
     for log in logs:
+        # 写真だけの記録は本文が空になる。中身の無い行をAIに渡すと
+        # 「2026-08-01: 」という無意味な入力になるためスキップする。
+        if not any(log.get(k) for k in ("created", "enjoyable", "struggled", "next")):
+            continue
         text += f"\n{log['date']}: {log.get('created', '')}"
         if log.get("enjoyable"):
             text += f"（楽しかったこと: {log['enjoyable']}）"
