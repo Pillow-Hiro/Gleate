@@ -10,7 +10,10 @@ supabase = create_client(_url, _key) if _url and _key else None
 # Supabase: content / good_things / struggles / next_action / lantern_message / updated_at
 # App:      created / enjoyable   / struggled / next        / ai_response     / saved_at
 
-_DB_SELECT = "id, date, content, next_action, good_things, struggles, lantern_message, updated_at, user_id"
+_DB_SELECT = (
+    "id, date, content, next_action, good_things, struggles, "
+    "lantern_message, updated_at, user_id, photo_path, photo_thumb_path"
+)
 
 
 def _from_db(row):
@@ -22,10 +25,16 @@ def _from_db(row):
         "next": row.get("next_action", ""),
         "saved_at": row.get("updated_at", "") or "",
         "ai_response": row.get("lantern_message", ""),
+        "photo_path": row.get("photo_path", "") or "",
+        "photo_thumb_path": row.get("photo_thumb_path", "") or "",
     }
 
 
 def _to_db(l, user_id=None):
+    # 写真カラム（photo_path / photo_thumb_path）は意図的に含めない。
+    # /save は受け取ったデータから entry を作り直すため、ここに写真を足すと
+    # テキストだけを編集したときに写真が消える。
+    # 写真の更新は main.py の /api/logs/<date>/photo だけが行う。
     return {
         "date": l.get("date", ""),
         "content": l.get("created", ""),

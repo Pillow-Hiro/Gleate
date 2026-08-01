@@ -44,6 +44,9 @@ APP_LOG = {
     "next": "明日サビを直す",
     "ai_response": "昨日の記録が、ここに残っています。",
     "saved_at": "2026-07-28T21:30:00",
+    # 写真なしの記録。DB_ROW に写真カラムが無い場合の _from_db の出力に合わせる
+    "photo_path": "",
+    "photo_thumb_path": "",
 }
 
 
@@ -56,6 +59,7 @@ class TestFromDb:
         assert result == {
             "date": "", "created": "", "enjoyable": "",
             "struggled": "", "next": "", "saved_at": "", "ai_response": "",
+            "photo_path": "", "photo_thumb_path": "",
         }
 
     def test_updated_atがNoneなら空文字にする(self):
@@ -153,3 +157,92 @@ class TestCurrentGoals:
     def test_今月の目標がなければ空文字(self):
         assert get_current_monthly_goal({}) == ""
         assert get_current_monthly_goal({"monthly_goals": [{"month": "1999-01", "goal": "x"}]}) == ""
+
+
+class TestPhotoColumns:
+    """写真カラムの扱い。
+
+    /save は受け取ったデータから entry を作り直すため、_to_db が写真を
+    書くようにするとテキスト編集だけで写真が消える。
+    そのため _to_db は写真カラムを一切出力しない。
+    """
+
+    def test_from_dbは写真パスを変換する(self):
+        row = {
+            **DB_ROW,
+            "photo_path": "u/2026-08-01.jpg",
+            "photo_thumb_path": "u/2026-08-01_thumb.jpg",
+        }
+        result = _from_db(row)
+        assert result["photo_path"] == "u/2026-08-01.jpg"
+        assert result["photo_thumb_path"] == "u/2026-08-01_thumb.jpg"
+
+    def test_写真カラムがNoneなら空文字になる(self):
+        # None のまま返すとフロントで `photo_path &&` の判定が通ってしまう
+        row = {**DB_ROW, "photo_path": None, "photo_thumb_path": None}
+        result = _from_db(row)
+        assert result["photo_path"] == ""
+        assert result["photo_thumb_path"] == ""
+
+    def test_写真カラムが無い行でも空文字になる(self):
+        result = _from_db(DB_ROW)
+        assert result["photo_path"] == ""
+        assert result["photo_thumb_path"] == ""
+
+    def test_to_dbは写真カラムを出力しない(self):
+        # ここが崩れると、テキスト編集のたびに写真が消える
+        row = _to_db(
+            {**APP_LOG, "photo_path": "u/x.jpg", "photo_thumb_path": "u/x_thumb.jpg"},
+            "abc-123",
+        )
+        assert "photo_path" not in row
+        assert "photo_thumb_path" not in row
+
+    def test_to_dbの出力キーは固定(self):
+        assert set(_to_db(APP_LOG, "abc-123").keys()) == {
+            "date", "content", "good_things", "struggles",
+            "next_action", "lantern_message", "updated_at", "user_id",
+        }
+
+    def test_写真つきの記録を保存してもDBの写真カラムは変わらない(self):
+        # /save 相当の往復。写真を持つアプリ側データを _to_db に通しても
+        # 写真カラムが出力されないため、既存の写真は更新対象から外れる
+        with_photo = {**APP_LOG, "photo_path": "u/x.jpg", "photo_thumb_path": "u/x_thumb.jpg"}
+        assert _to_db(with_photo, "abc-123") == _to_db(APP_LOG, "abc-123")
+
+
+class _RecordingRow(dict):
+    """_from_db がどのカラムを読んだかを記録する dict。"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.accessed = set()
+
+    def get(self, key, default=None):
+        self.accessed.add(key)
+        return super().get(key, default)
+
+
+class TestDbSelectCoversFromDb:
+    """_from_db が読むカラムが _DB_SELECT に入っているかを構造的に検証する。
+
+    _DB_SELECT への追加を忘れると、DBに値があっても常に空で返る。
+    例外は出ず「写真が消えた」ように見えるだけなので気づきにくい。
+    """
+
+    def test_from_dbが読むカラムはすべてDB_SELECTに含まれる(self):
+        from modules.logs import _DB_SELECT
+
+        row = _RecordingRow(DB_ROW)
+        _from_db(row)
+
+        selected = {c.strip() for c in _DB_SELECT.split(",")}
+        missing = row.accessed - selected
+        assert not missing, f"_DB_SELECT に無いカラムを読んでいる: {sorted(missing)}"
+
+    def test_写真カラムがDB_SELECTに入っている(self):
+        from modules.logs import _DB_SELECT
+
+        selected = {c.strip() for c in _DB_SELECT.split(",")}
+        assert "photo_path" in selected
+        assert "photo_thumb_path" in selected
