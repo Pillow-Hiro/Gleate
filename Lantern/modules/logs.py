@@ -90,6 +90,31 @@ def save_logs(logs, user_id=None):
         _upsert_one(_to_db(l, user_id))
 
 
+def set_photo_paths(user_id, date, photo_path, thumb_path):
+    """写真カラムだけを更新する。テキストには触らない。
+
+    該当日の記録が無ければ作る。写真だけで記録を成立させるため。
+    _to_db を通さないのは、_to_db が写真カラムを出力しない設計だから
+    （/save 経由でのテキスト編集が写真を消さないようにしている）。
+    """
+    if not supabase:
+        return
+    fields = {"photo_path": photo_path, "photo_thumb_path": thumb_path}
+    existing = (
+        supabase.table("logs").select("id")
+        .eq("date", date).eq("user_id", user_id).execute()
+    )
+    if existing.data:
+        supabase.table("logs").update(fields).eq("date", date).eq("user_id", user_id).execute()
+    else:
+        supabase.table("logs").insert({
+            "date": date,
+            "user_id": user_id,
+            "updated_at": datetime.now().isoformat(),
+            **fields,
+        }).execute()
+
+
 def delete_log_by_date(date, user_id=None):
     # Storage のファイルは DB の CASCADE では消えないため明示的に削除する。
     # 消し忘れると、消したはずの写真が容量を食い続ける。
