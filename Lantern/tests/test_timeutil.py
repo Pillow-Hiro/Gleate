@@ -97,9 +97,14 @@ class TestRoutesActuallyUseIt:
         from flask import g
         import main
 
+        # 実在しない日付を返させる。実日付を書くと、たまたま
+        # サーバーのUTC日付と一致した日にテストが素通りする
+        # （最初この書き方をして変異テストが生存した）。
+        SENTINEL = "1999-12-31"
+
         asked = {}
-        monkeypatch.setattr(main, "today_str", lambda: "2026-08-03")
-        monkeypatch.setattr(main, "days_ago_str", lambda n: "2026-08-02")
+        monkeypatch.setattr(main, "today_str", lambda: SENTINEL)
+        monkeypatch.setattr(main, "days_ago_str", lambda n: "1999-12-30")
         monkeypatch.setattr(
             main, "load_daily_quote",
             lambda uid, date: asked.setdefault("date", date) and None or "灯り",
@@ -109,8 +114,9 @@ class TestRoutesActuallyUseIt:
             g.user_id = "abc-123"
             main.daily_quote.__wrapped__()
 
-        # UTC 基準なら 2026-08-02 を引いてしまう場面
-        assert asked["date"] == "2026-08-03"
+        assert asked["date"] == SENTINEL, (
+            f"today_str() ではなくサーバー日付を使っている（{asked['date']}）"
+        )
 
     def test_今日の灯りはJSTの昨日を参照する(self, monkeypatch):
         from flask import g
