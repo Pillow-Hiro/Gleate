@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { authFetch } from '../../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../../lib/supabase'
 import { dateDisplayJa, groupByMonth, monthLabel } from '../../lib/format'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
@@ -9,6 +9,7 @@ import LogItem from '../../components/LogItem'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
+import PhotoPicker from '../../components/PhotoPicker'
 
 const MODAL_FIELDS = [
   { field: 'created', label: 'やったこと', placeholder: '今日やったこと', minHeight: 84 },
@@ -28,6 +29,7 @@ export default function Journal() {
   const [modalDate, setModalDate] = useState(null)
   const [modalForm, setModalForm] = useState(EMPTY_FORM)
   const [modalSaving, setModalSaving] = useState(false)
+  const [modalPhotoUrl, setModalPhotoUrl] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -63,11 +65,44 @@ export default function Journal() {
       setSelectedDate(null)
       setModalDate(date)
       setModalForm(EMPTY_FORM)
+      setModalPhotoUrl(null)
     }
   }
 
+  function closeModal() {
+    setModalDate(null)
+    setModalPhotoUrl(null)
+  }
+
+  // 写真はテキストと別APIで保存する。/save は写真に触れない設計なので、
+  // ここで先に保存しておけば後からテキストを編集しても消えない。
+  async function handleModalPhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(modalDate, photo, thumb)
+    setModalPhotoUrl(data.photo_url)
+    setLogs((prev) => {
+      const found = prev.find((l) => l.date === modalDate)
+      if (found) {
+        return prev.map((l) => (l.date === modalDate ? { ...l, ...data } : l))
+      }
+      // 写真だけの記録。サーバー側でも記録行が作られている
+      return [...prev, { date: modalDate, ...EMPTY_FORM, ...data }]
+    })
+  }
+
+  async function handleModalPhotoRemove() {
+    await removePhoto(modalDate)
+    setModalPhotoUrl(null)
+    setLogs((prev) =>
+      prev.map((l) => (l.date === modalDate ? { ...l, photo_url: null, photo_thumb_url: null } : l))
+    )
+  }
+
+  // テキストか写真のどちらかがあれば保存できる。
+  // 「写真だけで残せる」ことが本機能の目的なので、created 必須をやめた。
+  const canSaveModal = Boolean(modalForm.created.trim() || modalPhotoUrl)
+
   async function handleModalSave() {
-    if (!modalForm.created.trim()) return
+    if (!canSaveModal) return
     setModalSaving(true)
     try {
       const res = await authFetch('/save', {
@@ -76,10 +111,20 @@ export default function Journal() {
       })
       if (!res.ok) throw new Error('save failed')
       const data = await res.json()
-      const newLog = { date: modalDate, ...modalForm, ai_response: data.ai_response }
-      setLogs((prev) => [...prev, newLog])
+      const existing = logs.find((l) => l.date === modalDate)
+      const newLog = {
+        date: modalDate,
+        ...modalForm,
+        ai_response: data.ai_response,
+        // 写真は別APIで先に保存済み。テキスト保存で消えないよう引き継ぐ
+        photo_url: existing?.photo_url ?? null,
+        photo_thumb_url: existing?.photo_thumb_url ?? null,
+      }
+      setLogs((prev) =>
+        existing ? prev.map((l) => (l.date === modalDate ? newLog : l)) : [...prev, newLog]
+      )
       setSelectedDate(modalDate)
-      setModalDate(null)
+      closeModal()
     } catch (e) {
       // エラー時はモーダルを維持し、入力を捨てない
       console.warn(`[Journal] ${modalDate} の保存に失敗`, e)
@@ -244,15 +289,15 @@ export default function Journal() {
         visible={modalDate !== null}
         animationType="slide"
         transparent
-        onRequestClose={() => setModalDate(null)}
+        onRequestClose={closeModal}
       >
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setModalDate(null)}>
+        <Pressable className="flex-1 bg-black/50 justify-end" onPress={closeModal}>
           <Pressable className="bg-cream rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-xs text-ink-faint">
                 {modalDate ? dateDisplayJa(modalDate) : ''}
               </Text>
-              <Pressable onPress={() => setModalDate(null)} accessibilityLabel="閉じる" className="p-1">
+              <Pressable onPress={closeModal} accessibilityLabel="閉じる" className="p-1">
                 <Text className="text-ink-faint text-xs">✕</Text>
               </Pressable>
             </View>
@@ -274,16 +319,23 @@ export default function Journal() {
                     />
                   </View>
                 ))}
+
+                <PhotoPicker
+                  photoUrl={modalPhotoUrl}
+                  onSelect={handleModalPhotoSelect}
+                  onRemove={handleModalPhotoRemove}
+                  disabled={modalSaving}
+                />
               </View>
             </ScrollView>
 
             <View className="flex-row items-center justify-end gap-4 pt-4">
-              <Pressable onPress={() => setModalDate(null)}>
+              <Pressable onPress={closeModal}>
                 <Text className="text-xs text-ink-faint">キャンセル</Text>
               </Pressable>
               <Pressable
                 onPress={handleModalSave}
-                disabled={modalSaving || !modalForm.created.trim()}
+                disabled={modalSaving || !canSaveModal}
                 className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
               >
                 <Text className="text-xs text-forest">{modalSaving ? '保存中...' : '記録する'}</Text>
