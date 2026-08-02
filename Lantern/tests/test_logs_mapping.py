@@ -211,6 +211,51 @@ class TestPhotoColumns:
         assert _to_db(with_photo, "abc-123") == _to_db(APP_LOG, "abc-123")
 
 
+class TestPhotoOnlyRow:
+    """写真だけの記録が返ってくる場合。
+
+    set_photo_paths は該当日の記録が無いとき
+    date / user_id / updated_at / 写真カラム だけで insert する。
+    テキスト列は NULL になるため、_from_db が None をそのまま返すと
+    クライアントに `created: null` が渡る。
+    `row.get("content", "")` は「キーがある＋値が None」では既定値を返さない。
+    """
+
+    PHOTO_ONLY_ROW = {
+        "id": 1,
+        "date": "2026-08-01",
+        "content": None,
+        "good_things": None,
+        "struggles": None,
+        "next_action": None,
+        "lantern_message": None,
+        "updated_at": "2026-08-01T10:00:00",
+        "user_id": "abc-123",
+        "photo_path": "abc-123/2026-08-01.jpg",
+        "photo_thumb_path": "abc-123/2026-08-01_thumb.jpg",
+    }
+
+    def test_テキスト列がNULLでも全て空文字で返す(self):
+        result = _from_db(self.PHOTO_ONLY_ROW)
+        for key in ("created", "enjoyable", "struggled", "next", "ai_response"):
+            assert result[key] == "", f"{key} が {result[key]!r} になっている"
+
+    def test_値は必ず文字列(self):
+        # フロントは .trim() や .toLowerCase() を呼ぶ。None が混ざると落ちる
+        result = _from_db(self.PHOTO_ONLY_ROW)
+        for key, value in result.items():
+            assert isinstance(value, str), f"{key} が {type(value).__name__} になっている"
+
+    def test_写真パスは保たれる(self):
+        result = _from_db(self.PHOTO_ONLY_ROW)
+        assert result["photo_path"] == "abc-123/2026-08-01.jpg"
+        assert result["photo_thumb_path"] == "abc-123/2026-08-01_thumb.jpg"
+
+    def test_dateがNoneでも文字列のNoneにしない(self):
+        # str(None) は "None" という文字列になり、日付比較を静かに壊す
+        assert _from_db({**self.PHOTO_ONLY_ROW, "date": None})["date"] == ""
+
+
 class _RecordingRow(dict):
     """_from_db がどのカラムを読んだかを記録する dict。"""
 

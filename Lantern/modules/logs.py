@@ -17,16 +17,21 @@ _DB_SELECT = (
 
 
 def _from_db(row):
+    # すべて `or ""` を通すのは、写真だけの記録ではテキスト列が NULL になるため。
+    # set_photo_paths は記録が無い日に date と写真カラムだけで insert するので、
+    # content などは NULL のまま返ってくる。
+    # `row.get("content", "")` は「キーはあるが値が None」では既定値を返さないため、
+    # ここを通さないとクライアントに created: null が渡り、.trim() で落ちる。
     return {
-        "date": str(row.get("date", "")),
-        "created": row.get("content", ""),
-        "enjoyable": row.get("good_things", ""),
-        "struggled": row.get("struggles", ""),
-        "next": row.get("next_action", ""),
-        "saved_at": row.get("updated_at", "") or "",
-        "ai_response": row.get("lantern_message", ""),
-        "photo_path": row.get("photo_path", "") or "",
-        "photo_thumb_path": row.get("photo_thumb_path", "") or "",
+        "date": str(row.get("date") or ""),
+        "created": row.get("content") or "",
+        "enjoyable": row.get("good_things") or "",
+        "struggled": row.get("struggles") or "",
+        "next": row.get("next_action") or "",
+        "saved_at": row.get("updated_at") or "",
+        "ai_response": row.get("lantern_message") or "",
+        "photo_path": row.get("photo_path") or "",
+        "photo_thumb_path": row.get("photo_thumb_path") or "",
     }
 
 
