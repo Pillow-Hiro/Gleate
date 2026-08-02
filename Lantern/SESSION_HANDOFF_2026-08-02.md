@@ -33,7 +33,7 @@ cd frontend && npm test      # 53 passed
 - 設計: `docs/superpowers/specs/2026-08-01-photo-record-design.md`
 - 計画: `docs/superpowers/plans/2026-08-01-photo-record.md`（全16タスク）
 
-### 完了（Task 1〜7）
+### 完了（Task 1〜13）
 
 | Task | 内容 | コミット |
 |---|---|---|
@@ -43,24 +43,62 @@ cd frontend && npm test      # 53 passed
 | 4 | 記録削除でStorageも消す | `2b6eb82` |
 | 5 | 写真のみの記録をAI整形から除外 | `19b87d6` |
 | 6+7 | 写真のPUT/DELETE API・署名付きURL付与 | `0527545` |
+| 8+9 | 圧縮の寸法計算・mobile に画像パッケージ導入 | `6eebc20` |
+| 10〜12 | `PhotoPicker`（両）・アップロードヘルパー | `8ec15d1` |
+| 13 | Web の記録モーダルに組み込み | `d1e8184` |
 
-**サーバー側は完了。** テスト 123件 → 197件。
+**サーバー側と、Webの記録モーダルまで完了。**
+テスト pytest 197件（開始時123件）／ vitest 65件（開始時53件）。
 
-### 未着手（Task 8〜16）
+### 未着手（Task 14〜16）
 
-すべてフロントエンド。計画書に完全なコードつきで書いてある。
+計画書 `docs/superpowers/plans/2026-08-01-photo-record.md` に手順がある。
+ただし Task 14 以降は計画書の記述が粗いので、Task 13 の実装（`Journal.jsx`）を
+参考にすること。
 
-| Task | 内容 |
-|---|---|
-| 8 | 縮小寸法の計算（`frontend/src/lib/image.js` / `mobile/lib/image.js`） |
-| 9 | mobile に `expo-image-picker` / `expo-image-manipulator` を追加 |
-| 10 | `PhotoPicker`（Web） |
-| 11 | `PhotoPicker`（mobile） |
-| 12 | アップロード用ヘルパー（両 `lib/supabase.js`） |
-| 13 | 記録モーダルに組み込む（Web） |
-| 14 | 残りの表示箇所（Web: Home / LogDetail / LogItem / LogSnapshot） |
-| 15 | mobile の各画面に組み込む |
-| 16 | 統合確認とドキュメント更新 |
+| Task | 内容 | 対象ファイル |
+|---|---|---|
+| 14 | Web の残りの表示箇所 | `pages/Home.jsx` / `components/LogDetail.jsx` / `components/LogItem.jsx` / `components/LogSnapshot.jsx` |
+| 15 | mobile の各画面 | `app/(tabs)/journal.jsx` / `components/RecordForm.jsx` / `LogDetail.jsx` / `LogItem.jsx` / `LogSnapshot.jsx` |
+| 16 | 統合確認・PROGRESS.md と CLAUDE.md の更新 | — |
+
+### Task 14 以降で具体的にやること
+
+**Home.jsx（今日の記録）**
+`Journal.jsx` と同じ形で `PhotoPicker` を置く。日付は `targetDate` を使う。
+Home の保存ボタンには元々必須条件が無いので、条件の変更は不要。
+
+**LogDetail.jsx（記録の詳細・編集）**
+写真の表示と差し替え・削除。`uploadPhoto(log.date, ...)` / `removePhoto(log.date)` を
+呼び、成功したら `onUpdate({ ...log, ...data })` で親に反映する。
+
+**LogItem.jsx（一覧の1行）**
+`log.photo_thumb_url` があればサムネイルを出す。
+
+```jsx
+{log.photo_thumb_url && (
+  <img src={log.photo_thumb_url} alt="" className="w-8 h-8 rounded object-cover shrink-0 mr-2" />
+)}
+```
+
+**LogSnapshot.jsx（過去との対話の左右カード）**
+全項目が空でも崩れないようにする。写真だけの記録は日付だけのカードになってしまう。
+
+```jsx
+const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
+// log があるのにテキストが無い＝写真だけの記録
+{log && !hasText && (
+  log.photo_thumb_url
+    ? <img src={log.photo_thumb_url} alt="" className="w-full rounded-lg object-cover max-h-32" />
+    : <p className="text-sm text-ink-faint">この日の記録があります。</p>
+)}
+```
+
+**mobile 側**
+Web と同じ変更を React Native のコンポーネントで行う。
+`<img>` は `<Image source={{ uri }} />`。記録モーダルの保存条件も
+「テキストか写真のどちらかがあれば保存可」に変える
+（`app/(tabs)/journal.jsx` の `!modalForm.created.trim()` を置き換える）。
 
 ---
 
@@ -95,6 +133,18 @@ LogDetail のテキスト編集（写真フィールドを送らない）を保�
 
 期限切れで壊れるため、読み出しのたびに発行する。
 内部のStorageパスはレスポンスに含めない。
+
+### クライアントの状態更新でも写真を引き継ぐ（Task 13 で踏んだ）
+
+サーバー側の設計が正しくても、フロント側で状態を作り直すときに
+`photo_url` を引き継がないと**画面上だけ写真が消えたように見える**
+（DBには残っているのでリロードすると戻る）。
+
+`Journal.jsx` の `handleModalSave` では、テキスト保存後に組み立てる
+`newLog` へ既存ログの `photo_url` / `photo_thumb_url` をコピーしている。
+Task 14・15 で同じ形の処理を書くときは必ず引き継ぐこと。
+
+サーバー側の `_to_db` と対になる、**クライアント側の同じ罠**。
 
 ---
 
