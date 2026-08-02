@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { authFetch } from '../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
+import PhotoPicker from './PhotoPicker'
 
 // 1日の記録の詳細表示・編集・削除。
 // 記録そのものを尊重するため、内容には何も加工を加えず、そのまま並べる。
@@ -60,6 +61,18 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     setEditForm({})
   }
 
+  // 写真はテキストと別APIで扱う。/save は写真カラムに触れないため、
+  // ここで更新しても後のテキスト編集で消えることはない。
+  async function handlePhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(log.date, photo, thumb)
+    if (onUpdate) onUpdate({ ...log, ...data })
+  }
+
+  async function handlePhotoRemove() {
+    await removePhoto(log.date)
+    if (onUpdate) onUpdate({ ...log, photo_url: null, photo_thumb_url: null })
+  }
+
   const displayFields = [
     { key: 'created', label: 'やったこと' },
     { key: 'enjoyable', label: 'よかったこと' },
@@ -115,6 +128,14 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
           </div>
         ) : null
       )}
+
+      <PhotoPicker
+        photoUrl={log.photo_url}
+        onSelect={handlePhotoSelect}
+        onRemove={handlePhotoRemove}
+        disabled={deleting}
+      />
+
       {log.ai_response && (
         <div className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 space-y-1.5 mt-3">
           <p className="text-[10px] tracking-[0.18em] uppercase text-sage">Lantern</p>

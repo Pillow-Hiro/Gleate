@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { authFetch } from '../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
 import { localDateStr, todayStr, calcStreak } from '../lib/date'
+import PhotoPicker from '../components/PhotoPicker'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -28,6 +29,20 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
+  const [photoUrl, setPhotoUrl] = useState(existingLog?.photo_url || null)
+
+  // 写真は別APIで即座に保存する。テキストの「記録する」を待たない。
+  // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
+  // このフォームが作り直され、入力途中のテキストが消えるため。
+  async function handlePhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(targetDate, photo, thumb)
+    setPhotoUrl(data.photo_url)
+  }
+
+  async function handlePhotoRemove() {
+    await removePhoto(targetDate)
+    setPhotoUrl(null)
+  }
 
   async function handleSave() {
     setLoading(true)
@@ -104,6 +119,13 @@ function RecordForm({ existingLog, targetDate, onSaved }) {
           </div>
         </div>
       </div>
+
+      <PhotoPicker
+        photoUrl={photoUrl}
+        onSelect={handlePhotoSelect}
+        onRemove={handlePhotoRemove}
+        disabled={loading}
+      />
 
       <button
         onClick={handleSave}
