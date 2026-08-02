@@ -24,7 +24,7 @@ git checkout feat/photo-record
 ```bash
 cd Lantern
 ls modules/photos.py frontend/src/components/PhotoPicker.jsx
-python -m pytest -q          # 197 passed
+python -m pytest -q          # 201 passed
 cd frontend && npm test      # 65 passed
 ```
 
@@ -49,7 +49,7 @@ cd frontend && npm test      # 65 passed
 - 設計: `docs/superpowers/specs/2026-08-01-photo-record-design.md`
 - 計画: `docs/superpowers/plans/2026-08-01-photo-record.md`（全16タスク）
 
-### 完了（Task 1〜13）
+### 完了（Task 1〜16・実装は全て完了）
 
 | Task | 内容 | コミット |
 |---|---|---|
@@ -62,59 +62,45 @@ cd frontend && npm test      # 65 passed
 | 8+9 | 圧縮の寸法計算・mobile に画像パッケージ導入 | `6eebc20` |
 | 10〜12 | `PhotoPicker`（両）・アップロードヘルパー | `8ec15d1` |
 | 13 | Web の記録モーダルに組み込み | `d1e8184` |
+| 14 | Web の一覧・詳細・過去比較 | `95da190` |
+| 14前 | 写真だけの記録で NULL が漏れるのを修正 | `7b17f5b` |
+| 15 | mobile の各画面 | `139ca22` |
+| 16 | 統合確認・ドキュメント更新 | （このコミット） |
 
-**サーバー側と、Webの記録モーダルまで完了。**
-テスト pytest 197件（開始時123件）／ vitest 65件（開始時53件）。
+**実装は全て完了。** テスト pytest 201件（開始時123件）／ vitest 65件（開始時53件）。
 
-### 未着手（Task 14〜16）
+### 残っているのは実機確認とマージだけ
 
-計画書 `docs/superpowers/plans/2026-08-01-photo-record.md` に手順がある。
-ただし Task 14 以降は計画書の記述が粗いので、Task 13 の実装（`Journal.jsx`）を
-参考にすること。
+| 内容 | 誰がやるか |
+|---|---|
+| UI から実際に写真を選んで保存するエンドツーエンド確認 | ユーザー操作が必要 |
+| Render / Vercel にデプロイして確認 | ユーザー操作が必要 |
+| `main` へのマージ | 上記が通ってから |
 
-| Task | 内容 | 対象ファイル |
-|---|---|---|
-| 14 | Web の残りの表示箇所 | `pages/Home.jsx` / `components/LogDetail.jsx` / `components/LogItem.jsx` / `components/LogSnapshot.jsx` |
-| 15 | mobile の各画面 | `app/(tabs)/journal.jsx` / `components/RecordForm.jsx` / `LogDetail.jsx` / `LogItem.jsx` / `LogSnapshot.jsx` |
-| 16 | 統合確認・PROGRESS.md と CLAUDE.md の更新 | — |
+### 手動で確認すること（計画書 Task 16 Step 2）
 
-### Task 14 以降で具体的にやること
+ローカルは Flask と Vite の2つが要る。
 
-**Home.jsx（今日の記録）**
-`Journal.jsx` と同じ形で `PhotoPicker` を置く。日付は `targetDate` を使う。
-Home の保存ボタンには元々必須条件が無いので、条件の変更は不要。
-
-**LogDetail.jsx（記録の詳細・編集）**
-写真の表示と差し替え・削除。`uploadPhoto(log.date, ...)` / `removePhoto(log.date)` を
-呼び、成功したら `onUpdate({ ...log, ...data })` で親に反映する。
-
-**LogItem.jsx（一覧の1行）**
-`log.photo_thumb_url` があればサムネイルを出す。
-
-```jsx
-{log.photo_thumb_url && (
-  <img src={log.photo_thumb_url} alt="" className="w-8 h-8 rounded object-cover shrink-0 mr-2" />
-)}
+```bash
+python main.py                    # Flask :5000
+cd frontend && npm run dev        # Vite :5173
 ```
 
-**LogSnapshot.jsx（過去との対話の左右カード）**
-全項目が空でも崩れないようにする。写真だけの記録は日付だけのカードになってしまう。
+1. 写真だけで保存できる（テキストを空のまま「記録する」が押せる）
+2. **テキストだけを編集しても写真が消えない**（最重要）
+3. 記録を削除すると Storage のファイルも消える
+4. 選び直すと同じ日付のファイルが上書きされる（増えない）
 
-```jsx
-const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
-// log があるのにテキストが無い＝写真だけの記録
-{log && !hasText && (
-  log.photo_thumb_url
-    ? <img src={log.photo_thumb_url} alt="" className="w-full rounded-lg object-cover max-h-32" />
-    : <p className="text-sm text-ink-faint">この日の記録があります。</p>
-)}
+Storage の中身は以下で確認する。
+
+```bash
+cd Lantern && python -c "
+import sys, os; sys.path.insert(0, os.getcwd())
+from dotenv import load_dotenv; load_dotenv(os.path.join(os.getcwd(), '.env'))
+from modules.logs import supabase
+print(supabase.storage.from_('lantern-photos').list())
+"
 ```
-
-**mobile 側**
-Web と同じ変更を React Native のコンポーネントで行う。
-`<img>` は `<Image source={{ uri }} />`。記録モーダルの保存条件も
-「テキストか写真のどちらかがあれば保存可」に変える
-（`app/(tabs)/journal.jsx` の `!modalForm.created.trim()` を置き換える）。
 
 ---
 
@@ -161,6 +147,22 @@ LogDetail のテキスト編集（写真フィールドを送らない）を保�
 Task 14・15 で同じ形の処理を書くときは必ず引き継ぐこと。
 
 サーバー側の `_to_db` と対になる、**クライアント側の同じ罠**。
+
+Task 15 で mobile にも同じ問題があった。加えて mobile の記録モーダルは
+`setLogs((prev) => [...prev, newLog])` と常に append していたため、
+写真を先に付けてからテキストを保存すると同じ日付が2行に増えた。
+既存があれば置換するよう直してある。
+
+### 写真だけの記録ではテキスト列が NULL になる（Task 14 で踏んだ）
+
+`set_photo_paths` は該当日の記録が無いとき
+`date` / `user_id` / `updated_at` / 写真カラム だけで insert する。
+テキスト列は NULL のまま残る。
+
+`row.get("content", "")` は「キーはあるが値が None」のとき既定値を返さない。
+そのため `created: null` がクライアントに渡り、`.trim()` を呼ぶ箇所で落ちる。
+`_from_db` は全項目を `or ""` に統一してある（`7b17f5b`）。
+`tests/test_logs_mapping.py::TestPhotoOnlyRow` が固定している。
 
 ---
 
@@ -303,8 +305,8 @@ Vercel の bot 保護（HTTP 403 Security Checkpoint）に引っかかり、
 
 ## 7. 未確認事項（ユーザー確認が必要）
 
-- **写真記録の実物** — サーバー側は実APIで疎通確認済みだが、
-  UIが未実装なのでエンドツーエンドは未確認
+- **写真記録の実物** — サーバー側は実APIで疎通確認済み。UIも実装完了したが、
+  実際に写真を選んで保存する経路はまだ人の目で確認していない
 - **Vercel のデプロイ結果** — bot保護に引っかかったため確認できていない
 
 ### 確認済み

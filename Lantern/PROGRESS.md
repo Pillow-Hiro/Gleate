@@ -649,8 +649,95 @@ Windowsでは同じポートに複数プロセスが並存しうる。
 
 ---
 
+### 2026/08/01〜08/02（写真記録：マルチモーダル v1.3）
+
+ブランチ `feat/photo-record`。設計は
+`docs/superpowers/specs/2026-08-01-photo-record-design.md`、
+計画は `docs/superpowers/plans/2026-08-01-photo-record.md`（全16タスク）。
+
+**目的**
+
+記録のハードルを下げる。文章を書く気力がない日でも写真1枚なら残せる状態を作る。
+アーカイブが目的ではないため画質より軽さを優先し、クライアント側で圧縮する
+（本体1600px/q0.8 約250KB、サムネイル400px/q0.7 約30KB）。
+前身の設計（10MB×5枚/日＝年18GB）が保留になっていた理由が容量だったため、
+圧縮前提に変えたことが解除の鍵になった。毎日記録しても年102MB、無料枠1GBで約10年。
+
+**設計の核心：`/save` に写真を触らせない**
+
+`/save` は受け取ったデータから entry を作り直す。
+`_to_db` が写真カラムを出力すると、テキストだけを編集した瞬間に写真が消える
+（LogDetail の編集は写真フィールドを送らない）。
+そのため `_to_db` の戻り値に写真カラムを**含めない**。
+写真の更新は `/api/logs/<date>/photo` だけが行う。
+「今日の灯りが前日ログしか受け取らない」のと同じ、渡さないことで壊せなくする設計。
+
+**サーバー側**
+
+- [x] `modules/photos.py` 新規。パス生成・Storage保存・削除・署名付きURL発行
+      パスは必ず `g.user_id` と `date` から組み立て、クライアントの値を信用しない
+- [x] `logs.photo_path` / `photo_thumb_path` を `_DB_SELECT` と `_from_db` に追加
+      （`_to_db` には**追加しない**）
+- [x] `delete_log_by_date` で Storage の実ファイルも削除（CASCADEでは消えない）
+- [x] `_fmt_logs` が中身の無い記録をスキップ（写真だけの記録をAIに渡さない）
+- [x] `PUT` / `DELETE /api/logs/<date>/photo` を追加。どちらも `@require_auth`
+- [x] `/api/logs` に署名付きURLを付与。URLはDBに保存せず読み出しのたびに発行する
+- [x] 写真だけの記録で `content` 等が NULL になり、`created: null` が
+      クライアントに漏れていたのを修正（`row.get(k, "")` は値が None のとき
+      既定値を返さない）。`_from_db` の全項目を `or ""` に統一した
+
+**クライアント（Web・mobile 両方）**
+
+- [x] `lib/image.js` 新規。寸法計算は純粋関数に切り出し、
+      frontend と mobile で同一に保つ（一致検証テストあり）
+- [x] `PhotoPicker` 新規。Web は canvas、mobile は expo-image-manipulator
+- [x] 記録モーダル・今日の記録・記録の詳細・一覧・過去との対話に組み込み
+- [x] 記録モーダルの保存条件を「テキストか写真のどちらかがあれば可」に変更
+- [x] mobile の記録モーダルが `setLogs` で常に append していたのを、
+      既存があれば置換するよう修正（写真だけ先に付けると同じ日付が重複した）
+
+**クライアント側の落とし穴（`_to_db` と対になる罠）**
+
+サーバー側の設計が正しくても、フロントで状態を作り直すときに `photo_url` を
+引き継がないと**画面上だけ写真が消えたように見える**（DBには残っているので
+リロードすると戻る）。テキスト保存後に組み立てる `newLog` へ必ず引き継ぐこと。
+
+**Expo SDK 57 の確認**
+
+`mobile/AGENTS.md` の指示どおり公式ドキュメントで確認した。2つ変わっていた。
+
+- `ImageManipulator.manipulateAsync()` は非推奨。
+  `manipulate()` → `resize()` → `renderAsync()` → `saveAsync()` のビルダー型
+- `ImagePicker.MediaTypeOptions` は非推奨。`mediaTypes: ['images']` と配列で渡す
+
+**検証結果: OK**
+
+- pytest 201件パス（着手前123件。写真関連で78件増）
+- vitest 65件パス（着手前53件）
+- eslint エラー0・警告0 / `npm run build` 成功
+- `expo export --platform web` 成功。バンドルに新規文言5件を確認
+- Task 2 で本物の Supabase Storage に対して
+  保存→一覧→署名付きURL→上書き→削除を実行し、Fake と API の形が一致することを確認
+
+**未確認（要ユーザー操作）**
+
+- UI からのエンドツーエンド（実際に写真を選んで保存する経路）
+- Render / Vercel へのデプロイ後の動作
+
+**このセッションで学んだこと**
+
+変異テストで5回、テストが生存した（＝実装は正しいがテストが守っていない）。
+`_DATE_RE` を消してもテストが落ちなかった例では、`date.fromisoformat()` が
+`20260801` や `2026W011` を受け付けるため、Storageのパスと DB の DATE 列が
+ずれて参照できない孤児ファイルになる経路が残っていた。
+単体テストが dict を直接渡す構造だと `_DB_SELECT` の変更も素通りする。
+
+---
+
 ## 進行中
 
+- 写真記録（マルチモーダル v1.3）。`feat/photo-record` ブランチで Task 1〜16 実装済み。
+  残りは実UIでの動作確認とマージ。
 - React Native移行 フェーズA。A1〜A6と A7前半が完了。
   残りは配布まわり（アカウント登録・EASビルド・Vercel切り替え）で、いずれも要ユーザー操作。
 
