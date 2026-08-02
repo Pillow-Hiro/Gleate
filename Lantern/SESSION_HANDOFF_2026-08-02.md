@@ -5,24 +5,40 @@
 
 ---
 
-## 0. まず知るべきこと
+## 0. 最初に必ずやること：ブランチを切り替える
+
+```bash
+cd "C:/Users/tinot/OneDrive/ドキュメント/apps"
+git checkout feat/photo-record
+```
+
+**新セッションは `main` で始まる。** 写真記録の実装は全て
+`feat/photo-record` にあるため、切り替えないとこのファイル自体も
+`modules/photos.py` も存在しないように見える。
+
+（2026-08-02 のセッション引き継ぎ時に実際にこれで混乱した。
+「引き継ぎ資料が無い」と見えたが、単に `main` にいただけだった。）
+
+切り替え後、以下が揃っていれば正しい状態:
+
+```bash
+cd Lantern
+ls modules/photos.py frontend/src/components/PhotoPicker.jsx
+python -m pytest -q          # 197 passed
+cd frontend && npm test      # 65 passed
+```
+
+---
+
+## 0-2. リポジトリ構成
 
 ```
 リポジトリルート : C:\Users\tinot\OneDrive\ドキュメント\apps    ← .git はここ
 プロジェクト実体 : apps\Lantern\
-現在のブランチ   : feat/photo-record（main から分岐・未マージ）
+作業ブランチ     : feat/photo-record（main から分岐・未マージ・リモートにもある）
 ```
 
-**`main` ではなく `feat/photo-record` で作業中。** 写真記録機能の実装が
-サーバー側まで完了し、フロントエンドが未着手の状態。
-
-作業ツリーはクリーン。テストは197件すべて通る。
-
-```bash
-cd "C:/Users/tinot/OneDrive/ドキュメント/apps/Lantern"
-python -m pytest -q          # 197 passed
-cd frontend && npm test      # 53 passed
-```
+作業ツリーはクリーン。リモートとの差分もない。
 
 ---
 
