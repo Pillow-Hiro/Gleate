@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
-import { authFetch } from '../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
+import PhotoPicker from './PhotoPicker'
 
 // Web版 Journal.jsx の LogDetail を移植したもの。表示・編集・削除の挙動と文言は変更していない。
 const DISPLAY_FIELDS = [
@@ -68,6 +69,18 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     }
   }
 
+  // 写真はテキストと別APIで扱う。/save は写真カラムに触れないため、
+  // ここで更新しても後のテキスト編集で消えることはない。
+  async function handlePhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(log.date, photo, thumb)
+    if (onUpdate) onUpdate({ ...log, ...data })
+  }
+
+  async function handlePhotoRemove() {
+    await removePhoto(log.date)
+    if (onUpdate) onUpdate({ ...log, photo_url: null, photo_thumb_url: null })
+  }
+
   if (editing) {
     return (
       <View className="mt-3 gap-3 pb-1">
@@ -112,6 +125,13 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
           </View>
         ) : null
       )}
+
+      <PhotoPicker
+        photoUrl={log.photo_url}
+        onSelect={handlePhotoSelect}
+        onRemove={handlePhotoRemove}
+        disabled={deleting}
+      />
 
       {log.ai_response ? (
         <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5 mt-3">

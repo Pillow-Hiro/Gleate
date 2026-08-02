@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Image, Pressable, Text, View } from 'react-native'
 import LogDetail from './LogDetail'
 import { dayLabel, truncateTitle } from '../lib/format'
 
@@ -15,8 +15,18 @@ export default function LogItem({ log, onDelete, onUpdate }) {
         onPress={() => setOpen((o) => !o)}
         className="py-3.5 flex-row items-center justify-between gap-3"
       >
-        <View className="flex-1 flex-row items-baseline">
+        <View className="flex-1 flex-row items-center">
           <Text className="text-xs text-ink-faint mr-2.5">{dayLabel(log.date)}</Text>
+          {/* 写真だけの記録は summary が「（記録あり）」になる。
+              サムネイルがあれば、何を残した日かが一覧のまま分かる。 */}
+          {log.photo_thumb_url ? (
+            <Image
+              source={{ uri: log.photo_thumb_url }}
+              className="rounded mr-2"
+              style={{ width: 32, height: 32 }}
+              resizeMode="cover"
+            />
+          ) : null}
           <Text className="text-sm text-ink flex-1">{truncateTitle(summary)}</Text>
         </View>
         <Text className="text-ink-faint text-xs">{open ? '⌃' : '⌄'}</Text>

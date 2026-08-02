@@ -8,6 +8,8 @@ const SNAPSHOT_FIELDS = [
 ]
 
 export default function LogSnapshot({ log, dateHint, isToday }) {
+  const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
+
   return (
     <div className="bg-stone/40 rounded-xl px-4 py-4 flex-1 space-y-2.5 min-w-0">
       <p className="text-[10px] text-ink-faint tracking-[0.15em]">
@@ -18,16 +20,27 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
           {isToday ? '今日の記録はまだありません。' : 'この時期の記録はありません。'}
         </p>
       ) : (
-        SNAPSHOT_FIELDS.map(({ key, label }) =>
-          log[key] ? (
-            <div key={key}>
-              {label && (
-                <p className="text-[9px] text-ink-faint tracking-wider uppercase mb-0.5">{label}</p>
-              )}
-              <p className="text-sm text-ink leading-relaxed">{log[key]}</p>
-            </div>
-          ) : null
-        )
+        <>
+          {SNAPSHOT_FIELDS.map(({ key, label }) =>
+            log[key] ? (
+              <div key={key}>
+                {label && (
+                  <p className="text-[9px] text-ink-faint tracking-wider uppercase mb-0.5">{label}</p>
+                )}
+                <p className="text-sm text-ink leading-relaxed">{log[key]}</p>
+              </div>
+            ) : null
+          )}
+          {/* 記録はあるのにテキストが無い＝写真だけの記録。
+              日付だけのカードにせず、その日に残したものを見せる。 */}
+          {!hasText && (
+            log.photo_thumb_url ? (
+              <img src={log.photo_thumb_url} alt="" className="w-full rounded-lg object-cover max-h-32" />
+            ) : (
+              <p className="text-sm text-ink-faint">この日の記録があります。</p>
+            )
+          )}
+        </>
       )}
     </div>
   )

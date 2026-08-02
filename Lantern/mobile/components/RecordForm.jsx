@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
-import { authFetch } from '../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
 import { todayStr } from '../lib/date'
+import PhotoPicker from './PhotoPicker'
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
@@ -17,6 +18,20 @@ export default function RecordForm({ existingLog, targetDate, onSaved }) {
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
+  const [photoUrl, setPhotoUrl] = useState(existingLog?.photo_url || null)
+
+  // 写真は別APIで即座に保存する。テキストの「記録する」を待たない。
+  // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
+  // このフォームが作り直され、入力途中のテキストが消えるため。
+  async function handlePhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(targetDate, photo, thumb)
+    setPhotoUrl(data.photo_url)
+  }
+
+  async function handlePhotoRemove() {
+    await removePhoto(targetDate)
+    setPhotoUrl(null)
+  }
 
   async function handleSave() {
     setLoading(true)
@@ -91,6 +106,13 @@ export default function RecordForm({ existingLog, targetDate, onSaved }) {
           <Field fieldKey="struggled" label="詰まったこと・困ったこと" />
         </View>
       ) : null}
+
+      <PhotoPicker
+        photoUrl={photoUrl}
+        onSelect={handlePhotoSelect}
+        onRemove={handlePhotoRemove}
+        disabled={loading}
+      />
 
       <Pressable
         onPress={handleSave}

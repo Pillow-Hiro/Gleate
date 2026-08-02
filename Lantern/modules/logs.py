@@ -10,22 +10,36 @@ supabase = create_client(_url, _key) if _url and _key else None
 # Supabase: content / good_things / struggles / next_action / lantern_message / updated_at
 # App:      created / enjoyable   / struggled / next        / ai_response     / saved_at
 
-_DB_SELECT = "id, date, content, next_action, good_things, struggles, lantern_message, updated_at, user_id"
+_DB_SELECT = (
+    "id, date, content, next_action, good_things, struggles, "
+    "lantern_message, updated_at, user_id, photo_path, photo_thumb_path"
+)
 
 
 def _from_db(row):
+    # すべて `or ""` を通すのは、写真だけの記録ではテキスト列が NULL になるため。
+    # set_photo_paths は記録が無い日に date と写真カラムだけで insert するので、
+    # content などは NULL のまま返ってくる。
+    # `row.get("content", "")` は「キーはあるが値が None」では既定値を返さないため、
+    # ここを通さないとクライアントに created: null が渡り、.trim() で落ちる。
     return {
-        "date": str(row.get("date", "")),
-        "created": row.get("content", ""),
-        "enjoyable": row.get("good_things", ""),
-        "struggled": row.get("struggles", ""),
-        "next": row.get("next_action", ""),
-        "saved_at": row.get("updated_at", "") or "",
-        "ai_response": row.get("lantern_message", ""),
+        "date": str(row.get("date") or ""),
+        "created": row.get("content") or "",
+        "enjoyable": row.get("good_things") or "",
+        "struggled": row.get("struggles") or "",
+        "next": row.get("next_action") or "",
+        "saved_at": row.get("updated_at") or "",
+        "ai_response": row.get("lantern_message") or "",
+        "photo_path": row.get("photo_path") or "",
+        "photo_thumb_path": row.get("photo_thumb_path") or "",
     }
 
 
 def _to_db(l, user_id=None):
+    # 写真カラム（photo_path / photo_thumb_path）は意図的に含めない。
+    # /save は受け取ったデータから entry を作り直すため、ここに写真を足すと
+    # テキストだけを編集したときに写真が消える。
+    # 写真の更新は main.py の /api/logs/<date>/photo だけが行う。
     return {
         "date": l.get("date", ""),
         "content": l.get("created", ""),
@@ -81,7 +95,45 @@ def save_logs(logs, user_id=None):
         _upsert_one(_to_db(l, user_id))
 
 
+def set_photo_paths(user_id, date, photo_path, thumb_path):
+    """写真カラムだけを更新する。テキストには触らない。
+
+    該当日の記録が無ければ作る。写真だけで記録を成立させるため。
+    _to_db を通さないのは、_to_db が写真カラムを出力しない設計だから
+    （/save 経由でのテキスト編集が写真を消さないようにしている）。
+    """
+    if not supabase:
+        return
+    fields = {"photo_path": photo_path, "photo_thumb_path": thumb_path}
+    existing = (
+        supabase.table("logs").select("id")
+        .eq("date", date).eq("user_id", user_id).execute()
+    )
+    if existing.data:
+        supabase.table("logs").update(fields).eq("date", date).eq("user_id", user_id).execute()
+    else:
+        supabase.table("logs").insert({
+            "date": date,
+            "user_id": user_id,
+            "updated_at": datetime.now().isoformat(),
+            **fields,
+        }).execute()
+
+
 def delete_log_by_date(date, user_id=None):
+    # Storage のファイルは DB の CASCADE では消えないため明示的に削除する。
+    # 消し忘れると、消したはずの写真が容量を食い続ける。
+    # user_id が無いとパスを組み立てられないため、あるときだけ呼ぶ。
+    # import を関数内で行うのは modules.photos が modules.logs を参照するため（循環回避）。
+    if user_id:
+        try:
+            from modules.photos import delete_photo
+            delete_photo(user_id, date)
+        except Exception as e:
+            # 孤児ファイルは残るが、記録そのものが消せないほうが困る。
+            # 気づけるようにログには残す。
+            print(f"[Photo] 記録削除時の写真削除に失敗 user={user_id} date={date}: {type(e).__name__}: {e}")
+
     if not supabase:
         return
     q = supabase.table("logs").delete().eq("date", date)

@@ -82,7 +82,9 @@ class TestFmtLogs:
         assert "困ったこと" not in result
 
     def test_createdがなくても落ちない(self):
-        assert _fmt_logs([{"date": "2026-07-28"}]) == "\n2026-07-28: "
+        # 写真記録の追加（2026-08-01）で挙動を変えた。
+        # 本文が空の記録はAIに渡さずスキップする（旧: "\n2026-07-28: " を返していた）
+        assert _fmt_logs([{"date": "2026-07-28"}]) == ""
 
     def test_複数件を改行で並べる(self):
         result = _fmt_logs([
@@ -90,3 +92,35 @@ class TestFmtLogs:
             {"date": "2026-07-28", "created": "b"},
         ])
         assert result == "\n2026-07-27: a\n2026-07-28: b"
+
+
+class TestFmtLogsSkipsEmpty:
+    """写真だけの記録は本文が空になる。
+
+    中身の無い行をAIに渡すと「2026-08-01: 」という無意味な入力になるため
+    スキップする。
+    """
+
+    def test_全項目が空の記録はスキップする(self):
+        logs = [
+            {"date": "2026-08-01", "created": "", "enjoyable": "", "struggled": "", "next": ""},
+            {"date": "2026-08-02", "created": "曲を書いた"},
+        ]
+        assert _fmt_logs(logs) == "\n2026-08-02: 曲を書いた"
+
+    def test_全部が空の記録だけなら空文字(self):
+        assert _fmt_logs([{"date": "2026-08-01", "created": ""}]) == ""
+
+    def test_createdが空でも他が埋まっていれば残す(self):
+        result = _fmt_logs([{"date": "2026-08-01", "created": "", "enjoyable": "静かな朝"}])
+        assert "2026-08-01" in result
+        assert "静かな朝" in result
+
+    def test_nextだけでも残す(self):
+        result = _fmt_logs([{"date": "2026-08-01", "next": "明日サビを直す"}])
+        assert "2026-08-01" in result
+
+    def test_写真パスがあっても本文が空ならスキップする(self):
+        # 写真はAIに渡さない方針。写真の有無で判定を変えない
+        logs = [{"date": "2026-08-01", "created": "", "photo_path": "u/x.jpg"}]
+        assert _fmt_logs(logs) == ""

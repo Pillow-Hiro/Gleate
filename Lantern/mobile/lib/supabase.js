@@ -26,6 +26,10 @@ export async function authFetch(path, options = {}) {
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
+  // Content-Type: undefined が渡されたらヘッダごと落とす。
+  // FormData を送るときは境界文字列つきのヘッダが自動で付くため、
+  // こちらで application/json を残すと本文を解釈できなくなる。
+  Object.keys(headers).forEach((k) => headers[k] === undefined && delete headers[k])
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
 
@@ -38,4 +42,27 @@ export async function authFetch(path, options = {}) {
   }
 
   return res
+}
+
+// 圧縮済みの写真とサムネイルを送る。
+// パスはサーバーが g.user_id と date から組み立てるため、こちらからは渡さない。
+// React Native の FormData は Blob ではなく { uri, name, type } を受け取る。
+export async function uploadPhoto(date, photoUri, thumbUri) {
+  const body = new FormData()
+  body.append('photo', { uri: photoUri, name: 'photo.jpg', type: 'image/jpeg' })
+  body.append('thumb', { uri: thumbUri, name: 'thumb.jpg', type: 'image/jpeg' })
+
+  const res = await authFetch(`/api/logs/${date}/photo`, {
+    method: 'PUT',
+    body,
+    headers: { 'Content-Type': undefined },
+  })
+  if (!res.ok) throw new Error(`写真のアップロードに失敗しました (${res.status})`)
+  return res.json()
+}
+
+export async function removePhoto(date) {
+  const res = await authFetch(`/api/logs/${date}/photo`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`写真の削除に失敗しました (${res.status})`)
+  return res.json()
 }

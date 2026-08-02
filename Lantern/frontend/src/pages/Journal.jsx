@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { authFetch } from '../lib/supabase'
+import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
 import ActivityCalendar from '../components/ActivityCalendar'
 import ReviewSection from '../components/ReviewSection'
 import TimelineSection from '../components/TimelineSection'
 import KeywordSection from '../components/KeywordSection'
 import LogDetail from '../components/LogDetail'
 import LogItem from '../components/LogItem'
+import PhotoPicker from '../components/PhotoPicker'
 import { dateDisplayJa, groupByMonth, monthLabel } from '../lib/format'
 
 // タブ切り替えボタン。
@@ -37,6 +38,7 @@ export default function Journal() {
   const [modalDate, setModalDate] = useState(null)
   const [modalForm, setModalForm] = useState({ created: '', enjoyable: '', struggled: '', next: '' })
   const [modalSaving, setModalSaving] = useState(false)
+  const [modalPhotoUrl, setModalPhotoUrl] = useState(null)
 
   useEffect(() => {
     authFetch('/api/logs')
@@ -62,11 +64,41 @@ export default function Journal() {
       setSelectedDate(null)
       setModalDate(date)
       setModalForm({ created: '', enjoyable: '', struggled: '', next: '' })
+      setModalPhotoUrl(null)
     }
   }
 
+  // 写真はテキストと別APIで保存する。/save は写真に触れない設計なので、
+  // ここで先に保存しておけば後からテキストを編集しても消えない。
+  async function handleModalPhotoSelect(photo, thumb) {
+    const data = await uploadPhoto(modalDate, photo, thumb)
+    setModalPhotoUrl(data.photo_url)
+    setLogs(prev => {
+      const found = prev.find(l => l.date === modalDate)
+      if (found) {
+        return prev.map(l => (l.date === modalDate ? { ...l, ...data } : l))
+      }
+      // 写真だけの記録。サーバー側でも記録行が作られている
+      return [...prev, {
+        date: modalDate, created: '', enjoyable: '', struggled: '', next: '', ...data,
+      }]
+    })
+  }
+
+  async function handleModalPhotoRemove() {
+    await removePhoto(modalDate)
+    setModalPhotoUrl(null)
+    setLogs(prev => prev.map(l => (
+      l.date === modalDate ? { ...l, photo_url: null, photo_thumb_url: null } : l
+    )))
+  }
+
+  // テキストか写真のどちらかがあれば保存できる。
+  // 「写真だけで残せる」ことが本機能の目的なので、created 必須をやめた。
+  const canSaveModal = Boolean(modalForm.created.trim() || modalPhotoUrl)
+
   async function handleModalSave() {
-    if (!modalForm.created.trim()) return
+    if (!canSaveModal) return
     setModalSaving(true)
     try {
       const res = await authFetch('/save', {
@@ -76,8 +108,18 @@ export default function Journal() {
       })
       if (!res.ok) throw new Error('save failed')
       const data = await res.json()
-      const newLog = { date: modalDate, ...modalForm, ai_response: data.ai_response }
-      setLogs(prev => [...prev, newLog])
+      const existing = logs.find(l => l.date === modalDate)
+      const newLog = {
+        date: modalDate,
+        ...modalForm,
+        ai_response: data.ai_response,
+        // 写真は別APIで先に保存済み。テキスト保存で消えないよう引き継ぐ
+        photo_url: existing?.photo_url ?? null,
+        photo_thumb_url: existing?.photo_thumb_url ?? null,
+      }
+      setLogs(prev => (
+        existing ? prev.map(l => (l.date === modalDate ? newLog : l)) : [...prev, newLog]
+      ))
       setSelectedDate(modalDate)
       setModalDate(null)
     } catch (e) {
@@ -265,6 +307,13 @@ export default function Journal() {
                   />
                 </div>
               ))}
+
+              <PhotoPicker
+                photoUrl={modalPhotoUrl}
+                onSelect={handleModalPhotoSelect}
+                onRemove={handleModalPhotoRemove}
+                disabled={modalSaving}
+              />
             </div>
 
             <div className="flex items-center justify-end gap-4 pt-1">
@@ -273,7 +322,7 @@ export default function Journal() {
               </button>
               <button
                 onClick={handleModalSave}
-                disabled={modalSaving || !modalForm.created.trim()}
+                disabled={modalSaving || !canSaveModal}
                 className="text-xs text-forest border border-sage/40 px-3.5 py-1.5 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
               >
                 {modalSaving ? '保存中...' : '記録する'}
