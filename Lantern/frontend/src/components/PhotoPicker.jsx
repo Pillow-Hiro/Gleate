@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { compressPhoto } from '../lib/image'
+import PhotoLightbox from './PhotoLightbox'
 
 // 記録に添える写真の選択・プレビュー・削除。
 // 1記録1枚。選び直しは同じ枠を置き換える。
@@ -8,6 +9,7 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
   const inputRef = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [zoomed, setZoomed] = useState(false)
 
   async function handleChange(e) {
     const file = e.target.files?.[0]
@@ -53,7 +55,19 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
 
       {photoUrl ? (
         <div>
-          <img src={photoUrl} alt="" className="w-full rounded-lg object-cover max-h-64" />
+          {/* button で包むのはキーボードからも開けるようにするため */}
+          <button
+            type="button"
+            onClick={() => setZoomed(true)}
+            aria-label="写真を拡大する"
+            className="block w-full"
+          >
+            <img
+              src={photoUrl}
+              alt=""
+              className="w-full rounded-lg object-cover max-h-64 cursor-zoom-in"
+            />
+          </button>
           <div className="flex justify-end gap-4 mt-1.5">
             <button
               type="button"
@@ -85,6 +99,8 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
       )}
 
       {error && <p className="text-xs text-ink-faint">{error}</p>}
+
+      <PhotoLightbox src={zoomed ? photoUrl : null} onClose={() => setZoomed(false)} />
     </div>
   )
 }
