@@ -73,7 +73,7 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScrollView
-        contentContainerClassName="px-5 pt-6 pb-10 gap-8"
+        contentContainerClassName="px-5 pt-6 pb-10 gap-8 w-full max-w-2xl self-center"
         keyboardShouldPersistTaps="handled"
       >
         {/* 日付ヘッダー */}

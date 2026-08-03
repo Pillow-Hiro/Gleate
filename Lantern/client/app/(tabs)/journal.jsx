@@ -150,7 +150,7 @@ export default function Journal() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6" keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6 w-full max-w-2xl self-center" keyboardShouldPersistTaps="handled">
         {/* ヘッダー */}
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">JOURNAL</Text>

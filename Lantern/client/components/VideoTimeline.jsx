@@ -1,10 +1,30 @@
 import { useState } from 'react'
-import { Image, Linking, Pressable, Text, View } from 'react-native'
+import { Image, Linking, Pressable, Text, useWindowDimensions, View } from 'react-native'
 import { authFetch } from '../lib/supabase'
 
-// Web版 Dashboard.jsx の VideoTimeline を移植したもの。
-// Web版は画面幅に応じて1〜3カラムだったが、モバイルでは1カラム固定にする。
+// 旧 Web Dashboard.jsx の VideoTimeline を移植したもの。
+// 旧 Web は grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 で段組みしていた。
+// 一時は1カラム固定にしていたが、広い画面だと縦に長く伸びて見づらいため
+// 同じ折り返しを入れ直した。RN に grid が無いので flex-wrap で作る。
+const COLUMN_BREAKPOINTS = [
+  { minWidth: 1024, columns: 3 },
+  { minWidth: 640, columns: 2 },
+]
+
+function columnsFor(width) {
+  return COLUMN_BREAKPOINTS.find((b) => width >= b.minWidth)?.columns ?? 1
+}
+
+const GAP = 16
+
 export default function VideoTimeline({ videos }) {
+  const { width } = useWindowDimensions()
+  const columns = columnsFor(width)
+  // 1枚あたりの幅は実測から出す。calc() は react-native-web でしか通らず、
+  // パーセント指定だと gap の分を差し引けないため。
+  const [containerWidth, setContainerWidth] = useState(0)
+  const itemWidth =
+    containerWidth > 0 ? (containerWidth - GAP * (columns - 1)) / columns : undefined
   // 古い順に並べる（Web版と同じ）
   const rows = [...(videos ?? [])].reverse()
   const [insightState, setInsightState] = useState({})
@@ -44,7 +64,11 @@ export default function VideoTimeline({ videos }) {
   }
 
   return (
-    <View className="gap-6">
+    <View
+      className="flex-row flex-wrap"
+      style={{ gap: GAP }}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
       {rows.map((v) => {
         const pub = v.published_at
         const year = pub?.slice(0, 4)
@@ -55,7 +79,7 @@ export default function VideoTimeline({ videos }) {
         const watchUrl = `https://www.youtube.com/watch?v=${v.id}`
 
         return (
-          <View key={v.id}>
+          <View key={v.id} style={{ width: itemWidth }}>
             <Text className="text-xs text-ink-faint mb-1.5">{year}/{month}/{day}</Text>
 
             <Pressable onPress={() => Linking.openURL(watchUrl)}>
