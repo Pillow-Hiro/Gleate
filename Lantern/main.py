@@ -4,6 +4,7 @@ load_dotenv()
 from flask import Flask, request, jsonify, send_from_directory, g, redirect, abort
 from flask_cors import CORS
 import os
+import random
 import re
 import time
 import traceback
@@ -45,8 +46,11 @@ CORS(app, origins=[
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
+# 起動画面の写真。Unsplash の呼び出しを減らすためプロセス内に6時間持つ。
+# ワーカーやインスタンスをまたいでは共有されないが、その場合でも
+# 増えるのは「6時間あたりの取得回数がワーカー数まで」で、
+# Unsplash の無料枠（50回/時）には十分収まる。共有ストアは持ち込まない。
 _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
-_splash_access_count = 0
 
 
 @app.route("/save", methods=["POST"])
@@ -308,9 +312,11 @@ def daily_quote():
 
 @app.route("/api/splash/content")
 def splash_content_api():
-    global _splash_access_count
-    _splash_access_count += 1
-    quote_type = "zen" if _splash_access_count % 2 == 0 else "snoopy"
+    # 以前はプロセス内のカウンタで zen と snoopy を交互に出していたが、
+    # カウンタはワーカー間で共有されないため交互にならず、
+    # 「数えている」ように見えて実際は数えていない状態だった。
+    # 見せたいのは種類の変化であって順番ではないので、その都度選ぶ。
+    quote_type = random.choice(("zen", "snoopy"))
 
     now = time.time()
     if now - _splash_photo_cache["cached_at"] > 21600:
@@ -345,7 +351,7 @@ def splash_content_api():
 
     from modules.ai import get_splash_quote
     quote = get_splash_quote(quote_type)
-    print(f"[Splash] アクセス#{_splash_access_count} quote_type={quote_type}")
+    print(f"[Splash] quote_type={quote_type}")
 
     return jsonify({
         "photo_url": _splash_photo_cache["photo_url"],
