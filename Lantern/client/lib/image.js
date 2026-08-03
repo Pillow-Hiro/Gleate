@@ -1,28 +1,18 @@
 // 記録に添える写真の圧縮。
 // アーカイブが目的ではないため、画質より軽さを優先する。
+// 寸法の計算は imageMath.js にある（純粋関数として単体でテストしている）。
 
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import {
+  fitWithin,
+  PHOTO_MAX_EDGE,
+  THUMB_MAX_EDGE,
+  PHOTO_QUALITY,
+  THUMB_QUALITY,
+} from './imageMath'
 
-// --- 寸法計算 ---
-// この区間は frontend/src/lib/image.js と mobile/lib/image.js で同一に保つこと。
-// frontend/src/lib/image.test.js が一致を検証している。
-
-export const PHOTO_MAX_EDGE = 1600
-export const THUMB_MAX_EDGE = 400
-export const PHOTO_QUALITY = 0.8
-export const THUMB_QUALITY = 0.7
-
-// 縦横比を保ったまま長辺を maxEdge に収める。元が小さければ拡大しない。
-export function fitWithin(width, height, maxEdge) {
-  const longest = Math.max(width, height)
-  if (longest <= maxEdge) return { width, height }
-  const scale = maxEdge / longest
-  return {
-    width: Math.max(1, Math.round(width * scale)),
-    height: Math.max(1, Math.round(height * scale)),
-  }
-}
-// --- ここまで ---
+// 呼び出し側が image.js から寸法の定数も取れるようにしておく。
+export { fitWithin, PHOTO_MAX_EDGE, THUMB_MAX_EDGE, PHOTO_QUALITY, THUMB_QUALITY }
 
 // SDK 57 では manipulateAsync() が非推奨。
 // manipulate() -> resize() -> renderAsync() -> saveAsync() のビルダー型APIを使う。
@@ -35,8 +25,7 @@ async function toJpeg(uri, width, height, quality) {
 }
 
 // 本体とサムネイルの2つを作る。
-// Web版は File を受け取るが、ネイティブでは uri と元寸法を受け取る
-// （ImagePicker が asset として返すため）。
+// ImagePicker が asset として uri と元寸法を返すため、それを受け取る。
 export async function compressPhoto(uri, originalWidth, originalHeight) {
   const p = fitWithin(originalWidth, originalHeight, PHOTO_MAX_EDGE)
   const t = fitWithin(originalWidth, originalHeight, THUMB_MAX_EDGE)
