@@ -9,8 +9,8 @@
     },
     {
       "name": "web",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["--prefix", "client", "expo", "start", "--web", "--port", "8081"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "client", "run", "web"],
       "port": 8081
     }
   ]
