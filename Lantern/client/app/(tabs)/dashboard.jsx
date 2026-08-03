@@ -201,7 +201,7 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6">
+      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6 w-full max-w-2xl self-center">
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">DASHBOARD</Text>
           <Text className="font-display text-xl font-light text-ink">ダッシュボード</Text>
