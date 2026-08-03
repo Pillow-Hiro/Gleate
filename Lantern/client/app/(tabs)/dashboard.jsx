@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import * as WebBrowser from 'expo-web-browser'
 import { authFetch } from '../../lib/supabase'
+import { startConnect, readConnectResult, clearConnectResult } from '../../lib/youtubeConnect'
 import { useThemeContext } from '../../lib/theme'
 import ViewsChart from '../../components/ViewsChart'
 import VideoTimeline from '../../components/VideoTimeline'
@@ -12,9 +12,6 @@ const PERIODS = [
   { label: '30日間', days: 30 },
   { label: '90日間', days: 90 },
 ]
-
-// app.json の scheme と一致させること。バックエンドの _APP_SCHEME_ORIGIN と対になる。
-const RETURN_URL = 'lantern://dashboard'
 
 function SummaryCard({ label, value }) {
   return (
@@ -30,7 +27,12 @@ export default function Dashboard() {
   const [status, setStatus] = useState({ connected: false, channel_name: null })
   const [connecting, setConnecting] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
-  const [message, setMessage] = useState('')
+  // 連携から戻った直後かは URL で決まるため初期値として導出する。
+  // useEffect の中で setState すると余分な再レンダリングが起きる。
+  // ネイティブでは readConnectResult() が常に null を返すので空になる。
+  const [message, setMessage] = useState(
+    () => (readConnectResult() === 'connected' ? 'YouTubeと繋がりました。' : '')
+  )
   const [confirmDisconnect, setConfirmDisconnect] = useState(false)
   const [channelStats, setChannelStats] = useState(null)
   const [videos, setVideos] = useState(null)
@@ -134,33 +136,32 @@ export default function Dashboard() {
     }
   }, [fetchStatus, fetchData, fetchAnalytics])
 
-  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => {
+    // クエリを残すとリロードのたびに接続完了扱いになる
+    if (readConnectResult() === 'connected') clearConnectResult()
+    loadAll()
+  }, [loadAll])
 
   function handleChangeDays(days) {
     setAnalyticsDays(days)
     fetchAnalytics(days)
   }
 
-  // Web版は window.location.href で遷移し、リダイレクトで戻ってきたURLの
-  // クエリを見ていた。ネイティブでは認証セッションを開き、
-  // lantern:// への復帰をその戻り値で受け取る。
+  // 実装は lib/youtubeConnect.js（ネイティブ）と .web.js（Web）に分かれている。
+  // Web はページ遷移して戻ってこないため 'redirecting' が返る。
   async function handleConnect() {
     setConnecting(true)
     try {
-      const res = await authFetch('/api/youtube/auth-url?platform=app')
-      const data = await res.json()
-      if (!data.url) throw new Error('no auth url')
-
-      const result = await WebBrowser.openAuthSessionAsync(data.url, RETURN_URL)
-      if (result.type === 'success' && result.url?.includes('youtube=connected')) {
+      const result = await startConnect()
+      if (result === 'connected') {
         setMessage('YouTubeと繋がりました。')
         setTimeout(() => setMessage(''), 4000)
         await loadAll()
-      } else if (result.type === 'success') {
+      } else if (result === 'failed') {
         setMessage('連携できませんでした。')
         setTimeout(() => setMessage(''), 4000)
       }
-      // result.type === 'cancel' はユーザーが閉じただけなので何も表示しない
+      // 'cancelled' はユーザーが閉じただけなので何も表示しない
     } catch (e) {
       console.warn('[Dashboard] YouTube連携に失敗', e)
       setMessage('連携できませんでした。')
