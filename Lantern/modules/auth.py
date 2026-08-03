@@ -4,9 +4,16 @@ from jwt import PyJWKClient
 from functools import wraps
 from flask import request, jsonify, g
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 _JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json" if SUPABASE_URL else None
 _jwks_client = PyJWKClient(_JWKS_URL, cache_keys=True) if _JWKS_URL else None
+
+# JWKS が配るのは非対称鍵（Supabase は ES256）。ここに HS256 を混ぜてはいけない。
+# HS256 は共有秘密鍵方式なので、公開鍵を秘密鍵として署名させる
+# アルゴリズム混同攻撃の入口になる。
+# 現状の PyJWT は鍵オブジェクトを HMAC 秘密鍵として使うことを拒否するため
+# 実際には防がれているが、ライブラリの実装に依存しない形にしておく。
+_ALGORITHMS = ["ES256", "RS256"]
 
 
 def require_auth(f):
@@ -23,7 +30,7 @@ def require_auth(f):
             signing_key = _jwks_client.get_signing_key_from_jwt(token)
             payload = jwt.decode(
                 token, signing_key.key,
-                algorithms=["ES256", "RS256", "HS256"],
+                algorithms=_ALGORITHMS,
                 options={"verify_aud": False},
             )
             g.user_id = payload.get("sub")

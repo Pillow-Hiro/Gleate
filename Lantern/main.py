@@ -29,6 +29,9 @@ from modules.ai import (
     generate_keyword_frequency,
 )
 from modules.auth import require_auth
+# 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
+# JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
+from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -50,13 +53,15 @@ _splash_access_count = 0
 @require_auth
 def save():
     user_id = g.user_id
-    data = request.json
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Invalid request body"}), 400
 
     logs = load_logs(user_id)
     goals = load_goals()
-    today = data.get("date") or datetime.now().strftime("%Y-%m-%d")
+    today = data.get("date") or today_str()
+
+    previous = next((l for l in logs if l.get("date") == today), None)
 
     entry = {
         "date": today,
@@ -64,32 +69,33 @@ def save():
         "enjoyable": data.get("enjoyable", ""),
         "struggled": data.get("struggled", ""),
         "next": data.get("next", ""),
-        "saved_at": datetime.now().isoformat(),
+        "saved_at": now_utc_iso(),
+        # 既存の灯りをいったん引き継ぐ。空のまま書くと、この後の生成が失敗した
+        # ときに元のメッセージが消える。
+        "ai_response": (previous or {}).get("ai_response", ""),
     }
 
-    existing = next((i for i, l in enumerate(logs) if l.get("date") == today), None)
-    if existing is not None:
-        logs[existing] = entry
-    else:
-        logs.append(entry)
-
+    # 本文を先に確定させる。AI生成が落ちても記録そのものは残す。
+    # save_logs には対象の1日だけを渡すこと。全件を渡すと1行ずつ
+    # SELECT + UPDATE するため、記録が増えるほど保存が遅くなり、
+    # 100件あたりで Render の30秒制限を超えて保存できなくなる。
     try:
-        save_logs(logs, user_id)
+        save_logs([entry], user_id)
     except Exception as e:
         print(f"[/save] DB error: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return jsonify({"error": f"保存に失敗しました: {e}"}), 500
 
-    ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
-    entry["ai_response"] = ai_response
-
-    if existing is not None:
-        logs[existing] = entry
-    else:
-        logs[-1] = entry
-
     try:
-        save_logs(logs, user_id)
+        ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
+    except Exception as e:
+        # 本文は保存済み。既存の灯りもそのまま残っている
+        print(f"[/save] AI error: {type(e).__name__}: {e}")
+        return jsonify({"status": "ok", "ai_response": entry["ai_response"]})
+
+    entry["ai_response"] = ai_response
+    try:
+        save_logs([entry], user_id)
     except Exception as e:
         print(f"[/save] DB error (ai_response update): {type(e).__name__}: {e}")
 
@@ -247,15 +253,15 @@ def delete_log_photo(date):
 @app.route("/api/review/generate", methods=["POST"])
 @require_auth
 def generate_review():
-    data = request.json
+    data = request.get_json(silent=True) or {}
     review_type = data.get("type", "weekly")
     logs = load_logs(g.user_id)
     goals = load_goals()
 
     if review_type == "weekly":
-        week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        week_ago = days_ago_str(7)
         period_logs = [l for l in logs if l.get("date", "") >= week_ago]
-        today = datetime.now().date()
+        today = today_date()
         this_monday = today - timedelta(days=today.weekday())
         last_monday = this_monday - timedelta(days=7)
         last_sunday = this_monday - timedelta(days=1)
@@ -263,9 +269,9 @@ def generate_review():
         review_json = get_weekly_review(period_logs, goals, last_week_logs=last_week_logs or None)
         period_label = "今週"
     else:
-        month_start = datetime.now().strftime("%Y-%m-01")
+        month_start = today_date().strftime("%Y-%m-01")
         period_logs = [l for l in logs if l.get("date", "") >= month_start]
-        today = datetime.now()
+        today = today_date()
         last_month_end = today.replace(day=1) - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
         last_month_logs = [l for l in logs if last_month_start.strftime("%Y-%m-%d") <= l.get("date", "") <= last_month_end.strftime("%Y-%m-%d")]
@@ -284,14 +290,14 @@ def generate_review():
 @app.route("/api/daily/quote")
 @require_auth
 def daily_quote():
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = today_str()
 
     cached = load_daily_quote(g.user_id, today)
     if cached:
         return jsonify({"quote": cached, "cached": True})
 
     logs = load_logs(g.user_id)
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = days_ago_str(1)
     yesterday_log = next((l for l in logs if l.get("date") == yesterday), None)
 
     from modules.ai import get_daily_quote
@@ -561,7 +567,7 @@ def timeline_reflection():
 
     months_ago = _clamp_months_ago(request.args.get("months_ago"))
 
-    today = datetime.now().date()
+    today = today_date()
 
     # months_ago ヶ月前の日付を計算（月末日をはみ出す場合はその月の末日に丸める）
     past_month = today.month - months_ago
@@ -613,7 +619,7 @@ def _get_milestone_hit(user_id):
     except ValueError:
         return None, None, 0
 
-    today = datetime.now().date()
+    today = today_date()
     days_since_start = (today - first_dt).days
 
     for ms in _MILESTONES:
@@ -662,7 +668,7 @@ def insights_keywords():
     if months is None:
         return jsonify({"error": "invalid period"}), 400
 
-    today = datetime.now().date()
+    today = today_date()
     year = today.year
     month = today.month - months
     while month <= 0:
