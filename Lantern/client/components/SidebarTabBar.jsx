@@ -96,7 +96,8 @@ function ThemeIcon({ isDark, color }) {
   )
 }
 
-const SIDEBAR_WIDTH = 224
+// 旧 Web は w-56（224px）だったが、実機で見て広かったため w-48 まで詰めた。
+const SIDEBAR_WIDTH = 192
 
 export default function SidebarTabBar({ state, descriptors, navigation }) {
   const { isDark, toggleTheme } = useThemeContext()
