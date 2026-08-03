@@ -85,6 +85,26 @@ Web で直した内容が mobile に反映されていなかったためであ�
 ネイティブ（iOS / Android）は実質すべて 768px 未満なのでボトムタブになる。
 Web のデスクトップだけがサイドバーになる。
 
+### 自前でサイドバーを組む必要はない
+
+React Navigation 7（Expo Router 57 が使っている）の
+bottom-tabs は `tabBarPosition` に `left` を受け付け、
+公式ドキュメントに「`left` または `right` のときはサイドバーとして描画される。
+大きい画面ではサイドバー、小さい画面ではボトムタブを出したいときに使える」
+と明記されている。まさにこの用途である。
+
+`useWindowDimensions()` の幅で `tabBarPosition` を切り替えるだけで済む。
+
+**ただし現行 Web のサイドバーにある以下は失われる。**
+
+- 「Lantern」のロゴとタグライン「あなたの道は、あなたが照らす。」
+- 末尾のバージョン表記
+- テーマ切り替えボタン（Settings 画面に同じものが既にある）
+
+これは受け入れる。ナビゲーションの見た目を維持するために
+カスタムのタブバーを自作すると、一本化で減らしたはずの保守対象が戻る。
+ロゴの復活が必要になったら、`tabBar` プロップで後から足せる。
+
 ### CLAUDE.md の画面設計を変更する
 
 現行の記述は次のとおり。
@@ -124,14 +144,20 @@ client/lib/image.js       ← imageMath を import し、expo API と組み合�
 
 ### 移設後の構成
 
-| テスト | 件数 | 扱い |
-|---|---:|---|
-| `date.test.js` | 29 | そのまま移設（`date.js` は import なし） |
-| `format.test.js` | 24 | そのまま移設（`format.js` は import なし） |
-| `fitWithin` | 11 | `imageMath` を参照する形に変更 |
-| ドリフト検証 | 1 | **削除**。二重保守が消え役目を終える |
+**ドリフト検証テストは3ファイルすべてに入っている**（`date` / `format` / `image`）。
+二重保守が消えるため3件とも削除する。
 
-合計 **64件**。`client/` の devDependencies に vitest を追加する。
+| テスト | 件数 | うちドリフト検証 | 移設後 |
+|---|---:|---:|---:|
+| `date.test.js` | 29 | 1 | 28 |
+| `format.test.js` | 24 | 1 | 23 |
+| `image.test.js` | 12 | 1 | 11（`imageMath` を参照） |
+| 合計 | 65 | 3 | **62** |
+
+`date.js` と `format.js` は frontend と mobile でバイト単位で同一であることを
+確認済みのため、移設は frontend 側を消すだけで済む。
+
+`client/` の devDependencies に vitest を追加する。
 
 ### pytest 側
 
@@ -251,7 +277,7 @@ Vercel は過去のデプロイを保持しているため即座にロールバ�
 - `client/` の1つのコードベースから iOS / Android / Web が出る
 - Vercel が Expo Web 出力を配信し、全画面が動作する
 - YouTube 連携が Web とネイティブの両方で通る
-- vitest 64件・pytest 231件がパスする
+- vitest 62件・pytest 231件がパスする
   （`serve_react` の削除は許可リストの更新だけで、テスト件数は変わらない見込み。
   `REMOVED_PATHS` の404確認はルートが存在しないことで自然に満たされる）
 - `lib/*.js` の一致検証テストが不要になり削除されている
