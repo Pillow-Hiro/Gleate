@@ -32,10 +32,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "vitest run"
   },
   "private": true,
   "devDependencies": {
-    "babel-preset-expo": "^57.0.4"
+    "babel-preset-expo": "^57.0.4",
+    "vitest": "^4.1.10"
   }
 }
