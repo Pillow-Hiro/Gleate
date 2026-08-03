@@ -161,7 +161,7 @@ const RETURN_URL = 'lantern://dashboard'
 const result = await WebBrowser.openAuthSessionAsync(data.url, RETURN_URL)
 ```
 
-Expo Web ではスキーム URL は意味を持たない。`Platform.OS` で分岐する。
+Expo Web ではスキーム URL は意味を持たない。プラットフォームで実装を分ける。
 
 | プラットフォーム | 認可URL取得 | 遷移 | 戻りの検出 |
 |---|---|---|---|
@@ -169,6 +169,32 @@ Expo Web ではスキーム URL は意味を持たない。`Platform.OS` で分�
 | native | `/api/youtube/auth-url?platform=app` | `WebBrowser.openAuthSessionAsync` | 戻り値の URL を見る |
 
 web 側の実装は `frontend/src/pages/Dashboard.jsx` の既存コードを移植する。
+
+### 分岐は `Platform.OS` ではなくファイル分割で行う
+
+このリポジトリには既に前例がある。
+
+```
+client/lib/exportLogs.js       ← expo-file-system と expo-sharing を使う
+client/lib/exportLogs.web.js   ← Blob と <a download> を使う
+```
+
+呼び出し側（`settings.jsx`）は `import { exportLogs } from '../../lib/exportLogs'` と
+書くだけで、分岐を持たない。Metro がプラットフォームで自動選択する。
+
+YouTube 連携も同じ形にする。
+
+```
+client/lib/youtubeConnect.js       ← WebBrowser.openAuthSessionAsync を使う
+client/lib/youtubeConnect.web.js   ← window.location.href を使う
+```
+
+`Platform.OS` の if 文にしない理由は2つある。
+
+1. `expo-web-browser` を web バンドルに含めずに済む。
+   `exportLogs.web.js` のコメントにあるとおり、
+   expo-file-system は Web 向けの解決に失敗する。同種の問題を避ける
+2. `dashboard.jsx` は既に 356 行ある。分岐を足すとさらに膨らむ
 
 ---
 
