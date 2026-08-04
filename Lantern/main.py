@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, send_from_directory, g, redirect, abort
+from flask import Flask, request, jsonify, g, redirect
 from flask_cors import CORS
 import os
 import random
@@ -43,8 +43,6 @@ CORS(app, origins=[
     # CORSの対象外だが、Expo Web はブラウザ実行なので許可が必要）
     'http://localhost:8081',
 ])
-
-STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
 # 起動画面の写真。Unsplash の呼び出しを減らすためプロセス内に6時間持つ。
 # ワーカーやインスタンスをまたいでは共有されないが、その場合でも
@@ -701,24 +699,6 @@ def insights_keywords():
 
     keywords = generate_keyword_frequency(logs_text)
     return jsonify({"keywords": keywords, "period": period})
-
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react(path):
-    # シンプルで確実なガード条件（url_map動的チェックより予測可能）
-    _BLOCKED_PREFIXES = ('api/', 'debug/', 'goals/', 'save', 'static/')
-    if path == 'save' or any(path.startswith(p) for p in _BLOCKED_PREFIXES):
-        abort(404)
-
-    index_path = os.path.join(STATIC_DIR, 'index.html')
-    if not os.path.exists(index_path):
-        abort(404)
-
-    file_path = os.path.join(STATIC_DIR, path)
-    if path and os.path.isfile(file_path):
-        return send_from_directory(STATIC_DIR, path)
-    return send_from_directory(STATIC_DIR, 'index.html')
 
 
 if __name__ == "__main__":

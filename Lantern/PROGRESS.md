@@ -734,12 +734,98 @@ Windowsでは同じポートに複数プロセスが並存しうる。
 
 ---
 
+### 2026/08/04（frontend/ の廃止と Expo Web への一本化）
+
+設計は `docs/superpowers/specs/2026-08-03-expo-web-consolidation-design.md`、
+計画は `docs/superpowers/plans/2026-08-03-expo-web-consolidation.md`。
+
+**動機**
+
+写真記録で `PhotoPicker` も `image.js` も `PhotoLightbox` も Web と mobile に
+1つずつ書いた。その結果 mobile 側にだけバグが残った
+（`setLogs` が常に append していて同じ日付が重複した）。
+`date.js` / `format.js` / `image.js` は一致検証テストでドリフトを防いでいたが、
+テストで守らなければ壊れる構造そのものを消した。
+
+新機能は増えていない。以降のすべての変更が半分の手間になることが成果。
+
+**やったこと**
+
+- [x] `mobile/` を `client/` にリネーム（Web も出すため名前が実態と合わなくなっていた）
+- [x] 写真の寸法計算を `lib/imageMath.js` に切り出し、純粋関数とプラットフォームAPIを分離
+- [x] vitest を `client/` に移設。一致検証テスト3件を削除（65件 → 62件）
+- [x] ナビゲーションを画面幅で切り替え（768px以上はサイドバー）
+- [x] ハンバーガーメニューを廃止（タップ2回 → 1回）
+- [x] YouTube連携を `lib/youtubeConnect.js` / `.web.js` に分割
+- [x] `/insights` → `/journal` のリダイレクトを維持
+- [x] Flask の `serve_react` と `static/` を削除。API専用に戻した（公開ルート 5→4）
+- [x] `frontend/` を削除（44ファイル）
+
+**サイドバーは自作することになった**
+
+当初は React Navigation の `tabBarPosition="left"` に任せる計画だった。
+実際に表示させたところ Lantern の見た目に耐えなかった。
+
+- 既定幅が広すぎる（1920px 幅で 520px ほど占有）
+- アクティブ項目が既定の青。cream / sage / forest の配色から完全に外れる
+- ロゴ・タグライン・バージョン・テーマ切替を差し込む場所が無い
+
+描画だけ `components/SidebarTabBar.jsx` に持たせた。
+項目の状態と遷移は Tabs から受け取るため、ルーティングは二重になっていない。
+幅は実機で見ながら 224px → 192px まで詰めた。
+
+**移植時に落ちていた仕様を2つ戻した**
+
+Expo Web を広い画面で表示して発覚した。
+
+- 本文の幅制限。旧 Web は `max-w-2xl mx-auto`（672px 中央寄せ）だったが、
+  client 側は `px-5` だけで、1700px 幅まで伸びて読みづらかった
+- 動画一覧の段組み。旧 Web は `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` だったが、
+  移植時に「モバイルでは1カラム固定」にしていた
+
+どちらも mobile 前提の設計が、そのまま広い画面に出たことによるもの。
+
+**検証結果: OK**
+
+- pytest 231件パス / vitest 62件パス
+- Vercel のプレビューと本番の両方で、配信物が Expo Web であることを検査で確認
+  （`/_expo/static/js/web/entry-*.js`・`react-native-web` あり・Vite の痕跡なし）
+- `EXPO_PUBLIC_*` の埋め込みと Render API との疎通を確認
+  （スプラッシュの引用がフォールバックではなく実データだった）
+- ユーザーがローカルとプレビューで全画面を目視確認。YouTube連携も実通し済み
+
+**バンドルサイズ**
+
+| | 変更前（Vite） | 変更後（Expo Web） |
+|---|---|---|
+| raw | 882KB | 1552KB |
+| gzip | 250KB | 407KB |
+
+react-native-web を含むため gzip で 1.6倍になった。
+初回読み込みに差が出るが、個人利用のため許容した。
+
+**失われたもの**
+
+デスクトップのサイドバーは自作したのでロゴもテーマ切替も残っている。
+一方で `HamburgerMenu.jsx` は移植せず破棄した（タブに寄せたため不要）。
+
+**環境変数の落とし穴**
+
+`VITE_*` と `EXPO_PUBLIC_*` はどちらもビルド時にコードへ埋め込まれる。
+Vercel の設定を切り替える前に `EXPO_PUBLIC_*` を追加しておかないと、
+ビルドは成功するのに Supabase の URL が `undefined` になり、
+`EXPO_PUBLIC_API_URL` が空文字へフォールバックして
+API がすべて Vercel 自身に向かう。画面は出るので気づきにくい。
+
+また Vercel の設定変更は既存のデプロイに遡って適用されない。
+設定を変えた後に再デプロイが要る。
+
+---
+
 ## 進行中
 
-- 写真記録（マルチモーダル v1.3）。`feat/photo-record` ブランチで Task 1〜16 実装済み。
-  残りは実UIでの動作確認とマージ。
-- React Native移行 フェーズA。A1〜A6と A7前半が完了。
-  残りは配布まわり（アカウント登録・EASビルド・Vercel切り替え）で、いずれも要ユーザー操作。
+- React Native移行 フェーズA。Web の一本化まで完了。
+  残りは配布まわり（A7：アカウント登録・EASビルド）で、いずれも要ユーザー操作。
 
 ---
 

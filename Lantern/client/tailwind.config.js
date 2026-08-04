@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 // 色は global.css の CSS 変数で定義し、ライト/ダークを切り替える。
-// frontend/src/index.css の @theme と同じトークン名・同じ値を維持しているため、
-// Web版の className をそのまま移植できる。
+// トークン名と値は旧 frontend/src/index.css の @theme から引き継いだもの
+// （2026-08-04 に frontend/ を廃止し、こちらが唯一の定義になった）。
 const withAlpha = (name) => `rgb(var(${name}) / <alpha-value>)`
 
 module.exports = {

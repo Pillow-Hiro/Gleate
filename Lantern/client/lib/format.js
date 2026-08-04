@@ -1,8 +1,7 @@
 // 表示用フォーマッタ。
 //
-// frontend/src/lib/format.js と mobile/lib/format.js は同一内容を保つこと。
-// （Vercelの配信元をExpo Web出力へ切り替えた時点で frontend 側を廃止し一本化する）
-// frontend/src/lib/format.test.js が2ファイルの一致を検証している。
+// 2026-08-04 に frontend/ を廃止して一本化した。
+// 二重保守が消えたため、一致検証テストも削除している。
 const WEEKDAYS_JA = ['日', '月', '火', '水', '木', '金', '土']
 
 export function parseDate(dateStr) {
