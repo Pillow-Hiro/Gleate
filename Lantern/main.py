@@ -118,10 +118,29 @@ def debug_version():
     # コミットはハードコードしない。以前は固定文字列を返していたため、
     # 何をデプロイしても同じ値が返り、稼働バージョンの判定を誤らせた。
     # RENDER_GIT_COMMIT は Render が自動で設定する。ローカルでは未設定になる。
+    # リダイレクトURIは環境変数の生値ではなく、モジュールが実際に使う解決後の値を返す。
+    # 生値だと「未設定」としか分からず、何処へリダイレクトするのかが見えない。
+    #
+    # YOUTUBE_REDIRECT_URI / TWITCH_REDIRECT_URI はどちらも既定値がローカルを指す。
+    # 本番で設定を忘れると localhost へリダイレクトしようとして壊れるが、
+    # ローカルでは動くため気づけない。デプロイ後にここで見つけられるようにする。
+    from modules.youtube import REDIRECT_URI as youtube_redirect
+    from modules.twitch import REDIRECT_URI as twitch_redirect
+
+    on_render = bool(os.environ.get("RENDER_GIT_COMMIT"))
+    misconfigured = [
+        name
+        for name, uri in (("youtube", youtube_redirect), ("twitch", twitch_redirect))
+        if "localhost" in uri
+    ]
+
     return jsonify({
         "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
         "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
-        "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定"),
+        "youtube_redirect": youtube_redirect,
+        "twitch_redirect": twitch_redirect,
+        # 本番なのに localhost を指しているものがあれば設定漏れ
+        "redirect_misconfigured": misconfigured if on_render else [],
     })
 
 
@@ -252,6 +271,116 @@ def delete_log_photo(date):
     return jsonify({"status": "ok"})
 
 
+# --- Twitch 連携 ---
+# YouTube と同じ認可コードフロー。ただし PKCE は使わない（Twitch が非対応）。
+# 過去配信は一定期間で消えるため、取得できたときに twitch_streams へ保存する。
+
+@app.route("/api/twitch/auth-url")
+@require_auth
+def twitch_auth_url():
+    from modules.twitch import get_auth_url, TWITCH_CLIENT_ID
+    if not TWITCH_CLIENT_ID:
+        return jsonify({"error": "TWITCH_CLIENT_ID が未設定です"}), 500
+    platform = request.args.get("platform", "web")
+    return jsonify({"url": get_auth_url(g.user_id, platform)})
+
+
+@app.route("/api/twitch/callback")
+def twitch_callback():
+    # 認証なしで残している唯一のTwitchルート。Twitchからのリダイレクト先のため。
+    # 本人性は state に載せた user_id で確認する。
+    from modules.twitch import (
+        exchange_code_for_token, save_tokens, parse_state, get_current_user,
+    )
+
+    error = request.args.get("error")
+    code = request.args.get("code")
+    user_id, platform = parse_state(request.args.get("state"))
+    logger.info(f"[Twitch-CB] error={error} code={bool(code)} user_id={bool(user_id)} platform={platform}")
+
+    if error or not code or not user_id:
+        return redirect(_twitch_redirect_target(platform, "error"))
+
+    try:
+        token_response = exchange_code_for_token(code)
+        me = get_current_user(token_response.get("access_token"))
+        save_tokens(
+            user_id, token_response,
+            broadcaster_id=(me or {}).get("id"),
+            display_name=(me or {}).get("display_name"),
+        )
+        logger.info(f"[Twitch-CB] success (platform={platform})")
+        return redirect(_twitch_redirect_target(platform, "connected"))
+    except Exception as e:
+        logger.error(f"[Twitch-CB] FAILED: {type(e).__name__}: {e}")
+        logger.error(traceback.format_exc())
+        return redirect(_twitch_redirect_target(platform, "error"))
+
+
+@app.route("/api/twitch/status")
+@require_auth
+def twitch_status():
+    from modules.twitch import get_tokens
+    row = get_tokens(g.user_id)
+    if not row:
+        return jsonify({"connected": False, "display_name": None})
+    return jsonify({"connected": True, "display_name": row.get("display_name")})
+
+
+@app.route("/api/twitch/disconnect", methods=["DELETE"])
+@require_auth
+def twitch_disconnect():
+    # 保存済みの配信は消さない。VODが消えても Lantern には残る、という設計のため
+    from modules.twitch import delete_tokens
+    delete_tokens(g.user_id)
+    return jsonify({"message": "disconnected"})
+
+
+@app.route("/api/twitch/streams")
+@require_auth
+def twitch_streams():
+    """保存済みの配信を返す。あわせて Twitch から取得して保存する。
+
+    取得に失敗しても保存済みのものは返す。VODが消えた後でも
+    これまでの記録が見えなくならないようにするため。
+    """
+    from modules.twitch import get_valid_access_token, get_videos, save_streams, load_streams
+
+    access_token, broadcaster_id = get_valid_access_token(g.user_id)
+    if access_token and broadcaster_id:
+        try:
+            save_streams(g.user_id, get_videos(access_token, broadcaster_id))
+        except Exception as e:
+            # 取り逃した件数は画面に出さない（離脱期間を評価しない原則）
+            print(f"[Twitch] 配信の取得に失敗 user={g.user_id}: {type(e).__name__}: {e}")
+
+    return jsonify({"streams": load_streams(g.user_id)})
+
+
+@app.route("/api/twitch/channel")
+@require_auth
+def twitch_channel():
+    from modules.twitch import get_valid_access_token, get_follower_count, get_tokens
+
+    row = get_tokens(g.user_id)
+    if not row:
+        return jsonify({"connected": False}), 404
+
+    access_token, broadcaster_id = get_valid_access_token(g.user_id)
+    followers = None
+    if access_token and broadcaster_id:
+        try:
+            followers = get_follower_count(access_token, broadcaster_id)
+        except Exception as e:
+            print(f"[Twitch] フォロワー数の取得に失敗 user={g.user_id}: {type(e).__name__}: {e}")
+
+    return jsonify({
+        "connected": True,
+        "display_name": row.get("display_name"),
+        "follower_count": followers,
+    })
+
+
 @app.route("/api/review/generate", methods=["POST"])
 @require_auth
 def generate_review():
@@ -365,7 +494,8 @@ _DEFAULT_FRONTEND_ORIGIN = "https://lantern-inky-three.vercel.app"
 def _resolve_frontend_origin(raw):
     """OAuth 完了後にブラウザを戻す先を決める。
 
-    ローカル開発では Vite（http://localhost:5173）を指すよう .env で上書きする。
+    ローカル開発では Expo Web（http://localhost:8081）を指すよう .env で上書きする。
+    2026-08-04 に frontend/ を廃止するまでは Vite の 5173 だった。
     未設定なら本番の Vercel を使うため、Render 側は環境変数を足さなくてよい。
     末尾スラッシュを落とすのは、連結時に // にならないようにするため。
     """
@@ -375,6 +505,13 @@ def _resolve_frontend_origin(raw):
 _FRONTEND_ORIGIN = _resolve_frontend_origin(os.environ.get("FRONTEND_ORIGIN"))
 # ネイティブアプリ（Expo）の復帰先。app.json の scheme と一致させること。
 _APP_SCHEME_ORIGIN = "lantern://dashboard"
+
+
+def _twitch_redirect_target(platform, status):
+    """Twitch 連携完了後の戻り先。YouTube と同じ考え方でプラットフォームを分ける。"""
+    if platform == "app":
+        return f"{_APP_SCHEME_ORIGIN}?twitch={status}"
+    return f"{_FRONTEND_ORIGIN}/dashboard?twitch={status}"
 
 
 def _youtube_redirect_target(platform, status):

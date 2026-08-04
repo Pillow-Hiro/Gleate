@@ -53,25 +53,9 @@ def generate_code_challenge(verifier):
     return base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
 
 
-# state に user_id とクライアント種別を載せる。
-# GoogleへのリダイレクトURIはFlaskのままにし、コールバック側で
-# Web（Vercel）へ戻すかネイティブアプリ（lantern://）へ戻すかを切り替えるため。
-# これにより Google Cloud Console 側のリダイレクトURI設定を変更せずに済む。
-_STATE_SEPARATOR = "|"
-
-
-def build_state(user_id, platform="web"):
-    return f"{user_id}{_STATE_SEPARATOR}{platform}"
-
-
-def parse_state(state):
-    """state を (user_id, platform) に分解する。
-    platform を含まない古い形式の state もそのまま web として扱う。
-    """
-    if not state:
-        return None, "web"
-    user_id, _, platform = state.partition(_STATE_SEPARATOR)
-    return user_id or None, platform or "web"
+# state の組み立ては Twitch と共通のため modules/oauth_state.py にある。
+# ここから re-export しているのは、既存の import（tests を含む）を壊さないため。
+from modules.oauth_state import build_state, parse_state, _STATE_SEPARATOR  # noqa: F401
 
 
 def get_auth_url(user_id, platform="web"):
