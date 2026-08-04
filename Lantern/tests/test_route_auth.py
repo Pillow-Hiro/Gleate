@@ -20,7 +20,6 @@ from main import app
 # ここに足すときは理由を必ず書くこと。
 PUBLIC_ENDPOINTS = {
     "static": "Flask標準の静的配信",
-    "serve_react": "SPAのindex.html・静的ファイル配信。ユーザーデータを返さない",
     "debug_version": "デプロイ後の稼働バージョン確認。commit/branch/公開redirect_uriのみ",
     "splash_content_api": "起動画面の写真と引用。ユーザー個別のデータを含まない",
     "youtube_callback": "GoogleからのOAuthリダイレクト先。stateで本人性を確認する",

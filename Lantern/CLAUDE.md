@@ -300,7 +300,7 @@ UIの比重（グラフを中心に据えるか、記録との照合を中心に
 
 | 項目 | 内容 |
 |---|---|
-| フロントエンド | React + Vite |
+| フロントエンド | Expo（React Native / React Native Web） |
 | スタイリング | Tailwind CSS |
 | バックエンド | Flask（API専用） |
 | AI | Anthropic Claude API（claude-sonnet-4-6） |
@@ -320,7 +320,7 @@ UIの比重（グラフを中心に据えるか、記録との照合を中心に
 注記：
 Journaling Suggestions FrameworkはApple純正のオンデバイスAPIであり、iOS専用。
 Android版は別途独自実装が必要になる（コスト高のため後回し可）。
-Web版（React + Vite）では利用不可のため、導入はReact Native化後のiOS版に限定される。
+Webでは利用不可のため、導入はiOS版に限定される。
 
 ---
 
@@ -340,27 +340,33 @@ Lantern/                      ← .git はさらに1つ上の apps/ にある
 │   ├── ai.py                ← AI応答・プロンプト処理
 │   ├── logs.py              ← ログの読み書き・Supabaseカラム変換
 │   ├── auth.py              ← require_auth（Supabase JWT検証）
+│   ├── photos.py            ← 写真のStorage操作
+│   ├── timeutil.py          ← 日付の判定（JST基準）
 │   └── youtube.py           ← YouTube OAuth・API
 ├── tests/                   ← pytest
 │   ├── test_route_auth.py   ← 認証ガードの回帰テスト
 │   ├── test_logs_mapping.py
 │   ├── test_ai_parsing.py
 │   └── test_youtube_state.py
-├── frontend/                ← React + Vite（Web・Vercel配信）
-│   └── src/
-│       ├── components/      ← Sidebar / HamburgerMenu / SplashScreen /
-│       │                       ActivityCalendar
-│       ├── lib/             ← date.js（+ date.test.js）/ supabase.js
-│       └── pages/
-│           ├── Home.jsx      ← 今日の灯り・CTA
-│           ├── Journal.jsx   ← 記録タブ＋振り返りタブ（旧Insightsを統合）
-│           ├── Dashboard.jsx ← YouTube連携
-│           └── Settings.jsx  ← 設定
-└── mobile/                  ← Expo（React Native・フェーズA）
-    ├── app/(tabs)/          ← index / journal / dashboard / settings
-    ├── components/
-    └── lib/                 ← date.js は frontend 側と同一内容を保つこと
+└── client/                  ← Expo。iOS / Android / Web をここから出す
+    ├── app/                 ← expo-router
+    │   ├── (tabs)/          ← index / journal / dashboard / settings
+    │   ├── login.jsx
+    │   └── insights.jsx     ← /journal へのリダイレクト（旧URL用）
+    ├── components/          ← SidebarTabBar / PhotoPicker / ActivityCalendar ほか
+    ├── lib/                 ← date / format / imageMath / supabase /
+    │                           youtubeConnect（.web.js と対で持つ）
+    └── vitest.config.mjs    ← lib/ の純粋関数のみを対象にする
 ```
+
+`frontend/`（React + Vite）は 2026-08-04 に廃止した。
+Web も `client/` から `npx expo export --platform web` で出す。
+同じ画面を2回書く状態が解消され、一致検証テストも不要になった。
+
+プラットフォーム差は `Platform.OS` の分岐ではなくファイル分割で吸収する
+（`exportLogs.js` / `exportLogs.web.js`、`youtubeConnect.js` / `youtubeConnect.web.js`）。
+Metro がプラットフォームで選ぶため呼び出し側は分岐を持たず、
+ネイティブ専用の依存が Web バンドルに混ざらない。
 
 ---
 
@@ -407,11 +413,22 @@ Lantern/                      ← .git はさらに1つ上の apps/ にある
 
 ## ナビゲーション
 
-| デバイス | 表示 |
+| 画面幅 | 表示 |
 |---|---|
-| モバイル | ハンバーガーメニュー→ドロワー |
-| タブレット | サイドバー常時表示 |
-| デスクトップ | サイドバー常時表示 |
+| 768px 未満（スマホ・ネイティブ） | ボトムタブ |
+| 768px 以上（タブレット・デスクトップ） | サイドバー常時表示 |
+
+ハンバーガーメニューは 2026-08-04 に廃止した。
+目的の画面までタップ2回かかるため、1回で着くタブに寄せた。
+「入力負荷を最小化する」という判断基準に沿う。
+
+実装は `client/app/(tabs)/_layout.jsx` で `useWindowDimensions` の幅を見て
+`tabBarPosition` を切り替える。広いときの描画は
+`client/components/SidebarTabBar.jsx` が持つ。
+組み込みの `tabBarPosition="left"` だけでもサイドバーの形にはなるが、
+既定の幅が広すぎ、アクティブ色が青で Lantern の配色から外れ、
+ロゴやテーマ切替を差し込む場所も無いため描画だけ自前にしている。
+項目の状態と遷移は Tabs から受け取るので、ルーティングは二重に持っていない。
 
 ---
 

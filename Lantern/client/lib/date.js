@@ -1,9 +1,8 @@
 // 日付・継続日数の共通ロジック
 // ローカルタイムゾーン基準。toISOString() はUTC変換で日付がずれるため使わない。
 //
-// frontend/src/lib/date.js と mobile/lib/date.js は同一内容を保つこと。
-// （Vercelの配信元をExpo Web出力へ切り替えた時点で frontend 側を廃止し一本化する）
-// frontend/src/lib/date.test.js が2ファイルの一致を検証している。
+// 2026-08-04 に frontend/ を廃止して一本化した。
+// 二重保守が消えたため、一致検証テストも削除している。
 
 export function localDateStr(date = new Date()) {
   const y = date.getFullYear()

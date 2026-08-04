@@ -11,4 +11,6 @@ static/
 # Windows の `> nul` リダイレクトで生成されるゴミファイル
 nul
 .superpowers/
-_ul
+# フック出力がコンソールごとダンプされたもの。
+# 末尾にマシン名が付く場合があるため前方一致で無視する（例: _ul-LAPTOP-XXXX）
+_ul*
