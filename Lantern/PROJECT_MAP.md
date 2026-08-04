@@ -128,7 +128,7 @@ Supabase Auth のメールアドレス＋パスワード認証（`signInWithPass
 |---|---|
 | `lib/supabase.js` | Supabaseクライアント初期化・`authFetch()`（JWTをHeaderに付与するfetchラッパー）の提供 |
 | `lib/date.js` | `localDateStr()` / `todayStr()` / `calcStreak()`。日付はローカルタイムゾーン基準（`toISOString()` はUTC変換で日付がずれるため使わない） |
-| `constants.js` | `APP_VERSION`（現在 `v1.2`）のexport |
+| `constants.js` | `APP_VERSION`（現在 `v2.0`）のexport |
 | `App.jsx` | BrowserRouterによるルーティング・Supabase Authセッション管理・テーマ状態管理 |
 | `main.jsx` | Reactアプリのエントリーポイント |
 

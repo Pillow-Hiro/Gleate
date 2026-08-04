@@ -311,11 +311,11 @@ UIの比重（グラフを中心に据えるか、記録との照合を中心に
 
 ## 将来ロードマップ（React Native移行）
 
-| フェーズ | 内容 | 前提条件 |
+| フェーズ | 内容 | 状態 |
 |---|---|---|
-| 現行 | React + Vite（Web） | — |
-| フェーズA | React Native化（iOS/Android） | Web版の思想・UI・AI憲法確定後 |
-| フェーズB | Journaling Suggestions API導入（iOS限定） | フェーズA完了後 |
+| フェーズA | React Native化（Expo への統一） | **完了**（2026-08-04・v2.0） |
+| フェーズA7 | ネイティブの配布（EASビルド・ストア登録） | 未了。要ユーザー操作 |
+| フェーズB | Journaling Suggestions API導入（iOS限定） | フェーズA7完了後 |
 
 注記：
 Journaling Suggestions FrameworkはApple純正のオンデバイスAPIであり、iOS専用。
@@ -609,7 +609,14 @@ CORSエラー発生時は最初に以下を確認する。
 
 ## バージョン管理
 
-- `main` ブランチ：v1.2（現行・React+Flask API+Supabase）
+- `main` ブランチ：v2.0（現行・Expo + Flask API + Supabase）
+
+v2.0 は React Native 移行（`DESIGN_react_native_v2.0.md`）の到達点を指す。
+2026-08-04 に `frontend/` を廃止して Expo Web に一本化し、
+同設計書が A7 の完了条件としていた「Vercel の配信元を切替」を満たした。
+
+ネイティブアプリの配布（EASビルド・ストア登録）は未了。
+アーキテクチャは v2.0 だが、スマホに配られてはいない状態である。
 
 ---
 
