@@ -822,6 +822,68 @@ API がすべて Vercel 自身に向かう。画面は出るので気づきに�
 
 ---
 
+### 2026/08/05（Twitch連携）
+
+設計は `docs/superpowers/specs/2026-08-04-twitch-integration-design.md`。
+
+**動機**
+
+YouTube と同じ。「外の世界に届いた形跡」を記録と並べる。
+配信は開始時刻と長さを持つため、YouTube の「投稿日」より
+Journal の記録と時間軸で噛み合う。
+
+**中核：消えるものを残す**
+
+Twitch の過去配信（VOD）は一定期間で消える。
+取得できたときに `twitch_streams` へ保存し、VOD が消えても Lantern には残す。
+取得はダッシュボードを開いたときに行い、cron は持たない
+（Render の無料枠はスリープするため外部スケジューラが要る）。
+
+連携を解除しても `twitch_streams` は消さない。
+
+**やったこと**
+
+- [x] `modules/twitch.py`（認可・トークン・配信の取得と保存）
+- [x] `modules/oauth_state.py` に state の組み立てを切り出し、YouTube と共通化
+- [x] `/api/twitch/*` 6エンドポイント。callback 以外は `@require_auth`
+- [x] Dashboard をタブ化（YouTube / Twitch）。
+      既存の中身は `components/YouTubePanel.jsx` へ逐語的に切り出した
+- [x] `components/TwitchPanel.jsx` 新規
+- [x] `lib/twitchConnect.js` / `.web.js` でプラットフォーム分割
+
+**認可方式の変更**
+
+当初は Public クライアントで Device Code Flow を想定していた。
+Twitch は認可コードフローで PKCE をサポートせず、
+Public クライアントは Device Code Flow に限定されるため。
+その後 Confidential クライアントとして登録できたため通常の
+認可コードフローにした。PKCE は使わない。
+
+**壊れやすい点**
+
+リフレッシュトークンは1回限りの使い捨て。更新のたびに応答の
+新しい refresh_token で保存し直す。古いものを持ち続けると次の更新で失敗する。
+30日使わないと失効するが、その場合は未連携として扱うだけにした
+（「30日間ご利用がありませんでした」のような文言は出さない）。
+
+**移行の取りこぼしを1件修正**
+
+疎通確認の途中で発覚した。`.env` の `FRONTEND_ORIGIN` が
+`http://localhost:5173` のままで、削除した Vite のポートを指していた。
+ローカルで OAuth を完了しても存在しないポートへ戻され、
+連携が失敗したように見える状態だった（YouTube も同じ）。
+本番は未設定で Vercel の既定値を使うため影響なし。
+
+**検証結果: OK**
+
+- pytest 257件パス（新規26件）/ vitest 62件パス
+- Webバンドルを検査し、Twitchの文言・4つのAPIパス・タブが入り、
+  ネイティブ専用（openAuthSessionAsync / lantern:// / expo-web-browser）が
+  0件であることを確認
+- ローカルで実際に Twitch と連携し、動作をユーザーが確認
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA。Web の一本化まで完了。
