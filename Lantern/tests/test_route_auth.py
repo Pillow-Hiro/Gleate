@@ -23,6 +23,7 @@ PUBLIC_ENDPOINTS = {
     "debug_version": "デプロイ後の稼働バージョン確認。commit/branch/公開redirect_uriのみ",
     "splash_content_api": "起動画面の写真と引用。ユーザー個別のデータを含まない",
     "youtube_callback": "GoogleからのOAuthリダイレクト先。stateで本人性を確認する",
+    "twitch_callback": "TwitchからのOAuthリダイレクト先。stateで本人性を確認する",
 }
 
 # 削除済みのルート。復活していないことを確認する。
