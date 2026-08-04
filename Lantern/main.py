@@ -475,7 +475,8 @@ _DEFAULT_FRONTEND_ORIGIN = "https://lantern-inky-three.vercel.app"
 def _resolve_frontend_origin(raw):
     """OAuth 完了後にブラウザを戻す先を決める。
 
-    ローカル開発では Vite（http://localhost:5173）を指すよう .env で上書きする。
+    ローカル開発では Expo Web（http://localhost:8081）を指すよう .env で上書きする。
+    2026-08-04 に frontend/ を廃止するまでは Vite の 5173 だった。
     未設定なら本番の Vercel を使うため、Render 側は環境変数を足さなくてよい。
     末尾スラッシュを落とすのは、連結時に // にならないようにするため。
     """
