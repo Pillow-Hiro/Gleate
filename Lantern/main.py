@@ -118,10 +118,29 @@ def debug_version():
     # コミットはハードコードしない。以前は固定文字列を返していたため、
     # 何をデプロイしても同じ値が返り、稼働バージョンの判定を誤らせた。
     # RENDER_GIT_COMMIT は Render が自動で設定する。ローカルでは未設定になる。
+    # リダイレクトURIは環境変数の生値ではなく、モジュールが実際に使う解決後の値を返す。
+    # 生値だと「未設定」としか分からず、何処へリダイレクトするのかが見えない。
+    #
+    # YOUTUBE_REDIRECT_URI / TWITCH_REDIRECT_URI はどちらも既定値がローカルを指す。
+    # 本番で設定を忘れると localhost へリダイレクトしようとして壊れるが、
+    # ローカルでは動くため気づけない。デプロイ後にここで見つけられるようにする。
+    from modules.youtube import REDIRECT_URI as youtube_redirect
+    from modules.twitch import REDIRECT_URI as twitch_redirect
+
+    on_render = bool(os.environ.get("RENDER_GIT_COMMIT"))
+    misconfigured = [
+        name
+        for name, uri in (("youtube", youtube_redirect), ("twitch", twitch_redirect))
+        if "localhost" in uri
+    ]
+
     return jsonify({
         "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
         "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
-        "youtube_redirect": os.environ.get("YOUTUBE_REDIRECT_URI", "未設定"),
+        "youtube_redirect": youtube_redirect,
+        "twitch_redirect": twitch_redirect,
+        # 本番なのに localhost を指しているものがあれば設定漏れ
+        "redirect_misconfigured": misconfigured if on_render else [],
     })
 
 

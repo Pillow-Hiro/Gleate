@@ -112,6 +112,47 @@ class TestNeedsRefresh:
         assert twitch.needs_refresh("not-a-date") is True
 
 
+class TestDebugVersionReportsRedirects:
+    """デプロイ後に curl 一発でリダイレクトURIの設定漏れを見つけられること。
+
+    YOUTUBE_REDIRECT_URI / TWITCH_REDIRECT_URI は既定値がローカルを指す。
+    本番で設定を忘れると localhost へリダイレクトしようとして壊れるが、
+    ローカルでは動くため気づけない。実際に一度この設定漏れを起こしかけた。
+    """
+
+    @pytest.fixture
+    def client(self):
+        from main import app
+        return app.test_client()
+
+    def test_両方のリダイレクトURIを返す(self, client):
+        data = client.get("/api/debug/version").get_json()
+        assert "youtube_redirect" in data
+        assert "twitch_redirect" in data
+
+    def test_実際に使われる値を返す(self, client):
+        # 環境変数の生値ではなくモジュールが使う解決後の値を返す。
+        # 生値だと「未設定」としか分からず、何にリダイレクトするか見えない
+        from modules import twitch as twitch_mod
+        data = client.get("/api/debug/version").get_json()
+        assert data["twitch_redirect"] == twitch_mod.REDIRECT_URI
+
+    def test_本番でlocalhostを指していたら警告する(self, client, monkeypatch):
+        monkeypatch.setenv("RENDER_GIT_COMMIT", "abc1234")
+        data = client.get("/api/debug/version").get_json()
+        # ローカルの既定値は localhost。本番扱いなので設定漏れとして報告される
+        assert "twitch" in data["redirect_misconfigured"]
+
+    def test_本番でなければ警告しない(self, client, monkeypatch):
+        monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+        data = client.get("/api/debug/version").get_json()
+        assert data["redirect_misconfigured"] == []
+
+    def test_認証なしで見られる(self, client):
+        # デプロイ直後の確認に使うため公開のまま。機密は含まない
+        assert client.get("/api/debug/version").status_code == 200
+
+
 class TestVideoToStream:
     """Twitch の VOD を twitch_streams の行に変換する。"""
 
