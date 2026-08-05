@@ -6,7 +6,7 @@ import PhotoPicker from './PhotoPicker'
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
-export default function RecordForm({ existingLog, targetDate, onSaved }) {
+export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
   const isToday = targetDate === todayStr()
   const [form, setForm] = useState({
     created: existingLog?.created || '',
@@ -79,6 +79,14 @@ export default function RecordForm({ existingLog, targetDate, onSaved }) {
         <View className="self-start bg-sage-light rounded-full px-2 py-0.5">
           <Text className="text-[10px] text-sage">記録済</Text>
         </View>
+      ) : null}
+
+      {/* 書き始める前に置く問い。
+          入力欄の見出しにはしない。答えなくてよいものとして静かに置く。
+          フォームの項目にすると「埋めるべきもの」になり、空白の怖さが増す。
+          今日の記録のときだけ出す（過去の編集では今日の問いは合わない）。 */}
+      {question && isToday ? (
+        <Text className="text-sm text-ink-soft leading-relaxed">{question}</Text>
       ) : null}
 
       <Field

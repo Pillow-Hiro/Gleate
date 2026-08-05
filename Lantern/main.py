@@ -451,6 +451,27 @@ def daily_quote():
     return jsonify({"quote": quote, "cached": False})
 
 
+@app.route("/api/question")
+@require_auth
+def daily_question():
+    """書き始める前に置く問い。
+
+    AIは使わない。modules/questions の資産から日付で1つ選ぶだけなので、
+    呼び出し費用はかからず、同じ日は何度開いても同じ問いになる。
+    読み込むたびに変わると「選び直せるもの」に見えて書く手が止まる。
+    """
+    from modules.questions import pick_for_writing
+
+    question = pick_for_writing(today_str())
+    if not question:
+        return jsonify({"question": None})
+    return jsonify({
+        "question": question["text"],
+        "category": question["category"],
+        "subcategory": question["subcategory"],
+    })
+
+
 @app.route("/api/splash/content")
 def splash_content_api():
     # 以前はプロセス内のカウンタで zen と snoopy を交互に出していたが、
