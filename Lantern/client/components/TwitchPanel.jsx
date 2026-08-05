@@ -53,6 +53,8 @@ export default function TwitchPanel() {
   const [streams, setStreams] = useState(null)
   const [followerCount, setFollowerCount] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [insight, setInsight] = useState('')
+  const [insightLoading, setInsightLoading] = useState(false)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -113,6 +115,26 @@ export default function TwitchPanel() {
       setTimeout(() => setMessage(''), 4000)
     } finally {
       setConnecting(false)
+    }
+  }
+
+  // YouTube タブの handleChannelInsight と同じ仕様。
+  // 押したときだけ生成する（開くたびにAIを呼ばない）。
+  async function handleInsight() {
+    if (!streams?.length) return
+    setInsightLoading(true)
+    setInsight('')
+    try {
+      const res = await authFetch('/api/twitch/stream-insight', { method: 'POST' })
+      if (res.ok) {
+        setInsight((await res.json()).insight || '')
+      } else {
+        console.warn(`[Twitch] stream-insight が ${res.status} を返した`)
+      }
+    } catch (e) {
+      console.warn('[Twitch] 配信の観察の取得に失敗', e)
+    } finally {
+      setInsightLoading(false)
     }
   }
 
@@ -200,6 +222,37 @@ export default function TwitchPanel() {
             ) : (
               <Text className="text-sm text-ink-faint py-4">まだ配信の記録がありません。</Text>
             )}
+          </View>
+
+          {/* AIの観察。YouTube タブと同じ位置・同じ挙動 */}
+          <View>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-[10px] text-ink-faint tracking-[2px]">AIの観察</Text>
+              <Pressable
+                onPress={handleInsight}
+                disabled={insightLoading || !streams?.length}
+                className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+              >
+                <Text className="text-xs text-forest">
+                  {insightLoading ? '生成中...' : insight ? '再生成' : 'Lanternに聞く'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {insightLoading ? (
+              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2">
+                <View className="h-3 bg-sage/20 rounded w-full" />
+                <View className="h-3 bg-sage/20 rounded w-4/5" />
+                <View className="h-3 bg-sage/20 rounded w-2/3" />
+              </View>
+            ) : null}
+
+            {!insightLoading && insight ? (
+              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
+                <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
+                <Text className="text-sm leading-relaxed text-forest">{insight}</Text>
+              </View>
+            ) : null}
           </View>
 
           {followerCount != null ? (

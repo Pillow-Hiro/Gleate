@@ -153,6 +153,48 @@ class TestDebugVersionReportsRedirects:
         assert client.get("/api/debug/version").status_code == 200
 
 
+class TestStreamInsightGuardrails:
+    """配信の観察が数字で評価しないこと。
+
+    CLAUDE.md の Dashboard 節が実装上の担保としてこの一文を挙げている。
+    プロンプトから消えると、AIが「この配信は伸びましたね」と言い始める。
+    """
+
+    def _prompt(self, monkeypatch):
+        from modules import ai
+        captured = {}
+        monkeypatch.setattr(
+            ai, "call_claude",
+            lambda system, user, **kw: captured.setdefault("system", system) and "" or "観察",
+        )
+        ai.generate_stream_insight([
+            {"started_at": "2026-08-01T22:00:00Z", "title": "作業配信",
+             "duration_seconds": 7200, "view_count": 10},
+        ])
+        return captured["system"]
+
+    def test_数字で評価しない指示が入っている(self, monkeypatch):
+        assert "視聴数・フォロワー数で配信の価値を評価しない" in self._prompt(monkeypatch)
+
+    def test_事実として伝えるのは可と書いてある(self, monkeypatch):
+        assert "事実として伝えることはよい" in self._prompt(monkeypatch)
+
+    def test_助言をしない指示が入っている(self, monkeypatch):
+        assert "助言はしない" in self._prompt(monkeypatch)
+
+    def test_悪い例に助言が挙げられている(self, monkeypatch):
+        prompt = self._prompt(monkeypatch)
+        assert "もっと長く配信すると伸びます。" in prompt
+        assert "配信頻度を上げましょう。" in prompt
+
+    def test_配信が無ければAIを呼ばない(self, monkeypatch):
+        from modules import ai
+        called = []
+        monkeypatch.setattr(ai, "call_claude", lambda *a, **k: called.append(1) or "x")
+        ai.generate_stream_insight([])
+        assert called == []
+
+
 class TestVideoToStream:
     """Twitch の VOD を twitch_streams の行に変換する。"""
 

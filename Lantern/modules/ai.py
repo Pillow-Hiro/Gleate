@@ -354,6 +354,54 @@ YouTubeチャンネルの動画一覧から、このクリエイターの創作�
     return "動画の軌跡を観察しています。"
 
 
+def generate_stream_insight(streams):
+    """配信の傾向を観察して返す。
+
+    YouTubeと違い、配信は開始時刻と長さを持つ。
+    時間帯や長さは事実として観察してよいが、
+    「もっと長く配信すべき」のような助言は行わない。
+    """
+    if not streams:
+        return "配信の記録がありません。"
+
+    streams_text = ""
+    for s in streams:
+        started = (s.get("started_at") or "")[:16].replace("T", " ")
+        line = f"- {started or '不明'}: {s.get('title', '')}"
+        seconds = s.get("duration_seconds")
+        if seconds:
+            line += f"（{seconds // 3600}時間{(seconds % 3600) // 60}分）"
+        view = s.get("view_count", 0)
+        if view:
+            line += f"（{view:,}回視聴）"
+        streams_text += line + "\n"
+
+    system_prompt = LANTERN_IDENTITY + """
+
+【この観察の指針】
+配信の一覧から、この人の活動の傾向・変化・特徴を観察者として静かに言語化する。
+視聴数・フォロワー数で配信の価値を評価しない。事実として伝えることはよい。
+配信の時間帯や長さは観察の材料にしてよい。ただし助言はしない。
+
+【良い例】
+「夜に始まる配信が多く記録されています。」
+「3時間を超える配信が続いています。」
+「タイトルに『作業』という言葉が繰り返し現れます。」
+
+【悪い例】
+「もっと長く配信すると伸びます。」
+「この配信は反応が良かったようです。」
+「配信頻度を上げましょう。」
+
+300文字以内。丁寧体。"""
+
+    user_message = f"配信一覧：\n{streams_text}\nこの活動の傾向・変化・特徴を観察してください。"
+    result = call_claude(system_prompt, user_message, max_tokens=400)
+    if result:
+        return result.strip()
+    return "配信の軌跡を観察しています。"
+
+
 def generate_timeline_reflection(past_logs, current_logs, months_ago):
     """months_ago ヶ月前の同週と現在の記録を比較して観察・問いを生成する。"""
     import json as _json, re as _re
