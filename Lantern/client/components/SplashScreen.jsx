@@ -66,35 +66,31 @@ export default function SplashScreen({ onClose }) {
           pointerEvents を切らないと暗幕がタップを奪い、画面を閉じられなくなる。 */}
       <View pointerEvents="none" className="absolute inset-0 bg-black/40" />
 
+      {/* className は Animated.Text には効かない（NativeWind がラップするのは素の Text）。
+          効かないと色もサイズも既定値に落ち、写真の上に黒い小さな文字が出る。
+          opacity のアニメーションは Animated.View に持たせ、見た目は Text に置く。 */}
       <View className="px-10 w-full max-w-sm items-center">
-        <Animated.Text
-          style={{ opacity: dateOpacity }}
-          className="text-white/80 tracking-[4px] mb-5 text-xs"
-        >
-          {dateLabel}
-        </Animated.Text>
+        <Animated.View style={{ opacity: dateOpacity }}>
+          <Text className="text-white/80 tracking-[4px] mb-5 text-xs">{dateLabel}</Text>
+        </Animated.View>
 
-        <Animated.Text
-          style={{ opacity: logoOpacity }}
-          className="font-display text-3xl font-light text-white tracking-[8px] mb-7"
-        >
-          Lantern
-        </Animated.Text>
+        <Animated.View style={{ opacity: logoOpacity }}>
+          <Text className="font-display text-3xl font-light text-white tracking-[8px] mb-7">
+            Lantern
+          </Text>
+        </Animated.View>
 
-        <Animated.Text
-          style={{ opacity: quoteOpacity }}
-          className="text-white/90 text-sm font-light leading-loose text-center"
-        >
-          {quote}
-        </Animated.Text>
+        <Animated.View style={{ opacity: quoteOpacity }}>
+          <Text className="text-white/90 text-sm font-light leading-loose text-center">
+            {quote}
+          </Text>
+        </Animated.View>
       </View>
 
-      <Animated.Text
-        style={{ opacity: hintOpacity }}
-        className="absolute bottom-14 text-xs text-white/40 tracking-[2px]"
-      >
-        タップして続ける
-      </Animated.Text>
+      {/* ここも className は効かないので位置指定は style で持つ（bottom-14 = 56px） */}
+      <Animated.View style={{ opacity: hintOpacity, position: 'absolute', bottom: 56 }}>
+        <Text className="text-xs text-white/40 tracking-[2px]">タップして続ける</Text>
+      </Animated.View>
     </Pressable>
   )
 

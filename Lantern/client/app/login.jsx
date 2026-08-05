@@ -62,6 +62,7 @@ export default function Login() {
               onChangeText={setEmail}
               autoCapitalize="none"
               autoComplete="email"
+              textContentType="username"
               keyboardType="email-address"
               className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
               placeholderTextColor="#999999"
@@ -70,11 +71,17 @@ export default function Login() {
 
           <View>
             <Text className="text-xs text-ink-faint mb-1.5 tracking-wide">パスワード</Text>
+            {/* パスワードマネージャに拾わせるための指定。
+                autoComplete が無いと、メールだけ自動入力されてパスワードが空のままになる。
+                新規登録では new-password にしないと、保存済みの旧パスワードを
+                提案されてしまう。 */}
             <TextInput
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               autoCapitalize="none"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              textContentType={mode === 'login' ? 'password' : 'newPassword'}
               className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
               placeholderTextColor="#999999"
             />
