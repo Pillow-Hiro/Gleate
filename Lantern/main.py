@@ -381,6 +381,20 @@ def twitch_channel():
     })
 
 
+@app.route("/api/twitch/stream-insight", methods=["POST"])
+@require_auth
+def twitch_stream_insight():
+    """配信の傾向を観察する。数字で評価しないことは
+    modules/ai.py の generate_stream_insight のプロンプトで担保している。"""
+    from modules.ai import generate_stream_insight
+    from modules.twitch import load_streams
+
+    streams = load_streams(g.user_id)
+    if not streams:
+        return jsonify({"insight": ""})
+    return jsonify({"insight": generate_stream_insight(streams)})
+
+
 @app.route("/api/review/generate", methods=["POST"])
 @require_auth
 def generate_review():
