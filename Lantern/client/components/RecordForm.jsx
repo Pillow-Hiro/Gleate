@@ -81,19 +81,23 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         </View>
       ) : null}
 
-      {/* 書き始める前に置く問い。
-          入力欄の見出しにはしない。答えなくてよいものとして静かに置く。
-          フォームの項目にすると「埋めるべきもの」になり、空白の怖さが増す。
-          今日の記録のときだけ出す（過去の編集では今日の問いは合わない）。 */}
-      {question && isToday ? (
-        <Text className="text-sm text-ink-soft leading-relaxed">{question}</Text>
-      ) : null}
+      {/* 問いはプレースホルダとして入力欄の中に出す。
+          欄の上に別行で置くと「読むもの」が増えるが、中に出せば
+          書き始める場所と問いが同じ位置になる。
+          プレースホルダなので、書き始めれば自然に消える。
 
+          今日の記録のときだけ差し替える。過去の日を編集するときに
+          今日の問いを出しても合わない。
+          問いが取れなかったときは元の固定文に戻る。 */}
       <Field
         fieldKey="created"
         label={`${isToday ? '今日' : 'この日'}のこと`}
         rows={5}
-        placeholder={`${isToday ? '今日' : 'この日'}どんなことをしましたか？`}
+        placeholder={
+          question && isToday
+            ? question
+            : `${isToday ? '今日' : 'この日'}どんなことをしましたか？`
+        }
       />
       <Field fieldKey="next" label="次にやること" />
 
