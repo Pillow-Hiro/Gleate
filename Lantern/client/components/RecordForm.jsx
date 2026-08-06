@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
-import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
+import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
+import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
@@ -18,18 +19,19 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
-  const [photoUrl, setPhotoUrl] = useState(existingLog?.photo_url || null)
+  const [photoUrl, setPhotoUrl] = useState(
+    existingLog?.photo_url || loadPhoto(targetDate).photo_url,
+  )
 
-  // 写真は別APIで即座に保存する。テキストの「記録する」を待たない。
+  // 写真は端末に即座に置く。テキストの「記録する」を待たない。
   // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
   // このフォームが作り直され、入力途中のテキストが消えるため。
   async function handlePhotoSelect(photo, thumb) {
-    const data = await uploadPhoto(targetDate, photo, thumb)
-    setPhotoUrl(data.photo_url)
+    setPhotoUrl(savePhoto(targetDate, photo, thumb).photo_url)
   }
 
   async function handlePhotoRemove() {
-    await removePhoto(targetDate)
+    removePhoto(targetDate)
     setPhotoUrl(null)
   }
 

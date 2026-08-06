@@ -4,8 +4,13 @@ import * as ImagePicker from 'expo-image-picker'
 import { compressPhoto } from '../lib/image'
 import PhotoLightbox from './PhotoLightbox'
 
-// Web版 components/PhotoPicker.jsx と同じ役割。
-// SDK 57 では MediaTypeOptions が非推奨のため mediaTypes に配列を渡す。
+// ネイティブ版。SDK 57 では MediaTypeOptions が非推奨のため mediaTypes に配列を渡す。
+//
+// 写真は端末の中だけに置く（2026-08-06〜）。Web には置き場所が無いため
+// PhotoPicker.web.jsx が何も描かない。理由は lib/photoStore.web.js にある。
+//
+// Platform.OS で分岐せずファイルを分けているのは、そうしないと
+// expo-image-picker と写真まわりの文言が Web バンドルに乗ってしまうため。
 export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) {
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions()
   const [busy, setBusy] = useState(false)

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { authFetch, uploadPhoto, removePhoto } from '../../lib/supabase'
+import { authFetch } from '../../lib/supabase'
+import {
+  attach as attachPhotos,
+  remove as removePhoto,
+  save as savePhoto,
+} from '../../lib/photoStore'
 import { dateDisplayJa, groupByMonth, monthLabel } from '../../lib/format'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
@@ -38,7 +43,9 @@ export default function Journal() {
       try {
         const res = await authFetch('/api/logs')
         const data = await res.json()
-        if (!cancelled) setLogs(data)
+        // 写真は端末にしか無いので、サーバーの記録に合流させる。
+        // 写真しかない日もここで1件として現れる（lib/photoStore.js）
+        if (!cancelled) setLogs(attachPhotos(data))
       } catch (e) {
         // 取得失敗時は空一覧のままにする
         console.warn('[Journal] 記録の取得に失敗', e)
@@ -75,23 +82,23 @@ export default function Journal() {
     setModalPhotoUrl(null)
   }
 
-  // 写真はテキストと別APIで保存する。/save は写真に触れない設計なので、
-  // ここで先に保存しておけば後からテキストを編集しても消えない。
+  // 写真は端末の中にだけ置く（lib/photoStore.js）。テキストとは経路が別なので、
+  // ここで先に置いておけば後からテキストを編集しても消えない。
   async function handleModalPhotoSelect(photo, thumb) {
-    const data = await uploadPhoto(modalDate, photo, thumb)
-    setModalPhotoUrl(data.photo_url)
+    const urls = savePhoto(modalDate, photo, thumb)
+    setModalPhotoUrl(urls.photo_url)
     setLogs((prev) => {
       const found = prev.find((l) => l.date === modalDate)
       if (found) {
-        return prev.map((l) => (l.date === modalDate ? { ...l, ...data } : l))
+        return prev.map((l) => (l.date === modalDate ? { ...l, ...urls } : l))
       }
-      // 写真だけの記録。サーバー側でも記録行が作られている
-      return [...prev, { date: modalDate, ...EMPTY_FORM, ...data }]
+      // 写真だけの記録。サーバーはこの日を知らないので、一覧にはここで足す
+      return [...prev, { date: modalDate, ...EMPTY_FORM, ...urls }]
     })
   }
 
   async function handleModalPhotoRemove() {
-    await removePhoto(modalDate)
+    removePhoto(modalDate)
     setModalPhotoUrl(null)
     setLogs((prev) =>
       prev.map((l) => (l.date === modalDate ? { ...l, photo_url: null, photo_thumb_url: null } : l))

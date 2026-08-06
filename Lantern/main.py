@@ -144,28 +144,12 @@ def debug_version():
     })
 
 
-def _attach_photo_urls(logs):
-    """写真パスを署名付きURLに変換して返す。
-
-    URLは期限付きのためDBに保存せず、読み出しのたびに発行する。
-    内部のStorageパスはクライアントに渡さない。
-    """
-    from modules.photos import signed_url
-
-    result = []
-    for log in logs:
-        entry = {k: v for k, v in log.items() if k not in ("photo_path", "photo_thumb_path")}
-        entry["photo_url"] = signed_url(log.get("photo_path"))
-        entry["photo_thumb_url"] = signed_url(log.get("photo_thumb_path"))
-        result.append(entry)
-    return result
-
-
 @app.route("/api/logs", methods=["GET"])
 @require_auth
 def get_logs_api():
-    logs = load_logs(g.user_id)
-    return jsonify(_attach_photo_urls(logs))
+    # 写真はサーバーに無い（2026-08-06〜）。端末の中だけに置いている。
+    # クライアントが lib/photoStore.js でここに合流させる。
+    return jsonify(load_logs(g.user_id))
 
 
 @app.route("/api/logs/<date>", methods=["DELETE"])
@@ -176,58 +160,6 @@ def delete_log(date):
     except Exception as e:
         print(f"[DELETE /api/logs/{date}] DB error: {type(e).__name__}: {e}")
         return jsonify({"error": f"削除に失敗しました: {e}"}), 500
-    return jsonify({"status": "ok"})
-
-
-@app.route("/api/logs/<date>/photo", methods=["PUT"])
-@require_auth
-def upload_log_photo(date):
-    """圧縮済みの写真とサムネイルを受け取り、Storageに保存してDBに記録する。
-
-    パスは g.user_id と date から組み立てる。クライアントからパスは受け取らない。
-    /save とは経路を分けているため、この処理はテキストに一切触らない。
-    """
-    from modules.photos import save_photo, signed_url
-    from modules.logs import set_photo_paths
-
-    photo = request.files.get("photo")
-    thumb = request.files.get("thumb")
-    if not photo or not thumb:
-        return jsonify({"error": "photo と thumb の両方が必要です"}), 400
-
-    try:
-        photo_path, thumb_path = save_photo(g.user_id, date, photo.read(), thumb.read())
-    except ValueError as e:
-        # 不正な日付など。Storageには何も書かれていない
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        print(f"[Photo] アップロードに失敗 user={g.user_id} date={date}: {type(e).__name__}: {e}")
-        return jsonify({"error": "写真の保存に失敗しました"}), 500
-
-    try:
-        set_photo_paths(g.user_id, date, photo_path, thumb_path)
-    except Exception as e:
-        print(f"[Photo] DB更新に失敗 user={g.user_id} date={date}: {type(e).__name__}: {e}")
-        return jsonify({"error": "写真の保存に失敗しました"}), 500
-
-    return jsonify({
-        "photo_url": signed_url(photo_path),
-        "photo_thumb_url": signed_url(thumb_path),
-    })
-
-
-@app.route("/api/logs/<date>/photo", methods=["DELETE"])
-@require_auth
-def delete_log_photo(date):
-    from modules.photos import delete_photo
-    from modules.logs import set_photo_paths
-
-    delete_photo(g.user_id, date)
-    try:
-        set_photo_paths(g.user_id, date, None, None)
-    except Exception as e:
-        print(f"[Photo] DB更新に失敗 user={g.user_id} date={date}: {type(e).__name__}: {e}")
-        return jsonify({"error": "写真の削除に失敗しました"}), 500
     return jsonify({"status": "ok"})
 
 
@@ -312,7 +244,7 @@ def twitch_streams():
             save_streams(g.user_id, get_videos(access_token, broadcaster_id))
         except Exception as e:
             # 取り逃した件数は画面に出さない（離脱期間を評価しない原則）
-            print(f"[Twitch] 配信の取得に失敗 user={g.user_id}: {type(e).__name__}: {e}")
+            print(f"[Twitch] 配信の取得に失敗: {type(e).__name__}: {e}")
 
     return jsonify({"streams": load_streams(g.user_id)})
 
@@ -332,7 +264,7 @@ def twitch_channel():
         try:
             followers = get_follower_count(access_token, broadcaster_id)
         except Exception as e:
-            print(f"[Twitch] フォロワー数の取得に失敗 user={g.user_id}: {type(e).__name__}: {e}")
+            print(f"[Twitch] フォロワー数の取得に失敗: {type(e).__name__}: {e}")
 
     return jsonify({
         "connected": True,
@@ -575,15 +507,17 @@ def youtube_auth_url():
 
 @app.route("/api/youtube/callback")
 def youtube_callback():
-    logger.info(f"[YouTube-CB] ALL ARGS: {dict(request.args)}")
-    logger.info(f"[YouTube-CB] REQUEST URL: {request.url}")
+    # クエリと完全URLはログに出さない。
+    # code は認可コードそのもので、state には user_id が入っている。
+    # Render のログは保存されるため、そこに資格情報を書かない。
+    # 切り分けに要るのは「来たか／どの経路か」だけ（下の行で出している）。
 
     from modules.youtube import exchange_code_for_token, save_tokens, parse_state
     error = request.args.get("error")
     code = request.args.get("code")
     user_id, platform = parse_state(request.args.get("state"))
 
-    logger.info(f"[YouTube-CB] error={error} code={bool(code)} user_id={user_id} platform={platform}")
+    logger.info(f"[YouTube-CB] error={error} code={bool(code)} user_id={bool(user_id)} platform={platform}")
 
     if error or not code or not user_id:
         logger.info(f"[YouTube-CB] guard failed: error={error} code={bool(code)} user_id={bool(user_id)}")
@@ -629,7 +563,7 @@ def youtube_channel():
     try:
         stats = get_channel_stats(g.user_id)
         if stats is None:
-            print(f"[YouTube] youtube_channel: stats is None for user_id={g.user_id}")
+            print("[YouTube] youtube_channel: stats is None")
             return jsonify({"error": "チャンネル情報の取得に失敗しました"}), 500
         return jsonify(stats)
     except Exception as e:

@@ -30,14 +30,17 @@
 | 層 | 場所 | 備考 |
 |---|---|---|
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
-| 部品 | `client/components/` | 21ファイル |
+| 部品 | `client/components/` | 22ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。34ルール / 31パス |
+| API | `main.py` | ルートは全てここ。32ルール / 30パス |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 
 Web も同じ `client/` から `npx expo export --platform web` で出す。
 `frontend/`（React + Vite）は 2026-08-04 に廃止した。
+
+**写真だけはこの流れに乗らない。** 端末の中に置き、サーバーへ送らない
+（2026-08-06〜）。理由は `client/lib/photoStore.js` にある。
 
 ---
 
@@ -82,7 +85,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・21ファイル）
+## 3. 部品（`client/components/`・22ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -96,7 +99,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード |
 | `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
-| `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | 1記録1枚。圧縮してから送る |
+| `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。圧縮して端末に置く |
+| `PhotoPicker.web.jsx` | 同上 | **何も描かない。** 分岐ではなくファイルを分けて、expo-image-picker を Web バンドルに乗せない |
 | `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
@@ -118,6 +122,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
 | `image.js` | 圧縮の実行 | — |
+| `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
+| `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `theme.js` | テーマの保持 | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し | — |
@@ -143,28 +149,28 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py` |
 | `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
 | `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
-| `logs.py` | 記録の読み書きとカラム変換。**`_to_db` に写真を足さない** | `test_logs_mapping.py` |
+| `logs.py` | 記録の読み書きとカラム変換。**写真カラムを読み書きしない** | `test_logs_mapping.py` |
 | `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通 | `test_youtube_state.py` |
-| `photos.py` | Storage 操作。パスはサーバーが組み立てる | `test_photos.py`・`test_photo_routes.py` |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
 | `timeutil.py` | JST基準の日付 | `test_timeutil.py` |
 | `twitch.py` | Twitch OAuth・VODの保存 | `test_twitch.py` |
 | `youtube.py` | YouTube OAuth（PKCEあり） | `test_youtube_redirect.py` |
 
 その他の test: `test_save_cost.py`（`/save` が全件保存に戻らないこと）、
-`test_timeline_params.py`、`test_docs.py`（この表の検査）。
+`test_timeline_params.py`、`test_docs.py`（この表の検査）、
+`test_privacy.py`（記録と資格情報がログに出ないこと）。
 
 ---
 
-## 6. API（`main.py`・34ルール / 31パス）
+## 6. API（`main.py`・32ルール / 30パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
 
 | 系統 | パス |
 |---|---|
-| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT|DELETE /api/logs/<date>/photo` |
+| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>` |
 | 問い | `GET /api/question` |
 | アイデア | `GET|POST /api/ideas`・`PATCH|DELETE /api/ideas/<int:idea_id>` |
 | 灯り | `GET /api/daily/quote`・`GET /api/splash/content` |
@@ -182,12 +188,14 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 | 場所 | 壊れ方 | 守っているもの |
 |---|---|---|
-| `modules/logs.py` の `_to_db` | 写真カラムを足すと、テキスト編集の保存で写真が消える | `test_logs_mapping.py::TestPhotoColumns` |
+| `modules/logs.py` の `_to_db` | 写真カラムを読み書きすると、端末とサーバーの二重管理になる | `test_logs_mapping.py::TestNoPhotoColumns` |
 | `main.py` の `/save` | 全件 upsert に戻すと記録数に比例して遅く高くなる | `test_save_cost.py` |
 | `modules/ai.py` のプロンプト | ガードレールの文を消すと数字で評価し始める | `test_docs.py`（CLAUDE.md の引用と一致するか） |
+| `print` / `logger` の追記 | デバッグ中に記録の中身や user_id を書くと、Render のログに残る | `test_privacy.py` |
 | `modules/twitch.py` のトークン | 更新後の refresh_token を保存し直さないと次で失敗する（使い捨て） | `test_twitch.py` |
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
+| `client/lib/exportLogs.js` | SDK 57 の `expo-file-system` は旧APIを呼ぶと実行時に投げる。**Webは `.web.js` を使うので気づけない** | なし（実機で確認する） |
 
 ---
 

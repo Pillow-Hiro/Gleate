@@ -64,13 +64,11 @@ def _parse(date_str):
 def has_content(log):
     """記録として成立しているか。
 
-    保存条件と揃える。写真だけの記録も1件として数える
-    （「文章が書けない日でも写真1枚なら残せる」が写真機能の目的なので、
-    テキストが無いことを理由に数えないと、その日を無かったことにしてしまう）。
+    **写真だけの日は数えられない。** 2026-08-06 に写真を端末の中だけに置く
+    方針へ変えたため、サーバーはその日の存在を知らない。
+    ここで数える「記録した日数」は、文章を残した日数である。
     """
-    if any(_text(log, f) for f in FIELDS):
-        return True
-    return bool((log.get("photo_path") or "").strip())
+    return any(_text(log, f) for f in FIELDS)
 
 
 def field_usage(logs):
@@ -91,10 +89,6 @@ def field_usage(logs):
             "avg_chars": (sum(len(t) for t in texts) / len(texts)) if texts else 0.0,
         }
     return out
-
-
-def photo_count(logs):
-    return sum(1 for l in logs if (l.get("photo_path") or "").strip())
 
 
 def avg_total_chars(logs):
@@ -138,7 +132,6 @@ def weekly_summary(logs):
             "week": k,
             "days": len(week_logs),
             "avg_chars": avg_total_chars(week_logs),
-            "photos": photo_count(week_logs),
         }
         for k, week_logs in by_week(logs).items()
     ]

@@ -63,25 +63,6 @@ export async function authFetch(path, options = {}) {
   return retry
 }
 
-// 圧縮済みの写真とサムネイルを送る。
-// パスはサーバーが g.user_id と date から組み立てるため、こちらからは渡さない。
-// React Native の FormData は Blob ではなく { uri, name, type } を受け取る。
-export async function uploadPhoto(date, photoUri, thumbUri) {
-  const body = new FormData()
-  body.append('photo', { uri: photoUri, name: 'photo.jpg', type: 'image/jpeg' })
-  body.append('thumb', { uri: thumbUri, name: 'thumb.jpg', type: 'image/jpeg' })
-
-  const res = await authFetch(`/api/logs/${date}/photo`, {
-    method: 'PUT',
-    body,
-    headers: { 'Content-Type': undefined },
-  })
-  if (!res.ok) throw new Error(`写真のアップロードに失敗しました (${res.status})`)
-  return res.json()
-}
-
-export async function removePhoto(date) {
-  const res = await authFetch(`/api/logs/${date}/photo`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`写真の削除に失敗しました (${res.status})`)
-  return res.json()
-}
+// 写真をサーバーに送る関数はここにあったが、2026-08-06 に削除した。
+// 保存されていれば、サーバーの鍵を持つ開発者が中身を見られるため。
+// 写真は端末の中だけに置く（lib/photoStore.js）。

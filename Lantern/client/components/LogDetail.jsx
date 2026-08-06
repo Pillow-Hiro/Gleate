@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
-import { authFetch, uploadPhoto, removePhoto } from '../lib/supabase'
+import { authFetch } from '../lib/supabase'
+import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 
 // Web版 Journal.jsx の LogDetail を移植したもの。表示・編集・削除の挙動と文言は変更していない。
@@ -69,15 +70,15 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     }
   }
 
-  // 写真はテキストと別APIで扱う。/save は写真カラムに触れないため、
-  // ここで更新しても後のテキスト編集で消えることはない。
+  // 写真は端末の中にだけ置く。サーバーには送らない（lib/photoStore.js）。
+  // テキストの保存（/save）とは経路が別なので、片方が他方を消すことはない。
   async function handlePhotoSelect(photo, thumb) {
-    const data = await uploadPhoto(log.date, photo, thumb)
-    if (onUpdate) onUpdate({ ...log, ...data })
+    const urls = savePhoto(log.date, photo, thumb)
+    if (onUpdate) onUpdate({ ...log, ...urls })
   }
 
   async function handlePhotoRemove() {
-    await removePhoto(log.date)
+    removePhoto(log.date)
     if (onUpdate) onUpdate({ ...log, photo_url: null, photo_thumb_url: null })
   }
 

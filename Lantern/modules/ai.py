@@ -200,6 +200,23 @@ def _fmt_logs(logs):
     return text
 
 
+def _shape(raw):
+    """AI出力の形だけを返す。**本文はログに出さない。**
+
+    AI憲法の原則2に従い、AIは利用者が実際に残した言葉を引用する。
+    つまり AI の出力には記録の中身が混ざる。
+    Render のログは保存され、あとから読める。記録アプリのサーバーログに
+    記録の中身を残さない。
+
+    解析に失敗した原因（空・途中で切れた・JSON以外が混ざった）は
+    長さと先頭の文字種だけで足りる。
+    """
+    if not raw:
+        return "空の応答"
+    head = raw.lstrip()[:1]
+    return f"{len(raw)}文字 先頭={head!r}"
+
+
 def _parse_patterns_json(raw):
     """AI出力からJSONを抽出して検証する。失敗時は空パターンを返す。"""
     import json as _json, re as _re
@@ -222,7 +239,7 @@ def _parse_patterns_json(raw):
                 pass
     # ここに来るのはAI出力がJSONとして読めなかった時だけ。
     # 空のフォールバックを黙って返すとUI上は「パターンなし」と区別がつかないため記録する。
-    print(f"[AI] JSON解析に失敗（patterns）。先頭200文字: {raw[:200]!r}")
+    print(f"[AI] JSON解析に失敗（patterns）。{_shape(raw)}")
     return '{"patterns": []}'
 
 
@@ -453,7 +470,7 @@ JSONのみで返す。前置き不要。Markdownなし。
 
     # AI出力がJSONとして読めなかったか、observation キーが欠けていた場合。
     # 固定文言のフォールバックはAI生成と見分けがつかないため記録する。
-    print(f"[AI] JSON解析に失敗（timeline_reflection）。先頭200文字: {raw[:200]!r}")
+    print(f"[AI] JSON解析に失敗（timeline_reflection）。{_shape(raw)}")
     return {"observation": "記録が積み重なっています。", "question": "今、何を感じますか。"}
 
 
@@ -553,7 +570,7 @@ JSONのみで返す。前置き・Markdownなし。
                 pass
 
     # AI出力がJSONとして読めなかったか、observation キーが欠けていた場合。
-    print(f"[AI] JSON解析に失敗（milestone_reflection）。先頭200文字: {raw[:200]!r}")
+    print(f"[AI] JSON解析に失敗（milestone_reflection）。{_shape(raw)}")
     return {"observation": "記録が積み重なっています。", "question": "この期間、何が残りましたか。"}
 
 
@@ -615,5 +632,5 @@ JSONのみ。前置き・説明・Markdownは一切不要。
                 pass
 
     # 空リストは「頻出語なし」と見分けがつかないため、解析失敗として記録する。
-    print(f"[AI] JSON解析に失敗（keywords）。先頭200文字: {raw[:200]!r}")
+    print(f"[AI] JSON解析に失敗（keywords）。{_shape(raw)}")
     return []

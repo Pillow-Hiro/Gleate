@@ -226,7 +226,7 @@ def get_valid_access_token(user_id):
     except Exception as e:
         # 30日間使わないとリフレッシュトークンが失効する。
         # その場合は連携し直しになるが、ここでは責めずに未連携として扱う
-        print(f"[Twitch] トークンの更新に失敗 user={user_id}: {type(e).__name__}: {e}")
+        print(f"[Twitch] トークンの更新に失敗: {type(e).__name__}: {e}")
         return None, None
 
     save_tokens(user_id, token_response)

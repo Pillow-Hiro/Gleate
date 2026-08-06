@@ -78,7 +78,7 @@ def print_report(logs, ideas, today, boundary):
     print(f"  書いた日の割合    {_pct(s['rate'])}")
     print(f"  連続記録          現在 {st['current']} 日 / 最長 {st['longest']} 日")
     print(f"  1記録の平均字数   {metrics.avg_total_chars(logs):.1f} 字")
-    print(f"  写真あり          {metrics.photo_count(logs)} 件")
+    # 写真は端末の中にしか無いので数えられない（2026-08-06〜）
 
     print("\n■ 入力欄の使用率")
     print(f"  {'項目':<14}{'記入':>9}{'率':>8}{'平均字数':>10}")
@@ -88,10 +88,9 @@ def print_report(logs, ideas, today, boundary):
               f"{u['avg_chars']:>9.1f} 字")
 
     print("\n■ 週ごとの推移")
-    print(f"  {'週':<10}{'日数':>4}  {'平均字数':>8}  {'写真':>4}")
+    print(f"  {'週':<10}{'日数':>4}  {'平均字数':>8}")
     for r in metrics.weekly_summary(logs):
-        print(f"  {r['week']:<10}{r['days']:>4}  {r['avg_chars']:>8.1f}  {r['photos']:>4}"
-              f"   {_bar(r['days'])}")
+        print(f"  {r['week']:<10}{r['days']:>4}  {r['avg_chars']:>8.1f}   {_bar(r['days'])}")
 
     c = metrics.compare(logs, boundary)
     print(f"\n■ {boundary} の前後")

@@ -33,10 +33,11 @@ class TestHasContent:
     def test_やったこと以外の項目だけでも成立する(self):
         assert metrics.has_content(log("2026-08-06", struggled="詰まった"))
 
-    def test_写真だけでも成立する(self):
-        # 「文章が書けない日でも写真1枚なら残せる」が写真機能の目的。
-        # ここを False にすると、その日を無かったことにしてしまう
-        assert metrics.has_content(log("2026-08-06", photo="u/2026-08-06.jpg"))
+    def test_写真だけの日は数えられない(self):
+        # 2026-08-06 に写真を端末の中だけに置く方針へ変えた。
+        # サーバーはその日の存在を知らないので、ここで数えるのは
+        # 「文章を残した日数」になる。この制約を明示的に固定する
+        assert not metrics.has_content(log("2026-08-06", photo="u/2026-08-06.jpg"))
 
     def test_空なら成立しない(self):
         assert not metrics.has_content(log("2026-08-06"))
@@ -139,12 +140,11 @@ class TestWeeklySummary:
         assert rows[0]["days"] == 2
         assert rows[0]["avg_chars"] == pytest.approx(2.0)
 
-    def test_写真の枚数を数える(self):
-        logs = [
-            log("2026-08-03", created="あ", photo="p.jpg"),
-            log("2026-08-06", created="い"),
-        ]
-        assert metrics.weekly_summary(logs)[0]["photos"] == 1
+    def test_写真は集計しない(self):
+        # 写真は端末の中にしか無いため、サーバーからは数えられない。
+        # 数えられないものを 0 として出すと「写真を使っていない」と誤読する
+        logs = [log("2026-08-03", created="あ", photo="p.jpg")]
+        assert "photos" not in metrics.weekly_summary(logs)[0]
 
 
 class TestStreaks:

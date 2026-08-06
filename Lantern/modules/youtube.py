@@ -97,7 +97,7 @@ def save_tokens(user_id, credentials):
         print("[YouTube] save_tokens: no DB connection")
         return
 
-    print(f"[YouTube] save_tokens: user_id={user_id} has_token={bool(credentials.token)} has_refresh={bool(credentials.refresh_token)} expiry={credentials.expiry}")
+    print(f"[YouTube] save_tokens: has_token={bool(credentials.token)} has_refresh={bool(credentials.refresh_token)} expiry={credentials.expiry}")
 
     payload = {
         "user_id": user_id,
@@ -168,7 +168,7 @@ def delete_tokens(user_id):
 
 
 def refresh_token_if_needed(user_id):
-    print(f"[YouTube] refresh_token_if_needed START user_id={user_id}")
+    print("[YouTube] refresh_token_if_needed START")
     row = get_tokens(user_id)
     if not row:
         print("[YouTube] ERROR: no tokens found in DB")

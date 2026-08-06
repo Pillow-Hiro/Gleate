@@ -44,9 +44,6 @@ APP_LOG = {
     "next": "明日サビを直す",
     "ai_response": "昨日の記録が、ここに残っています。",
     "saved_at": "2026-07-28T21:30:00",
-    # 写真なしの記録。DB_ROW に写真カラムが無い場合の _from_db の出力に合わせる
-    "photo_path": "",
-    "photo_thumb_path": "",
 }
 
 
@@ -59,7 +56,6 @@ class TestFromDb:
         assert result == {
             "date": "", "created": "", "enjoyable": "",
             "struggled": "", "next": "", "saved_at": "", "ai_response": "",
-            "photo_path": "", "photo_thumb_path": "",
         }
 
     def test_updated_atがNoneなら空文字にする(self):
@@ -159,44 +155,36 @@ class TestCurrentGoals:
         assert get_current_monthly_goal({"monthly_goals": [{"month": "1999-01", "goal": "x"}]}) == ""
 
 
-class TestPhotoColumns:
-    """写真カラムの扱い。
+class TestNoPhotoColumns:
+    """写真カラムを読み書きしないこと。
 
-    /save は受け取ったデータから entry を作り直すため、_to_db が写真を
-    書くようにするとテキスト編集だけで写真が消える。
-    そのため _to_db は写真カラムを一切出力しない。
+    2026-08-06 に写真を端末の中だけに置く方針へ変えた。
+    保存されていれば、サーバーの鍵を持つ開発者が中身を見られるため。
+
+    **DBの列はまだ残っている。** 読み書きを再開すると、
+    端末とサーバーの二重管理になり、消したはずの写真がサーバーに残る。
+    列を落とすまではここで止める。
     """
 
-    def test_from_dbは写真パスを変換する(self):
+    PHOTO_KEYS = ("photo_path", "photo_thumb_path")
+
+    def test_from_dbは写真カラムを返さない(self):
         row = {
             **DB_ROW,
             "photo_path": "u/2026-08-01.jpg",
             "photo_thumb_path": "u/2026-08-01_thumb.jpg",
         }
         result = _from_db(row)
-        assert result["photo_path"] == "u/2026-08-01.jpg"
-        assert result["photo_thumb_path"] == "u/2026-08-01_thumb.jpg"
-
-    def test_写真カラムがNoneなら空文字になる(self):
-        # None のまま返すとフロントで `photo_path &&` の判定が通ってしまう
-        row = {**DB_ROW, "photo_path": None, "photo_thumb_path": None}
-        result = _from_db(row)
-        assert result["photo_path"] == ""
-        assert result["photo_thumb_path"] == ""
-
-    def test_写真カラムが無い行でも空文字になる(self):
-        result = _from_db(DB_ROW)
-        assert result["photo_path"] == ""
-        assert result["photo_thumb_path"] == ""
+        for key in self.PHOTO_KEYS:
+            assert key not in result, f"{key} を返している"
 
     def test_to_dbは写真カラムを出力しない(self):
-        # ここが崩れると、テキスト編集のたびに写真が消える
         row = _to_db(
             {**APP_LOG, "photo_path": "u/x.jpg", "photo_thumb_path": "u/x_thumb.jpg"},
             "abc-123",
         )
-        assert "photo_path" not in row
-        assert "photo_thumb_path" not in row
+        for key in self.PHOTO_KEYS:
+            assert key not in row, f"{key} を書こうとしている"
 
     def test_to_dbの出力キーは固定(self):
         assert set(_to_db(APP_LOG, "abc-123").keys()) == {
@@ -204,24 +192,28 @@ class TestPhotoColumns:
             "next_action", "lantern_message", "updated_at", "user_id",
         }
 
-    def test_写真つきの記録を保存してもDBの写真カラムは変わらない(self):
-        # /save 相当の往復。写真を持つアプリ側データを _to_db に通しても
-        # 写真カラムが出力されないため、既存の写真は更新対象から外れる
+    def test_DB_SELECTに写真カラムを含めない(self):
+        from modules.logs import _DB_SELECT
+
+        selected = {c.strip() for c in _DB_SELECT.split(",")}
+        for key in self.PHOTO_KEYS:
+            assert key not in selected, f"{key} を選択している"
+
+    def test_写真キーを持つデータを渡しても出力は変わらない(self):
         with_photo = {**APP_LOG, "photo_path": "u/x.jpg", "photo_thumb_path": "u/x_thumb.jpg"}
         assert _to_db(with_photo, "abc-123") == _to_db(APP_LOG, "abc-123")
 
 
-class TestPhotoOnlyRow:
-    """写真だけの記録が返ってくる場合。
+class TestTextOnlyNullRow:
+    """テキスト列が NULL の行。
 
-    set_photo_paths は該当日の記録が無いとき
-    date / user_id / updated_at / 写真カラム だけで insert する。
-    テキスト列は NULL になるため、_from_db が None をそのまま返すと
-    クライアントに `created: null` が渡る。
-    `row.get("content", "")` は「キーがある＋値が None」では既定値を返さない。
+    写真だけの記録を作っていた時期の行が残っている。
+    _from_db が None をそのまま返すとクライアントに `created: null` が渡り、
+    `.trim()` で落ちる。`row.get("content", "")` は
+    「キーがある＋値が None」では既定値を返さない。
     """
 
-    PHOTO_ONLY_ROW = {
+    NULL_ROW = {
         "id": 1,
         "date": "2026-08-01",
         "content": None,
@@ -231,29 +223,22 @@ class TestPhotoOnlyRow:
         "lantern_message": None,
         "updated_at": "2026-08-01T10:00:00",
         "user_id": "abc-123",
-        "photo_path": "abc-123/2026-08-01.jpg",
-        "photo_thumb_path": "abc-123/2026-08-01_thumb.jpg",
     }
 
     def test_テキスト列がNULLでも全て空文字で返す(self):
-        result = _from_db(self.PHOTO_ONLY_ROW)
+        result = _from_db(self.NULL_ROW)
         for key in ("created", "enjoyable", "struggled", "next", "ai_response"):
             assert result[key] == "", f"{key} が {result[key]!r} になっている"
 
     def test_値は必ず文字列(self):
         # フロントは .trim() や .toLowerCase() を呼ぶ。None が混ざると落ちる
-        result = _from_db(self.PHOTO_ONLY_ROW)
+        result = _from_db(self.NULL_ROW)
         for key, value in result.items():
             assert isinstance(value, str), f"{key} が {type(value).__name__} になっている"
 
-    def test_写真パスは保たれる(self):
-        result = _from_db(self.PHOTO_ONLY_ROW)
-        assert result["photo_path"] == "abc-123/2026-08-01.jpg"
-        assert result["photo_thumb_path"] == "abc-123/2026-08-01_thumb.jpg"
-
     def test_dateがNoneでも文字列のNoneにしない(self):
         # str(None) は "None" という文字列になり、日付比較を静かに壊す
-        assert _from_db({**self.PHOTO_ONLY_ROW, "date": None})["date"] == ""
+        assert _from_db({**self.NULL_ROW, "date": None})["date"] == ""
 
 
 class _RecordingRow(dict):
@@ -285,73 +270,19 @@ class TestDbSelectCoversFromDb:
         missing = row.accessed - selected
         assert not missing, f"_DB_SELECT に無いカラムを読んでいる: {sorted(missing)}"
 
-    def test_写真カラムがDB_SELECTに入っている(self):
-        from modules.logs import _DB_SELECT
+class TestDeleteLogDoesNotTouchStorage:
+    """記録の削除で Storage に触らないこと。
 
-        selected = {c.strip() for c in _DB_SELECT.split(",")}
-        assert "photo_path" in selected
-        assert "photo_thumb_path" in selected
-
-
-class TestDeleteLogRemovesPhoto:
-    """記録を削除したら Storage の写真も消す。
-
-    ON DELETE CASCADE はDBの行しか消さない。Storage を消さないと
-    消したはずの写真が容量を食い続ける（孤児ファイル）。
+    以前は Storage の写真も消していた。写真を端末に移したので、
+    サーバーは写真の存在を知らない。端末側 lib/photoStore.js の
+    remove() が受け持つ。
     """
 
-    def test_記録を削除するとStorageの写真も消す(self, monkeypatch):
-        from modules import logs as logs_mod
-        called = []
-        monkeypatch.setattr(logs_mod, "supabase", None)
-        monkeypatch.setattr(
-            "modules.photos.delete_photo",
-            lambda user_id, date: called.append((user_id, date)),
-        )
+    def test_写真モジュールを参照していない(self):
+        import inspect
 
-        logs_mod.delete_log_by_date("2026-08-01", "abc-123")
+        from modules import logs
 
-        assert called == [("abc-123", "2026-08-01")]
-
-    def test_user_idが無ければStorageには触らない(self, monkeypatch):
-        # パスが組み立てられないため。呼ぶと ValueError になる
-        from modules import logs as logs_mod
-        called = []
-        monkeypatch.setattr(logs_mod, "supabase", None)
-        monkeypatch.setattr(
-            "modules.photos.delete_photo",
-            lambda user_id, date: called.append((user_id, date)),
-        )
-
-        logs_mod.delete_log_by_date("2026-08-01", None)
-
-        assert called == []
-
-    def test_写真の削除に失敗してもDB削除は続行する(self, monkeypatch):
-        # 孤児ファイルは残るが、記録が消せないほうが困る
-        from modules import logs as logs_mod
-        deleted = []
-
-        class _FakeQuery:
-            def delete(self):
-                return self
-
-            def eq(self, *args):
-                return self
-
-            def execute(self):
-                deleted.append(True)
-
-        class _FakeSupabase:
-            def table(self, name):
-                return _FakeQuery()
-
-        monkeypatch.setattr(logs_mod, "supabase", _FakeSupabase())
-        monkeypatch.setattr(
-            "modules.photos.delete_photo",
-            lambda user_id, date: (_ for _ in ()).throw(RuntimeError("storage down")),
-        )
-
-        logs_mod.delete_log_by_date("2026-08-01", "abc-123")
-
-        assert deleted == [True]
+        src = inspect.getsource(logs)
+        assert "modules.photos" not in src, "削除済みのモジュールを参照している"
+        assert "delete_photo" not in src
