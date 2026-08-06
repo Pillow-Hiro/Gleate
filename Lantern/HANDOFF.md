@@ -113,6 +113,29 @@ npx eas-cli build --platform ios --profile production
 
 未決は「4. 今ある未解決のもの」にある。とくにプライバシーポリシーは必須。
 
+**優先度2.5: サーバーの冷え（実測 43.8秒）**
+
+2026-08-06 に実測した。
+
+| | 実測 |
+|---|---|
+| 眠っていた状態からの初回 | **43.8 秒** |
+| 以降（温まった状態） | 0.21〜0.35 秒 |
+
+Render の無料枠は一定時間で停止する。
+**Lantern は1日1回開く道具なので、開くたびに冷えている。**
+つまり利用者は毎回44秒待つことになる。
+「開きたくなる」（4段の1）を正面から壊す。
+
+ストア公開の前に、どちらかを選ぶ必要がある。
+
+| 案 | 冷えの時間 | 費用 | 移行の手間 |
+|---|---|---|---|
+| Render Starter | 無し（常時稼働） | 月$7 | **ゼロ** |
+| Google Cloud Run | 1〜3秒 | この規模なら実質$0 | Dockerfile と gcloud の設定 |
+| Fly.io | 1〜3秒 | 数$ | Dockerfile と flyctl |
+| Vercel の Python 関数 | 0.5〜2秒 | $0（Hobby） | 入口の作り替え。**同一オリジンになり CORS が不要になる**。ただし Hobby は商用利用不可 |
+
 これが終わるまで Journaling Suggestions API には進めない。
 
 **優先度3: TikTok連携**
@@ -130,6 +153,8 @@ npx eas-cli build --platform ios --profile production
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
+| **Procfile が効いていない** | デプロイは反映されている（commit `a1324cb`・Python 3.14.3→3.14.6）のに、`x-render-origin-server` が `Werkzeug` のまま。**Render のダッシュボードに Start Command が設定されていて、Procfile より優先されている**と考えられる。Settings → Start Command を `gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 60` にするか、空にして Procfile に任せる |
+| サーバーの冷え | 実測 43.8秒（上記）。ストア公開前に判断が要る |
 | Expo の追随 | `expo@57.0.11` の想定表が未公開の `expo-sharing@~57.0.10` を要求するため `expo install --fix` が通らない。**上流の不整合。** 直ったら追随する。それまで `expo-doctor` は「4件 out of date」と言う |
 | npm の脆弱性11件 | すべて `uuid` の境界チェック漏れで、`@expo/config` 系のビルド時ツールにしか無い。配布物には乗らない。解消には Expo 側の breaking change が要る |
 | AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |
