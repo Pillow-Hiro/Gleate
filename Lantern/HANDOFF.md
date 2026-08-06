@@ -30,7 +30,7 @@
 | バージョン | v2.0（Expo + Flask API + Supabase） |
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
-| API | Render |
+| API | Render **Starter**（2026-08-06〜。無料枠の停止で冷え43.8秒だったため） |
 | ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 621件 / vitest 82件 / expo config introspect 済 |
@@ -113,50 +113,18 @@ npx eas-cli build --platform ios --profile production
 
 未決は「4. 今ある未解決のもの」にある。とくにプライバシーポリシーは必須。
 
-**優先度2.5: サーバーの冷え（実測 43.8秒）**
+**優先度2.5: サーバーの冷え — 解決済み（2026-08-06）**
 
-2026-08-06 に実測した。
+Render Starter を契約した。実測で確認した。
 
-| | 実測 |
-|---|---|
-| 眠っていた状態からの初回 | **43.8 秒** |
-| 以降（温まった状態） | 0.21〜0.35 秒 |
+| | 無料枠のとき | Starter |
+|---|---|---|
+| 眠りからの初回 | **43.8 秒** | 冷えが無い |
+| 通常 | 0.21〜0.35 秒 | 0.19〜0.46 秒 |
 
-Render の無料枠は一定時間で停止する。
-**Lantern は1日1回開く道具なので、開くたびに冷えている。**
-つまり利用者は毎回44秒待つことになる。
-「開きたくなる」（4段の1）を正面から壊す。
-
-ストア公開の前に、どちらかを選ぶ必要がある。
-
-**分かれ目は「コンテナ（プロセス）を動かせるか」。**
-動かせる先への移動は設定変更で済む。動かせない先は書き直しになる。
-
-| 案 | 冷え | 費用 | Flask のまま動くか |
-|---|---|---|---|
-| Render Starter | 無し | 月$7 | **そのまま**（移行ゼロ） |
-| Google Cloud Run | 1〜3秒 | この規模なら実質$0 | **そのまま**（Dockerfile が要る） |
-| AWS Lambda | 0.5〜2秒 | 実質$0（月100万req・40万GB秒は無期限無料） | アダプタ経由で動く。**IAM・デプロイ道具・秘密情報の管理が増える** |
-| Fly.io | 1〜3秒 | 数$ | そのまま（Dockerfile） |
-| Cloudflare Containers | 数秒 | 従量 | そのまま。**2025年GAで最も新しい** |
-| Vercel の Python 関数 | 0.5〜2秒 | $0（Hobby） | 入口の作り替え。同一オリジンで CORS が消える。Hobby は商用不可 |
-| **Cloudflare Workers** | **ほぼ0秒** | $0 | **動かない。書き直しになる**（下記） |
-
-**Cloudflare Workers が使えない理由**
-
-Python Workers は Pyodide（CPython を Wasm 化したもの）で動く。
-Cloudflare の文書に「通常の CPython バイナリ拡張は持ち込めない」
-「OpenSSL に依存するハッシュは既定で使えない」とある。
-
-Lantern は `modules/auth.py` の ES256 検証で `PyJWT[crypto]`＝`cryptography`
-を使う。これは C/Rust 拡張なので載らない。加えて Flask は WSGI で、
-Workers は fetch ハンドラなので入口の形も違う。
-
-冷えがほぼ0秒なのは魅力だが、**33のエンドポイントとAIのプロンプトを
-JS/TS に書き直すことになる。失うのは行数ではなく、
-621件のテストとAI憲法のガードレール**（プロンプトの文言検査・
-ログ漏れ検査・削除の順序検査）である。それを捨てて得るのが
-「1〜3秒が0秒になる」ことなら、割に合わない。
+移行は行わなかった。**44秒の原因は Render ではなく無料枠の停止**で、
+プランで解決する問題だった。Cloud Run / AWS Lambda / Cloudflare の
+比較は下に残す。将来また費用を見直すときの材料になる。
 
 これが終わるまで Journaling Suggestions API には進めない。
 
@@ -175,8 +143,8 @@ JS/TS に書き直すことになる。失うのは行数ではなく、
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
-| **Procfile が効いていない** | デプロイは反映されている（commit `a1324cb`・Python 3.14.3→3.14.6）のに、`x-render-origin-server` が `Werkzeug` のまま。**Render のダッシュボードに Start Command が設定されていて、Procfile より優先されている**と考えられる。Settings → Start Command を `gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 60` にするか、空にして Procfile に任せる |
-| サーバーの冷え | 実測 43.8秒（上記）。ストア公開前に判断が要る |
+| **Procfile が効いていない** | Starter にしても `x-render-origin-server` は `Werkzeug` のまま（commit `0dba7eb` は反映済み）。**Render のダッシュボードに Start Command が設定されていて Procfile より優先されている。** Settings → Start Command を下記にするか、空にして Procfile に任せる<br>`gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 60` |
+| ローカルの node_modules | OneDrive 配下にあるため、同期でファイルが欠けてビルドが落ちることがある（`expo/src/Expo.ts が無い`・`EINVAL readlink`）。`rm -rf node_modules && npm ci` で直る。**EAS のビルドはクラウドで入れ直すため影響しない** |
 | Expo の追随 | `expo@57.0.11` の想定表が未公開の `expo-sharing@~57.0.10` を要求するため `expo install --fix` が通らない。**上流の不整合。** 直ったら追随する。それまで `expo-doctor` は「4件 out of date」と言う |
 | npm の脆弱性11件 | すべて `uuid` の境界チェック漏れで、`@expo/config` 系のビルド時ツールにしか無い。配布物には乗らない。解消には Expo 側の breaking change が要る |
 | AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |

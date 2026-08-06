@@ -17,6 +17,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   })
   const [detailOpen, setDetailOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [slow, setSlow] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
   const [photoUrl, setPhotoUrl] = useState(
@@ -35,10 +36,23 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     setPhotoUrl(null)
   }
 
+  // 保存が長引いたときに、待っていることを伝える。
+  //
+  // サーバー（Render の無料枠）は一定時間で停止する。
+  // 2026-08-06 の実測で、眠った状態からの初回は 43.8 秒かかった
+  // （温まっていれば 0.2 秒）。1日1回開く道具なので、毎回冷えている。
+  //
+  // **黙って44秒待たせると、遅いのではなく壊れて見える。**
+  // 押した手が悪かったのかと思わせない。
+  // 原因（サーバーが眠っていた等）は書かない。利用者にできることが増えない。
+  const SLOW_SAVE_MS = 6000
+
   async function handleSave() {
     setLoading(true)
+    setSlow(false)
     setAiResponse('')
     setSaveError('')
+    const slowTimer = setTimeout(() => setSlow(true), SLOW_SAVE_MS)
     try {
       const res = await authFetch('/save', {
         method: 'POST',
@@ -53,7 +67,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       console.warn('[Home] 記録の保存に失敗', e)
       setSaveError('保存に失敗しました。接続を確認してください。')
     } finally {
+      clearTimeout(slowTimer)
       setLoading(false)
+      setSlow(false)
     }
   }
 
@@ -144,6 +160,12 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           {loading ? '保存中...' : '記録する'}
         </Text>
       </Pressable>
+
+      {slow ? (
+        <Text className="text-xs text-ink-faint text-center">
+          まだ保存しています。もう少しかかります。
+        </Text>
+      ) : null}
 
       {saveError ? (
         <Text className="text-xs text-red-500 text-center">{saveError}</Text>
