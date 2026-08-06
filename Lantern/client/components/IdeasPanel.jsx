@@ -47,7 +47,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
               </Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-xs text-ink-faint">削除</Text>
+              <Text className="text-xs text-red-500">削除</Text>
             </Pressable>
           </View>
         )}
