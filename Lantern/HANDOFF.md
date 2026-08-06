@@ -104,7 +104,6 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
 | `logs` テーブルの写真列 | `photo_path` / `photo_thumb_path` が残っている。読み書きはしていない。落とすなら `alter table logs drop column photo_path, drop column photo_thumb_path;` |
 | `lantern-photos` バケット | 空。Supabase の画面から削除してよい |
-| ログイン画面の文言 | 「創作の道を照らす、AI伴走者」のまま。CLAUDE.md は 2026-08-05 にこの言い回しを退けている（主役は記録） |
 | North Star Metric | 器はできたが母数が足りない |
 
 ### 記録テキストの暗号化について
