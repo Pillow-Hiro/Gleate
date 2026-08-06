@@ -144,46 +144,6 @@ def debug_version():
     })
 
 
-@app.route("/api/debug/youtube-token")
-@require_auth
-def debug_youtube_token():
-    # 認証必須・g.user_id の範囲だけを返す。実機でのYouTube連携の切り分けに使う。
-    from modules.youtube import get_tokens, refresh_token_if_needed, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET
-    row = get_tokens(g.user_id)
-    if not row:
-        return jsonify({"status": "no_tokens"})
-
-    result = {
-        "status": "found",
-        "has_access_token": bool(row.get("access_token")),
-        "has_refresh_token": bool(row.get("refresh_token")),
-        "token_expiry": row.get("token_expiry"),
-        "channel_name": row.get("channel_name"),
-        "client_id_set": bool(YOUTUBE_CLIENT_ID),
-        "client_secret_set": bool(YOUTUBE_CLIENT_SECRET),
-    }
-
-    # 実際にトークンリフレッシュ→API呼び出しを試みてエラーを記録
-    try:
-        creds = refresh_token_if_needed(g.user_id)
-        if not creds:
-            result["refresh_result"] = "returned_none"
-        else:
-            result["refresh_result"] = "ok"
-            try:
-                from modules.youtube import _build_client
-                youtube = _build_client(creds)
-                ch = youtube.channels().list(part="snippet", mine=True).execute()
-                result["api_call"] = "ok"
-                result["channel_items"] = len(ch.get("items", []))
-            except Exception as api_e:
-                result["api_call"] = f"error: {type(api_e).__name__}: {api_e}"
-    except Exception as e:
-        result["refresh_result"] = f"exception: {type(e).__name__}: {e}"
-
-    return jsonify(result)
-
-
 def _attach_photo_urls(logs):
     """写真パスを署名付きURLに変換して返す。
 

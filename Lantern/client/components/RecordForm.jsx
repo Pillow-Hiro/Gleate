@@ -99,9 +99,13 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
             : `${isToday ? '今日' : 'この日'}どんなことをしましたか？`
         }
       />
-      <Field fieldKey="next" label="次にやること" />
+      {/* 既定で見えているのは「やったこと」だけにする。
+          実測（2026-08-06・全20件）で 17/20 が この1項目だけで完結しており、
+          次にやること 15% / よかったこと 5% / 困ったこと 5% だった。
+          既定の姿を実態に合わせ、4段の3（邪魔なUIがない）に寄せる。
+          欄は消さない。5%とはいえ使われており、消すと後から分けられない。
 
-      {/* Web版はCSS gridで開閉していたが、RNにgridがないため出し分けで表現する */}
+          Web版はCSS gridで開閉していたが、RNにgridがないため出し分けで表現する */}
       <Pressable
         onPress={() => setDetailOpen((o) => !o)}
         className="flex-row items-center gap-1.5"
@@ -116,6 +120,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         <View className="gap-4 pt-1">
           <Field fieldKey="enjoyable" label="よかったこと・楽しかったこと" />
           <Field fieldKey="struggled" label="詰まったこと・困ったこと" />
+          {/* 次にやることは「あったこと」ではなく予定で、他の3つと性質が違う。
+              アイデアの溜め場とも役割が重なるため、ここに置く。 */}
+          <Field fieldKey="next" label="次にやること" />
         </View>
       ) : null}
 

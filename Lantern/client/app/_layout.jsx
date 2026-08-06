@@ -5,7 +5,9 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
+import { localDateStr } from '../lib/date'
 import { ThemeProvider, useThemeContext } from '../lib/theme'
 import SplashScreen from '../components/SplashScreen'
 
@@ -37,10 +39,37 @@ export function ErrorBoundary({ error, retry }) {
 }
 
 
+// 起動画面は1日1回だけ出す。旧Web版はこの判定を持っていたが、
+// Expo への移植時に落ちて毎回出る状態になっていた。
+// 世界観としては強いが、1日に何度も開くと邪魔になる。
+const SPLASH_SEEN_KEY = 'lantern_splash_date'
+
 function RootNavigator() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showSplash, setShowSplash] = useState(true)
+  // false から始めるのは、判定前に一瞬出てしまうのを避けるため
+  const [showSplash, setShowSplash] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const seen = await AsyncStorage.getItem(SPLASH_SEEN_KEY)
+        if (!cancelled && seen !== localDateStr()) setShowSplash(true)
+      } catch (e) {
+        // 読めなければ出さない。毎回出るより出ない方が邪魔にならない
+        console.warn('[Splash] 表示履歴の読み込みに失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  function handleSplashClose() {
+    setShowSplash(false)
+    AsyncStorage.setItem(SPLASH_SEEN_KEY, localDateStr()).catch((e) => {
+      console.warn('[Splash] 表示履歴の保存に失敗', e)
+    })
+  }
   const segments = useSegments()
   const router = useRouter()
   const { isDark } = useThemeContext()
@@ -84,7 +113,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
       </Stack>
-      {showSplash ? <SplashScreen onClose={() => setShowSplash(false)} /> : null}
+      {showSplash ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>
   )
 }
