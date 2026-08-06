@@ -179,16 +179,50 @@ class TestRouteCount:
 
 
 class TestVersionConsistency:
-    def test_APP_VERSIONとCLAUDE_mdが一致する(self):
+    """バージョンは2つある。混ぜない。
+
+    - **リリースの版数**（`app.json` の `version` と `constants.js` の
+      `APP_VERSION`）。ストアの表示とアプリ内の表示。**必ず一致させる**
+    - **アーキテクチャの世代**（文書の「v2.0」）。
+      Expo + Flask API + Supabase の構成を指す。版数とは別物
+
+    2026-08-06 に版数を 1.0.0 へ統一した（ストア初回リリース）。
+    それまで `app.json` が 1.0.0、画面が v2.0 で食い違っていた。
+    """
+
+    def _release_version(self):
         m = re.search(r"APP_VERSION\s*=\s*'([^']+)'", read("client", "constants.js"))
         assert m, "constants.js に APP_VERSION が無い"
-        version = m.group(1)  # 例: v2.0
-        assert f"`main` ブランチ：{version}" in read("CLAUDE.md"), \
-            f"CLAUDE.md のバージョン記載が {version} と食い違う"
+        return m.group(1)
 
-    def test_REQUIREMENTSの対象バージョンが一致する(self):
-        m = re.search(r"APP_VERSION\s*=\s*'v([^']+)'", read("client", "constants.js"))
-        assert f"対象: v{m.group(1)}" in read("REQUIREMENTS.md")
+    def test_app_jsonと画面の版数が一致する(self):
+        import json
+
+        app_json = json.loads(read("client", "app.json"))["expo"]["version"]
+        assert app_json == self._release_version(), (
+            f"ストアの版数 {app_json} と画面の表示 {self._release_version()} が違う。"
+            "利用者はどちらが本当か分からなくなる"
+        )
+
+    def test_版数に接頭辞のvを付けない(self):
+        # ストアは "1.0.0" 形式しか受け付けない。画面だけ "v1.0.0" にすると
+        # 上の一致検査を通すために app.json 側を壊すことになる
+        v = self._release_version()
+        assert re.fullmatch(r"\d+\.\d+\.\d+", v), \
+            f"版数は 1.0.0 の形にする（今: {v}）"
+
+    def test_世代の表記が文書間で揃っている(self):
+        # 文書の「v2.0」は版数ではなく世代。REQUIREMENTS と CLAUDE.md で揃える
+        m = re.search(r"対象: (v[\d.]+)", read("REQUIREMENTS.md"))
+        assert m, "REQUIREMENTS.md に「対象: vX.Y」が無い"
+        assert f"`main` ブランチ：{m.group(1)}" in read("CLAUDE.md"), \
+            f"CLAUDE.md の世代表記が REQUIREMENTS.md の {m.group(1)} と食い違う"
+
+    def test_世代と版数を取り違えていない(self):
+        # 世代は v 付き、版数は v 無し。同じ値になったら混同が始まっている
+        m = re.search(r"対象: v([\d.]+)", read("REQUIREMENTS.md"))
+        assert m.group(1) != self._release_version(), \
+            "世代と版数が同じ値になっている。別物として扱えているか確認すること"
 
 
 class TestDocRoles:
