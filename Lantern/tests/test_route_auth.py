@@ -49,8 +49,15 @@ def _is_authed(endpoint):
 
 
 def _concrete_path(rule):
-    # /api/logs/<date> のような可変部分をダミー値で埋める
-    return re.sub(r"<[^>]+>", "x", rule.rule)
+    """/api/logs/<date> のような可変部分をダミー値で埋める。
+
+    型付きコンバータ（<int:idea_id> など）に合わない値を入れると
+    ルートに一致せず404になり、認証ガードを検査できない。
+    """
+    def _fill(m):
+        return "1" if m.group(0).startswith("<int:") else "x"
+
+    return re.sub(r"<[^>]+>", _fill, rule.rule)
 
 
 def _primary_method(rule):
