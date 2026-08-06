@@ -129,12 +129,34 @@ Render の無料枠は一定時間で停止する。
 
 ストア公開の前に、どちらかを選ぶ必要がある。
 
-| 案 | 冷えの時間 | 費用 | 移行の手間 |
+**分かれ目は「コンテナ（プロセス）を動かせるか」。**
+動かせる先への移動は設定変更で済む。動かせない先は書き直しになる。
+
+| 案 | 冷え | 費用 | Flask のまま動くか |
 |---|---|---|---|
-| Render Starter | 無し（常時稼働） | 月$7 | **ゼロ** |
-| Google Cloud Run | 1〜3秒 | この規模なら実質$0 | Dockerfile と gcloud の設定 |
-| Fly.io | 1〜3秒 | 数$ | Dockerfile と flyctl |
-| Vercel の Python 関数 | 0.5〜2秒 | $0（Hobby） | 入口の作り替え。**同一オリジンになり CORS が不要になる**。ただし Hobby は商用利用不可 |
+| Render Starter | 無し | 月$7 | **そのまま**（移行ゼロ） |
+| Google Cloud Run | 1〜3秒 | この規模なら実質$0 | **そのまま**（Dockerfile が要る） |
+| AWS Lambda | 0.5〜2秒 | 実質$0（月100万req・40万GB秒は無期限無料） | アダプタ経由で動く。**IAM・デプロイ道具・秘密情報の管理が増える** |
+| Fly.io | 1〜3秒 | 数$ | そのまま（Dockerfile） |
+| Cloudflare Containers | 数秒 | 従量 | そのまま。**2025年GAで最も新しい** |
+| Vercel の Python 関数 | 0.5〜2秒 | $0（Hobby） | 入口の作り替え。同一オリジンで CORS が消える。Hobby は商用不可 |
+| **Cloudflare Workers** | **ほぼ0秒** | $0 | **動かない。書き直しになる**（下記） |
+
+**Cloudflare Workers が使えない理由**
+
+Python Workers は Pyodide（CPython を Wasm 化したもの）で動く。
+Cloudflare の文書に「通常の CPython バイナリ拡張は持ち込めない」
+「OpenSSL に依存するハッシュは既定で使えない」とある。
+
+Lantern は `modules/auth.py` の ES256 検証で `PyJWT[crypto]`＝`cryptography`
+を使う。これは C/Rust 拡張なので載らない。加えて Flask は WSGI で、
+Workers は fetch ハンドラなので入口の形も違う。
+
+冷えがほぼ0秒なのは魅力だが、**33のエンドポイントとAIのプロンプトを
+JS/TS に書き直すことになる。失うのは行数ではなく、
+621件のテストとAI憲法のガードレール**（プロンプトの文言検査・
+ログ漏れ検査・削除の順序検査）である。それを捨てて得るのが
+「1〜3秒が0秒になる」ことなら、割に合わない。
 
 これが終わるまで Journaling Suggestions API には進めない。
 
