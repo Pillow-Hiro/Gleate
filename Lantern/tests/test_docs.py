@@ -32,6 +32,7 @@ Lantern のドキュメントは3回、静かに嘘になった。
 
 import io
 import os
+import sys
 import re
 
 import pytest
@@ -223,6 +224,57 @@ class TestVersionConsistency:
         m = re.search(r"対象: v([\d.]+)", read("REQUIREMENTS.md"))
         assert m.group(1) != self._release_version(), \
             "世代と版数が同じ値になっている。別物として扱えているか確認すること"
+
+
+class TestPrivacyPage:
+    """PRIVACY.md と、そこから作る privacy.html がずれていないか。
+
+    同じ文面を2か所に置くと必ずずれる。原本は PRIVACY.md で、
+    HTML は `scripts/build_privacy.py` の生成物とする。
+
+    掲載先は `client/public/`。expo export が出力の直下へ複製するため、
+    SPAのルーティングを通らず**ログインしていなくても開ける**。
+    アプリ内のルートにすると認証ガードが /login へ振り替えてしまい、
+    審査担当者が読めない。
+    """
+
+    def _built(self):
+        sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        import build_privacy
+
+        return build_privacy.render(read("PRIVACY.md"))
+
+    def test_生成物が最新である(self):
+        current = read("client", "public", "privacy.html")
+        assert current == self._built(), (
+            "PRIVACY.md を直して privacy.html を作り直していない。"
+            "python scripts/build_privacy.py を実行すること"
+        )
+
+    def test_見出しがすべて入っている(self):
+        page = read("client", "public", "privacy.html")
+        for line in read("PRIVACY.md").splitlines():
+            if line.startswith("## "):
+                assert line[3:] in page, f"見出しが落ちている: {line[3:]}"
+
+    def test_記法が生のまま残っていない(self):
+        # 変換に失敗すると ** や | が本文に出る
+        page = read("client", "public", "privacy.html")
+        body = re.sub(r"<[^>]+>", "", page.split("<body>")[1])
+        for mark in ("**", "](", "|"):
+            assert mark not in body, f"変換されていない記法が残っている: {mark}"
+
+    def test_閲覧できる状態であることを隠していない(self):
+        # 暗号化していない以上、ここを書かないのは不誠実になる。
+        # 暗号化を実装したら、この検査ごと書き換える
+        assert "提供者が管理者として閲覧できる状態にあります" in read("PRIVACY.md")
+
+    def test_写真が端末から出ないと書いてある(self):
+        assert "写真は端末の中だけに保存され" in read("PRIVACY.md")
+
+    def test_アカウント削除の案内がある(self):
+        # App Store 5.1.1(v) に対応した機能を、文書側でも示す
+        assert "アカウントの削除" in read("PRIVACY.md")
 
 
 class TestDocRoles:

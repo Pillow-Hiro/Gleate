@@ -1247,6 +1247,55 @@ SDK 57 の `expo-file-system` は `cacheDirectory` /
 
 ---
 
+### 2026/08/06（プライバシーポリシーの掲載先）
+
+**Vercel に同梱する形にした。** `client/public/privacy.html` を置くと、
+`expo export --platform web` が出力の直下へそのまま複製する（実測で確認）。
+次のデプロイで `https://lantern-inky-three.vercel.app/privacy.html` になる。
+
+**アプリ内のルートにしなかった理由。**
+`_layout.jsx` の認証ガードが未ログインを `/login` へ振り替えるため、
+審査担当者が読めない。App Store のポリシーURLは
+**ログイン不要で開ける**必要がある。
+`public/` の静的ファイルは SPA のルーティングを通らない。
+
+`vercel.json` は catch-all の rewrite を持つが、Vercel は rewrites より
+先にファイルを探す。`favicon.ico` や `_expo/static/...` が現に配信できて
+いるのがその証拠なので、privacy.html も同じ経路で出る。
+
+**GitHub Pages は使えない。** リポジトリが Private のため、
+無料枠では公開されない。
+
+**HTML は生成物にした**
+
+同じ文面を2か所に置くと必ずずれる。このプロジェクトでは
+PROJECT_MAP.md と MVP_SPEC.md が実際にずれた。
+`PRIVACY.md` を唯一の原本とし、`scripts/build_privacy.py` が HTML を作る。
+Markdown ライブラリは足していない（サーバーの依存を増やさないため、
+使っている記法だけを扱う小さな変換を書いた）。
+
+`tests/test_docs.py::TestPrivacyPage` が一致を検査する。
+あわせて「提供者が管理者として閲覧できる状態にあります」の一文が
+消えていないことも見る。**暗号化していない以上、ここを隠すのは不誠実**なので、
+文書から落ちたら落ちるようにした。
+
+**検証結果: OK**
+
+- pytest 596件パス（新規6件）
+- `expo export --platform web` 後、`dist/privacy.html` を配信して
+  ブラウザで全文を確認。見出し10・表4がすべて描画され、
+  `**` や `|` などの記法が本文に漏れていないことを確認
+- 意図的なずれを3通り作り 3/3 を検出
+  （原本を直して生成し忘れる・「閲覧できる」を隠す・生成物だけ手で直す）
+
+**途中で起きたこと**
+
+`expo export` が `EINVAL readlink` で落ちた。`public/` とは無関係で、
+起動したままの dev サーバーと Metro のキャッシュが競合していた。
+サーバーを止めて `node_modules/.cache` を消したら通った。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。

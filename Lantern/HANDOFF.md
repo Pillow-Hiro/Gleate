@@ -33,7 +33,7 @@
 | API | Render |
 | ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 590件 / vitest 82件 / expo-doctor 20/20 |
+| 検査 | pytest 596件 / vitest 82件 / expo-doctor 20/20 |
 
 ## 2. 直近にやったこと（2026-08-06）
 
@@ -58,6 +58,8 @@
 - **アカウント削除**を実装（App Store 5.1.1(v) の必須要件）
 - `PRIVACY.md` を用意
 - 空の `lantern-photos` バケットと孤児 worktree を削除
+- `logs` の写真列を削除（ユーザーが SQL を実行）
+- プライバシーポリシーを `client/public/privacy.html` として同梱
 
 ## 3. 次にやること
 
@@ -102,10 +104,9 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 
 | 内容 | 状態 |
 |---|---|
-| プライバシーポリシーの公開 | 文面は `PRIVACY.md` に用意した。**まだどこにも掲載していない。** App Store は URL の提出を必須にする。Vercel か GitHub Pages に置く |
+| プライバシーポリシーのURL | `client/public/privacy.html` として同梱済み。**次の Vercel デプロイで `https://lantern-inky-three.vercel.app/privacy.html` が有効になる。** App Store Connect にはこのURLを入れる |
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
-| `logs` テーブルの写真列 | `photo_path` / `photo_thumb_path` が残っている。読み書きはしていない。**Supabase の SQL エディタで実行が要る**（接続文字列もドライバも無いため私からは実行できない）<br>`alter table logs drop column photo_path, drop column photo_thumb_path;` |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
 | North Star Metric | 器はできたが母数が足りない |
 

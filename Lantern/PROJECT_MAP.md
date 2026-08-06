@@ -35,6 +35,7 @@
 | API | `main.py` | ルートは全てここ。33ルール / 31パス |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
+| 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
 
 Web も同じ `client/` から `npx expo export --platform web` で出す。
 `frontend/`（React + Vite）は 2026-08-04 に廃止した。
@@ -126,7 +127,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `theme.js` | テーマの保持 | — |
-| `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し | — |
+| `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
 | `constants.js`（`client/` 直下） | `APP_VERSION` | — |
@@ -200,6 +201,17 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
 | `client/lib/exportLogs.js` | SDK 57 の `expo-file-system` は旧APIを呼ぶと実行時に投げる。**Webは `.web.js` を使うので気づけない** | なし（実機で確認する） |
+
+---
+
+## 8. 生成物
+
+| ファイル | 元 | 作り方 |
+|---|---|---|
+| `client/public/privacy.html` | `PRIVACY.md` | `python scripts/build_privacy.py` |
+
+**手で直さないこと。** `tests/test_docs.py::TestPrivacyPage` が一致を検査する。
+原本を直したら作り直す。
 
 ---
 

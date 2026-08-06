@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プライバシーポリシー — Lantern</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; padding: 2.5rem 1.25rem 5rem; max-width: 46rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Noto Sans JP", "Yu Gothic", sans-serif;
+  line-height: 1.9; color: #2f2f2b; background: #faf8f3;
+  -webkit-text-size-adjust: 100%;
+}
+h1 { font-size: 1.5rem; letter-spacing: .02em; margin: 0 0 .5rem; }
+h2 { font-size: 1.1rem; margin: 2.5rem 0 .75rem; }
+h3 { font-size: .95rem; margin: 1.75rem 0 .5rem; color: #4a4a44; }
+p, li { font-size: .9rem; }
+a { color: #3d5a45; }
+hr { border: 0; border-top: 1px solid #e3ded2; margin: 2.5rem 0; }
+strong { font-weight: 600; }
+ul { padding-left: 1.25rem; }
+li { margin: .35rem 0; }
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+th, td { border: 1px solid #e3ded2; padding: .5rem .7rem; text-align: left;
+         vertical-align: top; }
+th { background: #f2eee4; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  body { color: #ddd9d0; background: #1c1c1a; }
+  h3 { color: #b9b5ab; }
+  a { color: #9dc0a6; }
+  hr, th, td { border-color: #3a3a36; }
+  th { background: #26262300; background-color: #262623; }
+}
+</style>
+</head>
+<body>
+<h1>プライバシーポリシー</h1>
+<p>Lantern（以下「本アプリ」）における個人情報の取り扱いについて定めます。</p>
+<p>最終更新日: 2026年8月6日 提供者: Pillow-Hiro</p>
+<hr>
+<h2>1. この文書の考え方</h2>
+<p>本アプリは、利用者が自分の言葉を記録するための道具です。 記録は利用者のものであり、提供者のものではありません。</p>
+<p><strong>そのため、この文書は「何を集めているか」ではなく 「何がどこに置かれ、誰が見られるか」を書きます。</strong> 利用者が自分で判断できることが目的です。</p>
+<hr>
+<h2>2. 取得する情報</h2>
+<div class="table-wrap"><table><thead><tr><th>情報</th><th>取得の理由</th><th>必須か</th></tr></thead><tbody>
+<tr><td>メールアドレス</td><td>ログインのため</td><td>必須</td></tr>
+<tr><td>パスワード</td><td>同上</td><td>必須</td></tr>
+<tr><td>記録した文章（やったこと・よかったこと・困ったこと・次にやること）</td><td>記録の保存と振り返りのため</td><td>利用者が書いたときのみ</td></tr>
+<tr><td>アイデアとして書いた文章</td><td>同上</td><td>同上</td></tr>
+<tr><td>記録した日付</td><td>一覧とカレンダーのため</td><td>記録に伴い自動</td></tr>
+<tr><td>YouTube / Twitch のアクセストークンと公開情報</td><td>連携を選んだ場合のみ</td><td>任意</td></tr>
+</tbody></table></div>
+<p><strong>取得しないもの</strong></p>
+<ul><li>位置情報</li><li>連絡先</li><li>端末の識別子を用いた広告目的の情報</li><li>利用状況の分析データ（どの画面を開いたか等の記録は行いません）</li></ul>
+<p>本アプリに広告はありません。第三者への販売・提供も行いません。</p>
+<hr>
+<h2>3. 写真の扱い</h2>
+<p><strong>写真は端末の中だけに保存され、提供者のサーバーには送信されません。</strong></p>
+<ul><li>記録に添えた写真は、端末のアプリ領域に保存されます</li><li>提供者はその写真を見ることができません</li><li>端末を変更した場合、写真は移りません</li><li>Web版では写真機能を提供していません</li><li>写真がAIに渡されることはありません</li></ul>
+<hr>
+<h2>4. 記録した文章の扱い</h2>
+<p><strong>記録した文章は、以下の2か所に渡ります。</strong></p>
+<h3>4-1. データベース（Supabase）</h3>
+<p>記録は Supabase（Supabase Inc.）のデータベースに保存されます。 サーバーは日本国外に置かれる場合があります。</p>
+<p><strong>この保存領域は、提供者が管理者として閲覧できる状態にあります。</strong> 提供者が個人の記録を読む意図はありませんが、 技術的に読めない仕組みにはなっていません。この点を明示します。</p>
+<h3>4-2. AI（Anthropic Claude API）</h3>
+<p>以下の場合に、記録した文章が Anthropic PBC の API に送信されます。</p>
+<div class="table-wrap"><table><thead><tr><th>いつ</th><th>送るもの</th></tr></thead><tbody>
+<tr><td>記録を保存したとき</td><td>その日の記録と、直近の記録</td></tr>
+<tr><td>「今日の灯り」を表示するとき</td><td>前日の記録のみ</td></tr>
+<tr><td>「今週・今月の振り返り」を押したとき</td><td>その期間の記録</td></tr>
+<tr><td>「過去との対話」を押したとき</td><td>対象期間と当日の記録</td></tr>
+<tr><td>キーワードを表示するとき</td><td>対象期間の記録</td></tr>
+<tr><td>動画・配信の観察を押したとき</td><td>記録と、公開されている動画・配信の情報</td></tr>
+</tbody></table></div>
+<p>ボタンを押していないときにAIが動くことはありません。 定期実行も行いません。</p>
+<p><strong>写真をAIに送ることはありません。</strong></p>
+<p>Anthropic の取り扱いについては <a href="https://www.anthropic.com/legal/privacy" rel="noreferrer">Anthropic のプライバシーポリシー</a>をご確認ください。</p>
+<hr>
+<h2>5. 外部サービス</h2>
+<p>本アプリは以下を利用します。</p>
+<div class="table-wrap"><table><thead><tr><th>サービス</th><th>用途</th><th>渡るもの</th></tr></thead><tbody>
+<tr><td>Supabase</td><td>認証・データベース</td><td>メールアドレス・記録・アイデア</td></tr>
+<tr><td>Anthropic</td><td>AIの応答</td><td>記録した文章（上記4-2の場合）</td></tr>
+<tr><td>Render</td><td>サーバーの実行</td><td>通信のログ（記録の中身は含みません）</td></tr>
+<tr><td>Vercel</td><td>Web版の配信</td><td>アクセスの技術的情報</td></tr>
+<tr><td>Unsplash</td><td>起動画面の背景写真</td><td>利用者の情報は渡しません</td></tr>
+<tr><td>Google / YouTube</td><td>連携を選んだ場合のみ</td><td>認可の情報</td></tr>
+<tr><td>Twitch</td><td>同上</td><td>同上</td></tr>
+</tbody></table></div>
+<p>サーバーのログには、記録の中身・利用者の識別子・認証情報を 出力しない設計としています。</p>
+<hr>
+<h2>6. 保存期間と削除</h2>
+<p><strong>利用者はいつでも自分で消すことができます。</strong></p>
+<div class="table-wrap"><table><thead><tr><th>操作</th><th>場所</th><th>消えるもの</th></tr></thead><tbody>
+<tr><td>記録の削除</td><td>記録の詳細</td><td>その日の記録</td></tr>
+<tr><td>アカウントの削除</td><td>設定</td><td>記録・アイデア・連携・アカウントのすべて</td></tr>
+</tbody></table></div>
+<p>アカウントを削除すると、提供者側にデータは残りません。 <strong>元に戻すことはできません。</strong> 必要な記録は、設定の「データのエクスポート」で JSON として手元に保存できます。</p>
+<p>端末の中の写真は、アカウント削除では消えません。 端末側で削除するか、アプリを削除してください。</p>
+<hr>
+<h2>7. 連携の解除</h2>
+<p>YouTube / Twitch の連携は、ダッシュボードからいつでも解除できます。 解除すると、保存していたアクセストークンは削除されます。</p>
+<p>なお、Twitch の過去配信は Twitch 側で一定期間後に消えるため、 取得できた時点の情報を本アプリ内に保存しています。 <strong>連携を解除しても、この記録は残ります。</strong> 不要な場合はアカウントの削除を行ってください。</p>
+<hr>
+<h2>8. 未成年の利用について</h2>
+<p>13歳未満を対象としたサービスではありません。</p>
+<hr>
+<h2>9. この文書の変更</h2>
+<p>内容を変更する場合は、本ページの最終更新日を改めます。 重要な変更がある場合は、アプリ内でお知らせします。</p>
+<hr>
+<h2>10. お問い合わせ</h2>
+<p>本アプリの個人情報の取り扱いに関するお問い合わせは、 App Store の連絡先、または GitHub リポジトリの Issue までお願いします。</p>
+</body>
+</html>

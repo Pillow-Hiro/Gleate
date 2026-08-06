@@ -160,8 +160,9 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 | 外部送信 | Anthropic / YouTube / Twitch 以外に送らない | 満たしている |
 | 写真 | 端末の外に出さない | 満たしている |
 | ログ | サーバーのログに記録の中身・user_id・資格情報を残さない | 満たしている（`test_privacy.py`） |
+| プライバシーポリシー | 公開URLを持つ。ログイン不要で読めること | `client/public/privacy.html`（`PRIVACY.md` から生成） |
 | 記録の暗号化 | — | **していない。** 提供者が管理者として閲覧できる。`PRIVACY.md` に明記した。設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md` |
-| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 590 + 82 件 |
+| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 596 + 82 件 |
 
 ---
 
