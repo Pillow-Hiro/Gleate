@@ -24,6 +24,7 @@ export default function Home() {
   const params = useLocalSearchParams()
   const router = useRouter()
   const [quote, setQuote] = useState('')
+  const [question, setQuestion] = useState('')
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
@@ -44,9 +45,10 @@ export default function Home() {
     ;(async () => {
       setLoading(true)
       try {
-        const [logsRes, quoteRes] = await Promise.all([
+        const [logsRes, quoteRes, questionRes] = await Promise.all([
           authFetch('/api/logs'),
           authFetch('/api/daily/quote'),
+          authFetch('/api/question'),
         ])
         if (logsRes.ok) {
           const logsData = await logsRes.json()
@@ -55,6 +57,10 @@ export default function Home() {
         if (quoteRes.ok) {
           const quoteData = await quoteRes.json()
           if (!cancelled) setQuote(quoteData.quote || '')
+        }
+        if (questionRes.ok) {
+          const questionData = await questionRes.json()
+          if (!cancelled) setQuestion(questionData.question || '')
         }
       } catch (e) {
         // 取得できなければ空のまま表示する
@@ -119,6 +125,7 @@ export default function Home() {
             key={existingLog ? existingLog.date : `new-${targetDate}`}
             existingLog={existingLog}
             targetDate={targetDate}
+            question={question}
             onSaved={() => {
               refreshData()
               if (isEditingPast) router.replace('/')

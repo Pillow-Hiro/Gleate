@@ -6,7 +6,7 @@ import PhotoPicker from './PhotoPicker'
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
-export default function RecordForm({ existingLog, targetDate, onSaved }) {
+export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
   const isToday = targetDate === todayStr()
   const [form, setForm] = useState({
     created: existingLog?.created || '',
@@ -81,11 +81,23 @@ export default function RecordForm({ existingLog, targetDate, onSaved }) {
         </View>
       ) : null}
 
+      {/* 問いはプレースホルダとして入力欄の中に出す。
+          欄の上に別行で置くと「読むもの」が増えるが、中に出せば
+          書き始める場所と問いが同じ位置になる。
+          プレースホルダなので、書き始めれば自然に消える。
+
+          今日の記録のときだけ差し替える。過去の日を編集するときに
+          今日の問いを出しても合わない。
+          問いが取れなかったときは元の固定文に戻る。 */}
       <Field
         fieldKey="created"
         label={`${isToday ? '今日' : 'この日'}のこと`}
         rows={5}
-        placeholder={`${isToday ? '今日' : 'この日'}どんなことをしましたか？`}
+        placeholder={
+          question && isToday
+            ? question
+            : `${isToday ? '今日' : 'この日'}どんなことをしましたか？`
+        }
       />
       <Field fieldKey="next" label="次にやること" />
 

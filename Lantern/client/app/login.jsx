@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { supabase } from '../lib/supabase'
+import FormShell from '../components/FormShell'
 
 // 文言・認証方式はWeb版 frontend/src/pages/Login.jsx をそのまま踏襲する
 // （メールアドレス＋パスワード。OTPではない）
@@ -54,7 +55,11 @@ export default function Login() {
           <Text className="text-xs text-ink-faint mt-2 tracking-wider">創作の道を照らす、AI伴走者</Text>
         </View>
 
-        <View className="gap-4">
+        {/* Web では FormShell が <form> を出す。
+            パスワードマネージャは <form> を手がかりに動くため、
+            無いとメールだけ入ってパスワードが入らない。
+            Enter での送信もブラウザの既定動作なので <form> が要る。 */}
+        <FormShell className="gap-4" onSubmit={handleSubmit}>
           <View>
             <Text className="text-xs text-ink-faint mb-1.5 tracking-wide">メールアドレス</Text>
             <TextInput
@@ -64,6 +69,8 @@ export default function Login() {
               autoComplete="email"
               textContentType="username"
               keyboardType="email-address"
+              returnKeyType="next"
+              onSubmitEditing={handleSubmit}
               className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
               placeholderTextColor="#999999"
             />
@@ -82,6 +89,8 @@ export default function Login() {
               autoCapitalize="none"
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               textContentType={mode === 'login' ? 'password' : 'newPassword'}
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit}
               className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
               placeholderTextColor="#999999"
             />
@@ -108,7 +117,7 @@ export default function Login() {
               {mode === 'login' ? 'アカウントを作成する' : 'ログインに戻る'}
             </Text>
           </Pressable>
-        </View>
+        </FormShell>
       </View>
     </ScrollView>
   )
