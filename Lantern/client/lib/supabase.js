@@ -17,10 +17,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || ''
 
-export async function authFetch(path, options = {}) {
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token
-
+function _buildHeaders(options, token) {
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -30,18 +27,40 @@ export async function authFetch(path, options = {}) {
   // FormData を送るときは境界文字列つきのヘッダが自動で付くため、
   // こちらで application/json を残すと本文を解釈できなくなる。
   Object.keys(headers).forEach((k) => headers[k] === undefined && delete headers[k])
+  return headers
+}
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+export async function authFetch(path, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: _buildHeaders(options, session?.access_token),
+  })
 
-  if (res.status === 401) {
-    // Web版は window.location.reload() で画面を作り直していたが、
-    // RNには存在しない。サインアウトすると onAuthStateChange が発火し、
-    // ルートレイアウトの認証ガードがLogin画面へ振り替える。
+  if (res.status !== 401) return res
+
+  // 401 でいきなりサインアウトしない。
+  // アクセストークンの寿命は1時間で、しばらく開いていないと
+  // 自動更新が走る前に古いトークンで最初の呼び出しが飛ぶ。
+  // 以前はここで signOut していたため、そのたびにログイン画面へ戻されていた。
+  // まず更新を試み、それでも駄目なときだけサインアウトする。
+  const { data, error } = await supabase.auth.refreshSession()
+  const refreshed = data?.session?.access_token
+  if (error || !refreshed) {
     await supabase.auth.signOut()
     throw new Error('Unauthorized')
   }
 
-  return res
+  const retry = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: _buildHeaders(options, refreshed),
+  })
+  if (retry.status === 401) {
+    // 更新後のトークンでも弾かれる＝本当に無効
+    await supabase.auth.signOut()
+    throw new Error('Unauthorized')
+  }
+  return retry
 }
 
 // 圧縮済みの写真とサムネイルを送る。

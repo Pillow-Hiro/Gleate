@@ -157,7 +157,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
               <Text className="text-xs text-ink-faint">編集</Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-xs text-ink-faint">削除</Text>
+              <Text className="text-xs text-red-500">削除</Text>
             </Pressable>
           </>
         )}
