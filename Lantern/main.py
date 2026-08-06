@@ -152,6 +152,25 @@ def get_logs_api():
     return jsonify(load_logs(g.user_id))
 
 
+@app.route("/api/account", methods=["DELETE"])
+@require_auth
+def delete_account_api():
+    """記録を消してから認証の利用者を消す。
+
+    App Store のガイドライン 5.1.1(v) が、アカウントを作れるアプリに
+    アプリ内からの削除を求めている。無効化では足りない。
+
+    確認の手順は画面側が持つ。ここに来た時点で実行する。
+    """
+    from modules.account import delete_account
+
+    ok, detail = delete_account(g.user_id)
+    if not ok:
+        print(f"[Account] 削除が途中で失敗: {detail['failed']}")
+        return jsonify({"error": "削除の途中で失敗しました。もう一度お試しください。"}), 500
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/logs/<date>", methods=["DELETE"])
 @require_auth
 def delete_log(date):

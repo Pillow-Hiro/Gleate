@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 22ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。32ルール / 30パス |
+| API | `main.py` | ルートは全てここ。33ルール / 31パス |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 
@@ -146,6 +146,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 | ファイル | 役割 | test |
 |---|---|---|
+| `account.py` | アカウントの削除。**行を消してから認証の利用者を消す** | `test_account.py` |
 | `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py` |
 | `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
 | `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
@@ -163,7 +164,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・32ルール / 30パス）
+## 6. API（`main.py`・33ルール / 31パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
@@ -178,6 +179,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | 節目 | `GET /api/milestone`・`GET /api/milestone/reflection` |
 | YouTube | `auth-url`・`callback`・`status`・`disconnect`・`channel`・`videos`・`analytics`・`video-insight`・`channel-insight` |
 | Twitch | `auth-url`・`callback`・`status`・`disconnect`・`streams`・`channel`・`stream-insight` |
+| アカウント | `DELETE /api/account`（記録・アイデア・連携・認証をすべて消す） |
 | 運用 | `GET /api/debug/version` |
 
 `serve_react` は 2026-08-04 に削除した。Flask は静的ファイルを配らない。
@@ -192,6 +194,8 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `main.py` の `/save` | 全件 upsert に戻すと記録数に比例して遅く高くなる | `test_save_cost.py` |
 | `modules/ai.py` のプロンプト | ガードレールの文を消すと数字で評価し始める | `test_docs.py`（CLAUDE.md の引用と一致するか） |
 | `print` / `logger` の追記 | デバッグ中に記録の中身や user_id を書くと、Render のログに残る | `test_privacy.py` |
+| `modules/account.py` | `.eq("user_id", ...)` を落とすと全員の記録が消える | `test_account.py` |
+| 利用者に紐づく表の追加 | 削除対象に足し忘れると、退会したのに記録が残る | `test_account.py`（表を走査する） |
 | `modules/twitch.py` のトークン | 更新後の refresh_token を保存し直さないと次で失敗する（使い捨て） | `test_twitch.py` |
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |

@@ -35,6 +35,27 @@ export default function Settings() {
   const [signingOut, setSigningOut] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  // 記録を消してから認証の利用者を消す（サーバー側 modules/account.py）。
+  // 成功したらサインアウトする。セッションだけ残ると、
+  // 消えたはずのアカウントで画面が開いたままになる。
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      const res = await authFetch('/api/account', { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await supabase.auth.signOut()
+    } catch (e) {
+      // 消えていないのに消えたように見せない
+      console.warn('[Settings] アカウントの削除に失敗', e)
+      setDeleteError('削除できませんでした。通信を確認してもう一度お試しください。')
+      setDeleting(false)
+    }
+  }
   const { isDark, toggleTheme } = useThemeContext()
 
   useEffect(() => {
@@ -130,6 +151,59 @@ export default function Settings() {
               </Text>
             </Pressable>
           </SettingsRow>
+        </Section>
+
+        <Section title="アカウントの削除">
+          {/* App Store のガイドライン 5.1.1(v) が、アカウントを作れるアプリに
+              アプリ内からの削除を求めている。無効化では足りない。
+
+              2段階にしているのは、取り返しがつかないため。
+              押し間違いで全部消えることがないようにする。
+              煽らないが、何が起きるかは省略せずに書く。 */}
+          {confirmDelete ? (
+            <View className="py-4 gap-3">
+              <Text className="text-sm text-ink leading-relaxed">
+                記録・アイデア・連携がすべて消え、元に戻せません。
+              </Text>
+              <Text className="text-xs text-ink-faint leading-relaxed">
+                端末の中にある写真は消えません。手元に残しておきたい記録があれば、
+                先にエクスポートしてください。
+              </Text>
+              {deleteError ? (
+                <Text className="text-xs text-red-500">{deleteError}</Text>
+              ) : null}
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={handleDeleteAccount}
+                  disabled={deleting}
+                  className="border border-red-400 dark:border-red-800 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+                >
+                  <Text className="text-xs text-red-500">
+                    {deleting ? '削除中...' : '削除する'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setConfirmDelete(false); setDeleteError('') }}
+                  disabled={deleting}
+                  className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+                >
+                  <Text className="text-xs text-forest">やめる</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <SettingsRow
+              label="アカウントを削除する"
+              description="記録とアイデアをすべて消します"
+            >
+              <Pressable
+                onPress={() => setConfirmDelete(true)}
+                className="border border-red-200 dark:border-red-900/40 rounded-full px-3.5 py-1.5"
+              >
+                <Text className="text-xs text-red-500">削除</Text>
+              </Pressable>
+            </SettingsRow>
+          )}
         </Section>
 
         <Section title="Lanternについて">
