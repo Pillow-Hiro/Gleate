@@ -1296,6 +1296,46 @@ Markdown ライブラリは足していない（サーバーの依存を増や�
 
 ---
 
+### 2026/08/06（ビルドの下ごしらえ）
+
+**ネイティブ設定が正しく落ちることを、ビルド前に確認した。**
+`npx expo config --type introspect` は config plugin を評価した結果を返す。
+ファイルを書かずに中身を見られるので、ビルド枠を使わずに検証できる。
+
+| 項目 | 結果 |
+|---|---|
+| `NSPhotoLibraryUsageDescription` | 意図した文面が入っている |
+| `NSCameraUsageDescription` / `NSMicrophoneUsageDescription` | **入っていない** |
+| `ITSAppUsesNonExemptEncryption` | `False` |
+| `CFBundleShortVersionString` | `1.0.0` |
+| Android の権限 | `READ/WRITE_EXTERNAL_STORAGE`・`INTERNET` のみ |
+
+カメラとマイクを `false` にした指定は、iOS 側でもキーを出さないことを確認した
+（ドキュメントには「Androidの権限をブロックする」としか書かれておらず、
+iOS の挙動は不明だった）。使わない権限を宣言せずに済んでいる。
+
+**`eas.json` の channel を外した**
+
+`expo-updates` を入れていないのに全プロファイルが `channel` を持っており、
+ビルドのたびに警告が出ていた。OTA更新を使っていないので channel は無意味。
+使うことにしたら、そのとき `expo-updates` と一緒に戻す。
+
+**残るのは Apple の認証情報だけ**
+
+非対話で試すと
+`Credentials are not set up. Run this command again in interactive mode.`
+で止まる。Apple ID のパスワードと2要素認証の入力が要るため、ここは
+利用者が1回だけ対話で実行する必要がある。**ビルド枠は消費されない。**
+
+配布は `preview`（内部配布）ではなく `production` を選ぶことにした。
+`preview` は端末のUDID登録が要る。`production` は TestFlight 経由で
+自分の端末に入り、そのまま審査に出せる同じ成果物になる。
+
+EAS 側の環境変数（`EXPO_PUBLIC_*` 3件）は preview / production の
+両方に設定済みであることを確認した。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。

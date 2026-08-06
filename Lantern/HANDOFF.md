@@ -33,7 +33,7 @@
 | API | Render |
 | ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 596件 / vitest 82件 / expo-doctor 20/20 |
+| 検査 | pytest 596件 / vitest 82件 / expo-doctor 20/20 / expo config introspect 済 |
 
 ## 2. 直近にやったこと（2026-08-06）
 
@@ -81,13 +81,33 @@ Apple Developer Program は 2026-08-06 に加入済み。
 **残りはほぼ全てユーザー操作。** 私が代われないのは、
 Apple のアカウントにログインする作業と、審査に出す判断のため。
 
-| # | 作業 | 誰が |
+| # | 作業 | 状態 |
 |---|---|---|
-| 1 | `eas login` | ユーザー |
-| 2 | `eas build --platform ios --profile preview` で実機確認 | ユーザーが実行、結果を見て私が直す |
-| 3 | `PRIVACY.md` をどこかに掲載してURLを得る（**App Store の必須項目**） | ユーザー |
-| 4 | App Store Connect でアプリを登録 | ユーザー |
-| 5 | `eas build --profile production` → `eas submit` | ユーザー |
+| 1 | `eas login` | **済**（`pillow_hiro`） |
+| 2 | EAS の環境変数（preview / production） | **済**（`EXPO_PUBLIC_*` 3件） |
+| 3 | プライバシーポリシーのURL | **済**（`/privacy.html`。次のVercelデプロイで有効） |
+| 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect` で検証） |
+| 5 | **Apple の認証情報の作成** | **未。対話が要る**（下記） |
+| 6 | ビルド → App Store Connect 登録 → `eas submit` | 5 のあと |
+
+**5 は私が代われない。** Apple ID のパスワードと2要素認証の入力が要るため。
+非対話で試すと `Credentials are not set up. Run this command again in
+interactive mode.` で止まる（ビルド枠は消費されない）。
+
+対話で1回実行すれば、証明書とプロビジョニングプロファイルは
+EAS 側に保存され、以降は自動になる。
+
+```
+cd client
+npx eas-cli build --platform ios --profile production
+```
+
+`preview` ではなく `production` を勧める。`preview` は内部配布のため
+端末のUDID登録が要る。`production` は TestFlight 経由で自分の端末に入り、
+そのまま審査に出せる同じ成果物になる。
+
+聞かれること: Appleアカウントへのログイン → Bundle ID の登録 →
+証明書の作成。すべて「はい」でよい。
 
 未決は「4. 今ある未解決のもの」にある。とくにプライバシーポリシーは必須。
 
