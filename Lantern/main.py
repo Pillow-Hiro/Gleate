@@ -451,6 +451,47 @@ def daily_quote():
     return jsonify({"quote": quote, "cached": False})
 
 
+# --- アイデアの溜め場 ---
+# 「思いついた瞬間に置いて、後で拾うもの」。日付に紐づく記録とは別に持つ。
+# 拾ったかどうかは picked_at で表す（done にすると未完了が負債に見える）。
+
+@app.route("/api/ideas", methods=["GET"])
+@require_auth
+def get_ideas():
+    from modules.ideas import load_ideas
+    return jsonify({"ideas": load_ideas(g.user_id)})
+
+
+@app.route("/api/ideas", methods=["POST"])
+@require_auth
+def create_idea():
+    from modules.ideas import add_idea, load_ideas
+
+    data = request.get_json(silent=True) or {}
+    if not add_idea(g.user_id, data.get("text")):
+        return jsonify({"error": "本文が空です"}), 400
+    return jsonify({"ideas": load_ideas(g.user_id)})
+
+
+@app.route("/api/ideas/<int:idea_id>", methods=["PATCH"])
+@require_auth
+def update_idea(idea_id):
+    """拾ったかどうかを切り替える。"""
+    from modules.ideas import set_picked
+
+    data = request.get_json(silent=True) or {}
+    set_picked(g.user_id, idea_id, bool(data.get("picked")))
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/ideas/<int:idea_id>", methods=["DELETE"])
+@require_auth
+def remove_idea(idea_id):
+    from modules.ideas import delete_idea
+    delete_idea(g.user_id, idea_id)
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/question")
 @require_auth
 def daily_question():

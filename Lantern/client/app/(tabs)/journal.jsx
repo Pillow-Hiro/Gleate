@@ -10,6 +10,7 @@ import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
 import PhotoPicker from '../../components/PhotoPicker'
+import IdeasPanel from '../../components/IdeasPanel'
 
 const MODAL_FIELDS = [
   { field: 'created', label: 'やったこと', placeholder: '今日やったこと', minHeight: 84 },
@@ -164,6 +165,7 @@ export default function Journal() {
         <View className="flex-row gap-4 border-b border-border">
           {[
             { id: 'record', label: '記録' },
+            { id: 'ideas', label: 'アイデア' },
             { id: 'review', label: '振り返り' },
           ].map(({ id, label }) => (
             <Pressable
@@ -274,6 +276,8 @@ export default function Journal() {
               </View>
             )}
           </View>
+        ) : activeTab === 'ideas' ? (
+          <IdeasPanel />
         ) : (
           <View className="gap-8">
             <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
