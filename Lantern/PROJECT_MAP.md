@@ -1,194 +1,194 @@
-# PROJECT_MAP.md — Lantern フロントエンド機能・ファイル対応表
+# PROJECT_MAP.md — 実装対応表
 
-作成日: 2026-07-26
-最終更新: 2026-07-27（`lib/date.js` 追加・今日の灯りAI生成再開に伴い行番号を更新）
+**役割：「どこにあるか」を引くための表。** 判断の根拠は CLAUDE.md、
+満たすべきことは REQUIREMENTS.md、経緯は PROGRESS.md にある。
+
+最終更新: 2026-08-06（v2.0 / Expo + Flask API + Supabase）
+
+`tests/test_docs.py` がこのファイルを機械的に検査する。
+ファイルを足したのに書き忘れると落ちる。**落ちたらこのファイルを直すこと。**
+
+## 行番号を書かない
+
+2026-08-06 に方針を変えた。以前は `L232–L270` のように行番号で示していたが、
+1回の編集で全部ずれるため、書いた翌日には嘘になっていた。
+実際、このファイルは 2026-08-04 に削除した `frontend/` を
+2026-08-06 まで説明し続けていた。
+
+**ファイル名と関数名・コンポーネント名で示す。** これらは編集でずれず、
+機械的に存在を確認できる。
 
 ---
 
-## 1. ページ一覧（frontend/src/pages/）
+## 1. 全体像
 
-### Home.jsx　— ルート `/`
+```
+利用者 → Expo（Web / iOS / Android）→ Flask API → Supabase
+                                          └→ Anthropic / YouTube / Twitch
+```
 
-| コンポーネント | 表示箇所 | 機能 |
+| 層 | 場所 | 備考 |
 |---|---|---|
-| `RecordForm`（内部定義） | Home | 記録入力フォーム（4項目）。POST /save でログを保存し、ai_responseを表示する |
-| `Home`（default export） | Home | ページ全体。日付ヘッダー・節目バナー・今日の灯り・記録フォーム・今週の発見を表示する |
+| 画面 | `client/app/` | expo-router。ファイル名がURLになる |
+| 部品 | `client/components/` | 21ファイル |
+| 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
+| API | `main.py` | ルートは全てここ。34ルール / 31パス |
+| ドメイン | `modules/` | Flask に依存しない処理 |
+| 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 
-**Home内の主要セクション：**
-
-| セクション名 | コード箇所 | 機能 | API |
-|---|---|---|---|
-| 日付ヘッダー | L221–L231 | 今日の日付と連続日数（streak）を表示する。streakは `lib/date.js` の `calcStreak()` | なし（ローカル計算） |
-| **節目バナー** | L232–L270 | 記録開始から30/90/180日の節目にバナーを表示する。展開するとAI観察・問いを表示する | GET /api/milestone、GET /api/milestone/reflection |
-| **今日の灯り** | L271–L284 | AIが前日の記録から生成した一言を深緑カードで表示する。前日の記録がない日は固定文 | GET /api/daily/quote |
-| 記録フォーム | L285–L302 | 今日または過去日付の記録を入力・保存する（`?date=` クエリで過去日編集） | POST /save |
-| **今週の発見** | L303–L355 | 過去7日間のログからテンプレート文を生成して表示する（**AIなし**） | なし（フロントエンドのみ） |
+Web も同じ `client/` から `npx expo export --platform web` で出す。
+`frontend/`（React + Vite）は 2026-08-04 に廃止した。
 
 ---
 
-### Journal.jsx　— ルート `/journal`
+## 2. 画面（`client/app/`）
 
-2つのタブ（「記録」「振り返り」）を持つ。
-
-| コンポーネント | 表示箇所 | 機能 |
+| ファイル | URL | 中身 |
 |---|---|---|
-| `LogDetail` | 記録タブ・モーダル | ログの詳細表示・編集・削除を行う。ai_responseをティールカードで表示する |
-| `PatternCard` | 振り返りタブ | observation（観察）＋question（問い）の1ペアを表示するカード |
-| `ReviewSection` | 振り返りタブ | 週次・月次の振り返りをAI生成して表示する（キャッシュはlocalStorage） |
-| `TimelineSection` | 振り返りタブ | 「**過去との対話**」セクション（後述） |
-| `LogItem` | 記録タブ | ログ一覧の折りたたみ行。タップでLogDetailを展開する |
-| `Journal`（default export） | Journal全体 | タブ切り替え・ログ一覧・検索・カレンダー・モーダルを管理する |
+| `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
+| `(tabs)/_layout.jsx` | タブ | 幅768pxでボトムタブ／サイドバーを切り替える |
+| `(tabs)/index.jsx` | `/` | Home |
+| `(tabs)/journal.jsx` | `/journal` | Journal（記録・アイデア・振り返りの3タブ） |
+| `(tabs)/dashboard.jsx` | `/dashboard` | Dashboard（YouTube / Twitch のタブ） |
+| `(tabs)/settings.jsx` | `/settings` | Settings |
+| `login.jsx` | `/login` | Supabase Auth |
+| `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
-**Journal記録タブの主要セクション：**
+### Home が呼ぶもの
 
-| セクション名 | コード箇所 | 機能 | API |
-|---|---|---|---|
-| 今月の灯りバッジ | L555–L562 | 今月の記録日数を表示するバッジ | なし |
-| ActivityCalendar | L565 | 月別カレンダー。記録ありの日をamber色表示し、タップで詳細表示または新規モーダルを開く | なし |
-| 検索ボックス | L583–L604 | created/enjoyable/struggled/next の全文検索（フロントのみ） | なし |
-| 月別ログ一覧 | L625–L643 | 月ごとにグループ化したログ一覧（LogItem） | なし |
-| 記録モーダル | L654–L713 | カレンダーで未記録日をタップした際に表示される記録フォーム | POST /save |
-
-**Journal振り返りタブの主要セクション：**
-
-| セクション名 | コード箇所 | 機能 | API |
-|---|---|---|---|
-| 今週の振り返り（ReviewSection） | L648 | 過去7日間の記録からAIがパターン（observation/question）を生成する | POST /api/review/generate?type=weekly |
-| 今月の振り返り（ReviewSection） | L649 | 今月の記録からAIがパターンを生成する | POST /api/review/generate?type=monthly |
-| **過去との対話**（TimelineSection） | L300–L410 | 1/3/6ヶ月前の同週ログと現在のログを並べ、AIが観察・問いを生成する | GET /api/timeline-reflection?months_ago= |
-
----
-
-### Insights.jsx　— ルート `/insights`
-
-AIによるコメントなし。ログデータを可視化・並列表示のみ。
-
-| コンポーネント | 表示箇所 | 機能 |
-|---|---|---|
-| `LogSnapshot`（L30） | Insights過去比較 | 1件のログを日付・フィールド別に表示するカード |
-| `KeywordSection`（L76–L137） | Insightsキーワード | 「**キーワードの変化**」セクション（後述） |
-| `Insights`（default export） | Insights全体 | 記録密度マップ・過去比較・キーワードの3セクションを管理する |
-
-**Insightsの主要セクション：**
-
-| セクション名 | コード箇所 | 機能 | API |
-|---|---|---|---|
-| **記録密度マップ** | L160–L175 | ActivityCalendarを読み取り専用（onDateSelect=空）で表示する | なし（/api/logs） |
-| **過去記録との比較** | L176–L200 | 1/3/6/12ヶ月前の最近傍ログと今日のログをカラム表示する（AIなし） | なし（/api/logs） |
-| **キーワードの変化**（KeywordSection） | L76–L137 | 「Lanternに聞く」ボタンで直近1/3/6ヶ月のキーワードをAI抽出して表示する | GET /api/insights/keywords?period= |
-
----
-
-### Dashboard.jsx　— ルート `/dashboard`
-
-YouTube連携専用ページ。記録との接点はAPIが/api/logsを参照する箇所のみ。
-
-| コンポーネント | 表示箇所 | 機能 |
-|---|---|---|
-| `SummaryCard` | Dashboard | 数値サマリーカード（総再生数・動画数など） |
-| `AnalyticsSection` | Dashboard | 期間別再生回数折れ線グラフ（recharts使用） |
-| `VideoTimeline` | Dashboard | 動画グリッド。1本ずつAI観察を取得できる |
-| `Dashboard`（default export） | Dashboard全体 | YouTube OAuth連携・動画一覧取得・連携解除を管理する |
-
----
-
-### Settings.jsx　— ルート `/settings`
-
-| セクション | 機能 |
+| 部品 | API |
 |---|---|
-| アクティビティ | 記録した日数合計・現在の連続日数を表示する（/api/logsを取得してフロントで計算） |
-| 表示 | ライト/ダークテーマ切り替えボタン |
-| データ | ログのJSONエクスポート |
-| アカウント | ログアウト（Supabase Auth） |
-| Lanternについて | APP_VERSIONとコンセプト文 |
+| `MilestoneBanner` | `GET /api/milestone`・`GET /api/milestone/reflection` |
+| （今日の灯り・画面直書き） | `GET /api/daily/quote` |
+| `RecordForm` | `POST /save`・`GET /api/question`（問いはプレースホルダに出る） |
+| `WeeklyDiscovery` | なし（AIを使わない。ローカルで組み立てる） |
 
----
+### Journal が呼ぶもの
 
-### Login.jsx　— ルート（未認証時）
-
-Supabase Auth のメールアドレス＋パスワード認証（`signInWithPassword` / `signUp`）。
-ログインと新規登録をボタンで切り替える1画面構成。
-
----
-
-## 2. コンポーネント一覧（frontend/src/components/）
-
-| ファイル名 | 使用箇所 | 機能 |
+| タブ | 部品 | API |
 |---|---|---|
-| `ActivityCalendar.jsx` | Journal（記録タブ）・Insights（記録密度） | 月別カレンダー。記録ありの日をamber色、今日をaccent色でハイライトする。Journal側はタップで日付選択、Insights側は読み取り専用 |
-| `Sidebar.jsx` | md以上の全ページ左側 | PC/タブレット用固定サイドナビ。今日/記録/振り返り/ダッシュボード/設定の5項目 |
-| `HamburgerMenu.jsx` | モバイル全ページ | モバイル用ドロワーナビ。Sidebarと同じ5項目 |
-| `SplashScreen.jsx` | App起動時・Lanternロゴタップ時 | 起動画面。Unsplash背景 + AI一言（またはフォールバック文）を表示し4秒後に自動遷移する |
+| 記録 | `ActivityCalendar` / `LogItem` → `LogDetail` / `PhotoPicker` | `GET /api/logs`・`POST /save`・`DELETE /api/logs/<date>` |
+| アイデア | `IdeasPanel` | `/api/ideas` 4種 |
+| 振り返り | `ReviewSection` | `POST /api/review/generate` |
+| 振り返り | `TimelineSection` → `LogSnapshot` / `ReviewSection` | `GET /api/timeline-reflection` |
+| 振り返り | `KeywordSection` | `GET /api/insights/keywords` |
 
----
+### Dashboard が呼ぶもの
 
-## 3. ライブラリ・ユーティリティ（frontend/src/）
-
-| ファイル名 | 役割 |
+| 部品 | API |
 |---|---|
-| `lib/supabase.js` | Supabaseクライアント初期化・`authFetch()`（JWTをHeaderに付与するfetchラッパー）の提供 |
-| `lib/date.js` | `localDateStr()` / `todayStr()` / `calcStreak()`。日付はローカルタイムゾーン基準（`toISOString()` はUTC変換で日付がずれるため使わない） |
-| `constants.js` | `APP_VERSION`（現在 `v2.0`）のexport |
-| `App.jsx` | BrowserRouterによるルーティング・Supabase Authセッション管理・テーマ状態管理 |
-| `main.jsx` | Reactアプリのエントリーポイント |
+| `YouTubePanel` → `ViewsChart` / `VideoTimeline` | `/api/youtube/*` 8種 |
+| `TwitchPanel` | `/api/twitch/*` 5種（callback を除く） |
 
 ---
 
-## 4. 特定機能名と実装箇所の対応
+## 3. 部品（`client/components/`・21ファイル）
 
-| 機能名 | ファイル | コード箇所 | 説明 |
-|---|---|---|---|
-| **過去との対話** | Journal.jsx | L300–L410（`TimelineSection`） | 振り返りタブ内。1/3/6ヶ月前の同週ログとAI観察・問いを表示する |
-| **今週の発見** | Home.jsx | L303–L355 | Homeの最下部。AIなし。テンプレートベースで観察文を生成する |
-| **節目バナー** | Home.jsx | L232–L270、L152–L188（useEffect） | 30/90/180日節目にHomeの上部に表示するバナー |
-| **今日の灯り** | Home.jsx / modules/ai.py | L271–L284 / `get_daily_quote()` | 前日の記録がある日のみAI生成。Supabase `daily_quotes` に1日1回キャッシュする |
-| **過去記録との比較** | Insights.jsx | L176–L200 | 1/3/6/12ヶ月前の最近傍ログを今日と横並び表示する（AIなし） |
-| **キーワードの変化** | Insights.jsx | L76–L137（`KeywordSection`） | 直近1/3/6ヶ月の頻出単語と出現回数をAI抽出して表示する |
-| **記録密度マップ** | Insights.jsx | L160–L175 | ActivityCalendarを読み取り専用で表示する |
-
----
-
-## 5. 重複・類似の懸念
-
-### 懸念①：「過去との対話」（Journal）と「過去との比較」（Insights）が混在
-
-| | Journal – 過去との対話（TimelineSection） | Insights – 過去との比較 |
+| ファイル | 使う側 | 役割 |
 |---|---|---|
-| 表示場所 | Journal振り返りタブ | Insightsページ |
-| 期間単位 | 1/3/6ヶ月前の「同週」のログ | 1/3/6/12ヶ月前の「最近傍1件」 |
-| AI | あり（observation/question生成） | なし（生のログをそのまま表示） |
-| 起動 | ボタン押下で都度生成 | ページ読み込み時に自動表示 |
-
-**リスク：** 両機能とも「過去と今を見比べる」目的で、ユーザーから見ると重複に映る可能性がある。
+| `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ |
+| `FormShell.jsx` | login | ネイティブ。素通しする |
+| `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
+| `IdeasPanel.jsx` | Journal | アイデアの溜め場。件数を出さない |
+| `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない |
+| `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
+| `LogItem.jsx` | Journal | 一覧の1行。開くと LogDetail |
+| `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード |
+| `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
+| `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
+| `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | 1記録1枚。圧縮してから送る |
+| `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
+| `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
+| `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
+| `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
+| `TimelineSection.jsx` | Journal | 過去との対話 |
+| `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
+| `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
+| `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
+| `WeeklyDiscovery.jsx` | Home | 今週の発見。**AIを使わない** |
+| `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
 
 ---
 
-### 懸念②：「今週の発見」（Home）と「今週の振り返り」（Journal）が類似
+## 4. `client/lib/`
 
-| | Home – 今週の発見 | Journal – 今週の振り返り（ReviewSection） |
+| ファイル | 役割 | test |
 |---|---|---|
-| 表示場所 | Home最下部 | Journal振り返りタブ |
-| 生成方法 | テンプレートベース（AIなし） | AI生成（POST /api/review/generate） |
-| 内容 | 直近7日間のログからフィールド引用 | 直近7日間のログからパターン抽出 |
+| `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
+| `format.js` | 表示用の整形 | `format.test.js` |
+| `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
+| `image.js` | 圧縮の実行 | — |
+| `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
+| `theme.js` | テーマの保持 | — |
+| `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し | — |
+| `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
+| `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
+| `constants.js`（`client/` 直下） | `APP_VERSION` | — |
 
-**リスク：** 「発見」と「振り返り」という名称の違いは意図的だが、コードを読まないと区別しにくい。
+対で持つファイルは省略せず両方書く。片方だけ足したときに
+`tests/test_docs.py` が気づけなくなるため。
 
----
+`.web.js` との対は Metro がプラットフォームで選ぶ。
+**呼び出し側に `Platform.OS` の分岐を置かない。**
+ネイティブ専用の依存が Web バンドルに混ざらないための分け方でもある。
 
-### 懸念③：`localDateStr` 関数の重複 — 解消済み（2026-07-27）
-
-`frontend/src/lib/date.js` に `localDateStr` / `todayStr` / `calcStreak` を集約し、
-Home・Journal・Insights・Settings・ActivityCalendar・SplashScreen の重複定義を削除した。
-streak計算も Home・Settings の二重実装を `calcStreak()` に統一している。
-
----
-
-### 懸念④：ルート名「Insights」とページ内容の乖離リスク
-
-現在のルート `/insights`（ナビ表示名「振り返り」）はジャーナリング記録の振り返りページ。  
-`/dashboard`（ナビ表示名「ダッシュボード」）はYouTube分析ページ。  
-"Insights"という語はYouTube Studioでも使われるため、将来ユーザーが混乱する可能性がある。現状はナビの日本語表示名（「振り返り」）で区別できているため、即時修正は不要。
+vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.config.mjs`）。
 
 ---
 
-*このファイルはコードベースを読み取って生成した事実の記録です。推測・設計意図は含みません。*
+## 5. `modules/`
+
+| ファイル | 役割 | test |
+|---|---|---|
+| `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py` |
+| `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
+| `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
+| `logs.py` | 記録の読み書きとカラム変換。**`_to_db` に写真を足さない** | `test_logs_mapping.py` |
+| `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
+| `oauth_state.py` | OAuth state。YouTube / Twitch 共通 | `test_youtube_state.py` |
+| `photos.py` | Storage 操作。パスはサーバーが組み立てる | `test_photos.py`・`test_photo_routes.py` |
+| `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
+| `timeutil.py` | JST基準の日付 | `test_timeutil.py` |
+| `twitch.py` | Twitch OAuth・VODの保存 | `test_twitch.py` |
+| `youtube.py` | YouTube OAuth（PKCEあり） | `test_youtube_redirect.py` |
+
+その他の test: `test_save_cost.py`（`/save` が全件保存に戻らないこと）、
+`test_timeline_params.py`、`test_docs.py`（この表の検査）。
+
+---
+
+## 6. API（`main.py`・34ルール / 31パス）
+
+`callback` の2本を除き、全てに `@require_auth` が付く。
+`test_route_auth.py` が全ルートを走査して固定している。
+
+| 系統 | パス |
+|---|---|
+| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT|DELETE /api/logs/<date>/photo` |
+| 問い | `GET /api/question` |
+| アイデア | `GET|POST /api/ideas`・`PATCH|DELETE /api/ideas/<int:idea_id>` |
+| 灯り | `GET /api/daily/quote`・`GET /api/splash/content` |
+| 振り返り | `POST /api/review/generate`・`GET /api/timeline-reflection`・`GET /api/insights/keywords` |
+| 節目 | `GET /api/milestone`・`GET /api/milestone/reflection` |
+| YouTube | `auth-url`・`callback`・`status`・`disconnect`・`channel`・`videos`・`analytics`・`video-insight`・`channel-insight` |
+| Twitch | `auth-url`・`callback`・`status`・`disconnect`・`streams`・`channel`・`stream-insight` |
+| 運用 | `GET /api/debug/version` |
+
+`serve_react` は 2026-08-04 に削除した。Flask は静的ファイルを配らない。
+
+---
+
+## 7. 触るときに壊しやすい場所
+
+| 場所 | 壊れ方 | 守っているもの |
+|---|---|---|
+| `modules/logs.py` の `_to_db` | 写真カラムを足すと、テキスト編集の保存で写真が消える | `test_logs_mapping.py::TestPhotoColumns` |
+| `main.py` の `/save` | 全件 upsert に戻すと記録数に比例して遅く高くなる | `test_save_cost.py` |
+| `modules/ai.py` のプロンプト | ガードレールの文を消すと数字で評価し始める | `test_docs.py`（CLAUDE.md の引用と一致するか） |
+| `modules/twitch.py` のトークン | 更新後の refresh_token を保存し直さないと次で失敗する（使い捨て） | `test_twitch.py` |
+| Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
+| `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
+
+---
+
+*このファイルは実装を読み取った事実の記録である。設計意図は CLAUDE.md にある。*
