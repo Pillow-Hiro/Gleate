@@ -38,9 +38,12 @@ app = Flask(__name__)
 CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
     re.compile(r'https://lantern-.*\.vercel\.app'),
-    'http://localhost:5173',
     # Expo Web の開発サーバー（React Nativeのネイティブfetchはブラウザではないため
     # CORSの対象外だが、Expo Web はブラウザ実行なので許可が必要）
+    #
+    # http://localhost:5173 は 2026-08-06 に外した。
+    # Vite の開発サーバーのポートで、frontend/ を廃止した 2026-08-04 以降
+    # 存在しない。使われない許可を残さない。
     'http://localhost:8081',
 ])
 
@@ -828,4 +831,13 @@ def insights_keywords():
 
 
 if __name__ == "__main__":
+    # **ここは開発用。本番はこの経路を通らない。**
+    #
+    # 2026-08-06 まで Procfile が `python main.py` だったため、
+    # 本番でも Flask の開発サーバー（Werkzeug）が動いていた。
+    # 応答ヘッダに `Server: Werkzeug/3.1.8 Python/3.14.3` が出ていて分かった。
+    # Flask 自身が本番利用を警告している構成で、同時実行にも耐えない。
+    #
+    # 本番は Procfile の gunicorn が `main:app` を読み込む。
+    # gunicorn は Unix 専用のため、Windows の開発ではこちらを使う。
     app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 22ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。33ルール / 31パス |
+| API | `main.py` | ルートは全てここ。33ルール / 31パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -161,7 +161,8 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 その他の test: `test_save_cost.py`（`/save` が全件保存に戻らないこと）、
 `test_timeline_params.py`、`test_docs.py`（この表の検査）、
-`test_privacy.py`（記録と資格情報がログに出ないこと）。
+`test_privacy.py`（記録と資格情報がログに出ないこと）、
+`test_deploy.py`（本番の起動構成と依存の固定）。
 
 ---
 
@@ -201,6 +202,8 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
 | `client/lib/exportLogs.js` | SDK 57 の `expo-file-system` は旧APIを呼ぶと実行時に投げる。**Webは `.web.js` を使うので気づけない** | なし（実機で確認する） |
+| `Procfile` | 開発サーバーに戻すと、本番が Werkzeug で動く。**動いてしまうので気づけない** | `test_deploy.py` |
+| `requirements.txt` | 版の固定を外すと、コードを変えていないのに壊れる余地が戻る | `test_deploy.py` |
 
 ---
 

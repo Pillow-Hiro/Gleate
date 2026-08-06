@@ -33,7 +33,7 @@
 | API | Render |
 | ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 596件 / vitest 82件 / expo-doctor 20/20 / expo config introspect 済 |
+| 検査 | pytest 621件 / vitest 82件 / expo config introspect 済 |
 
 ## 2. 直近にやったこと（2026-08-06）
 
@@ -60,6 +60,8 @@
 - 空の `lantern-photos` バケットと孤児 worktree を削除
 - `logs` の写真列を削除（ユーザーが SQL を実行）
 - プライバシーポリシーを `client/public/privacy.html` として同梱
+- **本番が Flask の開発サーバーで動いていたのを gunicorn に切替**
+- 依存と Python の版を固定（未固定だった）
 
 ## 3. 次にやること
 
@@ -128,6 +130,10 @@ npx eas-cli build --platform ios --profile production
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
+| Expo の追随 | `expo@57.0.11` の想定表が未公開の `expo-sharing@~57.0.10` を要求するため `expo install --fix` が通らない。**上流の不整合。** 直ったら追随する。それまで `expo-doctor` は「4件 out of date」と言う |
+| npm の脆弱性11件 | すべて `uuid` の境界チェック漏れで、`@expo/config` 系のビルド時ツールにしか無い。配布物には乗らない。解消には Expo 側の breaking change が要る |
+| AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |
+| ローカルの Python | 3.13.3。本番は 3.14。テストは 3.13 で通している。揃えるなら手元を 3.14 に上げる |
 | North Star Metric | 器はできたが母数が足りない |
 
 ### 記録テキストの暗号化について
