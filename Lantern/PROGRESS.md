@@ -1061,10 +1061,49 @@ Lantern は自己評価の道具になる。
 
 ---
 
+### 2026/08/06（フェーズA7 の下準備）
+
+**Apple Developer Program に加入した**（ユーザー操作）。
+2026-07-27 の設計以来ふさがっていた A7 が動き出した。
+
+**写真の権限説明が抜けていた**
+
+`expo-image-picker` が依存にあるのに `app.json` の `plugins` に無かった。
+このプロジェクトは CNG（`ios/` を持たない）ため、plugin を書かないと
+`NSPhotoLibraryUsageDescription` が Info.plist に入らない。
+**iOS は使用目的の記載が無いまま写真にアクセスするとアプリを落とす。**
+Web では起きないので、今まで気づけなかった。
+
+`expo-doctor` はこれを検出しない。SDK 57 のドキュメントを読んで見つけた。
+
+文面は「選んだ写真だけが保存され、AIには渡されません」とした。
+CLAUDE.md の「写真はAIに渡さない」を利用者に見える形で書いたもの。
+カメラとマイクは使わないので `false` にして、Android 側の権限も宣言させない。
+
+**依存をSDK 57の想定バージョンに揃えた**
+
+8パッケージがパッチ後れだった（expo / expo-router / react-native ほか）。
+`expo-doctor` が 19/20 → **20/20**。
+
+**検証結果: OK**
+
+- vitest 62件パス / pytest 617件パス
+- `expo export --platform web` 成功。バンドルを検査し、記録フォームの4項目・
+  起動画面の日付判定・削除ボタンの色が保たれ、ネイティブ専用
+  （`openAuthSessionAsync` / `lantern://`）が混ざっていないことを確認
+- アイコンは 1024x1024・α無しで App Store の要件を満たしている
+
+**残りはほぼ全てユーザー操作。** `eas login`・実機ビルド・
+App Store Connect への登録・審査提出。
+未決が3件ある（プライバシーポリシー・バージョン表記・輸出コンプライアンス申告）。
+`HANDOFF.md` に書いた。
+
+---
+
 ## 進行中
 
-- React Native移行 フェーズA。Web の一本化まで完了。
-  残りは配布まわり（A7：アカウント登録・EASビルド）で、いずれも要ユーザー操作。
+- React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。
+  コード側の準備は完了。残りは EAS ビルドとストア登録で、要ユーザー操作。
 
 ---
 

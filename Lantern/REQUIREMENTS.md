@@ -150,7 +150,7 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 | データ | 利用者ごとに分離（`require_auth` で `g.user_id` に絞る） | 満たしている |
 | 秘密情報 | コードに書かない。`.env` と Render から読む | 満たしている |
 | 外部送信 | Anthropic / YouTube / Twitch 以外に送らない | 満たしている |
-| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 588 + 62 件 |
+| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 617 + 62 件 |
 
 ---
 
@@ -160,8 +160,8 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 
 | 項目 | 状態 |
 |---|---|
-| ネイティブ配布 | 未了。Apple Developer Program から必要（フェーズA7） |
-| Journaling Suggestions API | A7 の後。エンタイトルメントとネイティブモジュールの自作が要る |
+| ネイティブ配布 | 進行中。Apple Developer Program は加入済み（2026-08-06）。ビルドと審査が残る |
+| Journaling Suggestions API | A7 の後。`com.apple.developer.journal.allow` とネイティブモジュールの自作が要る |
 | 7日/30日継続率 | 計測の器はできた（`scripts/report_metrics.py`）が母数が足りない |
 | 否定的表現の発生率 | 未計測 |
 | 「また明日も記録しよう」と思えるか | **未検証。** 実ユーザーは作者1人、記録18件 |

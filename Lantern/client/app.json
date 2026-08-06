@@ -28,7 +28,15 @@
     "plugins": [
       "expo-router",
       "expo-sharing",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "記録に添える写真を選ぶために使います。選んだ写真だけが保存され、AIには渡されません。",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "router": {},

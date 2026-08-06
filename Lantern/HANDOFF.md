@@ -31,9 +31,9 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | Render |
-| ネイティブ | **未配布。** EASの器（`eas.json`・projectId）はある |
+| ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 588件 / vitest 62件 |
+| 検査 | pytest 617件 / vitest 62件 / expo-doctor 20/20 |
 
 ## 2. 直近にやったこと（2026-08-06）
 
@@ -47,6 +47,8 @@
 - 記録フォームの既定表示を1欄に畳んだ
 - 計測（`scripts/report_metrics.py`）
 - ドキュメントの棚卸（このファイルを含む）
+- A7の下準備。`expo-image-picker` の権限説明を追加し、依存を SDK 57 の
+  想定バージョンに揃えた（`expo-doctor` 20/20）
 
 ## 3. 次にやること
 
@@ -60,9 +62,24 @@
 python scripts/report_metrics.py --user <user_id>
 ```
 
-**優先度2: ネイティブ配布（フェーズA7）**
+**優先度2: ネイティブ配布（フェーズA7）— 進行中**
 
-要ユーザー操作。Apple Developer Program（年$99）の加入から。
+Apple Developer Program は 2026-08-06 に加入済み。
+コード側の準備は済んでいる（`expo-doctor` 20/20・写真の権限説明を追加）。
+
+**残りはほぼ全てユーザー操作。** 私が代われないのは、
+Apple のアカウントにログインする作業と、審査に出す判断のため。
+
+| # | 作業 | 誰が |
+|---|---|---|
+| 1 | `eas login` | ユーザー |
+| 2 | `eas build --platform ios --profile preview` で実機確認 | ユーザーが実行、結果を見て私が直す |
+| 3 | プライバシーポリシーの用意（**App Store の必須項目。まだ無い**） | 相談して決める |
+| 4 | App Store Connect でアプリを登録 | ユーザー |
+| 5 | `eas build --profile production` → `eas submit` | ユーザー |
+
+未決の2件は「4. 今ある未解決のもの」にある。
+
 これが終わるまで Journaling Suggestions API には進めない。
 
 **優先度3: TikTok連携**
@@ -76,8 +93,10 @@ python scripts/report_metrics.py --user <user_id>
 
 | 内容 | 状態 |
 |---|---|
+| プライバシーポリシー | **無い。App Store の必須項目。** 写真がAIに渡らないこと・Anthropic に記録テキストを送ることを書く必要がある |
+| `client/app.json` の `version` | `1.0.0` のまま。`constants.js` は `v2.0`。**ストアの表示と Settings の表示が食い違う。**どちらに寄せるか未決 |
+| 輸出コンプライアンス | `ios.config.usesNonExemptEncryption` を設定していない。HTTPSのみなので免除に該当するが、**申告はユーザーが行うもの**なので勝手に書かなかった。設定すれば提出のたびの質問が省ける |
 | `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
-| `client/app.json` の `version` | `1.0.0` のまま。`constants.js` は `v2.0`。ストア配布時に決める |
 | North Star Metric | 器はできたが母数が足りない |
 
 ## 5. 引き継ぐときに読む順番
