@@ -19,7 +19,7 @@
 ```
 利用者
   ├─ iOS / Android ─┐
-  └─ Web（Vercel） ─┴→ Flask API（Render）→ Supabase（DB・認証）
+  └─ Web（Vercel） ─┴→ Flask API（api.golantern.app / Render）→ Supabase
                                           ├→ Anthropic（AI応答）
                                           ├→ YouTube Data API（任意）
                                           ├→ Twitch API（任意）
@@ -85,7 +85,7 @@ Unsplash のプロセス内キャッシュも1つで済む。
 | 用途 | サービス | プラン | 費用 |
 |---|---|---|---|
 | API | Render | **Starter** | 月 $7 |
-| ドメイン | `golantern.app`（2026-08-07 決定） | — | 年額はレジストラによる |
+| ドメイン | `golantern.app`（お名前.com）。API は `api.golantern.app` | — | 年額はレジストラによる |
 | Web | Vercel | Hobby | $0 |
 | DB・認証 | Supabase | Free | $0 |
 | ビルド | EAS（Expo） | Free | $0 |

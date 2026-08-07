@@ -143,19 +143,26 @@ Render が証明書を自動発行するので、その点は問題ない。
 
 順番を守れば、既存のビルドも連携も壊れない。
 
-| # | 作業 | 誰が |
+| # | 作業 | 状態 |
 |---|---|---|
-| 1 | Render → Settings → Custom Domains に `api.golantern.app` を追加 | ユーザー |
-| 2 | 画面に出る DNS レコードを登録し、TLS 発行を待つ | ユーザー |
-| 3 | `curl https://api.golantern.app/api/debug/version` で疎通確認 | ユーザー |
-| 4 | Google / Twitch のコンソールに**新URIを追加**（旧も残す） | ユーザー |
-| 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | ユーザー |
-| 6 | `/api/debug/version` で `redirect_misconfigured` が空を確認 | ユーザー |
-| 7 | EAS の `EXPO_PUBLIC_API_URL`・ローカル `.env`・文書 | **私** |
-| 8 | Vercel の `EXPO_PUBLIC_API_URL` | ユーザー |
+| 1 | Render に `api.golantern.app` を追加 | **済** |
+| 2 | DNS 登録・TLS 発行 | **済** |
+| 3 | 疎通確認（200・TLS正常・未認証は401） | **済**（2026-08-07） |
+| 4 | Google / Twitch に新URIを追加 | **未** |
+| 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | **未** |
+| 6 | `/api/debug/version` で `redirect_misconfigured` が空を確認 | 5 のあと |
+| 7 | EAS の `EXPO_PUBLIC_API_URL`（3環境）・ローカル `.env`・文書 | **済** |
+| 8 | Vercel の `EXPO_PUBLIC_API_URL` | **未** |
 
-**7 は 3 が通ってから。** 先に切り替えると、まだ存在しないURLを
-向いたビルドができる。
+**4→5 の順を守る。** 先にコンソールへ追加してから Render を切り替えれば、
+連携が落ちる瞬間がない。現在 `/api/debug/version` の
+`youtube_redirect` / `twitch_redirect` はまだ `onrender.com` を指している。
+
+**7 でキャッシュに引っかかった。** `.env` を書き換えても
+`expo export` が古い値を埋め込む。`EXPO_PUBLIC_*` はビルド時に
+文字列として展開されるが、Metro のキャッシュが効いたままになる。
+`rm -rf node_modules/.cache .expo && npx expo export --clear` で解消する。
+**バンドルを検査して確かめること。**
 
 **`.onrender.com` は消さないこと。** 既存の TestFlight ビルドが使っている。
 Render は独自ドメインを足しても既定で残す。
