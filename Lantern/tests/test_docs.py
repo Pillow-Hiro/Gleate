@@ -408,10 +408,18 @@ class TestIcons:
         _, _, ctype = self._png_header("icon.png")
         assert ctype not in (4, 6), "icon.png にアルファがある"
 
-    def test_Androidの前景はアルファを持つ(self):
-        # 背景と重ねるので透過が要る
-        _, _, ctype = self._png_header("android-icon-foreground.png")
-        assert ctype in (4, 6), "android-icon-foreground.png に透過が無い"
+    def test_Androidの前景が1024四方(self):
+        """透過は要求しない。
+
+        前景は透過を持つのが普通だが、**この絵は地の紺と発光が
+        溶け合っている**。切り抜くと光の外周に硬い縁が出る。
+        そのため前景を不透明にし、背景の単色を同じ紺に合わせている
+        （`adaptiveIcon.backgroundColor` の検査がその一致を守る）。
+
+        寸法だけを固定する。ここがずれると端末側で拡大されて粗くなる。
+        """
+        w, h, _ = self._png_header("android-icon-foreground.png")
+        assert (w, h) == (1024, 1024), f"前景が {w}x{h}"
 
     def test_Androidの背景色が雛形のままでない(self):
         import json
@@ -419,7 +427,9 @@ class TestIcons:
         color = json.loads(read("client", "app.json"))["expo"]["android"]["adaptiveIcon"][
             "backgroundColor"]
         assert color.upper() != "#E6F4FE", "Expo の雛形の水色が残っている"
-        assert color.upper() == "#22382F", f"Lantern の地の緑と違う: {color}"
+        # 2026-08-07 に作者が用意した画像に差し替えた。地は紺 #181F2F。
+        # 前景の画像と背景の単色が食い違うと、マスクの縁で色が割れる
+        assert color.upper() == "#181F2F", f"アイコン画像の地の色と違う: {color}"
 
 
 class TestDocRoles:
