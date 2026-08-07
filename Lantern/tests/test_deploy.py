@@ -26,6 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def read(name):
+    """ROOT からの相対パスで読む。`os.path.join` 済みの文字列も受ける。"""
     return io.open(os.path.join(ROOT, name), encoding="utf-8").read()
 
 
@@ -132,6 +133,58 @@ def cors_origins():
                 return [ast.unparse(e) for e in kw.value.elts]
             return [ast.unparse(kw.value)]
     raise AssertionError("main.py に CORS(origins=...) が見つからない")
+
+
+class TestOtaUpdates:
+    """OTA更新（EAS Update）の設定。
+
+    2026-08-08 に `expo-updates` を入れた。JSだけの修正を、
+    ビルドし直さずに配れるようにするため。
+
+    **`runtimeVersion` の方針が最も危ない。**
+
+    既定の `appVersion` は、`app.json` の `version`（今は 1.0.0）を
+    そのまま実行時の版として使う。この構成は `appVersionSource: remote` と
+    `autoIncrement` を使っており、**ビルド番号だけが上がって version は
+    1.0.0 のまま**になる。
+
+    つまりネイティブの依存を足しても実行時の版が変わらない。
+    その状態で `eas update` を打つと、新しいJSが「その依存を持たない
+    古いビルド」にも配られ、**起動時に落ちる。**
+
+    `fingerprint` はネイティブの構成から版を計算するため、
+    合わないビルドには配られない。届かないのは不便だが、
+    **落ちるより不便な方がよい。**
+    """
+
+    def _app_json(self):
+        import json
+
+        return json.loads(read(os.path.join("client", "app.json")))["expo"]
+
+    def test_更新の配信先が設定されている(self):
+        url = self._app_json().get("updates", {}).get("url", "")
+        assert url.startswith("https://u.expo.dev/"), f"updates.url が不正: {url!r}"
+
+    def test_runtimeVersionはfingerprintにする(self):
+        policy = self._app_json().get("runtimeVersion", {})
+        assert policy == {"policy": "fingerprint"}, (
+            f"runtimeVersion が {policy}。appVersion だと、ネイティブを足しても "
+            "版が 1.0.0 のまま変わらず、更新が古いビルドに届いて落ちる"
+        )
+
+    def test_全プロファイルにチャンネルがある(self):
+        import json
+
+        eas = json.loads(read(os.path.join("client", "eas.json")))["build"]
+        missing = [name for name, cfg in eas.items() if not cfg.get("channel")]
+        assert missing == [], f"channel が無いプロファイル: {missing}"
+
+    def test_expo_updatesが依存に入っている(self):
+        import json
+
+        deps = json.loads(read(os.path.join("client", "package.json")))["dependencies"]
+        assert "expo-updates" in deps, "channel を設定しているのに expo-updates が無い"
 
 
 class TestCorsOrigins:

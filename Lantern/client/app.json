@@ -58,6 +58,12 @@
         "projectId": "04815106-2180-4a87-b6e7-a17eb558d470"
       }
     },
-    "owner": "pillow_hiro"
+    "owner": "pillow_hiro",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/04815106-2180-4a87-b6e7-a17eb558d470"
+    }
   }
 }

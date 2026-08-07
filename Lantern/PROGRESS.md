@@ -1637,6 +1637,47 @@ Web では気づきにくく（ブラウザは入力中の要素を作り直し�
 
 ---
 
+### 2026/08/08（配り方を整える）
+
+**修正のたびに20分待つ状態をやめた。**
+
+| 追加 | 目的 |
+|---|---|
+| `expo-dev-client` | 開発用ビルドを1回作れば、以後は保存した瞬間に実機へ反映される |
+| `expo-updates` | JSだけの修正を、ビルドし直さずに配れる |
+
+`eas update:configure` が `updates.url` と `runtimeVersion` を設定し、
+`eas.json` の各プロファイルに `channel` を戻した
+（2026-08-06 に「使うことにしたら expo-updates と一緒に戻す」と書いたもの）。
+
+**`runtimeVersion` を `appVersion` から `fingerprint` に変えた。**
+
+既定の `appVersion` は `app.json` の `version` をそのまま実行時の版に使う。
+この構成は `appVersionSource: remote` と `autoIncrement` なので、
+**ビルド番号だけが上がって `version` は 1.0.0 のまま**になる。
+
+つまりネイティブの依存を足しても実行時の版が変わらない。
+その状態で `eas update` を打つと、新しいJSが「その依存を持たない
+古いビルド」にも配られ、**起動時に落ちる。**
+
+`fingerprint` はネイティブの構成から版を計算するため、
+合わないビルドには配られない。届かないのは不便だが、落ちるよりよい。
+`tests/test_deploy.py::TestOtaUpdates` が固定する（変異検査 3/3 検出）。
+
+**上流の不整合が解けた**
+
+`expo@57.0.11` の想定表が要求する `expo-sharing@~57.0.10` が
+公開されず数日止まっていたが、公開されたので `expo install --fix` で
+揃えた。**`expo-doctor` が 20/20 に戻った。**
+
+**検証結果: OK**
+
+- pytest 688件パス / vitest 82件パス / expo-doctor 20/20
+- `expo export --platform web` 成功
+- STACK.md の版を実装に合わせた（検査が2件落ちて気づいた。**文書の方を直した**）
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。
