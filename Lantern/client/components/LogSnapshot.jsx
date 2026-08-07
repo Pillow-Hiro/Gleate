@@ -9,11 +9,19 @@ const SNAPSHOT_FIELDS = [
   { key: 'next', label: '次にやること' },
 ]
 
+// **カードに flex-1 を付けないこと。**
+//
+// 2026-08-08 まで付いていた。横に並べていた頃（Web版）の名残で、
+// 幅を等分するための指定だった。縦積みに変えたあとも残っていたため、
+// 2枚が同じ高さに揃えられ、**中身の多い方がカードからはみ出していた**。
+// 実機では「次にやること」がカードの外へ出て、文字が重なって見えた。
+//
+// 中身の分だけ伸びればよい。2枚の高さを揃える理由は無い。
 export default function LogSnapshot({ log, dateHint, isToday }) {
   const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
 
   return (
-    <View className="bg-stone/40 rounded-xl px-4 py-4 flex-1 gap-2.5">
+    <View className="bg-stone/40 rounded-xl px-4 py-4 gap-2.5">
       <Text className="text-[10px] text-ink-faint tracking-[1px]">{log ? log.date : dateHint}</Text>
       {!log ? (
         <Text className="text-sm text-ink-faint">

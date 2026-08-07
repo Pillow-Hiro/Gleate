@@ -11,7 +11,17 @@ import { authFetch } from '../lib/supabase'
 // 「〇件未完了」はタスク管理の作法で、Lantern が最も避けている形。
 // カレンダーで記録の多寡を評価しないのと同じ理由。
 //
-// 「完了」ではなく「拾った」。アイデアは達成すべきタスクではない。
+// 語は「使った」。2026-08-08 に「拾う」から変えた。
+//
+// 「拾う」はタスク化を避けるために選んだ語だったが、
+// **作者自身が「どういう意味？」と尋ねた。** 意図が正しくても、
+// 伝わらなければ意味がない。
+//
+// 「完了」は避ける。未完了という対が生まれ、残りが負債に見える。
+// 「使った」なら、実際に何をしたかを言うだけで、対にならない。
+//
+// 使ったものには取り消し線を引く。**消さずに残す。**
+// アイデアは減らすものではなく、溜まってよいもの。
 
 function IdeaRow({ idea, onTogglePicked, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -20,14 +30,17 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
   return (
     <View className="border-b border-border py-3">
       <Pressable onPress={() => onTogglePicked(idea)}>
-        <Text className={`text-sm leading-relaxed ${picked ? 'text-ink-faint' : 'text-ink'}`}>
+        <Text
+          className={`text-sm leading-relaxed ${picked ? 'text-ink-faint' : 'text-ink'}`}
+          style={picked ? { textDecorationLine: 'line-through' } : undefined}
+        >
           {idea.text}
         </Text>
       </Pressable>
 
       <View className="flex-row items-center justify-between mt-1.5">
         <Text className="text-[10px] text-ink-faint">
-          {picked ? '拾いました' : ''}
+          {picked ? '使いました' : ''}
         </Text>
 
         {confirmDelete ? (
@@ -43,7 +56,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
           <View className="flex-row items-center gap-3">
             <Pressable onPress={() => onTogglePicked(idea)}>
               <Text className="text-xs text-ink-faint">
-                {picked ? '戻す' : '拾う'}
+                {picked ? '戻す' : '使った'}
               </Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>

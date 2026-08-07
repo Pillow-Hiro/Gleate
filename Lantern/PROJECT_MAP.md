@@ -51,8 +51,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 |---|---|---|
 | `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
 | `(tabs)/_layout.jsx` | タブ | 幅768pxでボトムタブ／サイドバーを切り替える |
-| `(tabs)/index.jsx` | `/` | Home |
-| `(tabs)/journal.jsx` | `/journal` | Journal（記録・アイデア・振り返りの3タブ） |
+| `(tabs)/index.jsx` | `/` | 書く（記録・アイデアの2タブ） |
+| `(tabs)/journal.jsx` | `/journal` | 記録（記録・振り返りの2タブ） |
 | `(tabs)/dashboard.jsx` | `/dashboard` | Dashboard（YouTube / Twitch のタブ） |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
 | `login.jsx` | `/login` | Supabase Auth |
@@ -65,6 +65,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `MilestoneBanner` | `GET /api/milestone`・`GET /api/milestone/reflection` |
 | （今日の灯り・画面直書き） | `GET /api/daily/quote` |
 | `RecordForm` | `POST /save`・`GET /api/question`（問いはプレースホルダに出る） |
+| `IdeasPanel` | `/api/ideas` 4種。**2026-08-08 に Journal から移した** |
 | `WeeklyDiscovery` | なし（AIを使わない。ローカルで組み立てる） |
 
 ### Journal が呼ぶもの
@@ -72,7 +73,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | タブ | 部品 | API |
 |---|---|---|
 | 記録 | `ActivityCalendar` / `LogItem` → `LogDetail` / `PhotoPicker` | `GET /api/logs`・`POST /save`・`DELETE /api/logs/<date>` |
-| アイデア | `IdeasPanel` | `/api/ideas` 4種 |
 | 振り返り | `ReviewSection` | `POST /api/review/generate` |
 | 振り返り | `TimelineSection` → `LogSnapshot` / `ReviewSection` | `GET /api/timeline-reflection` |
 | 振り返り | `KeywordSection` | `GET /api/insights/keywords` |
@@ -93,11 +93,11 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
-| `IdeasPanel.jsx` | Journal | アイデアの溜め場。件数を出さない |
+| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。使ったものは取り消し線で残す |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | Journal | 一覧の1行。開くと LogDetail |
-| `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード |
+| `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード。**`flex-1` を付けない**（中身がはみ出す） |
 | `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
 | `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。圧縮して端末に置く |

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
@@ -7,6 +7,7 @@ import { todayStr, calcStreak } from '../../lib/date'
 import RecordForm from '../../components/RecordForm'
 import MilestoneBanner from '../../components/MilestoneBanner'
 import WeeklyDiscovery from '../../components/WeeklyDiscovery'
+import IdeasPanel from '../../components/IdeasPanel'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -28,6 +29,10 @@ export default function Home() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
+  // アイデアは 2026-08-08 に「記録」から移した。
+  // 思いついた瞬間に置くものなので、書く場所にある方が自然。
+  // 「記録」は残したものを見る場所であって、置く場所ではなかった。
+  const [writeTab, setWriteTab] = useState('record')
 
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
@@ -109,8 +114,32 @@ export default function Home() {
           </View>
         </View>
 
+        {/* 記録とアイデアのタブ。
+            灯りはこの上に置いたまま。その日の入口はどちらにも要る。
+            過去日の編集中はタブを出さない（アイデアは日付を持たないため）。 */}
+        {!isEditingPast ? (
+          <View className="flex-row gap-4 border-b border-border">
+            {[
+              { id: 'record', label: '記録' },
+              { id: 'ideas', label: 'アイデア' },
+            ].map(({ id, label }) => (
+              <Pressable
+                key={id}
+                onPress={() => setWriteTab(id)}
+                className={`px-1 pb-2.5 border-b-2 ${
+                  writeTab === id ? 'border-accent' : 'border-transparent'
+                }`}
+              >
+                <Text className={`text-sm ${writeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         {/* 記録フォーム */}
-        <View>
+        <View style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}>
           {isEditingPast ? (
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-xs text-ink-faint">
@@ -133,7 +162,13 @@ export default function Home() {
           />
         </View>
 
-        <WeeklyDiscovery logs={logs} />
+        {/* アイデア。display で隠すだけにして、入力途中の文字を消さない */}
+        <View style={writeTab === 'ideas' && !isEditingPast ? undefined : { display: 'none' }}>
+          <IdeasPanel />
+        </View>
+
+        {/* 今週の発見は記録タブのときだけ。アイデアを見ているときには要らない */}
+        {writeTab === 'record' || isEditingPast ? <WeeklyDiscovery logs={logs} /> : null}
       </ScrollView>
     </SafeAreaView>
   )
