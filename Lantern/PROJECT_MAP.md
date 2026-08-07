@@ -30,7 +30,7 @@
 | 層 | 場所 | 備考 |
 |---|---|---|
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
-| 部品 | `client/components/` | 22ファイル |
+| 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
 | API | `main.py` | ルートは全てここ。33ルール / 31パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
@@ -86,7 +86,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・22ファイル）
+## 3. 部品（`client/components/`・23ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -105,6 +105,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
+| `TabIcons.jsx` | (tabs)/_layout / SidebarTabBar | **タブのアイコン。サイドバーとボトムタブが共有する** |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
@@ -204,6 +205,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
 | コンポーネントの中でのコンポーネント定義 | 描画のたびに作り直され、入力欄なら1文字ごとにフォーカスが外れる | `test_react_patterns.py` |
+| `tabBarIcon` の指定漏れ | ボトムタブに既定の三角が並ぶ。**広い画面のサイドバーは自前描画なので気づけない** | `test_react_patterns.py` |
 | `client/lib/exportLogs.js` | SDK 57 の `expo-file-system` は旧APIを呼ぶと実行時に投げる。**Webは `.web.js` を使うので気づけない** | なし（実機で確認する） |
 | `Procfile` | 開発サーバーに戻すと、本番が Werkzeug で動く。**動いてしまうので気づけない** | `test_deploy.py` |
 | `requirements.txt` | 版の固定を外すと、コードを変えていないのに壊れる余地が戻る | `test_deploy.py` |

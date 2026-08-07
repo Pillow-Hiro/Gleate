@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native'
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg'
+import Svg, { Circle, Line, Path } from 'react-native-svg'
+import { TAB_ICONS } from './TabIcons'
 import { useThemeContext } from '../lib/theme'
 import { APP_VERSION } from '../constants'
 
@@ -13,65 +14,10 @@ import { APP_VERSION } from '../constants'
 // 旧 frontend/src/components/Sidebar.jsx の移植。
 // 配色トークンは Web 版と同一のため className をそのまま使える。
 
-const ICON_PROPS = {
-  width: 15,
-  height: 15,
-  fill: 'none',
-  strokeWidth: 1.5,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  viewBox: '0 0 15 15',
-}
-
-function TodayIcon({ color }) {
-  return (
-    <Svg {...ICON_PROPS} stroke={color}>
-      <Circle cx="7.5" cy="7.5" r="2.5" />
-      <Line x1="7.5" y1="1" x2="7.5" y2="2.5" />
-      <Line x1="7.5" y1="12.5" x2="7.5" y2="14" />
-      <Line x1="1" y1="7.5" x2="2.5" y2="7.5" />
-      <Line x1="12.5" y1="7.5" x2="14" y2="7.5" />
-    </Svg>
-  )
-}
-
-function JournalIcon({ color }) {
-  return (
-    <Svg {...ICON_PROPS} stroke={color}>
-      <Rect x="2" y="1.5" width="11" height="12" rx="1.5" />
-      <Line x1="5" y1="5" x2="10" y2="5" />
-      <Line x1="5" y1="7.5" x2="10" y2="7.5" />
-      <Line x1="5" y1="10" x2="8" y2="10" />
-    </Svg>
-  )
-}
-
-function DashboardIcon({ color }) {
-  return (
-    <Svg {...ICON_PROPS} stroke={color}>
-      <Rect x="1.5" y="1.5" width="5" height="5" rx="1" />
-      <Rect x="8.5" y="1.5" width="5" height="5" rx="1" />
-      <Rect x="1.5" y="8.5" width="5" height="5" rx="1" />
-      <Rect x="8.5" y="8.5" width="5" height="5" rx="1" />
-    </Svg>
-  )
-}
-
-function SettingsIcon({ color }) {
-  return (
-    <Svg {...ICON_PROPS} stroke={color}>
-      <Circle cx="7.5" cy="7.5" r="1.75" />
-      <Path d="M7.5 1.5v1.25M7.5 12.25v1.25M1.5 7.5h1.25M12.25 7.5h1.25M3.4 3.4l.88.88M10.72 10.72l.88.88M3.4 11.6l.88-.88M10.72 4.28l.88-.88" />
-    </Svg>
-  )
-}
-
-const ICONS = {
-  index: TodayIcon,
-  journal: JournalIcon,
-  dashboard: DashboardIcon,
-  settings: SettingsIcon,
-}
+// タブのアイコンは components/TabIcons.jsx に置いてある。
+// ボトムタブ（(tabs)/_layout.jsx）と同じものを使う。
+// 2026-08-07 まではここにだけ定義しており、ボトムタブには
+// アイコンが無かった（実機で三角が並んでいた）。
 
 function ThemeIcon({ isDark, color }) {
   if (isDark) {
@@ -125,7 +71,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
           const { options } = descriptors[route.key]
           const label = options.title ?? route.name
           const isActive = state.index === index
-          const Icon = ICONS[route.name]
+          const Icon = TAB_ICONS[route.name]
 
           function handlePress() {
             // React Navigation の作法。既定動作を止められるようにイベントを発行する

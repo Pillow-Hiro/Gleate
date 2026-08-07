@@ -125,6 +125,42 @@ class TestDashboardKeepsPanelsMounted:
         assert "display: 'none'" in self._src(),             "隠す手段が display:'none' でない。unmount していないか確認すること"
 
 
+class TestTabsHaveIcons:
+    """ボトムタブにアイコンを渡しているか。
+
+    2026-08-07 まで `tabBarIcon` を一度も渡していなかった。
+    広い画面のサイドバーは自前で描いていたのでアイコンが出ていたが、
+    **ネイティブのボトムタブには React Navigation の既定表示
+    （塗りつぶした三角）が4つ並んでいた。**
+
+    実機で「アプリ感がない」と言われた主因。
+    Web の広い画面でしか確認していなかったため、気づけなかった。
+    """
+
+    def _layout(self):
+        return read(os.path.join(CLIENT, "app", "(tabs)", "_layout.jsx"))
+
+    def test_tabBarIconを渡している(self):
+        assert "tabBarIcon" in self._layout(), (
+            "tabBarIcon が無い。React Navigation の既定の三角が並ぶ"
+        )
+
+    def test_アイコンを共有ファイルから取る(self):
+        # 同じ絵を2か所で持つと、片方だけ直して食い違う
+        assert "TAB_ICONS" in self._layout()
+        assert "TAB_ICONS" in read(os.path.join(CLIENT, "components", "SidebarTabBar.jsx"))
+
+    def test_全ルートにアイコンがある(self):
+        icons = read(os.path.join(CLIENT, "components", "TabIcons.jsx"))
+        m = re.search(r"export const TAB_ICONS = \{([^}]*)\}", icons)
+        assert m, "TabIcons.jsx に TAB_ICONS が無い"
+        defined = set(re.findall(r"(\w+):", m.group(1)))
+        screens = {f[:-4] for f in os.listdir(os.path.join(CLIENT, "app", "(tabs)"))
+                   if f.endswith(".jsx") and f != "_layout.jsx"}
+        missing = screens - defined
+        assert missing == set(), f"アイコンが無いタブ: {sorted(missing)}"
+
+
 class TestTextInputsAreControlledFromOutside:
     """入力欄を持つ部品が、値と変更を props で受け取っているか。
 
