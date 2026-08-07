@@ -39,7 +39,8 @@ import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-LIVING_DOCS = ["CLAUDE.md", "REQUIREMENTS.md", "PROJECT_MAP.md", "HANDOFF.md"]
+LIVING_DOCS = ["CLAUDE.md", "REQUIREMENTS.md", "PROJECT_MAP.md",
+               "HANDOFF.md", "STACK.md"]
 
 
 def read(*parts):
@@ -275,6 +276,101 @@ class TestPrivacyPage:
     def test_アカウント削除の案内がある(self):
         # App Store 5.1.1(v) に対応した機能を、文書側でも示す
         assert "アカウントの削除" in read("PRIVACY.md")
+
+
+class TestStack:
+    """STACK.md の版が実ファイルと合っているか。
+
+    技術構成の文書は、書いた瞬間から腐る。
+    **版だけは機械が照合できる**ので、そこは機械に任せる。
+    費用やプランのように照合できないものは人が直す。
+    """
+
+    def _stack(self):
+        return read("STACK.md")
+
+    # 表の見出しと npm / pip の名前の対応。
+    # 版だけを部分一致で探すと、別の行の同じ版に当たって素通りする
+    # （`57.0.10` は Expo SDK と Expo Router の両方に出る）。
+    # 行ごと照合する。
+    FRONT = [
+        ("Expo SDK", "expo"),
+        ("React Native", "react-native"),
+        ("React", "react"),
+        ("React Native Web", "react-native-web"),
+        ("Expo Router", "expo-router"),
+        ("NativeWind", "nativewind"),
+        ("Tailwind CSS", "tailwindcss"),
+    ]
+
+    BACK = [
+        ("Flask", "flask"),
+        ("gunicorn", "gunicorn"),
+        ("supabase", "supabase"),
+        ("anthropic", "anthropic"),
+        ("PyJWT[crypto]", "PyJWT[crypto]"),
+        ("cryptography", "cryptography"),
+        ("google-api-python-client", "google-api-python-client"),
+    ]
+
+    @pytest.mark.parametrize("label,package", FRONT)
+    def test_フロントの版が一致する(self, label, package):
+        import json
+
+        dep = json.loads(read("client", "package.json"))["dependencies"][package]
+        version = re.sub(r"^[~^]", "", dep)
+        assert f"| {label} | {version} |" in self._stack(), (
+            f"STACK.md の「{label}」の行が {version} と食い違う"
+        )
+
+    @pytest.mark.parametrize("label,package", BACK)
+    def test_バックエンドの版が一致する(self, label, package):
+        for line in read("requirements.txt").splitlines():
+            if line.strip().startswith(f"{package}=="):
+                version = line.split("==")[1].strip()
+                assert f"| {label} | {version} |" in self._stack(),                     f"STACK.md の「{label}」の行が {version} と食い違う"
+                return
+        raise AssertionError(f"requirements.txt に {package} が無い")
+
+    def test_Pythonの版が一致する(self):
+        assert read(".python-version").strip() in self._stack()
+
+    def test_APIの本数が一致する(self):
+        from main import app
+
+        rules = [r for r in app.url_map.iter_rules() if r.endpoint != "static"]
+        assert f"{len(rules)}ルール" in self._stack()
+
+    def test_構成要素の数が一致する(self):
+        counts = {
+            "画面": len([f for f in listdir("client", "app") if f.endswith(".jsx")])
+                  + len([f for f in listdir("client", "app", "(tabs)") if f.endswith(".jsx")]),
+            "コンポーネント": len([f for f in listdir("client", "components")
+                                   if f.endswith(".jsx")]),
+            "モジュール": len([f for f in listdir("modules")
+                               if f.endswith(".py") and f != "__init__.py"]),
+        }
+        stack = self._stack()
+        for label, n in counts.items():
+            assert f"{label} {n}" in stack, f"STACK.md の「{label}」が {n} と食い違う"
+
+    def test_gunicornの設定が一致する(self):
+        # Procfile を変えたら STACK.md も直す
+        import re as _re
+
+        m = _re.search(r"--workers\s+(\d+)\s+--threads\s+(\d+)\s+--timeout\s+(\d+)",
+                       read("Procfile"))
+        assert m, "Procfile の gunicorn 設定を読み取れない"
+        assert (f"--workers {m.group(1)} --threads {m.group(2)} "
+                f"--timeout {m.group(3)}") in self._stack()
+
+    def test_使っているモデルが一致する(self):
+        import re as _re
+
+        models = set(_re.findall(r'model="([^"]+)"', read("modules", "ai.py")))
+        assert models, "modules/ai.py にモデル指定が無い"
+        for model in models:
+            assert model in self._stack(), f"STACK.md のモデル名が {model} と食い違う"
 
 
 class TestDocRoles:
