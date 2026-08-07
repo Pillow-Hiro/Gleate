@@ -373,6 +373,55 @@ class TestStack:
             assert model in self._stack(), f"STACK.md のモデル名が {model} と食い違う"
 
 
+class TestIcons:
+    """アイコンが配布に耐える形か。
+
+    2026-08-07 まで、**Expo の雛形のアイコンがそのまま入っていた**
+    （青いシェブロンに作図ガイド線）。気づいたのは実物を開いたときで、
+    ビルドもテストも通っていた。
+
+    ここで見るのは「ちゃんとしたデザインか」ではなく、
+    **機械で分かる致命傷**だけ。
+    - App Store は 1024x1024 でアルファ無しを要求する
+    - Android の背景色が雛形（水色）のままだと、緑の前景と噛み合わない
+
+    PNG のヘッダだけを読む。画像ライブラリを依存に足さない。
+    """
+
+    ASSETS = os.path.join("client", "assets")
+
+    def _png_header(self, name):
+        import struct
+
+        path = os.path.join(ROOT, self.ASSETS, name)
+        assert os.path.isfile(path), f"{name} が無い"
+        head = io.open(path, "rb").read(33)
+        width, height = struct.unpack(">II", head[16:24])
+        return width, height, head[25]  # color type
+
+    def test_iOSのアイコンは1024四方(self):
+        w, h, _ = self._png_header("icon.png")
+        assert (w, h) == (1024, 1024), f"icon.png が {w}x{h}"
+
+    def test_iOSのアイコンにアルファを含めない(self):
+        # 含まれていると App Store Connect が受け付けない
+        _, _, ctype = self._png_header("icon.png")
+        assert ctype not in (4, 6), "icon.png にアルファがある"
+
+    def test_Androidの前景はアルファを持つ(self):
+        # 背景と重ねるので透過が要る
+        _, _, ctype = self._png_header("android-icon-foreground.png")
+        assert ctype in (4, 6), "android-icon-foreground.png に透過が無い"
+
+    def test_Androidの背景色が雛形のままでない(self):
+        import json
+
+        color = json.loads(read("client", "app.json"))["expo"]["android"]["adaptiveIcon"][
+            "backgroundColor"]
+        assert color.upper() != "#E6F4FE", "Expo の雛形の水色が残っている"
+        assert color.upper() == "#22382F", f"Lantern の地の緑と違う: {color}"
+
+
 class TestDocRoles:
     """各文書が自分の役割を書いているか。
 
