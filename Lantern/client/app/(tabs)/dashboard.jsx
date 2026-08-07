@@ -16,6 +16,21 @@ const TABS = [
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('youtube')
+  // **一度開いたパネルは残す。**
+  //
+  // 2026-08-07 まで `activeTab === 'youtube' ? <A/> : <B/>` で
+  // 出し分けていた。切り替えるたびに片方が破棄され、戻るたびに
+  // 連携状態・チャンネル・動画一覧・推移を取り直していた。
+  // 外部APIを経由するため数秒かかり、**タブを触るたびに待たされていた。**
+  //
+  // 開いたものだけ描画し、以後は隠すだけにする。
+  // 最初から両方読むと初回が重くなるので、開くまでは作らない。
+  const [opened, setOpened] = useState({ youtube: true, twitch: false })
+
+  function selectTab(id) {
+    setActiveTab(id)
+    setOpened((o) => (o[id] ? o : { ...o, [id]: true }))
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
@@ -29,7 +44,7 @@ export default function Dashboard() {
           {TABS.map(({ id, label }) => (
             <Pressable
               key={id}
-              onPress={() => setActiveTab(id)}
+              onPress={() => selectTab(id)}
               className={`px-1 pb-2.5 border-b-2 ${
                 activeTab === id ? 'border-accent' : 'border-transparent'
               }`}
@@ -41,7 +56,17 @@ export default function Dashboard() {
           ))}
         </View>
 
-        {activeTab === 'youtube' ? <YouTubePanel /> : <TwitchPanel />}
+        {/* display:'none' で隠す。unmount しないので状態と取得結果が残る */}
+        {opened.youtube ? (
+          <View style={activeTab === 'youtube' ? undefined : { display: 'none' }}>
+            <YouTubePanel />
+          </View>
+        ) : null}
+        {opened.twitch ? (
+          <View style={activeTab === 'twitch' ? undefined : { display: 'none' }}>
+            <TwitchPanel />
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   )

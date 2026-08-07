@@ -47,19 +47,28 @@ const SPLASH_SEEN_KEY = 'lantern_splash_date'
 function RootNavigator() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
-  // false から始めるのは、判定前に一瞬出てしまうのを避けるため
-  const [showSplash, setShowSplash] = useState(false)
+  // **null は「まだ判定していない」。**
+  //
+  // 2026-08-07 まで false で始めていた。読み込みは非同期なので、
+  // 判定が終わる前に本画面が描画され、そのあとスプラッシュが
+  // 上から被さっていた。実機では**画面が一瞬ちらついて見えた**。
+  //
+  // 判定が済むまで本画面を出さないことで解消する。
+  // 読み込みは端末内なので、待つのは一瞬。
+  const [showSplash, setShowSplash] = useState(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      let next = false
       try {
         const seen = await AsyncStorage.getItem(SPLASH_SEEN_KEY)
-        if (!cancelled && seen !== localDateStr()) setShowSplash(true)
+        next = seen !== localDateStr()
       } catch (e) {
         // 読めなければ出さない。毎回出るより出ない方が邪魔にならない
         console.warn('[Splash] 表示履歴の読み込みに失敗', e)
       }
+      if (!cancelled) setShowSplash(next)
     })()
     return () => { cancelled = true }
   }, [])
@@ -98,7 +107,9 @@ function RootNavigator() {
     }
   }, [session, loading, segments, router])
 
-  if (loading) {
+  // 認証とスプラッシュの判定が両方済むまで、本画面を描画しない。
+  // どちらかが遅れて確定すると、その分だけ画面が入れ替わって見える。
+  if (loading || showSplash === null) {
     return (
       <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator />
@@ -113,7 +124,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
       </Stack>
-      {showSplash ? <SplashScreen onClose={handleSplashClose} /> : null}
+      {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>
   )
 }

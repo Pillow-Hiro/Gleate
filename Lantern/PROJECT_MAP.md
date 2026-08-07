@@ -162,7 +162,9 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 その他の test: `test_save_cost.py`（`/save` が全件保存に戻らないこと）、
 `test_timeline_params.py`、`test_docs.py`（この表の検査）、
 `test_privacy.py`（記録と資格情報がログに出ないこと）、
-`test_deploy.py`（本番の起動構成と依存の固定）。
+`test_deploy.py`（本番の起動構成と依存の固定）、
+`test_account.py`（退会時の削除）、
+`test_react_patterns.py`（実機でしか露見しない書き方の誤り）。
 
 ---
 
@@ -201,6 +203,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `modules/twitch.py` のトークン | 更新後の refresh_token を保存し直さないと次で失敗する（使い捨て） | `test_twitch.py` |
 | Dashboard の Web / ネイティブ | 片方だけ直すとまたずれる | なし（人が両方見る） |
 | `client/components/FormShell.web.jsx` | `<form>` を外すとパスワード自動入力が黙って壊れる | なし（実機で確認する） |
+| コンポーネントの中でのコンポーネント定義 | 描画のたびに作り直され、入力欄なら1文字ごとにフォーカスが外れる | `test_react_patterns.py` |
 | `client/lib/exportLogs.js` | SDK 57 の `expo-file-system` は旧APIを呼ぶと実行時に投げる。**Webは `.web.js` を使うので気づけない** | なし（実機で確認する） |
 | `Procfile` | 開発サーバーに戻すと、本番が Werkzeug で動く。**動いてしまうので気づけない** | `test_deploy.py` |
 | `requirements.txt` | 版の固定を外すと、コードを変えていないのに壊れる余地が戻る | `test_deploy.py` |

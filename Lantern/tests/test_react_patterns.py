@@ -96,6 +96,35 @@ class TestDetectorWorks:
         assert _INNER_FUNC.findall(src) == []
 
 
+class TestDashboardKeepsPanelsMounted:
+    """タブを切り替えても、開いたパネルを破棄していないか。
+
+    2026-08-07 まで `activeTab === 'youtube' ? <A/> : <B/>` で
+    出し分けていた。切り替えるたびに片方が破棄され、戻るたびに
+    連携状態・チャンネル・動画一覧・推移を取り直していた。
+    外部APIを経由するため数秒かかり、**タブを触るたびに待たされていた。**
+
+    開いたものは残し、隠すだけにする。
+    """
+
+    def _src(self):
+        return read(os.path.join(CLIENT, "app", "(tabs)", "dashboard.jsx"))
+
+    def test_三項演算子でパネルを入れ替えていない(self):
+        src = self._src()
+        assert "? <YouTubePanel /> : <TwitchPanel />" not in src, (
+            "タブ切替でパネルを破棄している。戻るたびに再取得が走る"
+        )
+
+    def test_両方のパネルを描画しうる(self):
+        src = self._src()
+        assert "<YouTubePanel />" in src and "<TwitchPanel />" in src
+
+    def test_隠すだけにしている(self):
+        # display:'none' なら unmount されず、取得結果と状態が残る
+        assert "display: 'none'" in self._src(),             "隠す手段が display:'none' でない。unmount していないか確認すること"
+
+
 class TestTextInputsAreControlledFromOutside:
     """入力欄を持つ部品が、値と変更を props で受け取っているか。
 
