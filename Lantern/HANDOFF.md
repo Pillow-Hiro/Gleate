@@ -135,6 +135,35 @@ Render Starter を契約した。実測で確認した。
 
 **やらないと決めたもの**: 目標設定機能（v0.5構想）、利用ログの収集。
 
+**優先度2.6: 独自ドメイン `golantern.app`（2026-08-07 決定）**
+
+API は `api.golantern.app` にする。
+**`.app` は HSTS プリロード済みで HTTPS が必須。** http:// では一切開けない。
+Render が証明書を自動発行するので、その点は問題ない。
+
+順番を守れば、既存のビルドも連携も壊れない。
+
+| # | 作業 | 誰が |
+|---|---|---|
+| 1 | Render → Settings → Custom Domains に `api.golantern.app` を追加 | ユーザー |
+| 2 | 画面に出る DNS レコードを登録し、TLS 発行を待つ | ユーザー |
+| 3 | `curl https://api.golantern.app/api/debug/version` で疎通確認 | ユーザー |
+| 4 | Google / Twitch のコンソールに**新URIを追加**（旧も残す） | ユーザー |
+| 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | ユーザー |
+| 6 | `/api/debug/version` で `redirect_misconfigured` が空を確認 | ユーザー |
+| 7 | EAS の `EXPO_PUBLIC_API_URL`・ローカル `.env`・文書 | **私** |
+| 8 | Vercel の `EXPO_PUBLIC_API_URL` | ユーザー |
+
+**7 は 3 が通ってから。** 先に切り替えると、まだ存在しないURLを
+向いたビルドができる。
+
+**`.onrender.com` は消さないこと。** 既存の TestFlight ビルドが使っている。
+Render は独自ドメインを足しても既定で残す。
+
+Web 側（`lantern-inky-three.vercel.app`）も後から
+`golantern.app` に寄せられる。プライバシーポリシーのURLが変わるが、
+App Store Connect 側で差し替えられる。
+
 ## 4. 今ある未解決のもの
 
 | 内容 | 状態 |

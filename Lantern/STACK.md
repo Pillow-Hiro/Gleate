@@ -85,6 +85,7 @@ Unsplash のプロセス内キャッシュも1つで済む。
 | 用途 | サービス | プラン | 費用 |
 |---|---|---|---|
 | API | Render | **Starter** | 月 $7 |
+| ドメイン | `golantern.app`（2026-08-07 決定） | — | 年額はレジストラによる |
 | Web | Vercel | Hobby | $0 |
 | DB・認証 | Supabase | Free | $0 |
 | ビルド | EAS（Expo） | Free | $0 |
