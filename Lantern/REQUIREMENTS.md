@@ -154,7 +154,7 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 | 項目 | 要件 | 現状 |
 |---|---|---|
 | 入力負荷 | 1分以内に記録できる | 満たしている（1記録の平均20.5字） |
-| 対応環境 | Web / iOS / Android を同一コードから | Web のみ配布済み |
+| 対応環境 | Web / iOS / Android を同一コードから | Web は公開済み。iOS はビルド済み・未提出 |
 | データ | 利用者ごとに分離（`require_auth` で `g.user_id` に絞る） | 満たしている |
 | 秘密情報 | コードに書かない。`.env` と Render から読む | 満たしている |
 | 外部送信 | Anthropic / YouTube / Twitch 以外に送らない | 満たしている |
@@ -162,7 +162,7 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 | ログ | サーバーのログに記録の中身・user_id・資格情報を残さない | 満たしている（`test_privacy.py`） |
 | プライバシーポリシー | 公開URLを持つ。ログイン不要で読めること | `client/public/privacy.html`（`PRIVACY.md` から生成） |
 | 記録の暗号化 | — | **していない。** 提供者が管理者として閲覧できる。`PRIVACY.md` に明記した。設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md` |
-| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 621 + 82 件 |
+| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 646 + 82 件 |
 | 本番の実行 | WSGIサーバー（gunicorn）で動かす。開発サーバーを公開しない | `Procfile`・`test_deploy.py` |
 | 依存 | 版を固定する。デプロイのたびに最新が入る状態にしない | `requirements.txt`・`.python-version` |
 
@@ -174,7 +174,7 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 
 | 項目 | 状態 |
 |---|---|
-| ネイティブ配布 | 進行中。Apple Developer Program は加入済み（2026-08-06）。ビルドと審査が残る |
+| ネイティブ配布 | 進行中。**iOSビルド #4 が成功**（2026-08-07）。App Store Connect への登録と審査が残る |
 | Journaling Suggestions API | A7 の後。`com.apple.developer.journal.allow` とネイティブモジュールの自作が要る |
 | 7日/30日継続率 | 計測の器はできた（`scripts/report_metrics.py`）が母数が足りない |
 | 否定的表現の発生率 | 未計測 |

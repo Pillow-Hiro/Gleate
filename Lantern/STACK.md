@@ -141,7 +141,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 621 |
+| バックエンド | pytest | 646 |
 | `client/lib` の純粋関数 | vitest | 82 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 

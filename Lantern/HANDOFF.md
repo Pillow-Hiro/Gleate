@@ -31,7 +31,7 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
+| ネイティブ | **iOSビルド #4 が成功**（2026-08-07・commit `b6d45da`）。TestFlight への提出が次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 646件 / vitest 82件 |
 
@@ -86,32 +86,28 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | # | 作業 | 状態 |
 |---|---|---|
 | 1 | `eas login` | **済**（`pillow_hiro`） |
-| 2 | EAS の環境変数（preview / production） | **済**（`EXPO_PUBLIC_*` 3件） |
-| 3 | プライバシーポリシーのURL | **済**（`/privacy.html`。次のVercelデプロイで有効） |
-| 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect` で検証） |
-| 5 | **Apple の認証情報の作成** | **未。対話が要る**（下記） |
-| 6 | ビルド → App Store Connect 登録 → `eas submit` | 5 のあと |
+| 2 | EAS の環境変数（3環境） | **済** |
+| 3 | プライバシーポリシーのURL | **済・公開確認済み** |
+| 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect`） |
+| 5 | Apple の認証情報の作成 | **済** |
+| 6 | **iOSビルド** | **済。#4 が finished**（commit `b6d45da`・版数1.0.0） |
+| 7 | App Store Connect にアプリを登録 | **未** |
+| 8 | `eas submit` で TestFlight へ | 7 のあと |
 
-**5 は私が代われない。** Apple ID のパスワードと2要素認証の入力が要るため。
-非対話で試すと `Credentials are not set up. Run this command again in
-interactive mode.` で止まる（ビルド枠は消費されない）。
-
-対話で1回実行すれば、証明書とプロビジョニングプロファイルは
-EAS 側に保存され、以降は自動になる。
+ビルド #4 は**アイコン確定（`31759f2`）とドメイン切替（`1a64267`）の
+両方を含む**コミットから作られている。作り直しは要らない。
 
 ```
 cd client
-npx eas-cli build --platform ios --profile production
+npx eas-cli submit --platform ios --latest
 ```
 
-`preview` ではなく `production` を勧める。`preview` は内部配布のため
-端末のUDID登録が要る。`production` は TestFlight 経由で自分の端末に入り、
-そのまま審査に出せる同じ成果物になる。
+App Store Connect にアプリが無ければ、この過程で作れる。
+**アプリ名「Lantern」は既に使われている可能性がある。**
+その場合は別名を求められるが、表示名だけの話でコードは変わらない。
 
-聞かれること: Appleアカウントへのログイン → Bundle ID の登録 →
-証明書の作成。すべて「はい」でよい。
-
-未決は「4. 今ある未解決のもの」にある。とくにプライバシーポリシーは必須。
+提出時に要るもの: プライバシーポリシーURL（下記）・スクリーンショット・
+説明文・年齢区分・カテゴリ。
 
 **優先度2.5: サーバーの冷え — 解決済み（2026-08-06）**
 
@@ -152,16 +148,14 @@ Render が証明書を自動発行するので、その点は問題ない。
 | 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | **済** |
 | 6 | `redirect_misconfigured` が空であることを確認 | **済**（2026-08-07） |
 | 7 | EAS の `EXPO_PUBLIC_API_URL`（3環境）・ローカル `.env`・文書 | **済** |
-| 8 | Vercel の `EXPO_PUBLIC_API_URL` | **未。下記** |
+| 8 | Vercel の `EXPO_PUBLIC_API_URL` | **済**（2026-08-07 に配信物で確認） |
 
-**8 だけ残っている。** 2026-08-07 時点で、配信中の Web バンドルは
-最新のコードを含んでいるのに向き先が `onrender.com` のまま。
-`client/.env` は Git 管理外なので、Vercel は自分の環境変数から値を取る。
-そこが未設定か、変更後に再デプロイしていない。
+**移行は完了した。** 8つすべて済み。
 
-**環境変数はビルド時に埋め込まれる。保存しただけでは変わらない。**
-Settings → Environment Variables で `EXPO_PUBLIC_API_URL` を
-`https://api.golantern.app` にし、Deployments から再デプロイする。
+途中で引っかかったのは、**環境変数がビルド時に埋め込まれる**こと。
+Vercel も Metro も、値を変えただけでは配信物が変わらない。
+Vercel は再デプロイ、ローカルは `--clear` が要る。
+**配信物を取って中身を検査するまで、切り替わったと判断しないこと。**
 
 **7 でキャッシュに引っかかった。** `.env` を書き換えても
 `expo export` が古い値を埋め込む。`EXPO_PUBLIC_*` はビルド時に
