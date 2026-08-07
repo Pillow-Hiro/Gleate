@@ -3,7 +3,7 @@
 **役割：「今どこにいるか」。** 別のセッション・別の人が、
 これだけ読めば続きから始められる状態にしておく。
 
-最終更新: 2026-08-06
+最終更新: 2026-08-07
 
 ## このファイルの決まり
 
@@ -30,10 +30,10 @@
 | バージョン | v2.0（Expo + Flask API + Supabase） |
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
-| API | Render **Starter**（2026-08-06〜。無料枠の停止で冷え43.8秒だったため） |
+| API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **未配布。** Apple Developer Program 加入済み（2026-08-06）。版数 1.0.0。ビルドが次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 621件 / vitest 82件 / expo config introspect 済 |
+| 検査 | pytest 646件 / vitest 82件 |
 
 ## 2. 直近にやったこと（2026-08-06）
 
@@ -148,15 +148,20 @@ Render が証明書を自動発行するので、その点は問題ない。
 | 1 | Render に `api.golantern.app` を追加 | **済** |
 | 2 | DNS 登録・TLS 発行 | **済** |
 | 3 | 疎通確認（200・TLS正常・未認証は401） | **済**（2026-08-07） |
-| 4 | Google / Twitch に新URIを追加 | **未** |
-| 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | **未** |
-| 6 | `/api/debug/version` で `redirect_misconfigured` が空を確認 | 5 のあと |
+| 4 | Google / Twitch に新URIを追加 | **済** |
+| 5 | Render の `YOUTUBE_REDIRECT_URI` / `TWITCH_REDIRECT_URI` を切替 | **済** |
+| 6 | `redirect_misconfigured` が空であることを確認 | **済**（2026-08-07） |
 | 7 | EAS の `EXPO_PUBLIC_API_URL`（3環境）・ローカル `.env`・文書 | **済** |
-| 8 | Vercel の `EXPO_PUBLIC_API_URL` | **未** |
+| 8 | Vercel の `EXPO_PUBLIC_API_URL` | **未。下記** |
 
-**4→5 の順を守る。** 先にコンソールへ追加してから Render を切り替えれば、
-連携が落ちる瞬間がない。現在 `/api/debug/version` の
-`youtube_redirect` / `twitch_redirect` はまだ `onrender.com` を指している。
+**8 だけ残っている。** 2026-08-07 時点で、配信中の Web バンドルは
+最新のコードを含んでいるのに向き先が `onrender.com` のまま。
+`client/.env` は Git 管理外なので、Vercel は自分の環境変数から値を取る。
+そこが未設定か、変更後に再デプロイしていない。
+
+**環境変数はビルド時に埋め込まれる。保存しただけでは変わらない。**
+Settings → Environment Variables で `EXPO_PUBLIC_API_URL` を
+`https://api.golantern.app` にし、Deployments から再デプロイする。
 
 **7 でキャッシュに引っかかった。** `.env` を書き換えても
 `expo export` が古い値を埋め込む。`EXPO_PUBLIC_*` はビルド時に
@@ -175,11 +180,9 @@ App Store Connect 側で差し替えられる。
 
 | 内容 | 状態 |
 |---|---|
-| プライバシーポリシーのURL | `client/public/privacy.html` として同梱済み。**次の Vercel デプロイで `https://lantern-inky-three.vercel.app/privacy.html` が有効になる。** App Store Connect にはこのURLを入れる |
+| プライバシーポリシーのURL | **公開済み・確認済み**（2026-08-07）。`https://lantern-inky-three.vercel.app/privacy.html`。ログイン不要で開ける。App Store Connect にはこのURLを入れる |
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
-| `.claude/worktrees/sad-hawking-5afb30/` | 孤児ディレクトリ648K。gitの管理から外れている。中身は履歴にあるもののみ。**削除してよい** |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
-| **Procfile が効いていない** | Starter にしても `x-render-origin-server` は `Werkzeug` のまま（commit `0dba7eb` は反映済み）。**Render のダッシュボードに Start Command が設定されていて Procfile より優先されている。** Settings → Start Command を下記にするか、空にして Procfile に任せる<br>`gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 60` |
 | ローカルの node_modules | OneDrive 配下にあるため、同期でファイルが欠けてビルドが落ちることがある（`expo/src/Expo.ts が無い`・`EINVAL readlink`）。`rm -rf node_modules && npm ci` で直る。**EAS のビルドはクラウドで入れ直すため影響しない** |
 | Expo の追随 | `expo@57.0.11` の想定表が未公開の `expo-sharing@~57.0.10` を要求するため `expo install --fix` が通らない。**上流の不整合。** 直ったら追随する。それまで `expo-doctor` は「4件 out of date」と言う |
 | npm の脆弱性11件 | すべて `uuid` の境界チェック漏れで、`@expo/config` 系のビルド時ツールにしか無い。配布物には乗らない。解消には Expo 側の breaking change が要る |
