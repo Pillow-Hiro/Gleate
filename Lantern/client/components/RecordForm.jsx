@@ -5,6 +5,35 @@ import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 
+// **モジュールの外に置くこと。**
+//
+// 2026-08-07 まで RecordForm の中で定義していた。
+// 1文字打つたびに setForm で再描画され、そのたびに Field が
+// 別の関数になるため、React は「別のコンポーネントに変わった」と見なして
+// TextInput を作り直していた。結果、**入力欄からフォーカスが外れ、
+// キーボードが閉じ、1文字しか打てなかった。**
+//
+// 記録アプリとして致命的な壊れ方だったが、Web では気づきにくく
+// （ブラウザは入力中の要素を作り直しても見た目が近い）、
+// 実機で初めて分かった。
+function Field({ value, onChange, label, rows = 2, placeholder = '（任意）' }) {
+  return (
+    <View>
+      <Text className="text-xs text-ink-faint mb-1.5">{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        multiline
+        textAlignVertical="top"
+        style={{ minHeight: rows * 22 + 16 }}
+        className="bg-cream border border-border rounded px-3 py-2 text-sm text-ink"
+        placeholder={placeholder}
+        placeholderTextColor="#999999"
+      />
+    </View>
+  )
+}
+
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
 export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
@@ -73,24 +102,6 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     }
   }
 
-  function Field({ fieldKey, label, rows = 2, placeholder = '（任意）' }) {
-    return (
-      <View>
-        <Text className="text-xs text-ink-faint mb-1.5">{label}</Text>
-        <TextInput
-          value={form[fieldKey]}
-          onChangeText={(v) => setForm((f) => ({ ...f, [fieldKey]: v }))}
-          multiline
-          textAlignVertical="top"
-          style={{ minHeight: rows * 22 + 16 }}
-          className="bg-cream border border-border rounded px-3 py-2 text-sm text-ink"
-          placeholder={placeholder}
-          placeholderTextColor="#999999"
-        />
-      </View>
-    )
-  }
-
   return (
     <View className="border border-border rounded-lg px-5 py-4 gap-4">
       {existingLog ? (
@@ -108,7 +119,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           今日の問いを出しても合わない。
           問いが取れなかったときは元の固定文に戻る。 */}
       <Field
-        fieldKey="created"
+        value={form.created}
+        onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}
         rows={5}
         placeholder={
@@ -136,11 +148,23 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
 
       {detailOpen ? (
         <View className="gap-4 pt-1">
-          <Field fieldKey="enjoyable" label="よかったこと・楽しかったこと" />
-          <Field fieldKey="struggled" label="詰まったこと・困ったこと" />
+          <Field
+            value={form.enjoyable}
+            onChange={(v) => setForm((f) => ({ ...f, enjoyable: v }))}
+            label="よかったこと・楽しかったこと"
+          />
+          <Field
+            value={form.struggled}
+            onChange={(v) => setForm((f) => ({ ...f, struggled: v }))}
+            label="詰まったこと・困ったこと"
+          />
           {/* 次にやることは「あったこと」ではなく予定で、他の3つと性質が違う。
               アイデアの溜め場とも役割が重なるため、ここに置く。 */}
-          <Field fieldKey="next" label="次にやること" />
+          <Field
+            value={form.next}
+            onChange={(v) => setForm((f) => ({ ...f, next: v }))}
+            label="次にやること"
+          />
         </View>
       ) : null}
 
