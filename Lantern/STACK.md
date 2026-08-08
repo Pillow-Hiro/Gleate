@@ -207,7 +207,7 @@ EAS のビルドはクラウドで入れ直すため影響しない。
 
 | 変えたもの | 手段 | 所要 |
 |---|---|---|
-| 画面のコード・文言（JSだけ） | `eas update --branch <channel>` | 1〜2分 |
+| 画面のコード・文言（JSだけ） | `eas update --branch <channel> --environment <env>` | 1〜2分 |
 | `app.json`・権限・アイコン・ネイティブ依存 | `eas build` | 15〜20分 |
 | 審査に出す | `eas build` → `eas submit` | 上記＋数分 |
 
@@ -219,6 +219,41 @@ EAS のビルドはクラウドで入れ直すため影響しない。
 `appVersion` にすると、この構成では `version` が 1.0.0 のまま動かないので、
 **新しいJSが古いネイティブのビルドに配られて落ちる。**
 `tests/test_deploy.py::TestOtaUpdates` が固定している。
+
+### `eas.json` を触ると OTA が届かなくなる
+
+**指紋の計算対象に `eas.json` が入っている。**
+ネイティブの中身が1バイトも変わらなくても、`eas.json` を1行足せば
+指紋が変わり、**配信済みのビルドは「自分向けではない」と判断して
+更新を取りに行かない。**
+
+2026-08-08 に実際に踏んだ。`submit.production.ios.ascAppId` を
+追記した状態で `eas update` を流し、ビルド #6 に届かなかった
+（`4ff774b0…` に対して更新は `1ccd1600…`）。
+配信は成功しているので、**エラーは出ない。届かないだけ。**
+
+流す前に必ず照合する。
+
+```
+npx eas-cli fingerprint:compare --build-id <配信先のビルドID>
+```
+
+`✅ ... matches ...` が出なければ、その更新は届かない。
+
+**`--environment` は必須。** `--non-interactive` では省略できない。
+どの環境変数をバンドルに焼くかが決まらないため。
+`production` を渡すと `EXPO_PUBLIC_API_URL` などが `api.golantern.app`
+になる。**間違えると、見た目だけのつもりの更新で接続先が変わる。**
+
+### `eas submit` の `ascAppId`
+
+`--non-interactive` で提出するには、App Store Connect のアプリID
+（`6798753977`）が `eas.json` の `submit.production.ios.ascAppId` に要る。
+コマンドラインのフラグは無い。
+
+**ただし上記の理由で、置きっぱなしにすると OTA が届かなくなる。**
+提出のときだけ書き、済んだら消す。次のビルドを作れば指紋は
+そのときの `eas.json` で計算され直すので、書いたまま残せる。
 
 ---
 

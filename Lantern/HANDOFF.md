@@ -146,9 +146,16 @@ npx eas-cli submit --platform ios --latest --profile production
 **`--non-interactive` を付けるなら `ascAppId` が要る。**
 2026-08-08 に一度ここで落ちた。どのアプリに送るかを対話で選べないため。
 `client/eas.json` の `submit.production.ios.ascAppId` に
-App Store Connect のアプリID（`6798753977`）を書いてある。
+App Store Connect のアプリID **`6798753977`** を書く。
 これはバンドルIDとは別物で、App Store Connect の
 「App情報 > 一般情報 > Apple ID」にある数字。
+
+**いまは書いていない。提出のときに書き足すこと。**
+`eas.json` は指紋の計算対象なので、置いたままにすると
+**配信済みのビルドに OTA が届かなくなる。**
+同じ日にこれを踏んだ（詳細は `STACK.md`「配り方」）。
+次にビルドを作れば、そのときの `eas.json` で指紋が計算し直されるので、
+それ以降は書いたまま残してよい。
 
 TestFlight:
 `https://appstoreconnect.apple.com/apps/6798753977/testflight/ios`

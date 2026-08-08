@@ -2092,6 +2092,34 @@ TestFlight に上げたあとの指摘。
 - パスを matplotlib で実寸（22px相当）と拡大の2段に描いて目で確認した。
   **小さいアイコンは形が潰れるかどうかが全てなので、実寸で見ること。**
 
+### OTA が届かなかった（`eas.json` と指紋）
+
+1回目の配信はビルド #6 に届かなかった。
+
+    ビルド #6   4ff774b0…
+    1回目の更新 1ccd1600…
+
+**原因は `eas.json` に `ascAppId` を足したこと。**
+`runtimeVersion` は `fingerprint` 方式で、`eas.json` も計算対象に入っている。
+ネイティブの中身は1バイトも変わっていないのに指紋が変わり、
+配信済みのビルドが「自分向けではない」と判断した。
+
+**配信は成功しているのでエラーが出ない。届かないだけ。**
+
+`ascAppId` を外すと指紋が `4ff774b0…` に戻ることを
+`eas fingerprint:compare` で確かめてから流し直した。
+
+    ✅ Fingerprint 4ff774b0... from IOS build matches ... from local directory
+
+`eas submit --non-interactive` には `ascAppId` が要るが、
+置きっぱなしにすると次の OTA も届かなくなる。**提出のときだけ書く。**
+次のビルドを作れば、そのときの `eas.json` で指紋が計算し直されるので、
+それ以降は残してよい。番号と手順は `HANDOFF.md` と `STACK.md` に書いた。
+
+**`--environment` も必須。** `--non-interactive` では省略できない。
+`production` を渡さないと `EXPO_PUBLIC_API_URL` が焼かれず、
+**見た目だけのつもりの更新で接続先が変わる。**
+
 ---
 
 ## 進行中
