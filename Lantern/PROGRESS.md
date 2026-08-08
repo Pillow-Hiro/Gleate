@@ -2050,7 +2050,19 @@ OTA では届かないもの。
 `runtimeVersion` は `fingerprint` なので、これらを含む新しい指紋になった。
 **#6 向けのOTAが古いビルドに配られることはない。**
 
-次は App Store Connect への登録と `eas submit`。どちらも要ユーザー操作。
+### TestFlight へアップロードした
+
+App Store Connect にアプリを登録（Apple ID `6798753977`）してもらい、
+`eas submit --platform ios --latest --profile production` で送った。
+
+**1回目は落ちた。** `--non-interactive` だと、どのアプリに送るかを
+対話で選べない。`client/eas.json` の `submit.production.ios.ascAppId` に
+アプリIDを書いて解決した。以後は聞かれない。
+アップロードは1回目には行われていない。
+
+    https://expo.dev/accounts/pillow_hiro/projects/lantern/submissions/4e0bc93b-ea69-432d-baca-4f5a4f3fb239
+
+**まだ審査には出していない。** TestFlight に上がっただけ。
 
 ---
 

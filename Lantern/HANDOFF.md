@@ -31,7 +31,7 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #6 が成功**（2026-08-08・commit `17135f4`・版数 1.0.0 / ビルド番号 6）。App Store Connect への登録と提出が次 |
+| ネイティブ | **iOSビルド #6 を TestFlight へアップロード済み**（2026-08-08・commit `17135f4`・版数 1.0.0 / ビルド番号 6） |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 756件 / vitest 88件 |
 
@@ -130,23 +130,32 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect`） |
 | 5 | Apple の認証情報の作成 | **済** |
 | 6 | **iOSビルド** | **済。#6 が finished**（2026-08-08・commit `17135f4`・版数1.0.0 / ビルド番号6） |
-| 7 | App Store Connect にアプリを登録 | **未** |
-| 8 | `eas submit` で TestFlight へ | 7 のあと |
+| 7 | App Store Connect にアプリを登録 | **済**（Apple ID `6798753977`） |
+| 8 | `eas submit` で TestFlight へ | **済**（2026-08-08・ビルド #6） |
+| 9 | TestFlight で実機確認 | 次 |
+| 10 | 審査に出す | 9 のあと。**要ユーザー判断** |
 
 ビルド #6 は 2026-08-08 までの変更をすべて含む
 （アイコン・ドメイン・配色・書体・すりガラス・ログイン画面の分離）。
 
 ```
 cd client
-npx eas-cli submit --platform ios --latest
+npx eas-cli submit --platform ios --latest --profile production
 ```
 
-App Store Connect にアプリが無ければ、この過程で作れる。
-**アプリ名「Lantern」は既に使われている可能性がある。**
-その場合は別名を求められるが、表示名だけの話でコードは変わらない。
+**`--non-interactive` を付けるなら `ascAppId` が要る。**
+2026-08-08 に一度ここで落ちた。どのアプリに送るかを対話で選べないため。
+`client/eas.json` の `submit.production.ios.ascAppId` に
+App Store Connect のアプリID（`6798753977`）を書いてある。
+これはバンドルIDとは別物で、App Store Connect の
+「App情報 > 一般情報 > Apple ID」にある数字。
 
-提出時に要るもの: プライバシーポリシーURL（下記）・スクリーンショット・
-説明文・年齢区分・カテゴリ。
+TestFlight:
+`https://appstoreconnect.apple.com/apps/6798753977/testflight/ios`
+
+**審査に出すのはまだ。** 出すときに要るもの:
+プライバシーポリシーURL（下記）・スクリーンショット・説明文・
+年齢区分・カテゴリ。
 
 **優先度2.5: サーバーの冷え — 解決済み（2026-08-06）**
 
