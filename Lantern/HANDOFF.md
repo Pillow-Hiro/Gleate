@@ -31,20 +31,25 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #4 が成功**（2026-08-07・commit `b6d45da`）。TestFlight への提出が次。**ただし下記の理由でビルドし直しが要る** |
+| ネイティブ | **iOSビルド #6 が成功**（2026-08-08・commit `17135f4`・版数 1.0.0 / ビルド番号 6）。App Store Connect への登録と提出が次 |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 756件 / vitest 88件 |
 
-## 1.5 ビルドし直しが要る（2026-08-08 時点）
+## 1.5 ビルド #6（2026-08-08）
 
-ビルド #4 のあとに**ネイティブ側の追加**が入っている。
-OTA（`eas update`）では届かない。
+ネイティブ側の追加が3回分たまっていたので作り直した。
+OTA（`eas update`）では届かないもの。
 
 - `expo-splash-screen` / `expo-dev-client` / `expo-updates`（2026-08-07）
 - `expo-font` と同梱の書体3つ（2026-08-08・約13MB）
 - `expo-blur`（2026-08-08・ボトムタブのすりガラス）
 
-書体はアプリの中身として載るため、**アプリの容量が約13MB増える。**
+書体はアプリの中身として載るため、**アプリの容量が約13MB増えている。**
+
+    https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/eb863e9d-e303-4c5c-96d6-6a42e4f5c27e
+
+`runtimeVersion` は `fingerprint`。上の3つを含む新しい指紋になったので、
+**#6 向けのOTAが #4 や #5 に配られることはない。**
 
 ## 2. 直近にやったこと
 
@@ -124,12 +129,12 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | 3 | プライバシーポリシーのURL | **済・公開確認済み** |
 | 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect`） |
 | 5 | Apple の認証情報の作成 | **済** |
-| 6 | **iOSビルド** | **済。#4 が finished**（commit `b6d45da`・版数1.0.0） |
+| 6 | **iOSビルド** | **済。#6 が finished**（2026-08-08・commit `17135f4`・版数1.0.0 / ビルド番号6） |
 | 7 | App Store Connect にアプリを登録 | **未** |
 | 8 | `eas submit` で TestFlight へ | 7 のあと |
 
-ビルド #4 は**アイコン確定（`31759f2`）とドメイン切替（`1a64267`）の
-両方を含む**コミットから作られている。作り直しは要らない。
+ビルド #6 は 2026-08-08 までの変更をすべて含む
+（アイコン・ドメイン・配色・書体・すりガラス・ログイン画面の分離）。
 
 ```
 cd client

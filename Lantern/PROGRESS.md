@@ -2036,6 +2036,24 @@ Android は `experimentalBlurMethod="dimezisBlurView"` を渡さないとぼか�
 
 ---
 
+## 2026/08/08 — iOSビルド #6
+
+版数 1.0.0 / ビルド番号 6。commit `17135f4` から作成。**finished**。
+
+ネイティブ側の追加が3回分たまっていたため作り直した。
+OTA では届かないもの。
+
+- `expo-splash-screen` / `expo-dev-client` / `expo-updates`（2026-08-07）
+- `expo-font` と書体3つ（約13MB）
+- `expo-blur`
+
+`runtimeVersion` は `fingerprint` なので、これらを含む新しい指紋になった。
+**#6 向けのOTAが古いビルドに配られることはない。**
+
+次は App Store Connect への登録と `eas submit`。どちらも要ユーザー操作。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。
