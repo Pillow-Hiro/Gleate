@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { authFetch } from '../../lib/supabase'
 import {
@@ -161,9 +162,9 @@ export default function Journal() {
         {/* ヘッダー */}
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">JOURNAL</Text>
-          <Text className="font-display text-xl font-light text-ink">記録</Text>
+          <Text className="font-display text-xl text-ink">記録</Text>
           {!loading && logs.length > 0 ? (
-            <Text className="text-sm text-ink-soft mt-1">{logs.length}日間の記録</Text>
+            <Text className="text-body text-ink-soft mt-1">{logs.length}日間の記録</Text>
           ) : null}
         </View>
 
@@ -181,7 +182,7 @@ export default function Journal() {
               onPress={() => setActiveTab(id)}
               className={`px-1 pb-2.5 border-b-2 ${activeTab === id ? 'border-accent' : 'border-transparent'}`}
             >
-              <Text className={`text-sm ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
+              <Text className={`text-body ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
             </Pressable>
           ))}
         </View>
@@ -193,7 +194,7 @@ export default function Journal() {
               {thisMonthCount > 0 ? (
                 <View className="flex-row justify-end mb-3">
                   <View className="bg-amber-light border border-amber/20 rounded-full px-2.5 py-0.5">
-                    <Text className="text-xs text-amber">今月の灯り {thisMonthCount}日</Text>
+                    <Text className="text-aux text-amber">今月の灯り {thisMonthCount}日</Text>
                   </View>
                 </View>
               ) : null}
@@ -213,29 +214,29 @@ export default function Journal() {
 
               {selectedDate && selectedLog ? (
                 <View className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
-                  <Text className="text-xs text-ink-faint mb-2">{dateDisplayJa(selectedDate)}</Text>
+                  <Text className="text-aux text-ink-faint mb-2">{dateDisplayJa(selectedDate)}</Text>
                   <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
                 </View>
               ) : null}
 
               {selectedDate && !selectedLog ? (
-                <Text className="text-xs text-ink-faint text-center mt-3">この日の記録はありません</Text>
+                <Text className="text-aux text-ink-faint text-center mt-3">この日の記録はありません</Text>
               ) : null}
             </View>
 
             {/* 検索 */}
             <View className="flex-row items-center bg-stone border border-border rounded-lg px-3">
-              <Text className="text-ink-faint text-xs mr-2">⌕</Text>
+              <Text className="text-ink-faint text-aux mr-2">⌕</Text>
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="記録を検索"
                 placeholderTextColor="#999999"
-                className="flex-1 py-2.5 text-sm text-ink"
+                className="flex-1 py-2.5 font-body text-body text-ink"
               />
               {search ? (
                 <Pressable onPress={() => setSearch('')} className="pl-2">
-                  <Text className="text-ink-faint text-xs">✕</Text>
+                  <Text className="text-ink-faint text-aux">✕</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -250,12 +251,12 @@ export default function Journal() {
             ) : logs.length === 0 ? (
               <View className="items-center py-16">
                 <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
-                <Text className="text-sm text-ink-soft">まだ記録がありません</Text>
-                <Text className="text-xs text-ink-faint mt-1.5">今日のタブから記録を始めましょう</Text>
+                <Text className="text-body text-ink-soft">まだ記録がありません</Text>
+                <Text className="text-aux text-ink-faint mt-1.5">今日のタブから記録を始めましょう</Text>
               </View>
             ) : monthKeys.length === 0 ? (
               <View className="items-center py-12">
-                <Text className="text-sm text-ink-faint">
+                <Text className="text-body text-ink-faint">
                   「{search.trim()}」の記録は見つかりませんでした
                 </Text>
               </View>
@@ -264,7 +265,7 @@ export default function Journal() {
                 {monthKeys.map((month) => (
                   <View key={month}>
                     <View className="flex-row items-center gap-2.5 mb-3">
-                      <Text className="text-xs text-ink-soft font-medium">
+                      <Text className="text-aux text-ink-soft">
                         {monthLabel(groups[month][0].date)}
                       </Text>
                       <Text className="text-[10px] text-ink-faint">{groups[month].length}日</Text>
@@ -304,11 +305,11 @@ export default function Journal() {
         <Pressable className="flex-1 bg-black/50 justify-end" onPress={closeModal}>
           <Pressable className="bg-cream rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xs text-ink-faint">
+              <Text className="text-aux text-ink-faint">
                 {modalDate ? dateDisplayJa(modalDate) : ''}
               </Text>
               <Pressable onPress={closeModal} accessibilityLabel="閉じる" className="p-1">
-                <Text className="text-ink-faint text-xs">✕</Text>
+                <Text className="text-ink-faint text-aux">✕</Text>
               </Pressable>
             </View>
 
@@ -325,7 +326,7 @@ export default function Journal() {
                       multiline
                       textAlignVertical="top"
                       style={{ minHeight }}
-                      className="bg-stone border border-border rounded-lg px-3 py-2.5 text-sm text-ink"
+                      className="bg-stone border border-border rounded-lg px-3 py-2.5 text-body text-ink"
                     />
                   </View>
                 ))}
@@ -341,14 +342,14 @@ export default function Journal() {
 
             <View className="flex-row items-center justify-end gap-4 pt-4">
               <Pressable onPress={closeModal}>
-                <Text className="text-xs text-ink-faint">キャンセル</Text>
+                <Text className="text-aux text-ink-faint">キャンセル</Text>
               </Pressable>
               <Pressable
                 onPress={handleModalSave}
                 disabled={modalSaving || !canSaveModal}
                 className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
               >
-                <Text className="text-xs text-forest">{modalSaving ? '保存中...' : '記録する'}</Text>
+                <Text className="text-aux text-forest">{modalSaving ? '保存中...' : '記録する'}</Text>
               </Pressable>
             </View>
           </Pressable>

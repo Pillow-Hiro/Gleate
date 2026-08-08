@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import { todayStr } from '../lib/date'
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
@@ -25,7 +26,7 @@ function cellStyle({ isFuture, isToday, hasLog, isSelected }) {
 function cellTextStyle({ isFuture, isToday, hasLog, isSelected }) {
   const base = 'text-[9px] '
   if (isFuture) return base + 'text-ink-faint/30'
-  if (isToday || hasLog) return base + (isToday && !hasLog ? 'text-accent font-semibold' : 'text-amber font-semibold')
+  if (isToday || hasLog) return base + (isToday && !hasLog ? 'text-accent' : 'text-amber')
   return base + (isSelected ? 'text-ink' : 'text-ink-faint/60')
 }
 
@@ -72,7 +73,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
     <View>
       <View className="flex-row items-center justify-center gap-2 mb-2">
         <Pressable onPress={prevMonth} className="p-1" accessibilityLabel="前月">
-          <Text className="text-ink-faint text-xs">‹</Text>
+          <Text className="text-ink-faint text-aux">‹</Text>
         </Pressable>
         <Text className="text-[10px] text-ink-faint tracking-[2px] w-24 text-center">
           {viewYear}年{viewMonth + 1}月
@@ -83,7 +84,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
           className="p-1 disabled:opacity-25"
           accessibilityLabel="翌月"
         >
-          <Text className="text-ink-faint text-xs">›</Text>
+          <Text className="text-ink-faint text-aux">›</Text>
         </Pressable>
         <Pressable onPress={goToday} className="border border-border rounded px-1.5 py-0.5">
           <Text className="text-[10px] text-ink-faint">今日</Text>

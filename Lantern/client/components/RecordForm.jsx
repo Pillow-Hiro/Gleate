@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, Text, TextInput, View } from 'react-native'
+import { Pressable, TextInput, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
@@ -19,14 +20,14 @@ import PhotoPicker from './PhotoPicker'
 function Field({ value, onChange, label, rows = 2, placeholder = '（任意）' }) {
   return (
     <View>
-      <Text className="text-xs text-ink-faint mb-1.5">{label}</Text>
+      <Text className="text-aux text-ink-faint mb-1.5">{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChange}
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
-        className="bg-cream border border-border rounded px-3 py-2 text-sm text-ink"
+        className="bg-cream border border-border rounded px-3 py-2 font-body text-body text-ink"
         placeholder={placeholder}
         placeholderTextColor="#999999"
       />
@@ -140,8 +141,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         onPress={() => setDetailOpen((o) => !o)}
         className="flex-row items-center gap-1.5"
       >
-        <Text className="text-xs text-ink-faint">{detailOpen ? '⌄' : '›'}</Text>
-        <Text className="text-xs text-ink-faint">
+        <Text className="text-aux text-ink-faint">{detailOpen ? '⌄' : '›'}</Text>
+        <Text className="text-aux text-ink-faint">
           {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
         </Text>
       </Pressable>
@@ -180,25 +181,25 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         disabled={loading}
         className="bg-forest dark:bg-primary rounded py-2.5 items-center active:opacity-80 disabled:opacity-50"
       >
-        <Text className="text-sm text-cream dark:text-primary-text">
+        <Text className="text-body text-cream dark:text-primary-text">
           {loading ? '保存中...' : '記録する'}
         </Text>
       </Pressable>
 
       {slow ? (
-        <Text className="text-xs text-ink-faint text-center">
+        <Text className="text-aux text-ink-faint text-center">
           まだ保存しています。もう少しかかります。
         </Text>
       ) : null}
 
       {saveError ? (
-        <Text className="text-xs text-red-500 text-center">{saveError}</Text>
+        <Text className="text-aux text-red-500 text-center">{saveError}</Text>
       ) : null}
 
       {aiResponse ? (
         <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 mt-4 gap-1.5">
           <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-          <Text className="text-sm leading-relaxed text-forest">{aiResponse}</Text>
+          <Text className="text-body leading-relaxed text-forest">{aiResponse}</Text>
         </View>
       ) : null}
     </View>

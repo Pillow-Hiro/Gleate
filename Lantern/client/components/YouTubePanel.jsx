@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { startConnect, readConnectResult, clearConnectResult } from '../lib/youtubeConnect'
 import { useThemeContext } from '../lib/theme'
@@ -20,7 +21,7 @@ function SummaryCard({ label, value }) {
   return (
     <View className="bg-stone/50 rounded-xl px-4 py-4 flex-1">
       <Text className="text-[10px] text-ink-faint mb-1">{label}</Text>
-      <Text className="text-xl font-light text-ink">{value.toLocaleString()}</Text>
+      <Text className="text-xl text-ink">{value.toLocaleString()}</Text>
     </View>
   )
 }
@@ -205,13 +206,13 @@ export default function YouTubePanel() {
     <>
       {message ? (
         <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-4 py-3">
-          <Text className="text-sm text-forest">{message}</Text>
+          <Text className="text-body text-forest">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-8 items-center gap-3">
-          <Text className="text-sm text-ink-soft text-center">
+          <Text className="text-body text-ink-soft text-center">
             YouTubeと繋ぐと、動画の記録がここに並びます。
           </Text>
           <Pressable
@@ -219,7 +220,7 @@ export default function YouTubePanel() {
             disabled={connecting}
             className="border border-sage/40 rounded-full px-4 py-2 disabled:opacity-50"
           >
-            <Text className="text-xs text-forest">
+            <Text className="text-aux text-forest">
               {connecting ? '接続中...' : 'YouTubeと繋ぐ'}
             </Text>
           </Pressable>
@@ -230,22 +231,22 @@ export default function YouTubePanel() {
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
               <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">CHANNEL</Text>
-              <Text className="text-sm text-ink">{status.channel_name || '—'}</Text>
+              <Text className="text-body text-ink">{status.channel_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
               <View className="flex-row items-center gap-3">
                 <Pressable onPress={() => setConfirmDisconnect(false)}>
-                  <Text className="text-xs text-ink-faint">キャンセル</Text>
+                  <Text className="text-aux text-ink-faint">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
-                  <Text className="text-xs text-red-500">
+                  <Text className="text-aux text-red-500">
                     {disconnecting ? '解除中...' : '解除する'}
                   </Text>
                 </Pressable>
               </View>
             ) : (
               <Pressable onPress={() => setConfirmDisconnect(true)}>
-                <Text className="text-xs text-ink-faint">連携を解除</Text>
+                <Text className="text-aux text-ink-faint">連携を解除</Text>
               </Pressable>
             )}
           </View>
@@ -288,7 +289,7 @@ export default function YouTubePanel() {
             {analyticsLoading ? (
               <View className="h-48 bg-parchment rounded" />
             ) : chartData.length === 0 ? (
-              <Text className="text-xs text-ink-faint py-2">
+              <Text className="text-aux text-ink-faint py-2">
                 この期間に投稿された動画はありません。
               </Text>
             ) : (
@@ -309,7 +310,7 @@ export default function YouTubePanel() {
                 ))}
               </View>
             ) : videosError ? (
-              <Text className="text-sm text-ink-faint">動画を取得できませんでした。</Text>
+              <Text className="text-body text-ink-faint">動画を取得できませんでした。</Text>
             ) : (
               <VideoTimeline videos={videos} />
             )}
@@ -324,7 +325,7 @@ export default function YouTubePanel() {
                 disabled={channelInsightLoading || !videos?.length}
                 className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
               >
-                <Text className="text-xs text-forest">
+                <Text className="text-aux text-forest">
                   {channelInsightLoading ? '生成中...' : channelInsight ? '再生成' : 'Lanternに聞く'}
                 </Text>
               </Pressable>
@@ -341,7 +342,7 @@ export default function YouTubePanel() {
             {!channelInsightLoading && channelInsight ? (
               <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
                 <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-                <Text className="text-sm leading-relaxed text-forest">{channelInsight}</Text>
+                <Text className="text-body leading-relaxed text-forest">{channelInsight}</Text>
               </View>
             ) : null}
           </View>

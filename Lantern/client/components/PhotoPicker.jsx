@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
+import Text from './Text'
 import * as ImagePicker from 'expo-image-picker'
 import { compressPhoto } from '../lib/image'
 import PhotoLightbox from './PhotoLightbox'
@@ -73,10 +74,10 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
           </Pressable>
           <View className="flex-row justify-end gap-4 mt-1.5">
             <Pressable onPress={handlePick} disabled={disabled || busy}>
-              <Text className="text-xs text-ink-faint">選び直す</Text>
+              <Text className="text-aux text-ink-faint">選び直す</Text>
             </Pressable>
             <Pressable onPress={handleRemove} disabled={disabled || busy}>
-              <Text className="text-xs text-ink-faint">削除</Text>
+              <Text className="text-aux text-ink-faint">削除</Text>
             </Pressable>
           </View>
         </View>
@@ -86,11 +87,11 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
           disabled={disabled || busy}
           className="border border-border border-dashed rounded-lg py-4 items-center"
         >
-          <Text className="text-xs text-ink-faint">{busy ? '読み込み中...' : '写真を追加'}</Text>
+          <Text className="text-aux text-ink-faint">{busy ? '読み込み中...' : '写真を追加'}</Text>
         </Pressable>
       )}
 
-      {error ? <Text className="text-xs text-ink-faint">{error}</Text> : null}
+      {error ? <Text className="text-aux text-ink-faint">{error}</Text> : null}
 
       <PhotoLightbox src={zoomed ? photoUrl : null} onClose={() => setZoomed(false)} />
     </View>

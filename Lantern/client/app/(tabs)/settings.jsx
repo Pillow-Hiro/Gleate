@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
+import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase, authFetch } from '../../lib/supabase'
 import { calcStreak } from '../../lib/date'
@@ -11,9 +12,9 @@ function SettingsRow({ label, description, children }) {
   return (
     <View className="flex-row items-center justify-between py-4 border-b border-border">
       <View className="flex-1 mr-4">
-        <Text className="text-sm text-ink">{label}</Text>
+        <Text className="text-body text-ink">{label}</Text>
         {description ? (
-          <Text className="text-xs text-ink-faint mt-0.5">{description}</Text>
+          <Text className="text-aux text-ink-faint mt-0.5">{description}</Text>
         ) : null}
       </View>
       <View>{children}</View>
@@ -104,22 +105,22 @@ export default function Settings() {
       <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-8 w-full max-w-2xl self-center">
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">SETTINGS</Text>
-          <Text className="font-display text-xl font-light text-ink">設定</Text>
+          <Text className="font-display text-xl text-ink">設定</Text>
         </View>
 
         <Section title="アクティビティ">
           <SettingsRow label="記録した日数" description="これまでの合計">
-            <Text className="text-sm font-medium text-forest">{logs.length}日</Text>
+            <Text className="text-body text-forest">{logs.length}日</Text>
           </SettingsRow>
           <SettingsRow label="現在の連続日数" description="今日まで続けた日数">
-            <Text className="text-sm font-medium text-forest">{streak}日</Text>
+            <Text className="text-body text-forest">{streak}日</Text>
           </SettingsRow>
         </Section>
 
         <Section title="表示">
           <SettingsRow label="テーマ" description="ボタンで手動切り替え">
             <Pressable onPress={toggleTheme} className="border border-sage/40 rounded-full px-3 py-1.5">
-              <Text className="text-xs text-forest">
+              <Text className="text-aux text-forest">
                 {isDark ? '☀️ ライトに切替' : '🌙 ダークに切替'}
               </Text>
             </Pressable>
@@ -133,11 +134,11 @@ export default function Settings() {
               disabled={exporting}
               className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
             >
-              <Text className="text-xs text-forest">{exporting ? '準備中...' : 'エクスポート'}</Text>
+              <Text className="text-aux text-forest">{exporting ? '準備中...' : 'エクスポート'}</Text>
             </Pressable>
           </SettingsRow>
         </Section>
-        {exportError ? <Text className="text-xs text-red-500">{exportError}</Text> : null}
+        {exportError ? <Text className="text-aux text-red-500">{exportError}</Text> : null}
 
         <Section title="アカウント">
           <SettingsRow label="ログアウト" description="このデバイスからサインアウトします">
@@ -146,7 +147,7 @@ export default function Settings() {
               disabled={signingOut}
               className="border border-red-200 dark:border-red-900/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
             >
-              <Text className="text-xs text-red-500">
+              <Text className="text-aux text-red-500">
                 {signingOut ? 'ログアウト中...' : 'ログアウト'}
               </Text>
             </Pressable>
@@ -162,15 +163,15 @@ export default function Settings() {
               煽らないが、何が起きるかは省略せずに書く。 */}
           {confirmDelete ? (
             <View className="py-4 gap-3">
-              <Text className="text-sm text-ink leading-relaxed">
+              <Text className="text-body text-ink leading-relaxed">
                 記録・アイデア・連携がすべて消え、元に戻せません。
               </Text>
-              <Text className="text-xs text-ink-faint leading-relaxed">
+              <Text className="text-aux text-ink-faint leading-relaxed">
                 端末の中にある写真は消えません。手元に残しておきたい記録があれば、
                 先にエクスポートしてください。
               </Text>
               {deleteError ? (
-                <Text className="text-xs text-red-500">{deleteError}</Text>
+                <Text className="text-aux text-red-500">{deleteError}</Text>
               ) : null}
               <View className="flex-row gap-3">
                 <Pressable
@@ -178,7 +179,7 @@ export default function Settings() {
                   disabled={deleting}
                   className="border border-red-400 dark:border-red-800 rounded-full px-3.5 py-1.5 disabled:opacity-50"
                 >
-                  <Text className="text-xs text-red-500">
+                  <Text className="text-aux text-red-500">
                     {deleting ? '削除中...' : '削除する'}
                   </Text>
                 </Pressable>
@@ -187,7 +188,7 @@ export default function Settings() {
                   disabled={deleting}
                   className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
                 >
-                  <Text className="text-xs text-forest">やめる</Text>
+                  <Text className="text-aux text-forest">やめる</Text>
                 </Pressable>
               </View>
             </View>
@@ -200,7 +201,7 @@ export default function Settings() {
                 onPress={() => setConfirmDelete(true)}
                 className="border border-red-200 dark:border-red-900/40 rounded-full px-3.5 py-1.5"
               >
-                <Text className="text-xs text-red-500">削除</Text>
+                <Text className="text-aux text-red-500">削除</Text>
               </Pressable>
             </SettingsRow>
           )}
@@ -208,7 +209,7 @@ export default function Settings() {
 
         <Section title="Lanternについて">
           <SettingsRow label="バージョン">
-            <Text className="text-xs text-ink-faint">{APP_VERSION}</Text>
+            <Text className="font-mono text-aux text-ink-faint">{APP_VERSION}</Text>
           </SettingsRow>
           <SettingsRow label="コンセプト" description="静かに寄り添う、あなただけの伴走者。">
             <View />

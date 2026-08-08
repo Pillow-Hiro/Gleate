@@ -1,4 +1,5 @@
-import { Image, Modal, Pressable, Text, View } from 'react-native'
+import { Image, Modal, Pressable, View } from 'react-native'
+import Text from './Text'
 
 // Web版 components/PhotoLightbox.jsx と同じ役割。
 // サムネイルではなく本体（photo_url）を渡すこと。縮小版を拡大しても意味がない。

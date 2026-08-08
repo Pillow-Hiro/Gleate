@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Image, Linking, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Image, Linking, Pressable, useWindowDimensions, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 
 // 旧 Web Dashboard.jsx の VideoTimeline を移植したもの。
@@ -60,7 +61,7 @@ export default function VideoTimeline({ videos }) {
   }
 
   if (rows.length === 0) {
-    return <Text className="text-sm text-ink-faint py-4">まだ動画がありません。</Text>
+    return <Text className="text-body text-ink-faint py-4">まだ動画がありません。</Text>
   }
 
   return (
@@ -80,7 +81,7 @@ export default function VideoTimeline({ videos }) {
 
         return (
           <View key={v.id} style={{ width: itemWidth }}>
-            <Text className="text-xs text-ink-faint mb-1.5">{year}/{month}/{day}</Text>
+            <Text className="text-aux text-ink-faint mb-1.5">{year}/{month}/{day}</Text>
 
             <Pressable onPress={() => Linking.openURL(watchUrl)}>
               <Image
@@ -90,15 +91,15 @@ export default function VideoTimeline({ videos }) {
                 resizeMode="cover"
                 accessibilityLabel={v.title}
               />
-              <Text className={`text-sm leading-snug mt-1.5 ${isDim ? 'text-ink-soft' : 'text-ink'}`}>
+              <Text className={`text-body leading-snug mt-1.5 ${isDim ? 'text-ink-soft' : 'text-ink'}`}>
                 {v.title}
               </Text>
             </Pressable>
 
             <View className="flex-row items-center gap-2 mt-1 flex-wrap">
-              <Text className="text-xs text-ink-faint">{v.view_count.toLocaleString()} 回</Text>
+              <Text className="text-aux text-ink-faint">{v.view_count.toLocaleString()} 回</Text>
               {v.like_count > 0 ? (
-                <Text className="text-xs text-ink-faint">♡ {v.like_count.toLocaleString()}</Text>
+                <Text className="text-aux text-ink-faint">♡ {v.like_count.toLocaleString()}</Text>
               ) : null}
               {isDim ? (
                 <View className="border border-border rounded-full px-1.5 py-0.5">
@@ -125,7 +126,7 @@ export default function VideoTimeline({ videos }) {
 
             {s.visible && s.text ? (
               <View className="bg-background-info rounded-lg px-3 py-2.5 mt-2">
-                <Text className="text-xs leading-relaxed text-text-info">{s.text}</Text>
+                <Text className="text-aux leading-relaxed text-text-info">{s.text}</Text>
               </View>
             ) : null}
           </View>

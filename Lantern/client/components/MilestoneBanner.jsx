@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
 
@@ -59,10 +60,10 @@ export default function MilestoneBanner() {
         onPress={() => setOpen((o) => !o)}
         className="flex-row items-center justify-between gap-3"
       >
-        <Text className="flex-1 text-sm text-cream dark:text-primary-text">
+        <Text className="flex-1 text-body text-cream dark:text-primary-text">
           記録を始めて{milestone.days}日が経ちました。
         </Text>
-        <Text className="text-cream/60 text-xs">{open ? '⌃' : '⌄'}</Text>
+        <Text className="text-cream/60 text-aux">{open ? '⌃' : '⌄'}</Text>
       </Pressable>
 
       {open ? (
@@ -70,16 +71,16 @@ export default function MilestoneBanner() {
           {milestone.reflection ? (
             <View className="bg-white/10 dark:bg-black/20 rounded-xl px-4 py-3.5 gap-2">
               <Text className="text-[10px] text-cream/60 tracking-[2px]">LANTERN</Text>
-              <Text className="text-sm text-cream dark:text-primary-text leading-relaxed">
+              <Text className="text-body text-cream dark:text-primary-text leading-relaxed">
                 {milestone.reflection.observation}
               </Text>
-              <Text className="text-sm text-cream/80 dark:text-primary-text/80 italic leading-relaxed">
+              <Text className="text-body text-cream/80 dark:text-primary-text/80 italic leading-relaxed">
                 {milestone.reflection.question}
               </Text>
             </View>
           ) : null}
           <Pressable onPress={handleDismiss} className="self-end">
-            <Text className="text-xs text-cream/60">閉じる</Text>
+            <Text className="text-aux text-cream/60">閉じる</Text>
           </Pressable>
         </View>
       ) : null}

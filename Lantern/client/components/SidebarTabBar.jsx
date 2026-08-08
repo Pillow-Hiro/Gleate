@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import Svg, { Circle, Line, Path } from 'react-native-svg'
 import { TAB_ICONS } from './TabIcons'
 import { useThemeContext } from '../lib/theme'
@@ -60,7 +61,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
       style={{ width: SIDEBAR_WIDTH, borderRightWidth: 1 }}
     >
       <View className="px-5 py-6 border-b border-border" style={{ borderBottomWidth: 1 }}>
-        <Text className="font-display text-sm text-ink" style={{ letterSpacing: 3 }}>
+        <Text className="font-display text-body text-ink" style={{ letterSpacing: 3 }}>
           Lantern
         </Text>
         <Text className="text-[10px] text-ink-faint mt-1">あなたの道は、あなたが照らす。</Text>
@@ -96,7 +97,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
               }`}
             >
               {Icon ? <Icon color={isActive ? activeColor : inactiveColor} /> : null}
-              <Text className={`text-sm ${isActive ? 'text-forest' : 'text-ink-soft'}`}>
+              <Text className={`text-body ${isActive ? 'text-forest' : 'text-ink-soft'}`}>
                 {label}
               </Text>
             </Pressable>

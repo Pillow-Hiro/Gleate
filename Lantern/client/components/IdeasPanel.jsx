@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, Text, TextInput, View } from 'react-native'
+import { Pressable, TextInput, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 
 // アイデアの溜め場。
@@ -31,7 +32,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
     <View className="border-b border-border py-3">
       <Pressable onPress={() => onTogglePicked(idea)}>
         <Text
-          className={`text-sm leading-relaxed ${picked ? 'text-ink-faint' : 'text-ink'}`}
+          className={`text-body leading-relaxed ${picked ? 'text-ink-faint' : 'text-ink'}`}
           style={picked ? { textDecorationLine: 'line-through' } : undefined}
         >
           {idea.text}
@@ -46,21 +47,21 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
         {confirmDelete ? (
           <View className="flex-row items-center gap-3">
             <Pressable onPress={() => setConfirmDelete(false)}>
-              <Text className="text-xs text-ink-faint">キャンセル</Text>
+              <Text className="text-aux text-ink-faint">キャンセル</Text>
             </Pressable>
             <Pressable onPress={() => onDelete(idea)}>
-              <Text className="text-xs text-red-500">削除する</Text>
+              <Text className="text-aux text-red-500">削除する</Text>
             </Pressable>
           </View>
         ) : (
           <View className="flex-row items-center gap-3">
             <Pressable onPress={() => onTogglePicked(idea)}>
-              <Text className="text-xs text-ink-faint">
+              <Text className="text-aux text-ink-faint">
                 {picked ? '戻す' : '使った'}
               </Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-xs text-red-500">削除</Text>
+              <Text className="text-aux text-red-500">削除</Text>
             </Pressable>
           </View>
         )}
@@ -144,14 +145,14 @@ export default function IdeasPanel() {
           returnKeyType="done"
           placeholder="思いついたこと"
           placeholderTextColor="#999999"
-          className="flex-1 bg-stone border border-border rounded-lg px-3 py-2.5 text-sm text-ink"
+          className="flex-1 bg-stone border border-border rounded-lg px-3 py-2.5 font-body text-body text-ink"
         />
         <Pressable
           onPress={handleAdd}
           disabled={!text.trim() || saving}
           className="border border-sage/40 rounded-full px-3.5 py-2 disabled:opacity-50"
         >
-          <Text className="text-xs text-forest">置く</Text>
+          <Text className="text-aux text-forest">置く</Text>
         </Pressable>
       </View>
 
@@ -162,7 +163,7 @@ export default function IdeasPanel() {
           ))}
         </View>
       ) : ideas.length === 0 ? (
-        <Text className="text-sm text-ink-faint py-6">
+        <Text className="text-body text-ink-faint py-6">
           思いついたことを、ここに置いておけます。
         </Text>
       ) : (

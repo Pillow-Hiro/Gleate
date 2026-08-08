@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Animated, ImageBackground, Pressable, Text, View } from 'react-native'
+import { Animated, ImageBackground, Pressable, View } from 'react-native'
+import Text from './Text'
 import { localDateStr } from '../lib/date'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -71,17 +72,17 @@ export default function SplashScreen({ onClose }) {
           opacity のアニメーションは Animated.View に持たせ、見た目は Text に置く。 */}
       <View className="px-10 w-full max-w-sm items-center">
         <Animated.View style={{ opacity: dateOpacity }}>
-          <Text className="text-white/80 tracking-[4px] mb-5 text-xs">{dateLabel}</Text>
+          <Text className="text-white/80 tracking-[4px] mb-5 text-aux">{dateLabel}</Text>
         </Animated.View>
 
         <Animated.View style={{ opacity: logoOpacity }}>
-          <Text className="font-display text-3xl font-light text-white tracking-[8px] mb-7">
+          <Text className="font-display text-3xl text-white tracking-[8px] mb-7">
             Lantern
           </Text>
         </Animated.View>
 
         <Animated.View style={{ opacity: quoteOpacity }}>
-          <Text className="text-white/90 text-sm font-light leading-loose text-center">
+          <Text className="text-white/90 text-body leading-loose text-center">
             {quote}
           </Text>
         </Animated.View>
@@ -89,7 +90,7 @@ export default function SplashScreen({ onClose }) {
 
       {/* ここも className は効かないので位置指定は style で持つ（bottom-14 = 56px） */}
       <Animated.View style={{ opacity: hintOpacity, position: 'absolute', bottom: 56 }}>
-        <Text className="text-xs text-white/40 tracking-[2px]">タップして続ける</Text>
+        <Text className="text-aux text-white/40 tracking-[2px]">タップして続ける</Text>
       </Animated.View>
     </Pressable>
   )

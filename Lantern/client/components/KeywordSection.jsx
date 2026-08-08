@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
 import { localDateStr } from '../lib/date'
@@ -61,13 +62,13 @@ export default function KeywordSection() {
       {KEYWORD_PERIODS.map(({ label, period }) => (
         <View key={period} className="gap-2.5">
           <View className="flex-row items-center justify-between">
-            <Text className="text-xs text-ink-soft">{label}</Text>
+            <Text className="text-aux text-ink-soft">{label}</Text>
             <Pressable
               onPress={() => handleFetch(period)}
               disabled={fetching[period]}
               className="border border-sage/40 rounded-full px-3.5 py-1 disabled:opacity-50"
             >
-              <Text className="text-xs text-forest">
+              <Text className="text-aux text-forest">
                 {fetching[period] ? '取得中...' : data[period] ? '再取得' : 'Lanternに聞く'}
               </Text>
             </Pressable>
@@ -76,7 +77,7 @@ export default function KeywordSection() {
           {data[period] ? (
             <View className="flex-row flex-wrap gap-2">
               {data[period].length === 0 ? (
-                <Text className="text-sm text-ink-faint">
+                <Text className="text-body text-ink-faint">
                   この期間のキーワードを抽出できませんでした。
                 </Text>
               ) : (
@@ -85,7 +86,7 @@ export default function KeywordSection() {
                     key={word}
                     className="flex-row items-baseline gap-1.5 bg-stone/60 rounded-full px-3 py-1"
                   >
-                    <Text className="text-xs text-ink-soft">{word}</Text>
+                    <Text className="text-aux text-ink-soft">{word}</Text>
                     <Text className="text-[10px] text-ink-faint">{count}</Text>
                   </View>
                 ))

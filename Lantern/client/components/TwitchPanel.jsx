@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Linking, Pressable, Text, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { startConnect, readConnectResult, clearConnectResult } from '../lib/twitchConnect'
 
@@ -30,13 +31,13 @@ function StreamRow({ stream }) {
   const duration = formatDuration(stream.duration_seconds)
   return (
     <View className="border-b border-border py-3.5">
-      <Text className="text-xs text-ink-faint mb-1">{formatDate(stream.started_at)}</Text>
+      <Text className="text-aux text-ink-faint mb-1">{formatDate(stream.started_at)}</Text>
       <Pressable onPress={() => stream.url && Linking.openURL(stream.url)}>
-        <Text className="text-sm text-ink leading-snug">{stream.title || '（タイトルなし）'}</Text>
+        <Text className="text-body text-ink leading-snug">{stream.title || '（タイトルなし）'}</Text>
       </Pressable>
       <View className="flex-row items-center gap-3 mt-1">
-        {duration ? <Text className="text-xs text-ink-faint">{duration}</Text> : null}
-        <Text className="text-xs text-ink-faint">{(stream.view_count ?? 0).toLocaleString()} 回</Text>
+        {duration ? <Text className="text-aux text-ink-faint">{duration}</Text> : null}
+        <Text className="text-aux text-ink-faint">{(stream.view_count ?? 0).toLocaleString()} 回</Text>
       </View>
     </View>
   )
@@ -159,13 +160,13 @@ export default function TwitchPanel() {
     <>
       {message ? (
         <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-4 py-3">
-          <Text className="text-sm text-forest">{message}</Text>
+          <Text className="text-body text-forest">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-8 items-center gap-3">
-          <Text className="text-sm text-ink-soft text-center">
+          <Text className="text-body text-ink-soft text-center">
             Twitchと繋ぐと、配信の記録がここに並びます。
           </Text>
           <Pressable
@@ -173,7 +174,7 @@ export default function TwitchPanel() {
             disabled={connecting}
             className="border border-sage/40 rounded-full px-4 py-2 disabled:opacity-50"
           >
-            <Text className="text-xs text-forest">
+            <Text className="text-aux text-forest">
               {connecting ? '接続中...' : 'Twitchと繋ぐ'}
             </Text>
           </Pressable>
@@ -183,22 +184,22 @@ export default function TwitchPanel() {
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
               <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">CHANNEL</Text>
-              <Text className="text-sm text-ink">{status.display_name || '—'}</Text>
+              <Text className="text-body text-ink">{status.display_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
               <View className="flex-row items-center gap-3">
                 <Pressable onPress={() => setConfirmDisconnect(false)}>
-                  <Text className="text-xs text-ink-faint">キャンセル</Text>
+                  <Text className="text-aux text-ink-faint">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
-                  <Text className="text-xs text-red-500">
+                  <Text className="text-aux text-red-500">
                     {disconnecting ? '解除中...' : '解除する'}
                   </Text>
                 </Pressable>
               </View>
             ) : (
               <Pressable onPress={() => setConfirmDisconnect(true)}>
-                <Text className="text-xs text-ink-faint">連携を解除</Text>
+                <Text className="text-aux text-ink-faint">連携を解除</Text>
               </Pressable>
             )}
           </View>
@@ -220,7 +221,7 @@ export default function TwitchPanel() {
                 ))}
               </View>
             ) : (
-              <Text className="text-sm text-ink-faint py-4">まだ配信の記録がありません。</Text>
+              <Text className="text-body text-ink-faint py-4">まだ配信の記録がありません。</Text>
             )}
           </View>
 
@@ -233,7 +234,7 @@ export default function TwitchPanel() {
                 disabled={insightLoading || !streams?.length}
                 className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
               >
-                <Text className="text-xs text-forest">
+                <Text className="text-aux text-forest">
                   {insightLoading ? '生成中...' : insight ? '再生成' : 'Lanternに聞く'}
                 </Text>
               </Pressable>
@@ -250,7 +251,7 @@ export default function TwitchPanel() {
             {!insightLoading && insight ? (
               <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
                 <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-                <Text className="text-sm leading-relaxed text-forest">{insight}</Text>
+                <Text className="text-body leading-relaxed text-forest">{insight}</Text>
               </View>
             ) : null}
           </View>
@@ -258,7 +259,7 @@ export default function TwitchPanel() {
           {followerCount != null ? (
             <View className="bg-stone/50 rounded-xl px-4 py-4">
               <Text className="text-[10px] text-ink-faint mb-1">フォロワー数</Text>
-              <Text className="text-xl font-light text-ink">
+              <Text className="text-xl text-ink">
                 {followerCount.toLocaleString()}
               </Text>
             </View>

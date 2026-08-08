@@ -106,6 +106,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout / SidebarTabBar | **タブのアイコン。サイドバーとボトムタブが共有する** |
+| `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
@@ -121,6 +122,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | ファイル | 役割 | test |
 |---|---|---|
 | `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
+| `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
 | `image.js` | 圧縮の実行 | — |

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
 import { formatAge } from '../lib/format'
@@ -7,8 +8,8 @@ import { formatAge } from '../lib/format'
 export function PatternCard({ observation, question }) {
   return (
     <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2.5">
-      <Text className="text-sm text-ink leading-relaxed">{observation}</Text>
-      <Text className="text-sm text-ink-soft italic leading-relaxed">{question}</Text>
+      <Text className="text-body text-ink leading-relaxed">{observation}</Text>
+      <Text className="text-body text-ink-soft italic leading-relaxed">{question}</Text>
     </View>
   )
 }
@@ -73,15 +74,15 @@ export default function ReviewSection({ title, type, description }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-base font-light text-ink">{title}</Text>
-          <Text className="text-xs text-ink-faint mt-0.5">{description}</Text>
+          <Text className="font-display text-base text-ink">{title}</Text>
+          <Text className="text-aux text-ink-faint mt-0.5">{description}</Text>
         </View>
         <Pressable
           onPress={generate}
           disabled={loading}
           className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-xs text-forest">{loading ? '生成中...' : '振り返る'}</Text>
+          <Text className="text-aux text-forest">{loading ? '生成中...' : '振り返る'}</Text>
         </Pressable>
       </View>
 
@@ -108,7 +109,7 @@ export default function ReviewSection({ title, type, description }) {
 
       {!loading && restored && patterns === null ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
-          <Text className="text-sm text-ink-faint text-center">
+          <Text className="text-body text-ink-faint text-center">
             「振り返る」を押すと、Lanternが記録から気づきを届けます
           </Text>
         </View>
@@ -116,7 +117,7 @@ export default function ReviewSection({ title, type, description }) {
 
       {!loading && isEmpty ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
-          <Text className="text-sm text-ink-faint text-center">記録が増えると、パターンが見えてきます。</Text>
+          <Text className="text-body text-ink-faint text-center">記録が増えると、パターンが見えてきます。</Text>
         </View>
       ) : null}
     </View>

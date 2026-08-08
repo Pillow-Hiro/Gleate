@@ -2,55 +2,119 @@
 @tailwind components;
 @tailwind utilities;
 
-/* frontend/src/index.css の @theme と同じ値。
-   NativeWind は rgb(var(--x) / <alpha-value>) 形式で不透明度指定を解決するため、
-   色は空白区切りのRGB三値で持つ。 */
+/* カラーシステム v1.4（2026-08-08 改訂）
+   定義は CLAUDE.md「カラーシステム」の節。値を変えるときは両方を直す。
+
+   NativeWind は rgb(var(--x) / <alpha-value>) 形式で不透明度を解決するため、
+   色は空白区切りのRGB三値で持つ（border だけは透過率込みなので例外）。
+
+   ## トークンを2系統持っている理由
+
+   新しい名前（bg-base / brand-green / ai-teal / lantern-warm /
+   text-primary / text-secondary）を足したが、**古い名前も残している。**
+
+   画面のコードには色クラスが約340箇所ある。一斉に置換すると
+   全ファイルが変更対象になり、目視で追えない量のデグレ危険が出る。
+   そこで**古い名前の「値」を新パレットに向け直した。**
+   これで既存の画面はそのまま新しい配色になる。
+   新しく書くコードは新しい名前を使う。
+
+   | 新しい名前 | 古い名前 | 役割 |
+   |---|---|---|
+   | bg-base | cream | 画面の地 |
+   | brand-green | forest / primary | ブランド・主要CTA |
+   | ai-teal | sage | AIの観察・発言 |
+   | lantern-warm | lantern / amber | 灯り・節目 |
+   | text-primary | ink | 本文 |
+   | text-secondary | ink-soft / ink-faint | 補足・日時 |
+
+   ## 暗いテーマで brand-green をそのまま文字に使わない
+
+   `text-forest` は24箇所ある。#2D4A3E を #1A1A18 の地に載せると
+   コントラスト比が 1.4:1 で読めない。
+   **暗いテーマの「文字としての緑」は明るい側に振る。**
+   面（ボタン・カード）としての #2D4A3E は brand-green で別に持つ。 */
 @layer base {
   :root {
+    /* 地。純白ではなく、わずかに温かい白 */
     --color-cream: 250 249 247;
     --color-stone: 240 238 234;
     --color-parchment: 232 228 220;
+
+    /* ブランド。明るい地の上では、そのまま文字にも面にも使える */
     --color-forest: 45 74 62;
-    --color-sage: 74 124 104;
-    --color-sage-light: 232 240 236;
-    --color-ink: 26 26 26;
-    --color-ink-soft: 102 102 102;
-    --color-ink-faint: 153 153 153;
-    --color-amber: 146 104 10;
-    --color-amber-light: 253 242 224;
-    --color-accent: 196 168 130;
-    --color-lantern: 212 149 106;
-    --color-background-info: 245 237 224;
-    --color-text-info: 122 92 58;
+    --color-brand-green: 45 74 62;
+
+    /* AI の観察・発言 */
+    --color-sage: 74 124 116;
+    --color-sage-light: 232 240 238;
+    --color-ai-teal: 74 124 116;
+
+    /* 本文と補足 */
+    --color-ink: 26 26 24;
+    --color-ink-soft: 106 102 94;
+    --color-ink-faint: 138 133 120;
+    --color-text-primary: 26 26 24;
+    --color-text-secondary: 138 133 120;
+
+    /* 灯り。明るい地では少し落として可読性を保つ */
+    --color-amber: 166 92 55;
+    --color-amber-light: 250 238 230;
+    --color-lantern: 217 123 79;
+    --color-lantern-warm: 217 123 79;
+    --color-accent: 191 132 92;
+
+    --color-background-info: 250 238 230;
+    --color-text-info: 140 82 48;
     --color-border: rgba(0, 0, 0, 0.08);
 
-    /* Web版ではダーク専用だが、クラスが解決できるようライトにも定義する */
     --color-primary: 45 74 62;
-    --color-primary-hover: 74 124 104;
+    --color-primary-hover: 61 96 80;
     --color-primary-text: 250 249 247;
+
+    /* Home だけの特例。CLAUDE.md「Home画面のみの特例」参照 */
+    --color-home-bg: 250 249 247;
+    --color-home-warm: 166 92 55;
   }
 
   .dark:root {
-    --color-cream: 28 28 30;
-    --color-stone: 44 44 46;
-    --color-parchment: 58 58 60;
-    --color-forest: 95 168 130;
-    --color-sage: 78 148 112;
-    --color-sage-light: 30 45 38;
-    --color-ink: 242 242 247;
-    --color-ink-soft: 174 174 178;
-    --color-ink-faint: 99 99 102;
-    --color-amber: 232 160 32;
-    --color-amber-light: 46 32 8;
-    --color-accent: 196 168 130;
-    --color-lantern: 212 149 106;
-    --color-background-info: 38 26 9;
-    --color-text-info: 196 168 130;
+    /* 純黒にしない。#000 だと有機ELで沈みすぎ、余白が穴に見える */
+    --color-cream: 26 26 24;
+    --color-stone: 38 38 35;
+    --color-parchment: 52 52 48;
+
+    /* **文字としての緑は明るい側。** 面としての緑は brand-green を使う */
+    --color-forest: 122 168 142;
+    --color-brand-green: 45 74 62;
+
+    /* AI の色も同じ理由で明るい側へ。#4A7C74 は暗い地で 3.3:1 しかない */
+    --color-sage: 122 168 158;
+    --color-sage-light: 30 45 43;
+    --color-ai-teal: 122 168 158;
+
+    --color-ink: 232 228 220;
+    --color-ink-soft: 176 170 158;
+    --color-ink-faint: 138 133 120;
+    --color-text-primary: 232 228 220;
+    --color-text-secondary: 138 133 120;
+
+    --color-amber: 217 123 79;
+    --color-amber-light: 46 32 24;
+    --color-lantern: 217 123 79;
+    --color-lantern-warm: 217 123 79;
+    --color-accent: 217 123 79;
+
+    --color-background-info: 40 28 20;
+    --color-text-info: 217 123 79;
     --color-border: rgba(255, 255, 255, 0.1);
 
-    /* 夜の書斎テーマ — カード・ボタン専用 */
-    --color-primary: 47 68 56;
-    --color-primary-hover: 58 84 69;
-    --color-primary-text: 232 224 208;
+    --color-primary: 45 74 62;
+    --color-primary-hover: 58 90 74;
+    --color-primary-text: 232 228 220;
+
+    /* Home は地をさらに沈め、灯りを一段落とす。
+       「本当に暗闇に灯りが1つだけある」感覚のため */
+    --color-home-bg: 18 19 15;
+    --color-home-warm: 184 129 90;
   }
 }

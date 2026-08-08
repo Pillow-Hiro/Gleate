@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import Text from '../components/Text'
 import { supabase } from '../lib/supabase'
 import FormShell from '../components/FormShell'
 
@@ -51,8 +52,8 @@ export default function Login() {
     >
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-display text-3xl font-light text-ink tracking-[8px]">Lantern</Text>
-          <Text className="text-xs text-ink-faint mt-2 tracking-wider">創作の道を照らす、AI伴走者</Text>
+          <Text className="font-display text-3xl text-ink tracking-[8px]">Lantern</Text>
+          <Text className="text-aux text-ink-faint mt-2 tracking-wider">創作の道を照らす、AI伴走者</Text>
         </View>
 
         {/* Web では FormShell が <form> を出す。
@@ -61,7 +62,7 @@ export default function Login() {
             Enter での送信もブラウザの既定動作なので <form> が要る。 */}
         <FormShell className="gap-4" onSubmit={handleSubmit}>
           <View>
-            <Text className="text-xs text-ink-faint mb-1.5 tracking-wide">メールアドレス</Text>
+            <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">メールアドレス</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -71,13 +72,13 @@ export default function Login() {
               keyboardType="email-address"
               returnKeyType="next"
               onSubmitEditing={handleSubmit}
-              className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
+              className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
               placeholderTextColor="#999999"
             />
           </View>
 
           <View>
-            <Text className="text-xs text-ink-faint mb-1.5 tracking-wide">パスワード</Text>
+            <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">パスワード</Text>
             {/* パスワードマネージャに拾わせるための指定。
                 autoComplete が無いと、メールだけ自動入力されてパスワードが空のままになる。
                 新規登録では new-password にしないと、保存済みの旧パスワードを
@@ -91,20 +92,20 @@ export default function Login() {
               textContentType={mode === 'login' ? 'password' : 'newPassword'}
               returnKeyType="go"
               onSubmitEditing={handleSubmit}
-              className="bg-stone border border-border rounded-lg px-3 py-3 text-sm text-ink"
+              className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
               placeholderTextColor="#999999"
             />
           </View>
 
-          {error ? <Text className="text-xs text-red-500">{error}</Text> : null}
-          {message ? <Text className="text-xs text-sage">{message}</Text> : null}
+          {error ? <Text className="text-aux text-red-500">{error}</Text> : null}
+          {message ? <Text className="text-aux text-sage">{message}</Text> : null}
 
           <Pressable
             onPress={handleSubmit}
             disabled={loading}
             className="bg-forest rounded-full py-3 items-center active:opacity-80 disabled:opacity-50"
           >
-            <Text className="text-sm text-cream">
+            <Text className="text-body text-cream">
               {loading ? '処理中...' : mode === 'login' ? 'ログイン' : '登録する'}
             </Text>
           </Pressable>
@@ -113,7 +114,7 @@ export default function Login() {
             onPress={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}
             className="items-center pt-2"
           >
-            <Text className="text-xs text-ink-faint">
+            <Text className="text-aux text-ink-faint">
               {mode === 'login' ? 'アカウントを作成する' : 'ログインに戻る'}
             </Text>
           </Pressable>

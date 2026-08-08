@@ -1,7 +1,8 @@
 import '../global.css'
 
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, View } from 'react-native'
+import Text from '../components/Text'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -9,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { localDateStr } from '../lib/date'
 import { ThemeProvider, useThemeContext } from '../lib/theme'
+import { useAppFonts } from '../lib/fonts'
 import SplashScreen from '../components/SplashScreen'
 
 // Web版 components/ErrorBoundary.jsx と同じ役割。
@@ -24,14 +26,14 @@ export function ErrorBoundary({ error, retry }) {
     <View className="flex-1 bg-cream items-center justify-center px-6">
       <View className="max-w-sm items-center gap-4">
         <Text className="text-3xl opacity-40">◇</Text>
-        <Text className="text-sm text-ink text-center leading-relaxed">
+        <Text className="text-body text-ink text-center leading-relaxed">
           画面をうまく表示できませんでした。
         </Text>
-        <Text className="text-xs text-ink-faint text-center leading-relaxed">
+        <Text className="text-aux text-ink-faint text-center leading-relaxed">
           これまでの記録は残っています。
         </Text>
         <Pressable onPress={retry} className="border border-sage/40 rounded-full px-3.5 py-1.5">
-          <Text className="text-xs text-forest">読み込み直す</Text>
+          <Text className="text-aux text-forest">読み込み直す</Text>
         </Pressable>
       </View>
     </View>
@@ -130,6 +132,10 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // フォントは待たない。読み込み中は端末の既定で描き、あとで差し替わる。
+  // 13MBの読み込みを白画面で待たせるより、読める状態で待たせる方がよい。
+  useAppFonts()
+
   return (
     <ThemeProvider>
       <SafeAreaProvider>

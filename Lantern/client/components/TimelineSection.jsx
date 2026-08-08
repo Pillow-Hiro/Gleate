@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { localDateStr, monthsAgoStr, findNearestLog } from '../lib/date'
 import { PatternCard } from './ReviewSection'
@@ -57,15 +58,15 @@ export default function TimelineSection({ logs = [] }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-base font-light text-ink">過去との対話</Text>
-          <Text className="text-xs text-ink-faint mt-0.5">あの頃の自分と、今の自分。</Text>
+          <Text className="font-display text-base text-ink">過去との対話</Text>
+          <Text className="text-aux text-ink-faint mt-0.5">あの頃の自分と、今の自分。</Text>
         </View>
         <Pressable
           onPress={handleReflect}
           disabled={loading}
           className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-xs text-forest">{loading ? '観察中...' : '振り返る'}</Text>
+          <Text className="text-aux text-forest">{loading ? '観察中...' : '振り返る'}</Text>
         </Pressable>
       </View>
 
@@ -77,7 +78,7 @@ export default function TimelineSection({ logs = [] }) {
             onPress={() => setMonths(m)}
             className={`px-3 py-1.5 border-b-2 ${months === m ? 'border-accent' : 'border-transparent'}`}
           >
-            <Text className={`text-xs ${months === m ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
+            <Text className={`text-aux ${months === m ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
           </Pressable>
         ))}
       </View>
@@ -98,7 +99,7 @@ export default function TimelineSection({ logs = [] }) {
 
       {!loading && data !== null && data.past_logs.length === 0 ? (
         <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
-          <Text className="text-sm text-ink-faint text-center">{currentLabel}の記録はありません。</Text>
+          <Text className="text-body text-ink-faint text-center">{currentLabel}の記録はありません。</Text>
         </View>
       ) : null}
 

@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
+import Text from './Text'
 import { localDateStr } from '../lib/date'
 
 // Web版 Home.jsx の「今週の発見」を移植したもの。AIは使わない。
@@ -63,11 +64,11 @@ export default function WeeklyDiscovery({ logs }) {
       <Text className="text-[10px] text-ink-faint tracking-[2px] mb-3">今週の発見</Text>
       <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4">
         {observations === null ? (
-          <Text className="text-sm text-ink-soft">今週の記録がまだありません。</Text>
+          <Text className="text-body text-ink-soft">今週の記録がまだありません。</Text>
         ) : (
           <View className="gap-2">
             {observations.map((obs, i) => (
-              <Text key={i} className="text-sm text-forest leading-relaxed">{obs}</Text>
+              <Text key={i} className="text-body text-forest leading-relaxed">{obs}</Text>
             ))}
           </View>
         )}

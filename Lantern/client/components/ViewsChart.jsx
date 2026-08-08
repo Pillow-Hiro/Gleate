@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
+import Text from './Text'
 import Svg, { Circle, Line, Polyline } from 'react-native-svg'
 
 // recharts はDOM/SVG前提でRNでは動かないため、折れ線を自前で描く。

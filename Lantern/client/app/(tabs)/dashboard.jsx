@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
+import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
@@ -37,7 +38,7 @@ export default function Dashboard() {
       <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6 w-full max-w-2xl self-center">
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">DASHBOARD</Text>
-          <Text className="font-display text-xl font-light text-ink">ダッシュボード</Text>
+          <Text className="font-display text-xl text-ink">ダッシュボード</Text>
         </View>
 
         <View className="flex-row gap-4 border-b border-border">
@@ -49,7 +50,7 @@ export default function Dashboard() {
                 activeTab === id ? 'border-accent' : 'border-transparent'
               }`}
             >
-              <Text className={`text-sm ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
+              <Text className={`text-body ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
                 {label}
               </Text>
             </Pressable>

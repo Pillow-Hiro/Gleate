@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
+import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
@@ -81,19 +82,22 @@ export default function Home() {
   const existingLog = logs.find((l) => l.date === targetDate) || null
   const streak = calcStreak(logs)
 
+  // Home だけ地を沈める。CLAUDE.md「Home画面のみの特例」。
+  // 「本当に暗闇に灯りが1つだけある」感覚を強めるため。
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-home-bg" edges={['top']}>
       <ScrollView
         contentContainerClassName="px-5 pt-6 pb-10 gap-8 w-full max-w-2xl self-center"
         keyboardShouldPersistTaps="handled"
       >
         {/* 日付ヘッダー */}
         <View>
-          <Text className="text-xs text-ink-faint tracking-[2px] mb-0.5">{dateLabel}</Text>
+          {/* 英数字だけの行なので Inter。和文フォントの英数字より字幅が揃う */}
+          <Text className="font-mono text-aux text-text-secondary tracking-[2px] mb-0.5">{dateLabel}</Text>
           <View className="flex-row items-baseline">
-            <Text className="font-display text-xl font-light text-ink">{dateJa}</Text>
+            <Text className="font-display text-xl text-ink">{dateJa}</Text>
             {streak >= 2 ? (
-              <Text className="text-xs text-ink-faint ml-2">· {streak}日目</Text>
+              <Text className="text-aux text-ink-faint ml-2">· {streak}日目</Text>
             ) : null}
           </View>
         </View>
@@ -102,12 +106,14 @@ export default function Home() {
 
         {/* 今日の灯り */}
         <View>
-          <Text className="text-[10px] text-ink-faint tracking-[2px] mb-3">今日の灯り</Text>
-          <View className="bg-forest dark:bg-primary rounded-xl px-5 py-5 min-h-[88px] justify-center">
+          {/* ラベルの灯り色は home-warm。他画面の accent より一段落とす。
+              Home の地が沈んでいるぶん、同じ強さだと灯りが強く見えるため */}
+          <Text className="text-[10px] text-home-warm tracking-[2px] mb-3">今日の灯り</Text>
+          <View className="bg-brand-green rounded-xl px-5 py-5 min-h-[88px] justify-center">
             {loading ? (
               <View className="w-32 h-4 bg-white/20 rounded" />
             ) : (
-              <Text className="font-display text-cream dark:text-primary-text text-base font-light leading-relaxed">
+              <Text className="font-display text-primary-text text-quote">
                 {quote || '今日の記録が、ここに残る。'}
               </Text>
             )}
@@ -130,7 +136,7 @@ export default function Home() {
                   writeTab === id ? 'border-accent' : 'border-transparent'
                 }`}
               >
-                <Text className={`text-sm ${writeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
+                <Text className={`text-body ${writeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
                   {label}
                 </Text>
               </Pressable>
@@ -142,10 +148,10 @@ export default function Home() {
         <View style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}>
           {isEditingPast ? (
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-xs text-ink-faint">
+              <Text className="text-aux text-ink-faint">
                 {dateDisplayJa(targetDate)}の記録を編集中
               </Text>
-              <Text onPress={() => router.replace('/')} className="text-xs text-ink-faint">
+              <Text onPress={() => router.replace('/')} className="text-aux text-ink-faint">
                 ← 今日に戻る
               </Text>
             </View>
