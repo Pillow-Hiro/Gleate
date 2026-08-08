@@ -67,7 +67,7 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
           <Pressable onPress={() => setZoomed(true)} accessibilityLabel="写真を拡大する">
             <Image
               source={{ uri: photoUrl }}
-              className="w-full rounded-lg"
+              className="w-full rounded"
               style={{ height: 200 }}
               resizeMode="cover"
             />
@@ -85,7 +85,7 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled }) 
         <Pressable
           onPress={handlePick}
           disabled={disabled || busy}
-          className="border border-border border-dashed rounded-lg py-4 items-center"
+          className="border border-border border-dashed rounded py-4 items-center"
         >
           <Text className="text-aux text-ink-faint">{busy ? '読み込み中...' : '写真を追加'}</Text>
         </Pressable>

@@ -86,7 +86,7 @@ export default function VideoTimeline({ videos }) {
             <Pressable onPress={() => Linking.openURL(watchUrl)}>
               <Image
                 source={{ uri: v.thumbnail || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg` }}
-                className="w-full rounded-lg"
+                className="w-full rounded"
                 style={{ aspectRatio: 16 / 9 }}
                 resizeMode="cover"
                 accessibilityLabel={v.title}
@@ -125,7 +125,7 @@ export default function VideoTimeline({ videos }) {
             </View>
 
             {s.visible && s.text ? (
-              <View className="bg-background-info rounded-lg px-3 py-2.5 mt-2">
+              <View className="bg-background-info rounded px-3 py-2.5 mt-2">
                 <Text className="text-aux leading-relaxed text-text-info">{s.text}</Text>
               </View>
             ) : null}

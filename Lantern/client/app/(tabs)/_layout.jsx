@@ -18,8 +18,10 @@ import { TAB_BAR_HEIGHT, WIDE_SCREEN_MIN_WIDTH } from '../../lib/tabBar'
 // 既定の幅が広すぎ、アクティブ色も青のままで Lantern の配色から外れる。
 
 const THEME = {
-  light: { border: 'rgba(0,0,0,0.08)', active: '#2d4a3e', inactive: '#8a8578', blur: 'systemChromeMaterialLight' },
-  dark: { border: 'rgba(255,255,255,0.10)', active: '#7aa88e', inactive: '#8a8578', blur: 'systemChromeMaterialDark' },
+  // 値は DESIGN.md（lantern-glow / outline / border）。
+  // クラス名を渡せない場所なので、パレットを変えたらここも直す。
+  light: { border: 'rgba(0,0,0,0.10)', active: '#825500', inactive: '#847563', blur: 'systemChromeMaterialLight' },
+  dark: { border: 'rgba(255,255,255,0.12)', active: '#FFB953', inactive: '#988C7E', blur: 'systemChromeMaterialDark' },
 }
 
 // ラベルは「そこで何をするか」にする。

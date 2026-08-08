@@ -93,11 +93,11 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
               value={editForm[field]}
               onChangeText={(v) => setEditForm((f) => ({ ...f, [field]: v }))}
               placeholder={placeholder}
-              placeholderTextColor="#999999"
+              placeholderTextColor="#8E8478"
               multiline
               textAlignVertical="top"
               style={{ minHeight: 72 }}
-              className="bg-stone border border-border rounded-lg px-3 py-2.5 font-body text-body text-ink"
+              className="bg-stone border border-border rounded px-3 py-2.5 font-body text-body text-ink"
             />
           </View>
         ))}
@@ -136,7 +136,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       />
 
       {log.ai_response ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5 mt-3">
+        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-1.5 mt-3">
           <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
           <Text className="text-body text-forest leading-relaxed">{log.ai_response}</Text>
         </View>
@@ -150,7 +150,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
               <Text className="text-aux text-ink-faint">キャンセル</Text>
             </Pressable>
             <Pressable onPress={handleDelete} disabled={deleting}>
-              <Text className="text-aux text-red-500">{deleting ? '削除中...' : '削除する'}</Text>
+              <Text className="text-aux text-error">{deleting ? '削除中...' : '削除する'}</Text>
             </Pressable>
           </>
         ) : (
@@ -159,7 +159,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
               <Text className="text-aux text-ink-faint">編集</Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-aux text-red-500">削除</Text>
+              <Text className="text-aux text-error">削除</Text>
             </Pressable>
           </>
         )}

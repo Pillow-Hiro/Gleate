@@ -26,7 +26,7 @@ function cellStyle({ isFuture, isToday, hasLog, isSelected }) {
 function cellTextStyle({ isFuture, isToday, hasLog, isSelected }) {
   const base = 'text-[9px] '
   if (isFuture) return base + 'text-ink-faint/30'
-  if (isToday || hasLog) return base + (isToday && !hasLog ? 'text-accent' : 'text-amber')
+  if (isToday || hasLog) return base + 'font-strong ' + (isToday && !hasLog ? 'text-accent' : 'text-amber')
   return base + (isSelected ? 'text-ink' : 'text-ink-faint/60')
 }
 
@@ -75,7 +75,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
         <Pressable onPress={prevMonth} className="p-1" accessibilityLabel="前月">
           <Text className="text-ink-faint text-aux">‹</Text>
         </Pressable>
-        <Text className="text-[10px] text-ink-faint tracking-[2px] w-24 text-center">
+        <Text className="font-strong text-aux text-ink-soft w-24 text-center">
           {viewYear}年{viewMonth + 1}月
         </Text>
         <Pressable
@@ -86,7 +86,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
         >
           <Text className="text-ink-faint text-aux">›</Text>
         </Pressable>
-        <Pressable onPress={goToday} className="border border-border rounded px-1.5 py-0.5">
+        <Pressable onPress={goToday} className="border border-border rounded-full px-2 py-0.5">
           <Text className="text-[10px] text-ink-faint">今日</Text>
         </Pressable>
       </View>

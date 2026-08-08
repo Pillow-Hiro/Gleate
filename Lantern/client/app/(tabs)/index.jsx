@@ -11,7 +11,6 @@ import MilestoneBanner from '../../components/MilestoneBanner'
 import WeeklyDiscovery from '../../components/WeeklyDiscovery'
 import IdeasPanel from '../../components/IdeasPanel'
 
-const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 
 function formatDateJa(date) {
@@ -39,7 +38,6 @@ export default function Home() {
   const [writeTab, setWriteTab] = useState('record')
 
   const now = new Date()
-  const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
   const dateJa = formatDateJa(now)
 
   const dateParam = typeof params.date === 'string' ? params.date : null
@@ -90,16 +88,18 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-home-bg" edges={['top']}>
       <ScrollView
-        contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-2xl self-center"
+        contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 日付ヘッダー */}
+        {/* 日付ヘッダー。
+            2026-08-09 まで「8 AUG」を上に重ねていた。
+            すぐ下に「2026年8月8日 土曜日」があるので、**同じことを
+            2回書いていた**。英字を上に置くと様になって見えるが、
+            読む人に何も足していない。 */}
         <View>
-          {/* 英数字だけの行なので Inter。和文フォントの英数字より字幅が揃う */}
-          <Text className="font-mono text-aux text-text-secondary tracking-[2px] mb-0.5">{dateLabel}</Text>
           <View className="flex-row items-baseline">
-            <Text className="font-display text-xl text-ink">{dateJa}</Text>
+            <Text className="font-display text-headline-md text-ink">{dateJa}</Text>
             {streak >= 2 ? (
               <Text className="text-aux text-ink-faint ml-2">· {streak}日目</Text>
             ) : null}
@@ -112,12 +112,12 @@ export default function Home() {
         <View>
           {/* ラベルの灯り色は home-warm。他画面の accent より一段落とす。
               Home の地が沈んでいるぶん、同じ強さだと灯りが強く見えるため */}
-          <Text className="text-[10px] text-home-warm tracking-[2px] mb-3">今日の灯り</Text>
-          <View className="bg-brand-green rounded-xl px-5 py-5 min-h-[88px] justify-center">
+          <Text className="font-strong text-aux text-home-warm mb-3">今日の灯り</Text>
+          <View className="border-l-2 border-lantern-glow pl-4 py-1 min-h-[64px] justify-center">
             {loading ? (
-              <View className="w-32 h-4 bg-white/20 rounded" />
+              <View className="w-32 h-4 bg-surface-high rounded-full" />
             ) : (
-              <Text className="font-display text-primary-text text-quote">
+              <Text className="text-body-lg text-ink">
                 {quote || '今日の記録が、ここに残る。'}
               </Text>
             )}

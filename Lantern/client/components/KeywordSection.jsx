@@ -57,7 +57,7 @@ export default function KeywordSection() {
 
   return (
     <View className="gap-5">
-      <Text className="text-[10px] text-ink-faint tracking-[2px]">キーワード</Text>
+      <Text className="font-strong text-aux text-ink-soft">キーワード</Text>
 
       {KEYWORD_PERIODS.map(({ label, period }) => (
         <View key={period} className="gap-2.5">

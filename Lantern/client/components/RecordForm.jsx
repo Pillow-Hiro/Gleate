@@ -27,9 +27,9 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）' 
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
-        className="bg-cream border border-border rounded px-3 py-2 font-body text-body text-ink"
+        className="bg-stone border border-border rounded px-3 py-2 font-body text-body text-ink"
         placeholder={placeholder}
-        placeholderTextColor="#999999"
+        placeholderTextColor="#8E8478"
       />
     </View>
   )
@@ -104,7 +104,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   }
 
   return (
-    <View className="border border-border rounded-lg px-5 py-4 gap-4">
+    <View className="bg-stone/50 rounded-lg px-5 py-5 gap-4">
       {existingLog ? (
         <View className="self-start bg-sage-light rounded-full px-2 py-0.5">
           <Text className="text-[10px] text-sage">記録済</Text>
@@ -179,9 +179,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       <Pressable
         onPress={handleSave}
         disabled={loading}
-        className="bg-forest dark:bg-primary rounded py-2.5 items-center active:opacity-80 disabled:opacity-50"
+        className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
       >
-        <Text className="text-body text-cream dark:text-primary-text">
+        <Text className="font-strong text-body text-on-lantern">
           {loading ? '保存中...' : '記録する'}
         </Text>
       </Pressable>
@@ -193,11 +193,11 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       ) : null}
 
       {saveError ? (
-        <Text className="text-aux text-red-500 text-center">{saveError}</Text>
+        <Text className="text-aux text-error text-center">{saveError}</Text>
       ) : null}
 
       {aiResponse ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 mt-4 gap-1.5">
+        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 mt-4 gap-1.5">
           <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
           <Text className="text-body leading-relaxed text-forest">{aiResponse}</Text>
         </View>

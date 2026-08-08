@@ -79,7 +79,7 @@ export default function Signup() {
     >
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-display text-3xl text-ink tracking-[8px]">Lantern</Text>
+          <Text className="font-latin text-display text-ink">Lantern</Text>
           <Text className="text-aux text-ink-faint mt-2 tracking-wider">はじめる</Text>
         </View>
 

@@ -58,7 +58,7 @@ export default function TimelineSection({ logs = [] }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-base text-ink">過去との対話</Text>
+          <Text className="font-display text-body-lg text-ink">過去との対話</Text>
           <Text className="text-aux text-ink-faint mt-0.5">あの頃の自分と、今の自分。</Text>
         </View>
         <Pressable
@@ -91,14 +91,14 @@ export default function TimelineSection({ logs = [] }) {
 
       {/* AIの観察 */}
       {loading ? (
-        <View className="bg-stone/60 rounded-xl px-5 py-4 gap-2.5">
-          <View className="h-3.5 bg-parchment rounded w-3/4" />
-          <View className="h-3 bg-parchment rounded w-1/2" />
+        <View className="bg-stone/60 rounded-lg px-5 py-4 gap-2.5">
+          <View className="h-3.5 bg-parchment rounded-full w-3/4" />
+          <View className="h-3 bg-parchment rounded-full w-1/2" />
         </View>
       ) : null}
 
       {!loading && data !== null && data.past_logs.length === 0 ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
+        <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
           <Text className="text-body text-ink-faint text-center">{currentLabel}の記録はありません。</Text>
         </View>
       ) : null}

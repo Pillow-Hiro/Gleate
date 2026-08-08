@@ -76,7 +76,7 @@ export default function SplashScreen({ onClose }) {
         </Animated.View>
 
         <Animated.View style={{ opacity: logoOpacity }}>
-          <Text className="font-display text-3xl text-white tracking-[8px] mb-7">
+          <Text className="font-latin text-display text-white mb-7">
             Lantern
           </Text>
         </Animated.View>
@@ -90,7 +90,7 @@ export default function SplashScreen({ onClose }) {
 
       {/* ここも className は効かないので位置指定は style で持つ（bottom-14 = 56px） */}
       <Animated.View style={{ opacity: hintOpacity, position: 'absolute', bottom: 56 }}>
-        <Text className="text-aux text-white/40 tracking-[2px]">タップして続ける</Text>
+        <Text className="text-aux text-white/40">タップして続ける</Text>
       </Animated.View>
     </Pressable>
   )

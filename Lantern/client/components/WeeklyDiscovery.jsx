@@ -61,8 +61,8 @@ export default function WeeklyDiscovery({ logs }) {
 
   return (
     <View>
-      <Text className="text-[10px] text-ink-faint tracking-[2px] mb-3">今週の発見</Text>
-      <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4">
+      <Text className="font-strong text-aux text-ink-soft mb-3">今週の発見</Text>
+      <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4">
         {observations === null ? (
           <Text className="text-body text-ink-soft">今週の記録がまだありません。</Text>
         ) : (

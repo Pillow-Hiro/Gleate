@@ -38,10 +38,9 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
-          <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">DASHBOARD</Text>
-          <Text className="font-display text-xl text-ink">ダッシュボード</Text>
+          <Text className="font-display text-headline-md text-ink">ダッシュボード</Text>
         </View>
 
         <View className="flex-row gap-4 border-b border-border">

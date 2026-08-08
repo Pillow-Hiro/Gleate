@@ -2,16 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* カラーシステム v1.4（2026-08-08 改訂）
+/* カラーシステム（2026-08-09 改訂・`DESIGN.md` 準拠）
    定義は CLAUDE.md「カラーシステム」の節。値を変えるときは両方を直す。
 
    NativeWind は rgb(var(--x) / <alpha-value>) 形式で不透明度を解決するため、
    色は空白区切りのRGB三値で持つ（border だけは透過率込みなので例外）。
 
-   ## トークンを2系統持っている理由
+   ## 何が変わったか
 
-   新しい名前（bg-base / brand-green / ai-teal / lantern-warm /
-   text-primary / text-secondary）を足したが、**古い名前も残している。**
+   2026-08-08 まで、緑（#2D4A3E）をブランド色にしていた。
+   `DESIGN.md` は**灯りの琥珀（#FBB03B）を主役に、地を紙のような
+   ほぼ白（#F9F9FB）に置く**設計で、緑は含まれない。仕様に寄せた。
+
+   深さは影ではなく**地の色の段差**で出す（Tonal Layers）。
+   surface → container-low → container → container-high の順に沈む。
+
+   ## トークンを2系統持っている理由
 
    画面のコードには色クラスが約340箇所ある。一斉に置換すると
    全ファイルが変更対象になり、目視で追えない量のデグレ危険が出る。
@@ -19,102 +25,151 @@
    これで既存の画面はそのまま新しい配色になる。
    新しく書くコードは新しい名前を使う。
 
-   | 新しい名前 | 古い名前 | 役割 |
+   | 古い名前 | 新しい名前 | 役割 |
    |---|---|---|
-   | bg-base | cream | 画面の地 |
-   | brand-green | forest / primary | ブランド・主要CTA |
-   | ai-teal | sage | AIの観察・発言 |
-   | lantern-warm | lantern / amber | 灯り・節目 |
-   | text-primary | ink | 本文 |
-   | text-secondary | ink-soft / ink-faint | 補足・日時 |
+   | cream | surface | 画面の地 |
+   | stone | surface-container-low | 一段沈んだ面 |
+   | parchment | surface-container-high | さらに沈んだ面 |
+   | forest / primary | primary | 主要な操作 |
+   | sage | tertiary | AIの観察・発言 |
+   | amber / lantern / accent | lantern-glow | 灯り・節目・選択中 |
+   | ink | on-surface | 本文 |
+   | ink-soft | on-surface-variant | 補足 |
+   | ink-faint | outline | 日時・弱いラベル |
 
-   ## 暗いテーマで brand-green をそのまま文字に使わない
+   ## 暗いテーマ
 
-   `text-forest` は24箇所ある。#2D4A3E を #1A1A18 の地に載せると
-   コントラスト比が 1.4:1 で読めない。
-   **暗いテーマの「文字としての緑」は明るい側に振る。**
-   面（ボタン・カード）としての #2D4A3E は brand-green で別に持つ。 */
+   `DESIGN.md` は明るいテーマだけを定めている。アプリは手動で
+   切り替えられるので、**同じ役割を保ったまま明暗を反転**させた。
+   琥珀は暗い地でも読めるため、そのまま使う。 */
 @layer base {
   :root {
-    /* 地。純白ではなく、わずかに温かい白 */
-    --color-cream: 250 249 247;
-    --color-stone: 240 238 234;
-    --color-parchment: 232 228 220;
+    /* 地。純白ではなく、わずかに青みのある白 */
+    --color-surface: 249 249 251;
+    --color-surface-container-lowest: 255 255 255;
+    --color-surface-container-low: 243 243 245;
+    --color-surface-container: 238 238 240;
+    --color-surface-container-high: 232 232 234;
+    --color-surface-container-highest: 226 226 228;
 
-    /* ブランド。明るい地の上では、そのまま文字にも面にも使える */
-    --color-forest: 45 74 62;
-    --color-brand-green: 45 74 62;
+    /* 旧名。値は上と同じものを指す */
+    --color-cream: 249 249 251;
+    --color-stone: 243 243 245;
+    --color-parchment: 232 232 234;
+
+    /* 文字。**純黒にしない。** 目の振動を抑え、長文を読みやすくする */
+    --color-on-surface: 29 29 31;
+    --color-on-surface-variant: 81 69 53;
+    --color-outline: 132 117 99;
+    --color-outline-variant: 214 196 175;
+    --color-ink: 29 29 31;
+    --color-ink-soft: 81 69 53;
+    --color-ink-faint: 132 117 99;
+    --color-text-primary: 29 29 31;
+    --color-text-secondary: 132 117 99;
+
+    /* 灯り。主役の色。**使う場所を絞る** */
+    --color-lantern-glow: 251 176 59;
+    /* 灯りのボタンに載せる文字。**明暗で反転させない。**
+       琥珀の上は明るいテーマでも暗いテーマでも黒が読みやすい */
+    --color-on-lantern: 29 29 31;
+    --color-primary: 130 85 0;
+    --color-on-primary: 255 255 255;
+    --color-primary-container: 251 176 59;
+    --color-on-primary-container: 108 69 0;
+    --color-forest: 130 85 0;
+    --color-primary-hover: 108 69 0;
+    --color-primary-text: 255 255 255;
+    --color-amber: 130 85 0;
+    --color-amber-light: 255 221 180;
+    --color-lantern: 251 176 59;
+    --color-accent: 130 85 0;
+
+    /* リンクと標準の操作。iOS の作法に合わせる */
+    --color-secondary: 0 92 186;
+    --color-system-blue: 0 102 204;
 
     /* AI の観察・発言 */
-    --color-sage: 74 124 116;
-    --color-sage-light: 232 240 238;
-    --color-ai-teal: 74 124 116;
+    --color-tertiary: 0 102 135;
+    --color-on-tertiary: 255 255 255;
+    --color-tertiary-container: 192 232 255;
+    --color-sage: 0 102 135;
+    --color-sage-light: 192 232 255;
 
-    /* 本文と補足 */
-    --color-ink: 26 26 24;
-    --color-ink-soft: 106 102 94;
-    --color-ink-faint: 138 133 120;
-    --color-text-primary: 26 26 24;
-    --color-text-secondary: 138 133 120;
+    --color-error: 186 26 26;
+    --color-error-container: 255 218 214;
 
-    /* 灯り。明るい地では少し落として可読性を保つ */
-    --color-amber: 166 92 55;
-    --color-amber-light: 250 238 230;
-    --color-lantern: 217 123 79;
-    --color-lantern-warm: 217 123 79;
-    --color-accent: 191 132 92;
+    --color-background-info: 255 221 180;
+    --color-text-info: 99 63 0;
 
-    --color-background-info: 250 238 230;
-    --color-text-info: 140 82 48;
-    --color-border: rgba(0, 0, 0, 0.08);
+    /* 仕切り。影ではなく1pxの線で分ける */
+    --color-border: rgba(0, 0, 0, 0.10);
 
-    --color-primary: 45 74 62;
-    --color-primary-hover: 61 96 80;
-    --color-primary-text: 250 249 247;
-
-    /* Home だけの特例。CLAUDE.md「Home画面のみの特例」参照 */
-    --color-home-bg: 250 249 247;
-    --color-home-warm: 166 92 55;
+    /* Home も同じ地にする。**2026-08-09 に特例をやめた。**
+       `DESIGN.md` は紙のような明るい地で統一する設計で、
+       Home だけ暗くすると仕様の外に出る */
+    --color-home-bg: 249 249 251;
+    --color-home-warm: 130 85 0;
   }
 
   .dark:root {
     /* 純黒にしない。#000 だと有機ELで沈みすぎ、余白が穴に見える */
-    --color-cream: 26 26 24;
-    --color-stone: 38 38 35;
-    --color-parchment: 52 52 48;
+    --color-surface: 26 28 29;
+    --color-surface-container-lowest: 18 20 21;
+    --color-surface-container-low: 34 36 37;
+    --color-surface-container: 40 42 43;
+    --color-surface-container-high: 47 49 50;
+    --color-surface-container-highest: 55 57 58;
 
-    /* **文字としての緑は明るい側。** 面としての緑は brand-green を使う */
-    --color-forest: 122 168 142;
-    --color-brand-green: 45 74 62;
+    --color-cream: 26 28 29;
+    --color-stone: 34 36 37;
+    --color-parchment: 47 49 50;
 
-    /* AI の色も同じ理由で明るい側へ。#4A7C74 は暗い地で 3.3:1 しかない */
-    --color-sage: 122 168 158;
-    --color-sage-light: 30 45 43;
-    --color-ai-teal: 122 168 158;
+    --color-on-surface: 240 240 242;
+    --color-on-surface-variant: 205 196 184;
+    --color-outline: 152 140 126;
+    --color-outline-variant: 82 74 65;
+    --color-ink: 240 240 242;
+    --color-ink-soft: 205 196 184;
+    --color-ink-faint: 152 140 126;
+    --color-text-primary: 240 240 242;
+    --color-text-secondary: 152 140 126;
 
-    --color-ink: 232 228 220;
-    --color-ink-soft: 176 170 158;
-    --color-ink-faint: 138 133 120;
-    --color-text-primary: 232 228 220;
-    --color-text-secondary: 138 133 120;
+    /* **暗い地では琥珀をそのまま出す。** #825500 は 2.1:1 で読めない */
+    --color-lantern-glow: 255 185 83;
+    /* 灯りのボタンに載せる文字。**明暗で反転させない。**
+       琥珀の上は明るいテーマでも暗いテーマでも黒が読みやすい */
+    --color-on-lantern: 29 29 31;
+    --color-primary: 255 185 83;
+    --color-on-primary: 41 24 0;
+    --color-primary-container: 99 63 0;
+    --color-on-primary-container: 255 221 180;
+    --color-forest: 255 185 83;
+    --color-primary-hover: 251 176 59;
+    --color-primary-text: 41 24 0;
+    --color-amber: 255 185 83;
+    --color-amber-light: 60 42 12;
+    --color-lantern: 255 185 83;
+    --color-accent: 255 185 83;
 
-    --color-amber: 217 123 79;
-    --color-amber-light: 46 32 24;
-    --color-lantern: 217 123 79;
-    --color-lantern-warm: 217 123 79;
-    --color-accent: 217 123 79;
+    --color-secondary: 170 199 255;
+    --color-system-blue: 170 199 255;
 
-    --color-background-info: 40 28 20;
-    --color-text-info: 217 123 79;
-    --color-border: rgba(255, 255, 255, 0.1);
+    --color-tertiary: 113 210 255;
+    --color-on-tertiary: 0 30 43;
+    --color-tertiary-container: 0 77 102;
+    --color-sage: 113 210 255;
+    --color-sage-light: 0 45 60;
 
-    --color-primary: 45 74 62;
-    --color-primary-hover: 58 90 74;
-    --color-primary-text: 232 228 220;
+    --color-error: 255 180 171;
+    --color-error-container: 147 0 10;
 
-    /* Home は地をさらに沈め、灯りを一段落とす。
-       「本当に暗闇に灯りが1つだけある」感覚のため */
-    --color-home-bg: 18 19 15;
-    --color-home-warm: 184 129 90;
+    --color-background-info: 60 42 12;
+    --color-text-info: 255 221 180;
+
+    --color-border: rgba(255, 255, 255, 0.12);
+
+    --color-home-bg: 26 28 29;
+    --color-home-warm: 255 185 83;
   }
 }

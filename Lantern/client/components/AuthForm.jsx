@@ -51,8 +51,8 @@ export default function AuthForm({ mode, submitLabel, hint, error, notice, loadi
           keyboardType="email-address"
           returnKeyType="next"
           onSubmitEditing={handleSubmit}
-          className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
-          placeholderTextColor="#999999"
+          className="bg-stone border border-border rounded px-3 py-3 font-body text-body text-ink"
+          placeholderTextColor="#8E8478"
         />
       </View>
 
@@ -71,8 +71,8 @@ export default function AuthForm({ mode, submitLabel, hint, error, notice, loadi
           textContentType={isSignup ? 'newPassword' : 'password'}
           returnKeyType="go"
           onSubmitEditing={handleSubmit}
-          className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
-          placeholderTextColor="#999999"
+          className="bg-stone border border-border rounded px-3 py-3 font-body text-body text-ink"
+          placeholderTextColor="#8E8478"
         />
         {/* **条件は失敗する前に出す。**
             2026-08-08 まで、6文字未満で送ってから初めて知らされていた。
@@ -81,16 +81,16 @@ export default function AuthForm({ mode, submitLabel, hint, error, notice, loadi
       </View>
 
       {blank || error ? (
-        <Text className="text-aux text-red-500">{blank || error}</Text>
+        <Text className="text-aux text-error">{blank || error}</Text>
       ) : null}
       {notice ? <Text className="text-aux text-sage">{notice}</Text> : null}
 
       <Pressable
         onPress={handleSubmit}
         disabled={loading}
-        className="bg-forest rounded-full py-3 items-center active:opacity-80 disabled:opacity-50"
+        className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
       >
-        <Text className="text-body text-cream">{loading ? '処理中...' : submitLabel}</Text>
+        <Text className="font-strong text-body text-on-lantern">{loading ? '処理中...' : submitLabel}</Text>
       </Pressable>
 
       {children}

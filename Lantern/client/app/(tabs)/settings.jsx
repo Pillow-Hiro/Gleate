@@ -26,8 +26,8 @@ function SettingsRow({ label, description, children }) {
 function Section({ title, children }) {
   return (
     <View>
-      <Text className="text-[10px] text-ink-faint tracking-[2px] mb-3">{title}</Text>
-      <View className="bg-stone/50 rounded-xl px-4">{children}</View>
+      <Text className="font-strong text-aux text-ink-soft mb-2.5">{title}</Text>
+      <View className="bg-stone/50 rounded-lg px-4">{children}</View>
     </View>
   )
 }
@@ -105,18 +105,17 @@ export default function Settings() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
-          <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">SETTINGS</Text>
-          <Text className="font-display text-xl text-ink">設定</Text>
+          <Text className="font-display text-headline-md text-ink">設定</Text>
         </View>
 
         <Section title="アクティビティ">
           <SettingsRow label="記録した日数" description="これまでの合計">
-            <Text className="text-body text-forest">{logs.length}日</Text>
+            <Text className="font-strong text-body text-forest">{logs.length}日</Text>
           </SettingsRow>
           <SettingsRow label="現在の連続日数" description="今日まで続けた日数">
-            <Text className="text-body text-forest">{streak}日</Text>
+            <Text className="font-strong text-body text-forest">{streak}日</Text>
           </SettingsRow>
         </Section>
 
@@ -124,7 +123,7 @@ export default function Settings() {
           <SettingsRow label="テーマ" description="ボタンで手動切り替え">
             <Pressable onPress={toggleTheme} className="border border-sage/40 rounded-full px-3 py-1.5">
               <Text className="text-aux text-forest">
-                {isDark ? '☀️ ライトに切替' : '🌙 ダークに切替'}
+                {isDark ? 'ライトにする' : 'ダークにする'}
               </Text>
             </Pressable>
           </SettingsRow>
@@ -141,16 +140,16 @@ export default function Settings() {
             </Pressable>
           </SettingsRow>
         </Section>
-        {exportError ? <Text className="text-aux text-red-500">{exportError}</Text> : null}
+        {exportError ? <Text className="text-aux text-error">{exportError}</Text> : null}
 
         <Section title="アカウント">
           <SettingsRow label="ログアウト" description="このデバイスからサインアウトします">
             <Pressable
               onPress={handleSignOut}
               disabled={signingOut}
-              className="border border-red-200 dark:border-red-900/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+              className="border border-error/30 rounded-full px-3.5 py-1.5 disabled:opacity-50"
             >
-              <Text className="text-aux text-red-500">
+              <Text className="text-aux text-error">
                 {signingOut ? 'ログアウト中...' : 'ログアウト'}
               </Text>
             </Pressable>
@@ -174,15 +173,15 @@ export default function Settings() {
                 先にエクスポートしてください。
               </Text>
               {deleteError ? (
-                <Text className="text-aux text-red-500">{deleteError}</Text>
+                <Text className="text-aux text-error">{deleteError}</Text>
               ) : null}
               <View className="flex-row gap-3">
                 <Pressable
                   onPress={handleDeleteAccount}
                   disabled={deleting}
-                  className="border border-red-400 dark:border-red-800 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+                  className="border border-error/60 rounded-full px-3.5 py-1.5 disabled:opacity-50"
                 >
-                  <Text className="text-aux text-red-500">
+                  <Text className="text-aux text-error">
                     {deleting ? '削除中...' : '削除する'}
                   </Text>
                 </Pressable>
@@ -202,9 +201,9 @@ export default function Settings() {
             >
               <Pressable
                 onPress={() => setConfirmDelete(true)}
-                className="border border-red-200 dark:border-red-900/40 rounded-full px-3.5 py-1.5"
+                className="border border-error/30 rounded-full px-3.5 py-1.5"
               >
-                <Text className="text-aux text-red-500">削除</Text>
+                <Text className="text-aux text-error">削除</Text>
               </Pressable>
             </SettingsRow>
           )}

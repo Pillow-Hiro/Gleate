@@ -159,13 +159,13 @@ export default function TwitchPanel() {
   return (
     <>
       {message ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-4 py-3">
+        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-4 py-3">
           <Text className="text-body text-forest">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-8 items-center gap-3">
+        <View className="border border-border border-dashed rounded-lg px-5 py-8 items-center gap-3">
           <Text className="text-body text-ink-soft text-center">
             Twitchと繋ぐと、配信の記録がここに並びます。
           </Text>
@@ -183,7 +183,7 @@ export default function TwitchPanel() {
         <>
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
-              <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">CHANNEL</Text>
+              <Text className="font-strong text-aux text-ink-soft mb-0.5">チャンネル</Text>
               <Text className="text-body text-ink">{status.display_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
@@ -192,7 +192,7 @@ export default function TwitchPanel() {
                   <Text className="text-aux text-ink-faint">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
-                  <Text className="text-aux text-red-500">
+                  <Text className="text-aux text-error">
                     {disconnecting ? '解除中...' : '解除する'}
                   </Text>
                 </Pressable>
@@ -207,11 +207,11 @@ export default function TwitchPanel() {
           {/* 配信の一覧を主、数字を従とする配置。
               フォロワー数は最も外部評価に近い指標のため上に置かない。 */}
           <View>
-            <Text className="text-[10px] text-ink-faint tracking-[2px] mb-1">STREAMS</Text>
+            <Text className="font-strong text-aux text-ink-soft mb-1">配信</Text>
             {loading && streams === null ? (
               <View className="gap-3 pt-2">
                 {[1, 2, 3].map((i) => (
-                  <View key={i} className="h-4 bg-parchment rounded w-4/5" />
+                  <View key={i} className="h-4 bg-parchment rounded-full w-4/5" />
                 ))}
               </View>
             ) : streams && streams.length > 0 ? (
@@ -228,7 +228,7 @@ export default function TwitchPanel() {
           {/* AIの観察。YouTube タブと同じ位置・同じ挙動 */}
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-[10px] text-ink-faint tracking-[2px]">AIの観察</Text>
+              <Text className="font-strong text-aux text-ink-soft">AIの観察</Text>
               <Pressable
                 onPress={handleInsight}
                 disabled={insightLoading || !streams?.length}
@@ -241,15 +241,15 @@ export default function TwitchPanel() {
             </View>
 
             {insightLoading ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2">
-                <View className="h-3 bg-sage/20 rounded w-full" />
-                <View className="h-3 bg-sage/20 rounded w-4/5" />
-                <View className="h-3 bg-sage/20 rounded w-2/3" />
+              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-2">
+                <View className="h-3 bg-sage/20 rounded-full w-full" />
+                <View className="h-3 bg-sage/20 rounded-full w-4/5" />
+                <View className="h-3 bg-sage/20 rounded-full w-2/3" />
               </View>
             ) : null}
 
             {!insightLoading && insight ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
+              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-1.5">
                 <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
                 <Text className="text-body leading-relaxed text-forest">{insight}</Text>
               </View>
@@ -257,7 +257,7 @@ export default function TwitchPanel() {
           </View>
 
           {followerCount != null ? (
-            <View className="bg-stone/50 rounded-xl px-4 py-4">
+            <View className="bg-stone/50 rounded-lg px-4 py-4">
               <Text className="text-[10px] text-ink-faint mb-1">フォロワー数</Text>
               <Text className="text-xl text-ink">
                 {followerCount.toLocaleString()}

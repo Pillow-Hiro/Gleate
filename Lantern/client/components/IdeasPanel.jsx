@@ -50,7 +50,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
               <Text className="text-aux text-ink-faint">キャンセル</Text>
             </Pressable>
             <Pressable onPress={() => onDelete(idea)}>
-              <Text className="text-aux text-red-500">削除する</Text>
+              <Text className="text-aux text-error">削除する</Text>
             </Pressable>
           </View>
         ) : (
@@ -61,7 +61,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete }) {
               </Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-aux text-red-500">削除</Text>
+              <Text className="text-aux text-error">削除</Text>
             </Pressable>
           </View>
         )}
@@ -144,8 +144,8 @@ export default function IdeasPanel() {
           onSubmitEditing={handleAdd}
           returnKeyType="done"
           placeholder="思いついたこと"
-          placeholderTextColor="#999999"
-          className="flex-1 bg-stone border border-border rounded-lg px-3 py-2.5 font-body text-body text-ink"
+          placeholderTextColor="#8E8478"
+          className="flex-1 bg-stone border border-border rounded px-3 py-2.5 font-body text-body text-ink"
         />
         <Pressable
           onPress={handleAdd}
@@ -159,7 +159,7 @@ export default function IdeasPanel() {
       {ideas === null ? (
         <View className="gap-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <View key={i} className="h-4 bg-parchment rounded w-3/4" />
+            <View key={i} className="h-4 bg-parchment rounded-full w-3/4" />
           ))}
         </View>
       ) : ideas.length === 0 ? (

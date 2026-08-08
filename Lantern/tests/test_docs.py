@@ -39,8 +39,10 @@ import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# DESIGN.md は 2026-08-09 に加わった。作者がデザインツールで作った
+# 仕様書で、色・字・余白・かたちの定義はここが正。
 LIVING_DOCS = ["CLAUDE.md", "REQUIREMENTS.md", "PROJECT_MAP.md",
-               "HANDOFF.md", "STACK.md"]
+               "HANDOFF.md", "STACK.md", "DESIGN.md"]
 
 
 def read(*parts):

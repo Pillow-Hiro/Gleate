@@ -7,8 +7,9 @@ import Svg, { Circle, Line, Polyline } from 'react-native-svg'
 // Web版と同じ「期間内の再生回数推移」を表現する最小構成。
 // 色はNativeWindのトークンではなくSVG属性に直接渡す必要があるため定数で持つ。
 const COLORS = {
-  light: { line: '#c4a882', grid: 'rgba(0,0,0,0.08)', text: '#999999' },
-  dark: { line: '#c4a882', grid: 'rgba(255,255,255,0.10)', text: '#636366' },
+  // 値は DESIGN.md（lantern-glow / border / outline）
+  light: { line: '#FBB03B', grid: 'rgba(0,0,0,0.10)', text: '#847563' },
+  dark: { line: '#FFB953', grid: 'rgba(255,255,255,0.12)', text: '#988C7E' },
 }
 
 const HEIGHT = 200

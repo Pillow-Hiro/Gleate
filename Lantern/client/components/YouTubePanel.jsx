@@ -19,7 +19,7 @@ const PERIODS = [
 
 function SummaryCard({ label, value }) {
   return (
-    <View className="bg-stone/50 rounded-xl px-4 py-4 flex-1">
+    <View className="bg-stone/50 rounded-lg px-4 py-4 flex-1">
       <Text className="text-[10px] text-ink-faint mb-1">{label}</Text>
       <Text className="text-xl text-ink">{value.toLocaleString()}</Text>
     </View>
@@ -205,13 +205,13 @@ export default function YouTubePanel() {
   return (
     <>
       {message ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-4 py-3">
+        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-4 py-3">
           <Text className="text-body text-forest">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-8 items-center gap-3">
+        <View className="border border-border border-dashed rounded-lg px-5 py-8 items-center gap-3">
           <Text className="text-body text-ink-soft text-center">
             YouTubeと繋ぐと、動画の記録がここに並びます。
           </Text>
@@ -230,7 +230,7 @@ export default function YouTubePanel() {
           {/* チャンネル */}
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
-              <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">CHANNEL</Text>
+              <Text className="font-strong text-aux text-ink-soft mb-0.5">チャンネル</Text>
               <Text className="text-body text-ink">{status.channel_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
@@ -239,7 +239,7 @@ export default function YouTubePanel() {
                   <Text className="text-aux text-ink-faint">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
-                  <Text className="text-aux text-red-500">
+                  <Text className="text-aux text-error">
                     {disconnecting ? '解除中...' : '解除する'}
                   </Text>
                 </Pressable>
@@ -262,9 +262,9 @@ export default function YouTubePanel() {
           ) : null}
 
           {/* 再生回数推移 */}
-          <View className="bg-stone/50 rounded-xl px-4 pt-5 pb-4">
+          <View className="bg-stone/50 rounded-lg px-4 pt-5 pb-4">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[10px] text-ink-faint tracking-[2px]">再生回数推移</Text>
+              <Text className="font-strong text-aux text-ink-soft">再生回数推移</Text>
               <View className="flex-row gap-1">
                 {PERIODS.map(({ label, days }) => (
                   <Pressable
@@ -287,7 +287,7 @@ export default function YouTubePanel() {
             </View>
 
             {analyticsLoading ? (
-              <View className="h-48 bg-parchment rounded" />
+              <View className="h-48 bg-parchment rounded-lg" />
             ) : chartData.length === 0 ? (
               <Text className="text-aux text-ink-faint py-2">
                 この期間に投稿された動画はありません。
@@ -299,13 +299,13 @@ export default function YouTubePanel() {
 
           {/* 動画一覧 */}
           <View>
-            <Text className="text-[10px] text-ink-faint tracking-[2px] mb-3">VIDEOS</Text>
+            <Text className="font-strong text-aux text-ink-soft mb-3">動画</Text>
             {dataLoading ? (
               <View className="gap-4">
                 {[1, 2, 3].map((i) => (
                   <View key={i}>
-                    <View className="w-full bg-parchment rounded-lg" style={{ aspectRatio: 16 / 9 }} />
-                    <View className="h-3 bg-parchment rounded w-4/5 mt-2" />
+                    <View className="w-full bg-parchment rounded" style={{ aspectRatio: 16 / 9 }} />
+                    <View className="h-3 bg-parchment rounded-full w-4/5 mt-2" />
                   </View>
                 ))}
               </View>
@@ -319,7 +319,7 @@ export default function YouTubePanel() {
           {/* AIの観察（チャンネル全体）。Web版と同じ位置・同じ挙動 */}
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-[10px] text-ink-faint tracking-[2px]">AIの観察</Text>
+              <Text className="font-strong text-aux text-ink-soft">AIの観察</Text>
               <Pressable
                 onPress={handleChannelInsight}
                 disabled={channelInsightLoading || !videos?.length}
@@ -332,15 +332,15 @@ export default function YouTubePanel() {
             </View>
 
             {channelInsightLoading ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2">
-                <View className="h-3 bg-sage/20 rounded w-full" />
-                <View className="h-3 bg-sage/20 rounded w-4/5" />
-                <View className="h-3 bg-sage/20 rounded w-2/3" />
+              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-2">
+                <View className="h-3 bg-sage/20 rounded-full w-full" />
+                <View className="h-3 bg-sage/20 rounded-full w-4/5" />
+                <View className="h-3 bg-sage/20 rounded-full w-2/3" />
               </View>
             ) : null}
 
             {!channelInsightLoading && channelInsight ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-1.5">
+              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-1.5">
                 <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
                 <Text className="text-body leading-relaxed text-forest">{channelInsight}</Text>
               </View>

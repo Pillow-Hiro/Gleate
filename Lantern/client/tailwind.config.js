@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 // 色は global.css の CSS 変数で定義し、ライト/ダークを切り替える。
-// トークン名と値は旧 frontend/src/index.css の @theme から引き継いだもの
-// （2026-08-04 に frontend/ を廃止し、こちらが唯一の定義になった）。
+// トークンの由来は `DESIGN.md`（2026-08-09 に全面的に寄せた）。
 const withAlpha = (name) => `rgb(var(${name}) / <alpha-value>)`
 
 module.exports = {
@@ -11,6 +10,41 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // DESIGN.md の名前。**新しく書くコードはこちらを使う。**
+        surface: {
+          DEFAULT: withAlpha('--color-surface'),
+          lowest: withAlpha('--color-surface-container-lowest'),
+          low: withAlpha('--color-surface-container-low'),
+          mid: withAlpha('--color-surface-container'),
+          high: withAlpha('--color-surface-container-high'),
+          highest: withAlpha('--color-surface-container-highest'),
+        },
+        'on-surface': {
+          DEFAULT: withAlpha('--color-on-surface'),
+          variant: withAlpha('--color-on-surface-variant'),
+        },
+        outline: {
+          DEFAULT: withAlpha('--color-outline'),
+          variant: withAlpha('--color-outline-variant'),
+        },
+        'lantern-glow': withAlpha('--color-lantern-glow'),
+        'on-lantern': withAlpha('--color-on-lantern'),
+        'on-primary': withAlpha('--color-on-primary'),
+        'primary-container': withAlpha('--color-primary-container'),
+        'on-primary-container': withAlpha('--color-on-primary-container'),
+        secondary: withAlpha('--color-secondary'),
+        tertiary: {
+          DEFAULT: withAlpha('--color-tertiary'),
+          container: withAlpha('--color-tertiary-container'),
+        },
+        'on-tertiary': withAlpha('--color-on-tertiary'),
+        error: {
+          DEFAULT: withAlpha('--color-error'),
+          container: withAlpha('--color-error-container'),
+        },
+
+        // 旧名。値は上と同じものを指す（global.css の説明を参照）。
+        // 340箇所を一度に書き換えないための橋渡し。
         cream: withAlpha('--color-cream'),
         stone: withAlpha('--color-stone'),
         parchment: withAlpha('--color-parchment'),
@@ -35,44 +69,78 @@ module.exports = {
           hover: withAlpha('--color-primary-hover'),
           text: withAlpha('--color-primary-text'),
         },
-        'background-info': withAlpha('--color-background-info'),
-        'text-info': withAlpha('--color-text-info'),
-        // border は透過率込みで定義するため <alpha-value> を使わない
-        border: 'var(--color-border)',
-
-        // カラーシステム v1.4 の名前。定義は CLAUDE.md「カラーシステム」。
-        // 上の古い名前は同じ値を指している（global.css の説明を参照）。
-        // **新しく書くコードはこちらを使う。**
-        'bg-base': withAlpha('--color-cream'),
-        'brand-green': withAlpha('--color-brand-green'),
-        'ai-teal': withAlpha('--color-ai-teal'),
-        'lantern-warm': withAlpha('--color-lantern-warm'),
         'text-primary': withAlpha('--color-text-primary'),
         'text-secondary': withAlpha('--color-text-secondary'),
-        // Home だけの特例
+        'background-info': withAlpha('--color-background-info'),
+        'text-info': withAlpha('--color-text-info'),
         'home-bg': withAlpha('--color-home-bg'),
         'home-warm': withAlpha('--color-home-warm'),
+        // border は透過率込みで定義するため <alpha-value> を使わない
+        border: 'var(--color-border)',
       },
       fontFamily: {
         // 実体は client/lib/fonts.js が expo-font で読み込む。
-        // 読み込みが終わるまでは端末の既定にフォールバックする。
-        display: ['NotoSerifJP_600SemiBold', 'serif'],
+        // **和文は Noto Sans JP。** DESIGN.md の Hanken Grotesk /
+        // Source Sans 3 は和文の字を持たないため、そのままでは使えない。
+        // 理由は fonts.js に書いた。
+        display: ['NotoSansJP_700Bold', 'sans-serif'],
         body: ['NotoSansJP_400Regular', 'sans-serif'],
-        // 英数字が混ざる箇所（日付・バージョン等）
-        mono: ['Inter_400Regular', 'sans-serif'],
+        strong: ['NotoSansJP_700Bold', 'sans-serif'],
+        // 欧文だけの「Lantern」の綴りに使う
+        latin: ['HankenGrotesk_700Bold', 'sans-serif'],
+        // ラベル・数字
+        label: ['Inter_500Medium', 'sans-serif'],
+        'label-sm': ['Inter_600SemiBold', 'sans-serif'],
+        mono: ['Inter_500Medium', 'sans-serif'],
       },
       fontSize: {
-        // 文字サイズの基準（CLAUDE.md「文字サイズ基準」）。
-        // 実機で「小さい」と指摘されたため、本文を 15px に上げた。
-        // Tailwind 既定の text-sm(14) / text-xs(12) より1段大きい。
+        // DESIGN.md の typography をそのまま持ってきたもの。
         //
-        // **色と同じ名前を使わないこと。** Tailwind は色もサイズも
-        // `text-` 接頭辞で出すため、`lantern` という名前を両方に置くと
-        // `text-lantern` が1つのクラスで色とサイズの両方を指す。
-        // 「今日の灯り」用のサイズは quote と呼ぶ。
-        quote: ['18px', { lineHeight: '1.8' }],
-        body: ['15px', { lineHeight: '1.7' }],
-        aux: ['13px', { lineHeight: '1.6' }],
+        // **色とサイズに同じ名前を使わないこと。** Tailwind はどちらも
+        // `text-` で出すため、`lantern` を両方に置くと1つのクラスが
+        // 色とサイズの両方を指してしまう。
+        display: ['40px', { lineHeight: '48px', letterSpacing: '-0.8px' }],
+        'headline-lg': ['32px', { lineHeight: '40px', letterSpacing: '-0.32px' }],
+        'headline-lg-mobile': ['28px', { lineHeight: '34px' }],
+        'headline-md': ['24px', { lineHeight: '30px' }],
+        // 記録の本文。**19px は「じっくり読むため」の大きさ**（DESIGN.md）
+        'body-lg': ['19px', { lineHeight: '32px' }],
+        'body-md': ['17px', { lineHeight: '26px' }],
+        'label-md': ['14px', { lineHeight: '20px', letterSpacing: '0.14px' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.6px' }],
+
+        // 旧名。値は上に合わせた。
+        // quote=記録の本文 / body=通常本文 / aux=補助
+        quote: ['19px', { lineHeight: '32px' }],
+        body: ['17px', { lineHeight: '26px' }],
+        aux: ['14px', { lineHeight: '20px', letterSpacing: '0.14px' }],
+      },
+      borderRadius: {
+        // DESIGN.md の rounded。
+        // 入力欄とボタンは 8px、面（カード）は 16px。
+        DEFAULT: '0.5rem',
+        sm: '0.25rem',
+        md: '0.75rem',
+        lg: '1rem',
+        xl: '1.5rem',
+      },
+      spacing: {
+        // 画面の左右。DESIGN.md は mobile 20px / desktop 40px
+        margin: '20px',
+        gutter: '16px',
+        'stack-sm': '8px',
+        'stack-md': '16px',
+        'stack-lg': '32px',
+        // 押せるものの最小寸法（HIG の 44pt）
+        touch: '44px',
+      },
+      maxWidth: {
+        // 本文の読みやすい幅。長すぎる行を作らない
+        read: '680px',
+      },
+      boxShadow: {
+        // 「Natural Bloom」。**ほとんど見えない濃さにする**
+        bloom: '0 4px 12px rgba(0, 0, 0, 0.05)',
       },
     },
   },

@@ -55,7 +55,7 @@ export default function MilestoneBanner() {
   if (!milestone) return null
 
   return (
-    <View className="bg-forest dark:bg-primary rounded-xl px-4 py-3.5">
+    <View className="bg-forest dark:bg-primary rounded-lg px-4 py-3.5">
       <Pressable
         onPress={() => setOpen((o) => !o)}
         className="flex-row items-center justify-between gap-3"
@@ -69,7 +69,7 @@ export default function MilestoneBanner() {
       {open ? (
         <View className="mt-3 gap-3">
           {milestone.reflection ? (
-            <View className="bg-white/10 dark:bg-black/20 rounded-xl px-4 py-3.5 gap-2">
+            <View className="bg-white/10 dark:bg-black/20 rounded-lg px-4 py-3.5 gap-2">
               <Text className="text-[10px] text-cream/60 tracking-[2px]">LANTERN</Text>
               <Text className="text-body text-cream dark:text-primary-text leading-relaxed">
                 {milestone.reflection.observation}

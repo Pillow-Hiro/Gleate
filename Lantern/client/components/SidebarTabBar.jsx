@@ -51,9 +51,11 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
 
   // アイコンの色は className では渡せないため、ここだけ値で持つ。
   // global.css の --color-forest / --color-ink-soft / --color-ink-faint に対応する。
-  const activeColor = isDark ? '#5fa882' : '#2d4a3e'
-  const inactiveColor = isDark ? '#8a8a8e' : '#6b6b66'
-  const faintColor = isDark ? '#636366' : '#999999'
+  // 値は DESIGN.md。クラス名を渡せない場所なので、
+  // パレットを変えたらここも直す（`(tabs)/_layout.jsx` と揃える）。
+  const activeColor = isDark ? '#FFB953' : '#825500'
+  const inactiveColor = isDark ? '#CDC4B8' : '#514535'
+  const faintColor = isDark ? '#988C7E' : '#847563'
 
   return (
     <View

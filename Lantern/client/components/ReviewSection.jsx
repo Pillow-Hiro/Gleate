@@ -7,7 +7,7 @@ import { formatAge } from '../lib/format'
 
 export function PatternCard({ observation, question }) {
   return (
-    <View className="bg-sage-light/60 border border-sage/20 rounded-xl px-5 py-4 gap-2.5">
+    <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-2.5">
       <Text className="text-body text-ink leading-relaxed">{observation}</Text>
       <Text className="text-body text-ink-soft italic leading-relaxed">{question}</Text>
     </View>
@@ -74,7 +74,7 @@ export default function ReviewSection({ title, type, description }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-base text-ink">{title}</Text>
+          <Text className="font-display text-body-lg text-ink">{title}</Text>
           <Text className="text-aux text-ink-faint mt-0.5">{description}</Text>
         </View>
         <Pressable
@@ -89,10 +89,10 @@ export default function ReviewSection({ title, type, description }) {
       {loading ? (
         <View className="gap-3">
           {[1, 2].map((i) => (
-            <View key={i} className="bg-stone/60 rounded-xl px-5 py-4 gap-2.5">
-              <View className="h-3.5 bg-parchment rounded w-full" />
-              <View className="h-3.5 bg-parchment rounded w-4/5" />
-              <View className="h-3 bg-parchment rounded w-2/3" />
+            <View key={i} className="bg-stone/60 rounded-lg px-5 py-4 gap-2.5">
+              <View className="h-3.5 bg-parchment rounded-full w-full" />
+              <View className="h-3.5 bg-parchment rounded-full w-4/5" />
+              <View className="h-3 bg-parchment rounded-full w-2/3" />
             </View>
           ))}
         </View>
@@ -108,7 +108,7 @@ export default function ReviewSection({ title, type, description }) {
       ) : null}
 
       {!loading && restored && patterns === null ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
+        <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
           <Text className="text-body text-ink-faint text-center">
             「振り返る」を押すと、Lanternが記録から気づきを届けます
           </Text>
@@ -116,7 +116,7 @@ export default function ReviewSection({ title, type, description }) {
       ) : null}
 
       {!loading && isEmpty ? (
-        <View className="border border-border border-dashed rounded-xl px-5 py-6 items-center">
+        <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
           <Text className="text-body text-ink-faint text-center">記録が増えると、パターンが見えてきます。</Text>
         </View>
       ) : null}

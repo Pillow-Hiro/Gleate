@@ -42,7 +42,7 @@ export default function Login() {
     >
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-display text-3xl text-ink tracking-[8px]">Lantern</Text>
+          <Text className="font-latin text-display text-ink">Lantern</Text>
           {/* この一文は CLAUDE.md の書き出しと食い違って見えるが、
               2026-08-06 に作者が残すと決めた。直さないこと。 */}
           <Text className="text-aux text-ink-faint mt-2 tracking-wider">創作の道を照らす、AI伴走者</Text>

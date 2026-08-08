@@ -22,7 +22,7 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
   const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
 
   return (
-    <View className="bg-stone/40 rounded-xl px-4 py-4 gap-2.5">
+    <View className="bg-stone/40 rounded-lg px-4 py-4 gap-2.5">
       <Text className="text-[10px] text-ink-faint tracking-[1px]">{log ? log.date : dateHint}</Text>
       {!log ? (
         <Text className="text-body text-ink-faint">
@@ -44,7 +44,7 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
             log.photo_thumb_url ? (
               <Image
                 source={{ uri: log.photo_thumb_url }}
-                className="w-full rounded-lg"
+                className="w-full rounded"
                 style={{ height: 128 }}
                 resizeMode="cover"
               />

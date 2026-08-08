@@ -7,7 +7,7 @@
 - どのファイルに何があるかは `PROJECT_MAP.md`
 - 今どこにいるかは `HANDOFF.md`
 
-最終更新: 2026-08-08（世代 v2.0 / リリース版数 1.0.0）
+最終更新: 2026-08-09（世代 v2.0 / リリース版数 1.0.0）
 
 版数は `tests/test_docs.py` が実ファイルと照合する。**手で書き換えても、
 実装と合っていなければ落ちる。**
@@ -61,20 +61,30 @@
 | `expo-dev-client` | 57.0.10 | 開発用ビルド。**保存した瞬間に実機へ反映される** |
 | `expo-updates` | 57.0.12 | OTA更新。JSだけの修正をビルドせずに配る |
 
-書体も同梱している（2026-08-08）。読み込みは `client/lib/fonts.js` だけで行う。
+書体も同梱している。読み込みは `client/lib/fonts.js` だけで行う。
+どれを何に使うかは `DESIGN.md` と `CLAUDE.md`「デザインシステム」。
 
-| 追加 | 版 | 目的 |
-|---|---|---|
-| `expo-font` | ~57.0.1 | 書体の読み込み |
-| `@expo-google-fonts/noto-serif-jp` | ^0.4.3 | 見出し・今日の灯り（SemiBold のみ） |
-| `@expo-google-fonts/noto-sans-jp` | ^0.4.3 | 本文（Regular のみ） |
-| `@expo-google-fonts/inter` | ^0.4.2 | 英数字だけの行（Regular のみ） |
-| `expo-blur` | ~57.0.2 | ボトムタブのすりガラス（iOS は UIVisualEffectView） |
+| 追加 | 版 | 目的 | 容量 |
+|---|---|---|---|
+| `expo-font` | ~57.0.1 | 書体の読み込み | — |
+| `@expo-google-fonts/noto-sans-jp` | ^0.4.3 | 和文（Regular / Bold） | 10.4MB |
+| `@expo-google-fonts/hanken-grotesk` | ^0.4.3 | 欧文のワードマーク（Bold） | 0.06MB |
+| `@expo-google-fonts/inter` | ^0.4.2 | ラベル・数字（Medium / SemiBold） | 0.7MB |
+| `expo-blur` | ~57.0.2 | ボトムタブのすりガラス | — |
 
-**和文の書体は1ウェイトで約5〜7MB ある。合計で約13MB がアプリに載る。**
-ウェイトを増やすと比例して増えるので、必要になるまで足さない。
+**合計 約11MB。**
+
+**ウェイトごとのパスから import すること。** パッケージ名から読むと
+index.js が9ウェイト全部を require し、Metro は木揺すりで落とさない。
+2026-08-08 にこれで web の書き出しが 114MB になった（フォントだけで111MB）。
+
+**和文の書体は1ウェイトで約5MB ある。** 増やすと比例して増える。
 字形を絞る手もあるが、記録アプリでは利用者が何の字を書くか分からないため
 **絞ると書いた字が出ない事故になる。** やらない。
+
+`DESIGN.md` が指定する Hanken Grotesk（見出し）と Source Sans 3（本文）は
+**和文の字を持たない。** 和文は Noto Sans JP に読み替えている。
+理由は `client/lib/fonts.js`。
 
 ---
 
@@ -164,7 +174,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 756 |
+| バックエンド | pytest | 793 |
 | `client/lib` の純粋関数 | vitest | 88 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 
@@ -180,6 +190,7 @@ AI憲法に照らして出力を読んでから決める。
 | `test_route_auth.py` | 全ルートに認証がかかっているか |
 | `test_react_patterns.py` | 実機でしか露見しない書き方の誤り（描画のたびに作り直されるコンポーネント等） |
 | `test_prompts.py` | AIのプロンプトが AI憲法と矛盾していないか |
+| `test_ui_words.py` | **画面の文言**が AI憲法の禁止ワードを含んでいないか |
 
 どれも「気をつける」では守れなかったものを機械に移したもの。
 **落ちたらテストではなく、実装か文書の方を直す。**

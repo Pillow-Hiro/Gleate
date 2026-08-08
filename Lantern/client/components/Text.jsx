@@ -11,7 +11,7 @@ import { Text as RNText } from 'react-native'
 // font-display / font-mono が指定されている場合は上書きしない。
 // NativeWind はクラスの並び順ではなく CSS の定義順で優先度を決めるため、
 // **両方を渡すとどちらが勝つか読めない。** 文字列に足す前に弾く。
-const HAS_FONT = /(^|\s)font-(display|body|mono)(\s|$)/
+const HAS_FONT = /(^|\s)font-(display|body|strong|mono)(\s|$)/
 
 export default function Text({ className, ...props }) {
   const cls = className || ''

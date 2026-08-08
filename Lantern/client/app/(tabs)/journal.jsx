@@ -161,11 +161,10 @@ export default function Journal() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
         {/* ヘッダー */}
         <View>
-          <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">JOURNAL</Text>
-          <Text className="font-display text-xl text-ink">記録</Text>
+          <Text className="font-display text-headline-md text-ink">記録</Text>
           {!loading && logs.length > 0 ? (
             <Text className="text-body text-ink-soft mt-1">{logs.length}日間の記録</Text>
           ) : null}
@@ -202,7 +201,7 @@ export default function Journal() {
                 </View>
               ) : null}
 
-              <View className="bg-stone/50 rounded-xl p-4">
+              <View className="bg-stone/50 rounded-lg p-4">
                 <ActivityCalendar
                   logs={logs}
                   selectedDate={selectedDate || ''}
@@ -210,13 +209,13 @@ export default function Journal() {
                 />
                 {!loading && logs.length === 0 ? (
                   <Text className="text-[11px] text-ink-faint text-center mt-3">
-                    日付をタップして記録を始めましょう
+                    日付をタップすると、その日の記録を開けます
                   </Text>
                 ) : null}
               </View>
 
               {selectedDate && selectedLog ? (
-                <View className="mt-3 bg-stone/40 rounded-xl px-5 py-4">
+                <View className="mt-3 bg-stone/40 rounded-lg px-5 py-4">
                   <Text className="text-aux text-ink-faint mb-2">{dateDisplayJa(selectedDate)}</Text>
                   <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
                 </View>
@@ -228,13 +227,13 @@ export default function Journal() {
             </View>
 
             {/* 検索 */}
-            <View className="flex-row items-center bg-stone border border-border rounded-lg px-3">
+            <View className="flex-row items-center bg-stone border border-border rounded px-3">
               <Text className="text-ink-faint text-aux mr-2">⌕</Text>
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="記録を検索"
-                placeholderTextColor="#999999"
+                placeholderTextColor="#8E8478"
                 className="flex-1 py-2.5 font-body text-body text-ink"
               />
               {search ? (
@@ -248,14 +247,14 @@ export default function Journal() {
             {loading ? (
               <View className="gap-3">
                 {[1, 2, 3].map((i) => (
-                  <View key={i} className="h-12 bg-stone rounded-lg" />
+                  <View key={i} className="h-12 bg-stone rounded" />
                 ))}
               </View>
             ) : logs.length === 0 ? (
               <View className="items-center py-16">
                 <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
                 <Text className="text-body text-ink-soft">まだ記録がありません</Text>
-                <Text className="text-aux text-ink-faint mt-1.5">今日のタブから記録を始めましょう</Text>
+                <Text className="text-aux text-ink-faint mt-1.5">「書く」から残せます</Text>
               </View>
             ) : monthKeys.length === 0 ? (
               <View className="items-center py-12">
@@ -268,12 +267,12 @@ export default function Journal() {
                 {monthKeys.map((month) => (
                   <View key={month}>
                     <View className="flex-row items-center gap-2.5 mb-3">
-                      <Text className="text-aux text-ink-soft">
+                      <Text className="font-strong text-aux text-ink-soft">
                         {monthLabel(groups[month][0].date)}
                       </Text>
                       <Text className="text-[10px] text-ink-faint">{groups[month].length}日</Text>
                     </View>
-                    <View className="bg-stone/40 rounded-xl px-4">
+                    <View className="bg-stone/40 rounded-lg px-4">
                       {groups[month].map((log) => (
                         <LogItem
                           key={log.date}
@@ -325,11 +324,11 @@ export default function Journal() {
                       value={modalForm[field]}
                       onChangeText={(v) => setModalForm((f) => ({ ...f, [field]: v }))}
                       placeholder={placeholder}
-                      placeholderTextColor="#999999"
+                      placeholderTextColor="#8E8478"
                       multiline
                       textAlignVertical="top"
                       style={{ minHeight }}
-                      className="bg-stone border border-border rounded-lg px-3 py-2.5 text-body text-ink"
+                      className="bg-stone border border-border rounded px-3 py-2.5 text-body text-ink"
                     />
                   </View>
                 ))}
