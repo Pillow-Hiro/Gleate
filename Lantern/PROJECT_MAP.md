@@ -107,7 +107,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
-| `TabIcons.jsx` | (tabs)/_layout / SidebarTabBar | **タブのアイコン。サイドバーとボトムタブが共有する** |
+| `TabIcons.jsx` | (tabs)/_layout / SidebarTabBar | **タブのアイコン。サイドバーとボトムタブが共有する**（ペン／ノート／格子／歯車） |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
