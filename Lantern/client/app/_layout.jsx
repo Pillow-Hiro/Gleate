@@ -46,6 +46,10 @@ export function ErrorBoundary({ error, retry }) {
 // 世界観としては強いが、1日に何度も開くと邪魔になる。
 const SPLASH_SEEN_KEY = 'lantern_splash_date'
 
+// セッションが無くても入れる画面。ここに足し忘れると、
+// その画面を開いた瞬間に /login へ振り替えられる。
+const AUTH_SCREENS = new Set(['login', 'signup'])
+
 function RootNavigator() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -99,12 +103,16 @@ function RootNavigator() {
   }, [])
 
   // 認証ガード。セッションの有無と現在地が食い違っていれば振り替える。
+  //
+  // 2026-08-08 に新規登録を別画面（`/signup`）に分けた。
+  // **どちらも「まだ入っていない人がいる場所」として同じ扱いにする。**
+  // login だけを見ていると、登録画面から本画面へ蹴り出される。
   useEffect(() => {
     if (loading) return
-    const onLoginScreen = segments[0] === 'login'
-    if (!session && !onLoginScreen) {
+    const onAuthScreen = AUTH_SCREENS.has(segments[0])
+    if (!session && !onAuthScreen) {
       router.replace('/login')
-    } else if (session && onLoginScreen) {
+    } else if (session && onAuthScreen) {
       router.replace('/')
     }
   }, [session, loading, segments, router])
@@ -125,6 +133,7 @@ function RootNavigator() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
       </Stack>
       {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { todayStr, calcStreak } from '../../lib/date'
@@ -23,6 +24,8 @@ function dateDisplayJa(dateStr) {
 }
 
 export default function Home() {
+  // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
+  const tabInset = useTabBarInset()
   const params = useLocalSearchParams()
   const router = useRouter()
   const [quote, setQuote] = useState('')
@@ -87,7 +90,8 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-home-bg" edges={['top']}>
       <ScrollView
-        contentContainerClassName="px-5 pt-6 pb-10 gap-8 w-full max-w-2xl self-center"
+        contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-2xl self-center"
+        contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
         keyboardShouldPersistTaps="handled"
       >
         {/* 日付ヘッダー */}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
 
@@ -16,6 +17,8 @@ const TABS = [
 ]
 
 export default function Dashboard() {
+  // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
+  const tabInset = useTabBarInset()
   const [activeTab, setActiveTab] = useState('youtube')
   // **一度開いたパネルは残す。**
   //
@@ -35,7 +38,7 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6 w-full max-w-2xl self-center">
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">DASHBOARD</Text>
           <Text className="font-display text-xl text-ink">ダッシュボード</Text>

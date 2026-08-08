@@ -1,44 +1,34 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
+import { useRouter } from 'expo-router'
 import Text from '../components/Text'
+import AuthForm from '../components/AuthForm'
 import { supabase } from '../lib/supabase'
-import FormShell from '../components/FormShell'
+import { authErrorMessage } from '../lib/authError'
 
-// 文言・認証方式はWeb版 frontend/src/pages/Login.jsx をそのまま踏襲する
-// （メールアドレス＋パスワード。OTPではない）
+// **ログインと新規登録を別の画面にしている（2026-08-08）。**
+//
+// それまでは1画面をモードで切り替えていた。実機で
+// 「ログインなのか登録なのか分かりづらい」と指摘された。
+// 見出しもボタンも入れ替わるだけなので、途中で切り替わったことに
+// 気づかないまま送信してしまう。
+//
+// 画面を分ければ、見出し・説明・失敗したときの案内を
+// それぞれの文脈で書ける。入力欄は `AuthForm` で共有する。
 export default function Login() {
-  const [mode, setMode] = useState('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
 
-  async function handleSubmit() {
+  async function handleLogin(email, password) {
     setLoading(true)
     setError('')
-    setMessage('')
-
     try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        setMessage('確認メールを送信しました。メールを確認してください。')
-      }
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+      if (err) throw err
+      // 成功したら _layout.jsx の認証ガードが本画面へ振り替える
     } catch (err) {
-      const msg = err.message || 'エラーが発生しました'
-      if (msg.includes('Invalid login credentials')) {
-        setError('メールアドレスまたはパスワードが正しくありません')
-      } else if (msg.includes('User already registered')) {
-        setError('このメールアドレスはすでに登録されています')
-      } else if (msg.includes('Password should be at least')) {
-        setError('パスワードは6文字以上で設定してください')
-      } else {
-        setError(msg)
-      }
+      setError(authErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -53,72 +43,22 @@ export default function Login() {
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
           <Text className="font-display text-3xl text-ink tracking-[8px]">Lantern</Text>
+          {/* この一文は CLAUDE.md の書き出しと食い違って見えるが、
+              2026-08-06 に作者が残すと決めた。直さないこと。 */}
           <Text className="text-aux text-ink-faint mt-2 tracking-wider">創作の道を照らす、AI伴走者</Text>
         </View>
 
-        {/* Web では FormShell が <form> を出す。
-            パスワードマネージャは <form> を手がかりに動くため、
-            無いとメールだけ入ってパスワードが入らない。
-            Enter での送信もブラウザの既定動作なので <form> が要る。 */}
-        <FormShell className="gap-4" onSubmit={handleSubmit}>
-          <View>
-            <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">メールアドレス</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              textContentType="username"
-              keyboardType="email-address"
-              returnKeyType="next"
-              onSubmitEditing={handleSubmit}
-              className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
-              placeholderTextColor="#999999"
-            />
-          </View>
-
-          <View>
-            <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">パスワード</Text>
-            {/* パスワードマネージャに拾わせるための指定。
-                autoComplete が無いと、メールだけ自動入力されてパスワードが空のままになる。
-                新規登録では new-password にしないと、保存済みの旧パスワードを
-                提案されてしまう。 */}
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              textContentType={mode === 'login' ? 'password' : 'newPassword'}
-              returnKeyType="go"
-              onSubmitEditing={handleSubmit}
-              className="bg-stone border border-border rounded-lg px-3 py-3 font-body text-body text-ink"
-              placeholderTextColor="#999999"
-            />
-          </View>
-
-          {error ? <Text className="text-aux text-red-500">{error}</Text> : null}
-          {message ? <Text className="text-aux text-sage">{message}</Text> : null}
-
-          <Pressable
-            onPress={handleSubmit}
-            disabled={loading}
-            className="bg-forest rounded-full py-3 items-center active:opacity-80 disabled:opacity-50"
-          >
-            <Text className="text-body text-cream">
-              {loading ? '処理中...' : mode === 'login' ? 'ログイン' : '登録する'}
-            </Text>
+        <AuthForm
+          mode="login"
+          submitLabel="ログイン"
+          error={error}
+          loading={loading}
+          onSubmit={handleLogin}
+        >
+          <Pressable onPress={() => router.push('/signup')} className="items-center pt-2">
+            <Text className="text-aux text-forest">はじめての方はこちら</Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}
-            className="items-center pt-2"
-          >
-            <Text className="text-aux text-ink-faint">
-              {mode === 'login' ? 'アカウントを作成する' : 'ログインに戻る'}
-            </Text>
-          </Pressable>
-        </FormShell>
+        </AuthForm>
       </View>
     </ScrollView>
   )

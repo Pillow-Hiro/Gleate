@@ -50,12 +50,13 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | ファイル | URL | 中身 |
 |---|---|---|
 | `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
-| `(tabs)/_layout.jsx` | タブ | 幅768pxでボトムタブ／サイドバーを切り替える |
+| `(tabs)/_layout.jsx` | タブ | 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス（`expo-blur`） |
 | `(tabs)/index.jsx` | `/` | 書く（記録・アイデアの2タブ） |
 | `(tabs)/journal.jsx` | `/journal` | 記録（記録・振り返りの2タブ） |
 | `(tabs)/dashboard.jsx` | `/dashboard` | Dashboard（YouTube / Twitch のタブ） |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
-| `login.jsx` | `/login` | Supabase Auth |
+| `login.jsx` | `/login` | ログインだけ。入力欄は `AuthForm.jsx` |
+| `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの
@@ -86,11 +87,12 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・23ファイル）
+## 3. 部品（`client/components/`・25ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
 | `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ |
+| `AuthForm.jsx` | login / signup | メールとパスワードの入力欄。空欄のまま送らせない |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。使ったものは取り消し線で残す |
@@ -122,6 +124,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | ファイル | 役割 | test |
 |---|---|---|
 | `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
+| `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
 | `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
@@ -129,6 +132,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
+| `tabBar.js` | タブバーの高さと、画面が空ける下の余白。**両方をここで決める** | — |
 | `theme.js` | テーマの保持 | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

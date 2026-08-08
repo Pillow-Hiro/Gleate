@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #4 が成功**（2026-08-07・commit `b6d45da`）。TestFlight への提出が次。**ただし下記の理由でビルドし直しが要る** |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 754件 / vitest 82件 |
+| 検査 | pytest 756件 / vitest 88件 |
 
 ## 1.5 ビルドし直しが要る（2026-08-08 時点）
 
@@ -42,6 +42,7 @@ OTA（`eas update`）では届かない。
 
 - `expo-splash-screen` / `expo-dev-client` / `expo-updates`（2026-08-07）
 - `expo-font` と同梱の書体3つ（2026-08-08・約13MB）
+- `expo-blur`（2026-08-08・ボトムタブのすりガラス）
 
 書体はアプリの中身として載るため、**アプリの容量が約13MB増える。**
 
@@ -57,8 +58,16 @@ OTA（`eas update`）では届かない。
   （本文15px・補助13px・今日の灯り18px）
 - `components/Text.jsx` を置き、本文書体の既定をここ1箇所に集めた。
   **`react-native` の `Text` を直接 import しないこと**
+- **ログインと新規登録を別の画面に分けた**（`/login` と `/signup`）。
+  入力欄は `components/AuthForm.jsx` で共有する
+- 登録の手間を削った。条件を先に出す・空欄で送らせない・
+  宛先を出す・再送を置く・Supabase の英文を日本語にする（`lib/authError.js`）
+- **ボトムタブをすりガラスにした**（`expo-blur`）。
+  絶対配置なので、画面は `lib/tabBar.js` の `useTabBarInset()` の分だけ下を空ける
 
 詳細は `PROGRESS.md` の 2026/08/08 の節。
+
+**2026-08-07 の実機指摘は全て対応済み。** 残るは実機での確認。
 
 ### 2026-08-06
 

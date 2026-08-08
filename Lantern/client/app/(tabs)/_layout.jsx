@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router'
-import { useWindowDimensions } from 'react-native'
+import { StyleSheet, useWindowDimensions } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useColorScheme } from 'nativewind'
+import { BlurView } from 'expo-blur'
 import SidebarTabBar from '../../components/SidebarTabBar'
 import { TAB_ICONS } from '../../components/TabIcons'
+import { TAB_BAR_HEIGHT, WIDE_SCREEN_MIN_WIDTH } from '../../lib/tabBar'
 
 // タブ項目は4つ。「振り返り」はJournal内のタブへ統合したためここには置かない。
 //
@@ -13,11 +16,10 @@ import { TAB_ICONS } from '../../components/TabIcons'
 // 組み込みの tabBarPosition="left" だけでもサイドバーの形にはなるが、
 // ロゴ・タグライン・バージョン・テーマ切替を差し込む場所が無く、
 // 既定の幅が広すぎ、アクティブ色も青のままで Lantern の配色から外れる。
-const WIDE_SCREEN_MIN_WIDTH = 768
 
 const THEME = {
-  light: { bg: '#faf9f7', border: 'rgba(0,0,0,0.08)', active: '#2d4a3e', inactive: '#999999' },
-  dark: { bg: '#1c1c1e', border: 'rgba(255,255,255,0.10)', active: '#5fa882', inactive: '#636366' },
+  light: { border: 'rgba(0,0,0,0.08)', active: '#2d4a3e', inactive: '#8a8578', blur: 'systemChromeMaterialLight' },
+  dark: { border: 'rgba(255,255,255,0.10)', active: '#7aa88e', inactive: '#8a8578', blur: 'systemChromeMaterialDark' },
 }
 
 // ラベルは「そこで何をするか」にする。
@@ -37,8 +39,45 @@ const TABS = [
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme()
   const { width } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const c = THEME[colorScheme === 'dark' ? 'dark' : 'light']
   const isWide = width >= WIDE_SCREEN_MIN_WIDTH
+
+  // **すりガラスのタブバー（2026-08-08）。**
+  //
+  // 実機で「下のタブを Liquid Glass に」と指摘された。
+  // 不透明の板を置くのではなく、記録が下を通って透けることで
+  // 画面が続いて見える。iOS では UIVisualEffectView の
+  // systemChromeMaterial を使う。ナビゲーションバーと同じ素材で、
+  // 濃さは OS が決める（自前で調整すると OS の更新で浮く）。
+  //
+  // **透けさせるには絶対配置が要る。** そのぶん画面の一番下が
+  // 裏に隠れるので、各画面が `useTabBarInset()` の分だけ下を空ける。
+  // 高さをここで固定しているのは、画面側と食い違わせないため。
+  const glassTabBar = {
+    tabBarBackground: () => (
+      <BlurView
+        tint={c.blur}
+        intensity={80}
+        // **Android は既定ではぼかさない。** これを渡さないと
+        // 半透明の板になるだけで、下の文字がそのまま透けて読みにくい。
+        // Modal の中では効かないという制約があるが、タブバーは Modal の外。
+        experimentalBlurMethod="dimezisBlurView"
+        style={StyleSheet.absoluteFill}
+      />
+    ),
+    tabBarStyle: {
+      position: 'absolute',
+      backgroundColor: 'transparent',
+      borderTopColor: c.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      // Android の影。すりガラスの上に落ちると濁って見える
+      elevation: 0,
+      height: TAB_BAR_HEIGHT + insets.bottom,
+      paddingBottom: insets.bottom,
+      paddingTop: 6,
+    },
+  }
 
   return (
     <Tabs
@@ -48,13 +87,9 @@ export default function TabsLayout() {
         tabBarPosition: isWide ? 'left' : 'bottom',
         tabBarActiveTintColor: c.active,
         tabBarInactiveTintColor: c.inactive,
-        tabBarStyle: {
-          backgroundColor: c.bg,
-          // サイドバーのときは右側、ボトムタブのときは上側に境界線が出る
-          borderTopColor: c.border,
-          borderRightColor: c.border,
-        },
         tabBarLabelStyle: { fontSize: 11 },
+        // 広いときの描画は SidebarTabBar が持つので、すりガラスは渡さない
+        ...(isWide ? {} : glassTabBar),
       }}
     >
       {TABS.map(({ name, title }) => {

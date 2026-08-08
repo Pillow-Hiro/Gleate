@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { calcStreak } from '../../lib/date'
 import { exportLogs } from '../../lib/exportLogs'
@@ -32,6 +33,8 @@ function Section({ title, children }) {
 }
 
 export default function Settings() {
+  // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
+  const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
   const [signingOut, setSigningOut] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -102,7 +105,7 @@ export default function Settings() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-8 w-full max-w-2xl self-center">
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">SETTINGS</Text>
           <Text className="font-display text-xl text-ink">設定</Text>

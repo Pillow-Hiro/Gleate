@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import {
   attach as attachPhotos,
@@ -27,6 +28,8 @@ const MODAL_FIELDS = [
 const EMPTY_FORM = { created: '', enjoyable: '', struggled: '', next: '' }
 
 export default function Journal() {
+  // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
+  const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -158,7 +161,7 @@ export default function Journal() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView contentContainerClassName="px-5 pt-6 pb-10 gap-6 w-full max-w-2xl self-center" keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-2xl self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
         {/* ヘッダー */}
         <View>
           <Text className="text-[10px] text-ink-faint tracking-[2px] mb-0.5">JOURNAL</Text>
