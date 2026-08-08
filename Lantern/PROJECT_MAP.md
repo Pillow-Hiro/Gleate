@@ -149,7 +149,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | ファイル | 役割 | test |
 |---|---|---|
 | `account.py` | アカウントの削除。**行を消してから認証の利用者を消す** | `test_account.py` |
-| `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py` |
+| `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py`・`test_prompts.py` |
 | `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
 | `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
 | `logs.py` | 記録の読み書きとカラム変換。**写真カラムを読み書きしない** | `test_logs_mapping.py` |
@@ -165,7 +165,8 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 `test_privacy.py`（記録と資格情報がログに出ないこと）、
 `test_deploy.py`（本番の起動構成と依存の固定）、
 `test_account.py`（退会時の削除）、
-`test_react_patterns.py`（実機でしか露見しない書き方の誤り）。
+`test_react_patterns.py`（実機でしか露見しない書き方の誤り）、
+`test_prompts.py`（プロンプトが AI憲法と矛盾していないか）。
 
 ---
 
