@@ -31,7 +31,7 @@
    | stone | surface-container-low | 一段沈んだ面 |
    | parchment | surface-container-high | さらに沈んだ面 |
    | forest / primary | primary | 主要な操作 |
-   | sage | tertiary | AIの観察・発言 |
+   | sage | ai-surface / ai-ink | AIの観察・発言（琥珀と同系の砂色） |
    | amber / lantern / accent | lantern-glow | 灯り・節目・選択中 |
    | ink | on-surface | 本文 |
    | ink-soft | on-surface-variant | 補足 |
@@ -89,12 +89,22 @@
     --color-secondary: 0 92 186;
     --color-system-blue: 0 102 204;
 
-    /* AI の観察・発言 */
+    /* AI の観察・発言。
+       **青緑（DESIGN.md の tertiary）は使わない。**
+       2026-08-09 に実機で「オレンジのブランドに合わない」と指摘された。
+       琥珀と同系の、褪せた紙のような砂色に変えた。
+       面は彩度の低い砂、文字は濃い茶。**灯りの #FBB03B は使わない。**
+       灯りは1画面に1つだけにしたいので、AIの面と競合させない。 */
+    --color-ai-surface: 255 240 219;
+    --color-ai-ink: 108 69 0;
+    --color-sage: 108 69 0;
+    --color-sage-light: 255 240 219;
+
+    /* DESIGN.md の tertiary。いまは画面で使っていないが、
+       仕様にある色なので定義は残す */
     --color-tertiary: 0 102 135;
     --color-on-tertiary: 255 255 255;
     --color-tertiary-container: 192 232 255;
-    --color-sage: 0 102 135;
-    --color-sage-light: 192 232 255;
 
     --color-error: 186 26 26;
     --color-error-container: 255 218 214;
@@ -155,11 +165,15 @@
     --color-secondary: 170 199 255;
     --color-system-blue: 170 199 255;
 
+    /* 暗い地では、砂を沈めて文字を明るい側に振る */
+    --color-ai-surface: 56 42 20;
+    --color-ai-ink: 255 221 180;
+    --color-sage: 255 221 180;
+    --color-sage-light: 56 42 20;
+
     --color-tertiary: 113 210 255;
     --color-on-tertiary: 0 30 43;
     --color-tertiary-container: 0 77 102;
-    --color-sage: 113 210 255;
-    --color-sage-light: 0 45 60;
 
     --color-error: 255 180 171;
     --color-error-container: 147 0 10;

@@ -38,6 +38,9 @@ module.exports = {
           container: withAlpha('--color-tertiary-container'),
         },
         'on-tertiary': withAlpha('--color-on-tertiary'),
+        // AI の声。青緑ではなく琥珀と同系の砂色（global.css の説明を参照）
+        'ai-surface': withAlpha('--color-ai-surface'),
+        'ai-ink': withAlpha('--color-ai-ink'),
         error: {
           DEFAULT: withAlpha('--color-error'),
           container: withAlpha('--color-error-container'),
