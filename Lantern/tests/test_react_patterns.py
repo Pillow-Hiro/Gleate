@@ -176,3 +176,61 @@ class TestTextInputsAreControlledFromOutside:
         assert "value" in params and "onChange" in params, (
             f"Field が value / onChange を受け取っていない: {sorted(params)}"
         )
+
+
+class TestNativeOnlyModulesAreLoadedLazily:
+    """ネイティブを持たないビルドに配られても落ちないか。
+
+    **`expo-glass-effect` は読み込んだ時点でネイティブを要求する。**
+
+        const NativeGlassView = requireNativeViewManager('ExpoGlassEffect', 'GlassView')
+        requireNativeModule('ExpoGlassEffect')   // 任意版ではない
+
+    静的 import すると、モジュールを持たないビルドでは
+    **画面を描く前に落ちる。**
+
+    そして実際に届きうる。2026-08-09 に確かめたところ、
+    `expo-glass-effect` を足したビルド #7 の指紋が、足していない #6 と
+    同一だった（どちらも `4ff774b0…`）。EAS Update はこの2つを
+    区別できないため、新しいJSが古いバイナリに配られる。
+
+    落ちたらテストではなく import の書き方を直すこと。
+    """
+
+    # 読み込んだだけでネイティブを要求するパッケージ。
+    # 増やすときは「トップレベルで requireNativeModule / requireNativeViewManager
+    # を呼んでいるか」を確認してから足す。
+    NATIVE_ON_IMPORT = ["expo-glass-effect"]
+
+    def _jsx_files(self):
+        out = []
+        for sub in ("app", os.path.join("app", "(tabs)"), "components", "lib"):
+            d = os.path.join(CLIENT, sub)
+            if not os.path.isdir(d):
+                continue
+            for f in sorted(os.listdir(d)):
+                if f.endswith(".jsx") or f.endswith(".js"):
+                    out.append(os.path.join(d, f))
+        return out
+
+    def test_静的importしていない(self):
+        hits = []
+        for path in self._jsx_files():
+            src = read(path)
+            for pkg in self.NATIVE_ON_IMPORT:
+                if re.search(rf"^\s*import\s.*from\s+['\"]{re.escape(pkg)}['\"]",
+                             src, re.M):
+                    hits.append(f"{os.path.basename(path)}: {pkg}")
+        assert hits == [], (
+            "ネイティブを持たないビルドで落ちる静的 import:\n" + "\n".join(hits)
+            + "\n関数の中で require し、try/catch で包むこと"
+        )
+
+    def test_読み込みを包んでいる(self):
+        """使っている側が try/catch を持っているか。"""
+        src = read(os.path.join(CLIENT, "app", "(tabs)", "_layout.jsx"))
+        if "expo-glass-effect" not in src:
+            return
+        assert "try {" in src and "catch" in src, (
+            "(tabs)/_layout.jsx が expo-glass-effect を包まずに読み込んでいる"
+        )

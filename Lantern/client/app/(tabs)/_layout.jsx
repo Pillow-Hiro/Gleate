@@ -3,7 +3,6 @@ import { StyleSheet, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useColorScheme } from 'nativewind'
 import { BlurView } from 'expo-blur'
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import SidebarTabBar from '../../components/SidebarTabBar'
 import { TAB_ICONS } from '../../components/TabIcons'
 import { TAB_BAR_HEIGHT, WIDE_SCREEN_MIN_WIDTH } from '../../lib/tabBar'
@@ -17,6 +16,39 @@ import { TAB_BAR_HEIGHT, WIDE_SCREEN_MIN_WIDTH } from '../../lib/tabBar'
 // 組み込みの tabBarPosition="left" だけでもサイドバーの形にはなるが、
 // ロゴ・タグライン・バージョン・テーマ切替を差し込む場所が無く、
 // 既定の幅が広すぎ、アクティブ色も青のままで Lantern の配色から外れる。
+
+// **`expo-glass-effect` を静的 import しないこと。**
+//
+// このパッケージは読み込んだ時点でネイティブを要求する。
+//
+//     const NativeGlassView = requireNativeViewManager('ExpoGlassEffect', 'GlassView')
+//     requireNativeModule('ExpoGlassEffect')   // 任意版ではない。無ければ throw
+//
+// ネイティブモジュールを持たないビルドにこのJSが届くと、
+// **画面を描く前に import だけで落ちる。**
+//
+// **そして実際に届きうる。** 2026-08-09 に確かめたところ、
+// `expo-glass-effect` を足したビルド #7 の指紋が、足していない #6 と
+// 同一だった（どちらも `4ff774b0…`）。EAS Update はこの2つを区別できない。
+//
+//     build 7  fp=4ff774b0…  (e47a369・glass あり)
+//     build 6  fp=4ff774b0…  (17135f4・glass なし)
+//
+// 指紋の側は直せないので、**JS の側で落ちないようにする。**
+// 読み込みを遅らせ、失敗したら「使えない」として扱う。
+let glassRuntime
+function getGlass() {
+  if (glassRuntime === undefined) {
+    try {
+      const m = require('expo-glass-effect')
+      glassRuntime = { GlassView: m.GlassView, available: m.isLiquidGlassAvailable() }
+    } catch (e) {
+      // モジュールを持たないビルド。すりガラスで代替する
+      glassRuntime = { GlassView: null, available: false }
+    }
+  }
+  return glassRuntime
+}
 
 const THEME = {
   // 値は DESIGN.md（lantern-glow / outline / border）。
@@ -45,8 +77,9 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets()
   const c = THEME[colorScheme === 'dark' ? 'dark' : 'light']
   const isWide = width >= WIDE_SCREEN_MIN_WIDTH
-  // iOS 26 以上で、かつ iOS 26 SDK でビルドされているときだけ true
-  const liquidGlass = isLiquidGlassAvailable()
+  // iOS 26 以上で、かつネイティブモジュールを持つビルドのときだけ true。
+  // 読み込みに失敗しても false になる（上の getGlass を参照）。
+  const { GlassView, available: liquidGlass } = getGlass()
 
   // **タブバーの素材（2026-08-09 に本物へ差し替えた）。**
   //
@@ -56,9 +89,8 @@ export default function TabsLayout() {
   // 屈折も鏡面ハイライトもスクロールに応じた変形も持たない。
   //
   // 本物は `UIGlassEffect`（iOS 26 以上）。`expo-glass-effect` が包んでいる。
-  // **iOS 26 未満と Android と Web では素の View に落ちる**ので、
-  // そこは今までどおり `expo-blur` を出す。
-  // 分岐は `isLiquidGlassAvailable()` が返す。
+  // **iOS 26 未満・Android・Web・モジュールを持たないビルド**では
+  // 今までどおり `expo-blur` を出す。
   //
   // **濃さや色を自前で作らない。** OS が素材を更新したとき、そこだけ浮く。
   //
