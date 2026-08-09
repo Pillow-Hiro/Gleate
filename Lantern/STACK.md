@@ -70,7 +70,8 @@
 | `@expo-google-fonts/noto-sans-jp` | ^0.4.3 | 和文（Regular / Bold） | 10.4MB |
 | `@expo-google-fonts/hanken-grotesk` | ^0.4.3 | 欧文のワードマーク（Bold） | 0.06MB |
 | `@expo-google-fonts/inter` | ^0.4.2 | ラベル・数字（Medium / SemiBold） | 0.7MB |
-| `expo-blur` | ~57.0.2 | ボトムタブのすりガラス | — |
+| `expo-blur` | ~57.0.2 | ボトムタブの素材（iOS 26 未満・Android・Web） |
+| `expo-glass-effect` | ~57.0.1 | **Liquid Glass**（iOS 26 以上）。未満では素の View に落ちる | — |
 
 **合計 約11MB。**
 

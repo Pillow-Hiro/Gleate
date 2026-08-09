@@ -2218,6 +2218,65 @@ Source Sans 3 は入れなかった。**出る場所が無い。**
 
 ---
 
+## 2026/08/09 — 本物の Liquid Glass
+
+2026-08-08 に入れた `expo-blur` の `systemChromeMaterial` は
+**iOS 7 以来の `UIVisualEffectView` で、Liquid Glass ではなかった。**
+「ナビゲーションバーと同じ素材」と説明したが、屈折も鏡面ハイライトも
+スクロールに応じた変形も持たない。**私の説明が誤っていた。**
+
+`expo-glass-effect@57.0.1` の `GlassView` に差し替えた。中身は
+`UIGlassEffect`。iOS 26 未満・Android・Web では素の View に落ちるので、
+そこは今までどおり `expo-blur` を出す。分岐は `isLiquidGlassAvailable()`。
+
+Liquid Glass のときは自前の境界線を引かない。素材が縁まで持っている。
+
+### `NativeTabs` を採らなかった理由
+
+`expo-router` の `NativeTabs` は本物の `UITabBar` を出すので、
+OS が丸ごと Liquid Glass にする。スクロール端での変形も付く。
+**それでも採らなかった。**
+
+- アイコンが SF Symbols になり、`TabIcons.jsx` のペンと歯車が使えない
+- 広い画面のサイドバー（ロゴ・テーマ切替を持つ自前描画）が失われる
+- `unstable_` が付いている
+
+**素材だけを差し替える方が、失うものが少ない。**
+
+### OTA を流し直した
+
+配色の OTA を流している最中に `expo-glass-effect` を入れてしまい、
+**書き出したバンドルにネイティブモジュールの import が
+混ざった可能性があった。** ビルド #6 にはその実体が無いので、
+混ざっていればタブ画面を開いた瞬間に落ちる。
+
+CDN が認証を要求して公開済みバンドルを読めなかったため、
+**確かめられないものを残さない**方針で、作業を `git stash` に退避し、
+コミット `09e02ba` そのままの状態から流し直した。
+
+    1回目 7f85c476  Commit 09e02ba…*  ← アスタリスク（作業中）
+    2回目 d20ad20e  Commit 09e02ba    ← きれい
+
+**アスタリスクの有無が判断材料になる。** 1回目には付いていた。
+
+### 変更したファイル
+
+- `client/app/(tabs)/_layout.jsx` — `GlassView` と分岐
+- `client/package.json` — `expo-glass-effect@~57.0.1`
+- `CLAUDE.md` / `STACK.md`
+
+**検証結果: OK**
+
+- pytest 793件 / `expo-doctor` 20/20
+- `expo export --platform web` 成功。Web で `GlassView` を import しても
+  落ちないことを確認（素の View に落ちる）
+- ログイン画面が描画され、コンソールにエラーが無いことを確認
+
+**未確認**: **`GlassView` が実際に Liquid Glass として描かれるところ。**
+iOS 26 の実機でしか見られない。Web も Android も分岐の反対側に行く。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。

@@ -829,14 +829,27 @@ React Native は CSS のようなフォント継承をしないため、197箇�
 ロゴやテーマ切替を差し込む場所も無いため描画だけ自前にしている。
 項目の状態と遷移は Tabs から受け取るので、ルーティングは二重に持っていない。
 
-### ボトムタブはすりガラス（2026-08-08）
+### ボトムタブは Liquid Glass（2026-08-09）
 
 実機で「下のタブを Liquid Glass に」と指摘された。
 不透明の板を置くのではなく、**記録が下を通って透ける**ことで画面が続いて見える。
 
-iOS は `expo-blur` の `systemChromeMaterial`（UIVisualEffectView）を使う。
-ナビゲーションバーと同じ素材で、濃さは OS が決める。
-**自前で色と濃さを作らない。** OS が素材を更新したときに、そこだけ浮く。
+**2026-08-08 に入れた `expo-blur` は Liquid Glass ではない。**
+`systemChromeMaterial` は iOS 7 以来の `UIVisualEffectView` で、
+屈折も鏡面ハイライトもスクロールに応じた変形も持たない。
+「同じ素材」と書いた説明は誤りだった。
+
+本物は `UIGlassEffect`（iOS 26 以上）。`expo-glass-effect` の
+`GlassView` が包んでいる。**iOS 26 未満・Android・Web では素の View に
+落ちる**ので、そこは今までどおり `expo-blur` を出す。
+分岐は `isLiquidGlassAvailable()`。
+
+**濃さや色を自前で作らない。** OS が素材を更新したときに、そこだけ浮く。
+**Liquid Glass のときは自前の境界線を引かない。** 素材が縁まで持っている。
+
+`NativeTabs`（本物の `UITabBar`）を使えば OS が丸ごと Liquid Glass に
+するが、**アイコンが SF Symbols になり、広い画面のサイドバーも失われる**
+ため採らなかった。素材だけを差し替える方が、失うものが少ない。
 
 **透けさせるには絶対配置が要る。** そのぶん画面の一番下がタブバーの裏に隠れる。
 React Navigation は自前の ScrollView に余白を入れてくれないので、

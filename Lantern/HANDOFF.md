@@ -46,10 +46,13 @@ OTA（`eas update`）では届かないもの。
 
 書体はアプリの中身として載るため、**アプリの容量が約13MB増えている。**
 
-**2026-08-09 の変更は #6 に入っていない。** 配色・書体・かたちの
-作り直しは JS と資産だけなので OTA で届く。
-ただし**書体を入れ替えた**ため、端末は新しい書体（約6MB）を
-落としてくる。次にビルドを作れば #6 に残っている明朝（7.3MB）も消える。
+**2026-08-09 の変更は #6 に入っていない。**
+
+- 配色・書体・かたち → **OTA 配信済み**（`d20ad20e`・runtime `4ff774b0`）。
+  書体を入れ替えたので端末は約6MB落としてくる
+- **Liquid Glass（`expo-glass-effect`）→ 要リビルド。** ネイティブの追加
+
+次にビルドを作れば #6 に残っている明朝（7.3MB）も消える。
 
     https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/eb863e9d-e303-4c5c-96d6-6a42e4f5c27e
 
@@ -70,10 +73,12 @@ OTA（`eas update`）では届かないもの。
 - 画面の文言の禁止ワードを直し、`tests/test_ui_words.py` で見張るようにした
 - タブのアイコンをペンと歯車にした（OTA 配信済み）
 
-**Liquid Glass はまだ入っていない。** 2026-08-08 に入れた
-`expo-blur` は iOS 7 以来の `UIVisualEffectView` で、別の素材。
-本物は `expo-glass-effect@57.0.1` か `expo-router` の `NativeTabs`。
-どちらもリビルドが要る。
+- **本物の Liquid Glass を入れた**（`expo-glass-effect` の `GlassView`）。
+  2026-08-08 に入れた `expo-blur` は iOS 7 以来の `UIVisualEffectView` で
+  別の素材だった。iOS 26 未満・Android・Web は今までどおり `expo-blur`
+
+**Liquid Glass はネイティブの追加なので、リビルドしないと実機に出ない。**
+配色・書体・かたちの方は OTA で #6 に配信済み（`d20ad20e`）。
 
 ### 2026-08-08
 

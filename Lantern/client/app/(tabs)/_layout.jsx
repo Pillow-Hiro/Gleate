@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useColorScheme } from 'nativewind'
 import { BlurView } from 'expo-blur'
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import SidebarTabBar from '../../components/SidebarTabBar'
 import { TAB_ICONS } from '../../components/TabIcons'
 import { TAB_BAR_HEIGHT, WIDE_SCREEN_MIN_WIDTH } from '../../lib/tabBar'
@@ -44,35 +45,48 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets()
   const c = THEME[colorScheme === 'dark' ? 'dark' : 'light']
   const isWide = width >= WIDE_SCREEN_MIN_WIDTH
+  // iOS 26 以上で、かつ iOS 26 SDK でビルドされているときだけ true
+  const liquidGlass = isLiquidGlassAvailable()
 
-  // **すりガラスのタブバー（2026-08-08）。**
+  // **タブバーの素材（2026-08-09 に本物へ差し替えた）。**
   //
   // 実機で「下のタブを Liquid Glass に」と指摘された。
-  // 不透明の板を置くのではなく、記録が下を通って透けることで
-  // 画面が続いて見える。iOS では UIVisualEffectView の
-  // systemChromeMaterial を使う。ナビゲーションバーと同じ素材で、
-  // 濃さは OS が決める（自前で調整すると OS の更新で浮く）。
+  // 2026-08-08 に `expo-blur` の `systemChromeMaterial` を入れたが、
+  // **あれは iOS 7 以来の `UIVisualEffectView` で、Liquid Glass ではない。**
+  // 屈折も鏡面ハイライトもスクロールに応じた変形も持たない。
+  //
+  // 本物は `UIGlassEffect`（iOS 26 以上）。`expo-glass-effect` が包んでいる。
+  // **iOS 26 未満と Android と Web では素の View に落ちる**ので、
+  // そこは今までどおり `expo-blur` を出す。
+  // 分岐は `isLiquidGlassAvailable()` が返す。
+  //
+  // **濃さや色を自前で作らない。** OS が素材を更新したとき、そこだけ浮く。
   //
   // **透けさせるには絶対配置が要る。** そのぶん画面の一番下が
   // 裏に隠れるので、各画面が `useTabBarInset()` の分だけ下を空ける。
   // 高さをここで固定しているのは、画面側と食い違わせないため。
   const glassTabBar = {
-    tabBarBackground: () => (
-      <BlurView
-        tint={c.blur}
-        intensity={80}
-        // **Android は既定ではぼかさない。** これを渡さないと
-        // 半透明の板になるだけで、下の文字がそのまま透けて読みにくい。
-        // Modal の中では効かないという制約があるが、タブバーは Modal の外。
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFill}
-      />
-    ),
+    tabBarBackground: () =>
+      liquidGlass ? (
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
+      ) : (
+        <BlurView
+          tint={c.blur}
+          intensity={80}
+          // **Android は既定ではぼかさない。** これを渡さないと
+          // 半透明の板になるだけで、下の文字がそのまま透けて読みにくい。
+          // Modal の中では効かないという制約があるが、タブバーは Modal の外。
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+      ),
     tabBarStyle: {
       position: 'absolute',
       backgroundColor: 'transparent',
-      borderTopColor: c.border,
-      borderTopWidth: StyleSheet.hairlineWidth,
+      // **Liquid Glass のときは自前の線を引かない。**
+      // 素材が縁の扱いまで持っているので、上から線を重ねると二重になる。
+      borderTopColor: liquidGlass ? 'transparent' : c.border,
+      borderTopWidth: liquidGlass ? 0 : StyleSheet.hairlineWidth,
       // Android の影。すりガラスの上に落ちると濁って見える
       elevation: 0,
       height: TAB_BAR_HEIGHT + insets.bottom,
