@@ -2277,6 +2277,66 @@ iOS 26 の実機でしか見られない。Web も Android も分岐の反対側
 
 ---
 
+## 2026/08/09 — ビルド #7・提出・指紋の落とし穴2つ
+
+版数 1.0.0 / ビルド番号 7。commit `e47a369` から作成。**finished**。
+TestFlight へアップロード済み（`a7520862`）。
+Liquid Glass はネイティブの追加なので、ここで初めて実機に載る。
+
+### 落とし穴1: ネイティブを足しても指紋が変わらなかった
+
+    build 7  fp=4ff774b0…  (expo-glass-effect あり)
+    build 6  fp=4ff774b0…  (なし)
+
+`@expo/fingerprint` のソース一覧には
+`node_modules/expo-glass-effect/ios` が `expoAutolinkingIos` として
+入っているのに、ハッシュが同じになる。
+**EAS Update はこの2つを区別できない。**
+
+`expo-glass-effect` は読み込んだ時点でネイティブを要求する。
+
+    const NativeGlassView = requireNativeViewManager('ExpoGlassEffect', 'GlassView')
+    requireNativeModule('ExpoGlassEffect')   // 任意版ではない
+
+静的 import のままだと、**このJSが #6 に配られた瞬間、
+画面を描く前に落ちる。** 指紋の側は直せないので、
+関数の中で `require` し `try/catch` で包んだ。
+失敗したら「使えない」として `expo-blur` に落ちる。
+
+`tests/test_react_patterns.py::TestNativeOnlyModulesAreLoadedLazily` を足した。
+
+### 落とし穴2: 改行コードで指紋が変わる
+
+提出のために `eas.json` に `ascAppId` を書き、済んでから
+`git checkout` で戻した。**Windows では CRLF で書き戻される。**
+
+    LF   → 4ff774b0…
+    CRLF → a29b0d07…
+
+中身は1文字も違わないのに、指紋が変わって OTA が届かなくなる。
+LF のまま戻して解決した。**戻したら必ず `fingerprint:compare` で確かめる。**
+
+### 配ったもの
+
+| 更新 | 内容 |
+|---|---|
+| `d20ad20e` | 配色・書体・かたち（`DESIGN.md` 準拠） |
+| `790bed51` | Liquid Glass の読み込みを遅らせる |
+
+どちらも runtime `4ff774b0…`。**#6 と #7 の両方に届く。**
+
+**検証結果: OK**
+
+- pytest 795件パス（新規2件）/ `expo-doctor` 20/20
+- `expo export --platform web` 成功。ログイン画面が描画され、
+  `expo-glass-effect` を読んでもコンソールにエラーが出ないことを確認
+- 提出後に `fingerprint:compare` で `✅ matches` を確認
+
+**未確認**: **Liquid Glass が実際に描かれるところ。**
+iOS 26 の実機でしか見られない。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。

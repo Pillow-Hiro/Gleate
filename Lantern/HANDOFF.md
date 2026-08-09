@@ -31,11 +31,11 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #6 を TestFlight へアップロード済み**（2026-08-08・commit `17135f4`・版数 1.0.0 / ビルド番号 6） |
+| ネイティブ | **iOSビルド #7 を TestFlight へアップロード済み**（2026-08-09・commit `e47a369`・版数 1.0.0 / ビルド番号 7）。Liquid Glass はこれで初めて実機に載る |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 793件 / vitest 88件 |
+| 検査 | pytest 795件 / vitest 88件 |
 
-## 1.5 ビルド #6（2026-08-08）
+## 1.5 ビルド #6 / #7
 
 ネイティブ側の追加が3回分たまっていたので作り直した。
 OTA（`eas update`）では届かないもの。
@@ -46,13 +46,32 @@ OTA（`eas update`）では届かないもの。
 
 書体はアプリの中身として載るため、**アプリの容量が約13MB増えている。**
 
-**2026-08-09 の変更は #6 に入っていない。**
+**ビルド #7（2026-08-09・commit `e47a369`）** で Liquid Glass を入れた。
 
-- 配色・書体・かたち → **OTA 配信済み**（`d20ad20e`・runtime `4ff774b0`）。
-  書体を入れ替えたので端末は約6MB落としてくる
-- **Liquid Glass（`expo-glass-effect`）→ 要リビルド。** ネイティブの追加
+    https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/ba1ed9a4-2968-4c95-943b-a1b56fede5f2
 
-次にビルドを作れば #6 に残っている明朝（7.3MB）も消える。
+配信済みの OTA は2つ。どちらも runtime `4ff774b0…` で、**#6 と #7 の
+両方に届く。**
+
+| 更新 | 内容 |
+|---|---|
+| `d20ad20e` | 配色・書体・かたち（`DESIGN.md` 準拠） |
+| `790bed51` | Liquid Glass の読み込みを遅らせる |
+
+### **#6 と #7 の指紋が同じ**
+
+`expo-glass-effect` を足したのに指紋が変わらなかった。
+**EAS Update はこの2つを区別できない。**
+読み込んだ時点でネイティブを要求するパッケージを静的 import すると、
+そのJSが #6 に届いた瞬間に落ちる。
+`(tabs)/_layout.jsx` は関数の中で `require` して `try/catch` で包んでいる。
+`tests/test_react_patterns.py` が固定している。**外さないこと。**
+
+### `eas.json` を戻すときは改行コードに注意
+
+`git checkout` で戻すと Windows では CRLF になり、
+**改行コードだけで指紋が変わる**（`4ff774b0…` → `a29b0d07…`）。
+LF のまま戻し、`fingerprint:compare` で確かめること。
 
     https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/eb863e9d-e303-4c5c-96d6-6a42e4f5c27e
 
@@ -156,9 +175,9 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | 3 | プライバシーポリシーのURL | **済・公開確認済み** |
 | 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect`） |
 | 5 | Apple の認証情報の作成 | **済** |
-| 6 | **iOSビルド** | **済。#6 が finished**（2026-08-08・commit `17135f4`・版数1.0.0 / ビルド番号6） |
+| 6 | **iOSビルド** | **済。#7 が finished**（2026-08-09・commit `e47a369`・ビルド番号7） |
 | 7 | App Store Connect にアプリを登録 | **済**（Apple ID `6798753977`） |
-| 8 | `eas submit` で TestFlight へ | **済**（2026-08-08・ビルド #6） |
+| 8 | `eas submit` で TestFlight へ | **済**（2026-08-09・ビルド #7） |
 | 9 | TestFlight で実機確認 | 次 |
 | 10 | 審査に出す | 9 のあと。**要ユーザー判断** |
 

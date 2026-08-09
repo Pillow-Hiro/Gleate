@@ -175,7 +175,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 793 |
+| バックエンド | pytest | 795 |
 | `client/lib` の純粋関数 | vitest | 88 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 
@@ -266,6 +266,28 @@ npx eas-cli fingerprint:compare --build-id <配信先のビルドID>
 **ただし上記の理由で、置きっぱなしにすると OTA が届かなくなる。**
 提出のときだけ書き、済んだら消す。次のビルドを作れば指紋は
 そのときの `eas.json` で計算され直すので、書いたまま残せる。
+
+**消すときに `git checkout` を使わないこと。** Windows では
+CRLF で書き戻され、**改行コードだけで指紋が変わる。**
+2026-08-09 に実際に踏んだ（`4ff774b0…` → `a29b0d07…`）。
+LF のまま戻すこと。戻したら必ず `fingerprint:compare` で確かめる。
+
+### 指紋はネイティブの追加を捉え損ねることがある
+
+**`expo-glass-effect` を足しても指紋が変わらなかった。**
+
+    build 7  fp=4ff774b0…  (glass あり)
+    build 6  fp=4ff774b0…  (glass なし)
+
+`@expo/fingerprint` のソース一覧には `node_modules/expo-glass-effect/ios` が
+`expoAutolinkingIos` として入っているのに、ハッシュが同じになる。
+**EAS Update はこの2つを区別できない。**
+
+つまり**新しいJSが古いバイナリに配られる**。
+読み込んだ時点でネイティブを要求するパッケージを静的 import すると、
+画面を描く前に落ちる。関数の中で `require` し、`try/catch` で包むこと。
+`tests/test_react_patterns.py::TestNativeOnlyModulesAreLoadedLazily` が
+固定している。
 
 ---
 
