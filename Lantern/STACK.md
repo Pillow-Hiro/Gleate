@@ -47,7 +47,7 @@
 | Tailwind CSS | 3.4.19 | NativeWind 4 が v3 系を要求する |
 | Node（要件） | 22.13 以上 | SDK 57 の最低要件。手元は 24.16.0 |
 
-規模: 画面 9 / コンポーネント 25 / `lib` 18。
+規模: 画面 10 / コンポーネント 25 / `lib` 19。
 
 **2026-08-08 に上流の不整合が解けた。** `expo@57.0.11` の想定表が要求する
 `expo-sharing@~57.0.10` が公開されず数日止まっていたが、公開されたので
@@ -70,8 +70,7 @@
 | `@expo-google-fonts/noto-sans-jp` | ^0.4.3 | 和文（Regular / Bold） | 10.4MB |
 | `@expo-google-fonts/hanken-grotesk` | ^0.4.3 | 欧文のワードマーク（Bold） | 0.06MB |
 | `@expo-google-fonts/inter` | ^0.4.2 | ラベル・数字（Medium / SemiBold） | 0.7MB |
-| `expo-blur` | ~57.0.2 | ボトムタブの素材（iOS 26 未満・Android・Web） |
-| `expo-glass-effect` | ~57.0.1 | **Liquid Glass**（iOS 26 以上）。未満では素の View に落ちる | — |
+| `expo-blur` | ~57.0.2 | **Web** のタブバーのすりガラス | — |
 
 **合計 約11MB。**
 
@@ -175,7 +174,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 795 |
+| バックエンド | pytest | 797 |
 | `client/lib` の純粋関数 | vitest | 88 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 

@@ -138,7 +138,9 @@ class TestTabsHaveIcons:
     """
 
     def _layout(self):
-        return read(os.path.join(CLIENT, "app", "(tabs)", "_layout.jsx"))
+        # 2026-08-09 にネイティブを NativeTabs（本物の UITabBar）へ移した。
+        # 自前のアイコンを持つのは Web 版だけになった。
+        return read(os.path.join(CLIENT, "app", "(tabs)", "_layout.web.jsx"))
 
     def test_tabBarIconを渡している(self):
         assert "tabBarIcon" in self._layout(), (
@@ -156,7 +158,7 @@ class TestTabsHaveIcons:
         assert m, "TabIcons.jsx に TAB_ICONS が無い"
         defined = set(re.findall(r"(\w+):", m.group(1)))
         screens = {f[:-4] for f in os.listdir(os.path.join(CLIENT, "app", "(tabs)"))
-                   if f.endswith(".jsx") and f != "_layout.jsx"}
+                   if f.endswith(".jsx") and not f.startswith("_layout")}
         missing = screens - defined
         assert missing == set(), f"アイコンが無いタブ: {sorted(missing)}"
 
@@ -226,11 +228,17 @@ class TestNativeOnlyModulesAreLoadedLazily:
             + "\n関数の中で require し、try/catch で包むこと"
         )
 
-    def test_読み込みを包んでいる(self):
-        """使っている側が try/catch を持っているか。"""
-        src = read(os.path.join(CLIENT, "app", "(tabs)", "_layout.jsx"))
-        if "expo-glass-effect" not in src:
-            return
-        assert "try {" in src and "catch" in src, (
-            "(tabs)/_layout.jsx が expo-glass-effect を包まずに読み込んでいる"
-        )
+    def test_requireを使う側が包んでいる(self):
+        """遅延読み込みしている場所が try/catch を持っているか。
+
+        コメントで名前に触れているだけの場合は対象外。
+        実際に `require` している行があるときだけ見る。
+        """
+        for path in self._jsx_files():
+            src = read(path)
+            for pkg in self.NATIVE_ON_IMPORT:
+                if f"require('{pkg}')" not in src:
+                    continue
+                assert "try {" in src and "catch" in src, (
+                    f"{os.path.basename(path)} が {pkg} を包まずに require している"
+                )

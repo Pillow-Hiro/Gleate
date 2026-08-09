@@ -50,7 +50,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | ファイル | URL | 中身 |
 |---|---|---|
 | `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
-| `(tabs)/_layout.jsx` | タブ | 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス（`expo-blur`） |
+| `(tabs)/_layout.jsx` | タブ | **ネイティブ。本物の `UITabBar`（`NativeTabs`）。iOS 26 では OS が Liquid Glass にする** |
+| `(tabs)/_layout.web.jsx` | 同上 | **Web。** 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス |
 | `(tabs)/index.jsx` | `/` | 書く（記録・アイデアの2タブ） |
 | `(tabs)/journal.jsx` | `/journal` | 記録（記録・振り返りの2タブ） |
 | `(tabs)/dashboard.jsx` | `/dashboard` | Dashboard（YouTube / Twitch のタブ） |
@@ -132,7 +133,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
-| `tabBar.js` | タブバーの高さと、画面が空ける下の余白。**両方をここで決める** | — |
+| `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
 | `theme.js` | テーマの保持 | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

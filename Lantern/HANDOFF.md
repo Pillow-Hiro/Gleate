@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #7 を TestFlight へアップロード済み**（2026-08-09・commit `e47a369`・版数 1.0.0 / ビルド番号 7）。Liquid Glass はこれで初めて実機に載る |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 795件 / vitest 88件 |
+| 検査 | pytest 797件 / vitest 88件 |
 
 ## 1.5 ビルド #6 / #7
 
@@ -92,9 +92,12 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 - 画面の文言の禁止ワードを直し、`tests/test_ui_words.py` で見張るようにした
 - タブのアイコンをペンと歯車にした（OTA 配信済み）
 
-- **本物の Liquid Glass を入れた**（`expo-glass-effect` の `GlassView`）。
-  2026-08-08 に入れた `expo-blur` は iOS 7 以来の `UIVisualEffectView` で
-  別の素材だった。iOS 26 未満・Android・Web は今までどおり `expo-blur`
+- **タブバーを OS に描かせるようにした**（`NativeTabs` ＝ 本物の `UITabBar`）。
+  素材（`expo-blur` / `expo-glass-effect`）を敷くだけでは
+  Liquid Glass にならなかった。`expo-glass-effect` は外した
+- **ネイティブと Web でタブの実装ファイルを分けた**
+  （`_layout.jsx` / `_layout.web.jsx`、`tabBar.js` / `tabBar.web.js`）
+- AIの声を青緑から琥珀と同系の砂色にした
 
 **Liquid Glass はネイティブの追加なので、リビルドしないと実機に出ない。**
 配色・書体・かたちの方は OTA で #6 に配信済み（`d20ad20e`）。

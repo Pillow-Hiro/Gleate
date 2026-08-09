@@ -1,37 +1,25 @@
-import { useWindowDimensions } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-// タブバーの寸法と、画面側が空ける余白。**両方をここで決める。**
+// タブバーまわりの寸法。**ネイティブ版。Web 版は `tabBar.web.js`。**
 //
-// 2026-08-08 にボトムタブをすりガラス（`expo-blur`）にした。
-// すりガラスは**後ろに何か通らないと意味がない**ので、
-// タブバーを絶対配置にして内容の上に浮かせている。
+// ネイティブは `app/(tabs)/_layout.jsx` が本物の `UITabBar`
+// （`NativeTabs`）を出す。**内容の余白は OS が持つ**ので、
+// 画面側は下を空けない。空けると二重になる。
 //
-// 浮かせた結果、各画面の一番下がタブバーの裏に隠れる。
-// React Navigation は自前の ScrollView に余白を入れてくれないので、
-// 画面側が `useTabBarInset()` の分だけ下を空ける。
-//
-// **高さを固定しているのはそのため。** 既定のままだと実測しないと
-// 分からず、画面側と食い違う。
+// Web は自前のタブバーを絶対配置で浮かせているため、
+// 画面側が余白を持つ必要がある。そちらは `tabBar.web.js`。
 
 export const WIDE_SCREEN_MIN_WIDTH = 768
 
-// アイコン22px + ラベル11px + 上下の余白。
+// Web 版と同じ名前を出しておく。画面はどちらでも同じ書き方で済む。
 export const TAB_BAR_HEIGHT = 56
 
 // 画面の一番下と内容のあいだの余白（元は className の `pb-10`）。
-// **`contentContainerStyle` は className を上書きするため、
-// ここに畳んで一緒に渡す。** 片方だけ残すと余白が消える。
 export const BOTTOM_GAP = 40
 
 /**
  * 画面の一番下に空ける余白。
  *
- * 広い画面ではサイドバーになり、下には何も無いので 0。
+ * **ネイティブでは 0。** `NativeTabs` が内容の余白を入れる。
  */
 export function useTabBarInset() {
-  const { width } = useWindowDimensions()
-  const insets = useSafeAreaInsets()
-  if (width >= WIDE_SCREEN_MIN_WIDTH) return 0
-  return TAB_BAR_HEIGHT + insets.bottom
+  return 0
 }

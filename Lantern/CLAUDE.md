@@ -837,36 +837,43 @@ React Native は CSS のようなフォント継承をしないため、197箇�
 ロゴやテーマ切替を差し込む場所も無いため描画だけ自前にしている。
 項目の状態と遷移は Tabs から受け取るので、ルーティングは二重に持っていない。
 
-### ボトムタブは Liquid Glass（2026-08-09）
+### ボトムタブは OS に描かせる（2026-08-09）
 
-実機で「下のタブを Liquid Glass に」と指摘された。
-不透明の板を置くのではなく、**記録が下を通って透ける**ことで画面が続いて見える。
+実機で「Liquid Glass になっていない」と2度指摘された。
 
-**2026-08-08 に入れた `expo-blur` は Liquid Glass ではない。**
-`systemChromeMaterial` は iOS 7 以来の `UIVisualEffectView` で、
-屈折も鏡面ハイライトもスクロールに応じた変形も持たない。
-「同じ素材」と書いた説明は誤りだった。
+**素材だけでは Liquid Glass にならない。**
+2026-08-08 に `expo-blur`、そのあと `expo-glass-effect` の `GlassView` を
+敷いたが、どちらも見た目が変わらなかった。
+iOS 26 のタブバーがああ見えるのは、素材に加えて
 
-本物は `UIGlassEffect`（iOS 26 以上）。`expo-glass-effect` の
-`GlassView` が包んでいる。**iOS 26 未満・Android・Web では素の View に
-落ちる**ので、そこは今までどおり `expo-blur` を出す。
-分岐は `isLiquidGlassAvailable()`。
+- 浮いたカプセル形（左右に余白があり、画面幅いっぱいではない）
+- 縁の鏡面ハイライト
+- スクロールに応じて縮む・変形する
 
-**濃さや色を自前で作らない。** OS が素材を更新したときに、そこだけ浮く。
-**Liquid Glass のときは自前の境界線を引かない。** 素材が縁まで持っている。
+があるため。**画面幅いっぱいの長方形にガラスを敷いても近づかない。**
 
-`NativeTabs`（本物の `UITabBar`）を使えば OS が丸ごと Liquid Glass に
-するが、**アイコンが SF Symbols になり、広い画面のサイドバーも失われる**
-ため採らなかった。素材だけを差し替える方が、失うものが少ない。
+`expo-router` の `NativeTabs`（本物の `UITabBar`）に変えた。
+`minimizeBehavior="onScrollDown"` でスクロール時の変形も出る。
+`sidebarAdaptable` で iPad と macOS では OS がサイドバーにする。
 
-**透けさせるには絶対配置が要る。** そのぶん画面の一番下がタブバーの裏に隠れる。
-React Navigation は自前の ScrollView に余白を入れてくれないので、
-各画面が `lib/tabBar.js` の `useTabBarInset()` の分だけ下を空ける。
-**タブバーの高さを固定しているのはそのため。** 既定のままだと実測しないと分からず、
-画面側と食い違う。
+**ネイティブと Web でファイルを分けている。**
 
-Android は `experimentalBlurMethod="dimezisBlurView"` を渡さないとぼかさない
-（半透明の板になるだけで、下の文字が読める状態で透ける）。
+| | 実装 |
+|---|---|
+| `(tabs)/_layout.jsx` | ネイティブ。`NativeTabs` |
+| `(tabs)/_layout.web.jsx` | Web。`Tabs` ＋ `SidebarTabBar` ＋ すりガラス |
+
+ロゴ・タグライン・バージョン・テーマ切替を持つサイドバーは
+`NativeTabs` に差し込めないため。プラットフォーム差はファイル分割で
+吸収するという、このプロジェクトの型に従っている。
+
+**アイコンは SF Symbols / Material になる。** 自作の SVG は Web だけで使う
+（`TabIcons.jsx`）。求められていたのはペンと歯車で、`pencil` と
+`gearshape` はまさにそれなので、失うものは実質ない。
+
+**画面は下に余白を空けない。** `NativeTabs` が内容の余白を持つ。
+`lib/tabBar.js` の `useTabBarInset()` はネイティブで 0、Web で自前の値を返す
+（`tabBar.web.js`）。
 
 ### ログインと新規登録は別の画面（2026-08-08）
 

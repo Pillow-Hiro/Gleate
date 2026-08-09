@@ -2369,6 +2369,63 @@ iOS 26 の実機でしか見られない。
 
 ---
 
+## 2026/08/09 — タブバーを OS に描かせる（NativeTabs）
+
+実機で「Liquid Glass になっていない」と2度目の指摘。
+
+**素材だけでは Liquid Glass にならなかった。**
+`expo-blur` も `expo-glass-effect` の `GlassView` も、
+**画面幅いっぱいの長方形にガラスを敷いていただけ**だった。
+iOS 26 のタブバーがああ見えるのは、素材に加えて浮いたカプセル形・
+縁の鏡面ハイライト・スクロールでの変形があるため。
+近似ではどこまでも近似にしかならない。
+
+`expo-router` の `NativeTabs`（本物の `UITabBar`）に変えた。
+`minimizeBehavior="onScrollDown"` と `sidebarAdaptable` を渡している。
+
+### ファイルを分けた
+
+| | 実装 |
+|---|---|
+| `(tabs)/_layout.jsx` | ネイティブ。`NativeTabs` |
+| `(tabs)/_layout.web.jsx` | Web。`Tabs` ＋ `SidebarTabBar` ＋ すりガラス |
+| `lib/tabBar.js` | ネイティブ。余白は 0（`NativeTabs` が持つ） |
+| `lib/tabBar.web.js` | Web。従来の計算 |
+
+ロゴ・テーマ切替を持つサイドバーは `NativeTabs` に差し込めない。
+プラットフォーム差はファイル分割で吸収する型に従った。
+
+**前回 `NativeTabs` を避けた理由は弱かった。**
+「アイコンが SF Symbols になる」と書いたが、求められていたのは
+ペンと歯車で、`pencil` と `gearshape` はまさにそれだった。
+「サイドバーが失われる」も、ファイルを分ければ済んだ。
+
+### `expo-glass-effect` は外した
+
+`NativeTabs` が OS に描かせるので要らない。
+**指紋の危険も一緒に消えた**（#6 と #7 が同じ指紋になる問題）。
+
+### リビルドは要らない
+
+`NativeTabs` が使うのは `react-native-screens` の `RNSTabs*` で、
+**ビルド #6 / #7 に既に入っている**（`RNScreens.podspec` の
+`source_files` は `ios/**` を無条件に含む。除外されるのは `ios/gamma/**` だけ）。
+新しいネイティブモジュールは足していないので、OTA で届く。
+
+**検証結果: OK**
+
+- pytest 797件パス / vitest 88件 / `expo-doctor` 20/20
+- `expo export --platform web` 成功
+- Web でファイル分割が効いていることを確認
+  - 幅375px … ボトムタブ4つ・絶対配置56px・`backdrop-filter: blur(16px)`・
+    内容の余白96px
+  - 幅1280px … サイドバー（ロゴ・タグライン・バージョン）・余白40px
+- 指紋が `4ff774b0…` のままであることを確認（#6 / #7 に届く）
+
+**未確認**: **iOS 26 実機でのタブバー。** ここだけは実機でしか見えない。
+
+---
+
 ## 進行中
 
 - React Native移行 フェーズA7（配布）。Apple Developer Program 加入済み。
