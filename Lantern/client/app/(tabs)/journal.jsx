@@ -9,10 +9,10 @@ import {
   remove as removePhoto,
   save as savePhoto,
 } from '../../lib/photoStore'
-import { dateDisplayJa, groupByMonth, monthLabel } from '../../lib/format'
+import { dateDisplayJa } from '../../lib/format'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
-import LogItem from '../../components/LogItem'
+import LogList from '../../components/LogList'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
@@ -156,9 +156,6 @@ export default function Journal() {
       )
     : logs
 
-  const groups = groupByMonth(filtered)
-  const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a))
-
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
@@ -256,35 +253,14 @@ export default function Journal() {
                 <Text className="text-body text-ink-soft">まだ記録がありません</Text>
                 <Text className="text-aux text-ink-faint mt-1.5">「書く」から残せます</Text>
               </View>
-            ) : monthKeys.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <View className="items-center py-12">
                 <Text className="text-body text-ink-faint">
                   「{search.trim()}」の記録は見つかりませんでした
                 </Text>
               </View>
             ) : (
-              <View className="gap-8">
-                {monthKeys.map((month) => (
-                  <View key={month}>
-                    <View className="flex-row items-center gap-2.5 mb-3">
-                      <Text className="font-strong text-aux text-ink-soft">
-                        {monthLabel(groups[month][0].date)}
-                      </Text>
-                      <Text className="text-[10px] text-ink-faint">{groups[month].length}日</Text>
-                    </View>
-                    <View className="bg-stone/40 rounded-lg px-4">
-                      {groups[month].map((log) => (
-                        <LogItem
-                          key={log.date}
-                          log={log}
-                          onDelete={handleDelete}
-                          onUpdate={handleUpdate}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <LogList logs={filtered} onDelete={handleDelete} onUpdate={handleUpdate} />
             )}
           </View>
         ) : (
