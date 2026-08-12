@@ -31,7 +31,7 @@ const TABS = [
   { name: 'home', title: 'ホーム' },
   { name: 'journal', title: '記録' },
   { name: 'index', title: '書く' },
-  { name: 'dashboard', title: 'インサイト' },
+  { name: 'dashboard', title: '分析' },
   { name: 'settings', title: '設定' },
 ]
 

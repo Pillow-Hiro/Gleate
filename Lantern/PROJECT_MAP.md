@@ -55,7 +55,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。今日の灯りは持たない |
 | `(tabs)/home.jsx` | `/home` | ホーム。**今日の灯り** ＋ 直近の記録を眺める（探さない） |
 | `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 ＋ 振り返りのタブ |
-| `(tabs)/dashboard.jsx` | `/dashboard` | インサイト。YouTube / Twitch |
+| `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続いている日・年間マップ ＋ YouTube / Twitch |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
 | `login.jsx` | `/login` | ログインだけ。入力欄は `AuthForm.jsx` |
 | `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
@@ -89,7 +89,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・26ファイル）
+## 3. 部品（`client/components/`・27ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -118,6 +118,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | 書く | 今週の発見。**AIを使わない** |
+| `YearMap.jsx` | 分析 | 1年分の記録の有無。**2状態のみ。濃淡を付けない** |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
 
 ---
@@ -137,6 +138,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
 | `theme.js` | テーマの保持 | — |
+| `yearMap.js` | 年間マップの格子を組む。**濃淡を持たせない** | `yearMap.test.js` |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |

@@ -1,19 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
+import { authFetch } from '../../lib/supabase'
+import { calcStreak } from '../../lib/date'
+import YearMap from '../../components/YearMap'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
 
-// **インサイト。外の世界に届いた形跡を見る場所。**
+// **分析。継続の可視化と、外の世界に届いた形跡。**
 //
-// 2026-08-12 に「ダッシュボード」から名前を変えた。
-// 数字を並べる管理画面ではなく、**観察の材料**を置く場所だという
-// 位置づけを名前に出す。中身と制約は変えていない。
+// 振り返り（言葉を読む）は「記録」のタブにある。
+// ここは**全体を俯瞰する**場所。
 //
-// 振り返り（内から見た自分）は「記録」のタブにある。
-// 一度ここへ集めたが、記録と振り返りは同じ材料を見るものなので戻した。
+// ## 煽らない
+//
+// 2026-08-13 に作者が「継続の可視化を煽らずに作る」と決めた。
+// **入れないもの**（`REQUIREMENTS.md`「やらないこと」）:
+// 進捗バー・炎のアイコン・達成率・他人との比較・総文字数と増減率・
+// 気分の分類。
+//
+// **数字は事実として出すが、良し悪しを添えない。**
+// 「記録した日数」「連続日数」は設定から移した。
+// 設定は道具の手入れをする場所で、歩みを見る場所ではない。
 //
 // タブの状態は保持しない。画面を離れたら YouTube から始まる。
 // 未連携でもタブは出す。隠すと機能があること自体に気づけないため。
@@ -25,6 +35,7 @@ const TABS = [
 export default function Dashboard() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
+  const [logs, setLogs] = useState([])
   const [activeTab, setActiveTab] = useState('youtube')
   // **一度開いたパネルは残す。**
   //
@@ -42,14 +53,41 @@ export default function Dashboard() {
     setOpened((o) => (o[id] ? o : { ...o, [id]: true }))
   }
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch('/api/logs')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setLogs(data)
+      } catch (e) {
+        console.warn('[分析] 記録の取得に失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
-          <Text className="font-display text-headline-md text-ink">インサイト</Text>
+          <Text className="font-display text-headline-md text-ink">分析</Text>
         </View>
 
+        {/* 継続の可視化。**数字を並べるが、良し悪しを添えない。**
+            「今月は先月より少ない」と読める並べ方をしない。 */}
+        <View className="gap-6">
+          <View className="flex-row gap-4">
+            <Stat label="記録した日" value={`${logs.length}日`} />
+            <Stat label="続いている日" value={`${calcStreak(logs)}日`} />
+          </View>
+          <YearMap logs={logs} />
+        </View>
+
+        {/* 外の世界に届いた形跡。
+            **フォロワー数は最も外部評価に近い指標なので上に置かない。** */}
         <View className="flex-row gap-4 border-b border-border">
           {TABS.map(({ id, label }) => (
             <Pressable
@@ -79,5 +117,17 @@ export default function Dashboard() {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+// 数字をそのまま置くだけ。
+// **増減の矢印も、色による良し悪しも付けない。**
+// 付けた瞬間、記録が達成すべき数字になる。
+function Stat({ label, value }) {
+  return (
+    <View className="flex-1 bg-surface-low rounded-lg px-4 py-3.5">
+      <Text className="font-label text-label-md text-outline mb-1">{label}</Text>
+      <Text className="font-strong text-headline-md text-ink">{value}</Text>
+    </View>
   )
 }

@@ -4,7 +4,6 @@ import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
-import { calcStreak } from '../../lib/date'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
@@ -77,8 +76,6 @@ export default function Settings() {
     return () => { cancelled = true }
   }, [])
 
-  const streak = calcStreak(logs)
-
   async function handleSignOut() {
     setSigningOut(true)
     await supabase.auth.signOut()
@@ -109,15 +106,6 @@ export default function Settings() {
         <View>
           <Text className="font-display text-headline-md text-ink">設定</Text>
         </View>
-
-        <Section title="アクティビティ">
-          <SettingsRow label="記録した日数" description="これまでの合計">
-            <Text className="font-strong text-body text-forest">{logs.length}日</Text>
-          </SettingsRow>
-          <SettingsRow label="現在の連続日数" description="今日まで続けた日数">
-            <Text className="font-strong text-body text-forest">{streak}日</Text>
-          </SettingsRow>
-        </Section>
 
         <Section title="表示">
           <SettingsRow label="テーマ" description="ボタンで手動切り替え">
