@@ -52,13 +52,14 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
 | `(tabs)/_layout.jsx` | タブ | **ネイティブ。本物の `UITabBar`（`NativeTabs`）。iOS 26 では OS が Liquid Glass にする** |
 | `(tabs)/_layout.web.jsx` | 同上 | **Web。** 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス |
-| `(tabs)/index.jsx` | `/` | 書く（記録・アイデアの2タブ） |
-| `(tabs)/journal.jsx` | `/journal` | 記録（記録・振り返りの2タブ） |
-| `(tabs)/dashboard.jsx` | `/dashboard` | Dashboard（YouTube / Twitch のタブ） |
+| `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ） |
+| `(tabs)/home.jsx` | `/home` | ホーム。直近の記録を眺める（探さない） |
+| `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 |
+| `(tabs)/dashboard.jsx` | `/dashboard` | ダッシュボード。**振り返り ＋ YouTube / Twitch** |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
 | `login.jsx` | `/login` | ログインだけ。入力欄は `AuthForm.jsx` |
 | `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
-| `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
+| `insights.jsx` | `/insights` | `/dashboard` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの
 
@@ -88,7 +89,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・26ファイル）
+## 3. 部品（`client/components/`・27ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -109,14 +110,15 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
-| `TabIcons.jsx` | (tabs)/_layout / SidebarTabBar | **タブのアイコン。サイドバーとボトムタブが共有する**（ペン／ノート／格子／歯車） |
+| `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
-| `WeeklyDiscovery.jsx` | Home | 今週の発見。**AIを使わない** |
+| `WeeklyDiscovery.jsx` | 書く | 今週の発見。**AIを使わない** |
+| `WriteFab.jsx` | ホーム / 記録 | 一覧から書き始める丸ボタン。**唯一の浮いた要素** |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
 
 ---

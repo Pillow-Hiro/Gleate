@@ -13,10 +13,8 @@ import { dateDisplayJa } from '../../lib/format'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import LogList from '../../components/LogList'
-import ReviewSection from '../../components/ReviewSection'
-import TimelineSection from '../../components/TimelineSection'
-import KeywordSection from '../../components/KeywordSection'
 import PhotoPicker from '../../components/PhotoPicker'
+import WriteFab from '../../components/WriteFab'
 
 const MODAL_FIELDS = [
   { field: 'created', label: 'やったこと', placeholder: '今日やったこと', minHeight: 84 },
@@ -34,7 +32,6 @@ export default function Journal() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
-  const [activeTab, setActiveTab] = useState('record')
   const [modalDate, setModalDate] = useState(null)
   const [modalForm, setModalForm] = useState(EMPTY_FORM)
   const [modalSaving, setModalSaving] = useState(false)
@@ -167,27 +164,13 @@ export default function Journal() {
           ) : null}
         </View>
 
-        {/* タブ */}
-        <View className="flex-row gap-4 border-b border-border">
-          {/* アイデアは 2026-08-08 に「書く」へ移した。
-              思いついた瞬間に置くものなので、書く場所にある方が自然。
-              ここ（記録）は残したものを見る場所。 */}
-          {[
-            { id: 'record', label: '記録' },
-            { id: 'review', label: '振り返り' },
-          ].map(({ id, label }) => (
-            <Pressable
-              key={id}
-              onPress={() => setActiveTab(id)}
-              className={`px-1 pb-2.5 border-b-2 ${activeTab === id ? 'border-accent' : 'border-transparent'}`}
-            >
-              <Text className={`text-body ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {activeTab === 'record' ? (
-          <View className="gap-8">
+        {/* **タブを持たない。**
+            2026-07-30 に振り返りをここへ統合したが、2026-08-12 に
+            「ダッシュボード」タブへ移した。「記録」と「振り返り」は
+            名前が近く、どちらに何があるのか分からなくなっていた。
+            ここは**残したものを探す場所**だけにする。
+            アイデアは 2026-08-08 に「書く」へ移した。 */}
+        <View className="gap-8">
             {/* カレンダー */}
             <View>
               {thisMonthCount > 0 ? (
@@ -262,16 +245,10 @@ export default function Journal() {
             ) : (
               <LogList logs={filtered} onDelete={handleDelete} onUpdate={handleUpdate} />
             )}
-          </View>
-        ) : (
-          <View className="gap-8">
-            <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
-            <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
-            <TimelineSection logs={logs} />
-            <KeywordSection />
-          </View>
-        )}
+        </View>
       </ScrollView>
+
+      <WriteFab />
 
       {/* 記録モーダル */}
       <Modal

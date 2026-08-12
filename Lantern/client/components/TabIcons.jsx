@@ -79,8 +79,19 @@ export function SettingsIcon({ color, size = 15 }) {
   )
 }
 
+// ホーム＝家。直近の記録を眺める場所（2026-08-12 に新設）
+export function HomeIcon({ color, size = 15 }) {
+  return (
+    <Svg {...ICON_PROPS} width={size} height={size} stroke={color}>
+      <Path d="M1.9 6.6 L7.5 1.9 L13.1 6.6 L13.1 13 L1.9 13 Z" />
+      <Path d="M5.9 13 L5.9 8.7 L9.1 8.7 L9.1 13" />
+    </Svg>
+  )
+}
+
 // ルート名で引く。expo-router のファイル名と一致させること
 export const TAB_ICONS = {
+  home: HomeIcon,
   index: WriteIcon,
   journal: JournalIcon,
   dashboard: DashboardIcon,
