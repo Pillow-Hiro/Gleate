@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from modules.logs import (
     load_logs, save_logs,
     load_goals,
-    delete_log_by_date,
+    delete_log_by_date, set_favorite,
     load_daily_quote, save_daily_quote,
 )
 from modules.ai import (
@@ -172,6 +172,27 @@ def delete_account_api():
         print(f"[Account] 削除が途中で失敗: {detail['failed']}")
         return jsonify({"error": "削除の途中で失敗しました。もう一度お試しください。"}), 500
     return jsonify({"status": "ok"})
+
+
+@app.route("/api/logs/<date>/favorite", methods=["PUT"])
+@require_auth
+def set_log_favorite(date):
+    """お気に入りの付け外し。
+
+    **記録の保存とは別の道にしている。** 一緒にすると、
+    記録を編集するたびにお気に入りが外れる（フォームは送らないため）。
+
+    件数は返さない。「◯件お気に入り」は多い/少ないの評価になる。
+    """
+    data = request.get_json(silent=True) or {}
+    favorite = bool(data.get("favorite"))
+    try:
+        set_favorite(date, favorite, g.user_id)
+    except Exception as e:
+        # 日付は残す。中身は残さない（記録の本文が混ざらない）
+        print(f"[PUT /api/logs/{date}/favorite] DB error: {type(e).__name__}")
+        return jsonify({"error": "変更に失敗しました。"}), 500
+    return jsonify({"status": "ok", "favorite": favorite})
 
 
 @app.route("/api/logs/<date>", methods=["DELETE"])

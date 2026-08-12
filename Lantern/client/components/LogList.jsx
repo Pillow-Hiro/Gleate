@@ -23,7 +23,7 @@ import { groupByMonth, monthLabel } from '../lib/format'
 // カードの地は `surface-lowest`（明るいテーマで純白）。
 // 画面の地（`surface` = #F9F9FB）との段差で浮かせる。
 // **影は使わない。** DESIGN.md の Tonal Layers に従う。
-export default function LogList({ logs, onDelete, onUpdate, limit }) {
+export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, limit }) {
   const shown = limit ? logs.slice(0, limit) : logs
   const groups = groupByMonth(shown)
   const months = Object.keys(groups).sort().reverse()
@@ -44,6 +44,7 @@ export default function LogList({ logs, onDelete, onUpdate, limit }) {
                   log={log}
                   onDelete={onDelete}
                   onUpdate={onUpdate}
+                  onToggleFavorite={onToggleFavorite}
                   isLast={i === items.length - 1}
                 />
               ))}

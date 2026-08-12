@@ -101,7 +101,7 @@ index.js が9ウェイト全部を require し、Metro は木揺すりで落と�
 | cryptography | 46.0.4 | 同上 |
 | google-api-python-client | 2.189.0 | YouTube |
 
-規模: モジュール 10 / API 33ルール・31パス。
+規模: モジュール 10 / API 34ルール・32パス。
 
 **I/O 待ちが仕事のほぼ全て**（Supabase・Anthropic）なので、
 プロセスを増やさずスレッドで捌く。Render の無料枠は 512MB のため
@@ -174,7 +174,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 803 |
+| バックエンド | pytest | 806 |
 | `client/lib` の純粋関数 | vitest | 98 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 

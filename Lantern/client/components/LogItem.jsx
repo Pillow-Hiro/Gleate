@@ -17,7 +17,7 @@ import { relativeDayLabel } from '../lib/format'
 // 3行だと一覧が縦に伸びて「探す」ための一覧でなくなる。
 const SNAPSHOT_ORDER = ['created', 'enjoyable', 'struggled', 'next']
 
-export default function LogItem({ log, onDelete, onUpdate, isLast }) {
+export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isLast }) {
   const [open, setOpen] = useState(false)
   const body = SNAPSHOT_ORDER.map((k) => log[k]).find(Boolean) || ''
 
@@ -31,7 +31,24 @@ export default function LogItem({ log, onDelete, onUpdate, isLast }) {
           <Text className="font-label text-label-md text-outline">
             {relativeDayLabel(log.date)}
           </Text>
-          <Text className="text-outline text-label-md">{open ? '⌃' : '⌄'}</Text>
+          <View className="flex-row items-center gap-3">
+            {/* お気に入り。**数を出さない。**
+                多い/少ないを評価しないため（CLAUDE.md）。
+                押せる範囲は 44px 以上（HIG）。 */}
+            {onToggleFavorite ? (
+              <Pressable
+                onPress={() => onToggleFavorite(log)}
+                accessibilityLabel={log.favorite ? 'お気に入りを外す' : 'お気に入りに入れる'}
+                hitSlop={12}
+                className="min-w-touch min-h-touch items-end justify-center"
+              >
+                <Text className={log.favorite ? 'text-lantern-glow' : 'text-outline'}>
+                  {log.favorite ? '★' : '☆'}
+                </Text>
+              </Pressable>
+            ) : null}
+            <Text className="text-outline text-label-md">{open ? '⌃' : '⌄'}</Text>
+          </View>
         </View>
 
         <View className="flex-row items-start gap-2.5">

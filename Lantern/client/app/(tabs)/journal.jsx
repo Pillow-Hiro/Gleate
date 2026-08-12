@@ -34,6 +34,8 @@ export default function Journal() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
+  // 絞り込み。'all' / 'favorite' / '2026' のような年
+  const [filter, setFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('record')
   const [modalDate, setModalDate] = useState(null)
   const [modalForm, setModalForm] = useState(EMPTY_FORM)
@@ -66,6 +68,25 @@ export default function Journal() {
 
   function handleUpdate(updatedLog) {
     setLogs((prev) => prev.map((l) => (l.date === updatedLog.date ? updatedLog : l)))
+  }
+
+  // お気に入りの付け外し。
+  //
+  // **画面を先に変える。** 通信を待たせると、押しても何も起きない
+  // 数百ミリ秒ができる。失敗したら元に戻す。
+  async function handleToggleFavorite(log) {
+    const next = !log.favorite
+    setLogs((prev) => prev.map((l) => (l.date === log.date ? { ...l, favorite: next } : l)))
+    try {
+      const res = await authFetch(`/api/logs/${log.date}/favorite`, {
+        method: 'PUT',
+        body: JSON.stringify({ favorite: next }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    } catch (e) {
+      console.warn('[記録] お気に入りの変更に失敗', e)
+      setLogs((prev) => prev.map((l) => (l.date === log.date ? { ...l, favorite: !next } : l)))
+    }
   }
 
   function handleDateClick(date) {
@@ -150,11 +171,27 @@ export default function Journal() {
   const selectedLog = selectedDate ? logs.find((l) => l.date === selectedDate) || null : null
 
   const q = search.trim().toLowerCase()
-  const filtered = q
+  const searched = q
     ? logs.filter((l) =>
         [l.created, l.enjoyable, l.struggled, l.next].some((v) => v?.toLowerCase().includes(q))
       )
     : logs
+
+  // チップ。**「すべて」と「お気に入り」以外は、記録がある年だけ出す。**
+  // 記録の無い年を並べても押す理由がない。
+  const years = [...new Set(logs.map((l) => l.date.slice(0, 4)))].sort().reverse()
+  const chips = [
+    { id: 'all', label: 'すべて' },
+    ...years.map((y) => ({ id: y, label: `${y}年` })),
+    { id: 'favorite', label: 'お気に入り' },
+  ]
+
+  const filtered =
+    filter === 'all'
+      ? searched
+      : filter === 'favorite'
+        ? searched.filter((l) => l.favorite)
+        : searched.filter((l) => l.date.startsWith(filter))
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
@@ -190,6 +227,50 @@ export default function Journal() {
 
         {activeTab === 'record' ? (
         <View className="gap-8">
+            {/* 検索。**上に置く。** デザイン案が
+                「検索や月別フィルタを上部に配置」としている。
+                探しに来た人が最初に触るものが最初にある。 */}
+            <View className="gap-3">
+              <View className="flex-row items-center bg-surface-low rounded px-3">
+                <Text className="text-outline text-label-md mr-2">⌕</Text>
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="記録を検索"
+                  placeholderTextColor="#8E8478"
+                  className="flex-1 py-3 font-body text-body-md text-ink"
+                />
+                {search ? (
+                  <Pressable onPress={() => setSearch('')} hitSlop={12} className="pl-2">
+                    <Text className="text-outline text-label-md">✕</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {/* 絞り込みのチップ。DESIGN.md「Chips/Tags は low-impact」 */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View className="flex-row gap-2">
+                  {chips.map(({ id, label }) => (
+                    <Pressable
+                      key={id}
+                      onPress={() => setFilter(id)}
+                      className={`rounded-full px-3.5 py-1.5 ${
+                        filter === id ? 'bg-lantern-glow' : 'bg-surface-low'
+                      }`}
+                    >
+                      <Text
+                        className={`text-label-md ${
+                          filter === id ? 'font-strong text-on-lantern' : 'text-on-surface-variant'
+                        }`}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+
             {/* カレンダー */}
             <View>
               {thisMonthCount > 0 ? (
@@ -225,23 +306,6 @@ export default function Journal() {
               ) : null}
             </View>
 
-            {/* 検索 */}
-            <View className="flex-row items-center bg-stone border border-border rounded px-3">
-              <Text className="text-ink-faint text-aux mr-2">⌕</Text>
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="記録を検索"
-                placeholderTextColor="#8E8478"
-                className="flex-1 py-2.5 font-body text-body text-ink"
-              />
-              {search ? (
-                <Pressable onPress={() => setSearch('')} className="pl-2">
-                  <Text className="text-ink-faint text-aux">✕</Text>
-                </Pressable>
-              ) : null}
-            </View>
-
             {/* ログ一覧 */}
             {loading ? (
               <View className="gap-3">
@@ -257,12 +321,21 @@ export default function Journal() {
               </View>
             ) : filtered.length === 0 ? (
               <View className="items-center py-12">
-                <Text className="text-body text-ink-faint">
-                  「{search.trim()}」の記録は見つかりませんでした
+                <Text className="text-body-md text-outline">
+                  {q
+                    ? `「${search.trim()}」の記録は見つかりませんでした`
+                    : filter === 'favorite'
+                      ? 'お気に入りはまだありません'
+                      : 'この年の記録はありません'}
                 </Text>
               </View>
             ) : (
-              <LogList logs={filtered} onDelete={handleDelete} onUpdate={handleUpdate} />
+              <LogList
+                logs={filtered}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+                onToggleFavorite={handleToggleFavorite}
+              />
             )}
         </View>
         ) : (

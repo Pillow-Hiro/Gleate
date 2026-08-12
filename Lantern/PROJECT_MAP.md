@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。33ルール / 31パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。34ルール / 32パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -75,7 +75,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 | タブ | 部品 | API |
 |---|---|---|
-| 記録 | `ActivityCalendar` / `LogItem` → `LogDetail` / `PhotoPicker` | `GET /api/logs`・`POST /save`・`DELETE /api/logs/<date>` |
+| 記録 | `ActivityCalendar` / `LogList` → `LogItem` → `LogDetail` / `PhotoPicker` | `GET /api/logs`・`POST /save`・`DELETE /api/logs/<date>`・`PUT /api/logs/<date>/favorite` |
 | 振り返り | `ReviewSection` | `POST /api/review/generate` |
 | 振り返り | `TimelineSection` → `LogSnapshot` / `ReviewSection` | `GET /api/timeline-reflection` |
 | 振り返り | `KeywordSection` | `GET /api/insights/keywords` |
@@ -181,14 +181,14 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・33ルール / 31パス）
+## 6. API（`main.py`・34ルール / 32パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
 
 | 系統 | パス |
 |---|---|
-| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>` |
+| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT /api/logs/<date>/favorite` |
 | 問い | `GET /api/question` |
 | アイデア | `GET|POST /api/ideas`・`PATCH|DELETE /api/ideas/<int:idea_id>` |
 | 灯り | `GET /api/daily/quote`・`GET /api/splash/content` |

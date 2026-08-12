@@ -10,10 +10,11 @@ supabase = create_client(_url, _key) if _url and _key else None
 # Supabase: content / good_things / struggles / next_action / lantern_message / updated_at
 # App:      created / enjoyable   / struggled / next        / ai_response     / saved_at
 
-_DB_SELECT = (
+_DB_SELECT_BASE = (
     "id, date, content, next_action, good_things, struggles, "
     "lantern_message, updated_at, user_id"
 )
+_DB_SELECT = _DB_SELECT_BASE + ", favorite"
 
 
 def _from_db(row):
@@ -28,6 +29,7 @@ def _from_db(row):
         "next": row.get("next_action") or "",
         "saved_at": row.get("updated_at") or "",
         "ai_response": row.get("lantern_message") or "",
+        "favorite": bool(row.get("favorite")),
     }
 
 
@@ -35,6 +37,11 @@ def _to_db(l, user_id=None):
     # 写真カラムは 2026-08-06 に扱いをやめた。写真は端末の中だけに置く。
     # DBの列は残っているが読み書きしない。ここに足すと、
     # クライアントが送らないフィールドを空で上書きすることになる。
+    #
+    # **`favorite` も同じ理由でここに入れない。**
+    # 記録フォームは favorite を送らない。ここに足すと、
+    # 記録を編集するたびにお気に入りが外れる。
+    # 付け外しは `set_favorite()` が、その列だけを書く。
     return {
         "date": l.get("date", ""),
         "content": l.get("created", ""),
@@ -71,17 +78,27 @@ def _upsert_one(row):
 # ── ログ ─────────────────────────────────────────────────────────
 
 def load_logs(user_id=None):
+    """記録を読む。
+
+    **`favorite` 列が無くても記録を返す。**
+    列を足す SQL は人の手で流す。サーバーの配備が先に済むと、
+    `select` が落ちて**記録が1件も出ない画面**になる。
+    順番に依存させないため、列が無ければ外して読み直す。
+    列を足したあとは1回目で通るので、この道は使われなくなる。
+    """
     if not supabase:
         return []
-    try:
-        q = supabase.table("logs").select(_DB_SELECT)
-        if user_id:
-            q = q.eq("user_id", user_id)
-        result = q.order("date").execute()
-        return [_from_db(r) for r in (result.data or [])]
-    except Exception as e:
-        print(f"[Supabase] load_logs error: {e}")
-        return []
+    for select in (_DB_SELECT, _DB_SELECT_BASE):
+        try:
+            q = supabase.table("logs").select(select)
+            if user_id:
+                q = q.eq("user_id", user_id)
+            result = q.order("date").execute()
+            return [_from_db(r) for r in (result.data or [])]
+        except Exception as e:
+            # 中身は出さない。型と、どちらの select で落ちたかだけ残す
+            print(f"[Supabase] load_logs error ({type(e).__name__}), favorite={select is _DB_SELECT}")
+    return []
 
 
 def save_logs(logs, user_id=None):
@@ -89,6 +106,26 @@ def save_logs(logs, user_id=None):
         return
     for l in logs:
         _upsert_one(_to_db(l, user_id))
+
+
+def set_favorite(date, favorite, user_id):
+    """お気に入りの付け外し。**その列だけを書く。**
+
+    記録の保存（`save_logs`）とは別の道にしている。
+    一緒にすると、記録を編集するたびにお気に入りが外れる
+    （クライアントは favorite を送らないため）。
+
+    件数は返さない。「◯件お気に入り」は多い/少ないの評価になる。
+    """
+    if not supabase:
+        return
+    (
+        supabase.table("logs")
+        .update({"favorite": bool(favorite)})
+        .eq("date", date)
+        .eq("user_id", user_id)
+        .execute()
+    )
 
 
 def delete_log_by_date(date, user_id=None):

@@ -33,6 +33,7 @@ DB_ROW = {
     "next_action": "明日サビを直す",
     "lantern_message": "昨日の記録が、ここに残っています。",
     "updated_at": "2026-07-28T21:30:00",
+    "favorite": False,
     "user_id": "abc-123",
 }
 
@@ -44,6 +45,7 @@ APP_LOG = {
     "next": "明日サビを直す",
     "ai_response": "昨日の記録が、ここに残っています。",
     "saved_at": "2026-07-28T21:30:00",
+    "favorite": False,
 }
 
 
@@ -56,6 +58,8 @@ class TestFromDb:
         assert result == {
             "date": "", "created": "", "enjoyable": "",
             "struggled": "", "next": "", "saved_at": "", "ai_response": "",
+            # お気に入りだけ真偽値。未設定は False（付いていない）
+            "favorite": False,
         }
 
     def test_updated_atがNoneなら空文字にする(self):
@@ -71,10 +75,26 @@ class TestFromDb:
         assert "user_id" not in _from_db(DB_ROW)
 
 
+# `_to_db` が書かない列。**ここに入れたら、記録を保存するたびに上書きされる。**
+# 写真は 2026-08-06 に、お気に入りは 2026-08-13 に外した。
+WRITE_EXCLUDED = {"favorite"}
+DB_ROW_WRITABLE = {k: v for k, v in DB_ROW.items() if k not in WRITE_EXCLUDED}
+
+
 class TestToDb:
     def test_全フィールドをSupabaseのカラム名に変換する(self):
         row = _to_db(APP_LOG, "abc-123")
-        assert row == DB_ROW
+        assert row == DB_ROW_WRITABLE
+
+    def test_お気に入りを書かない(self):
+        """**記録の保存でお気に入りを触らない。**
+
+        記録フォームは favorite を送らない。`_to_db` がこの列を出すと、
+        既定値（False）で上書きされ、**編集するたびに星が外れる。**
+        付け外しは `set_favorite()` がその列だけを書く。
+        """
+        row = _to_db({**APP_LOG, "favorite": True}, "abc-123")
+        assert "favorite" not in row
 
     def test_user_id未指定ならNoneが入る(self):
         assert _to_db(APP_LOG)["user_id"] is None
@@ -101,7 +121,8 @@ class TestRoundTrip:
         assert _from_db(_to_db(APP_LOG, "abc-123")) == APP_LOG
 
     def test_DBからアプリへ戻して内容が保たれる(self):
-        assert _to_db(_from_db(DB_ROW), "abc-123") == DB_ROW
+        # お気に入りは `_to_db` が書かない列なので、往復の対象外
+        assert _to_db(_from_db(DB_ROW), "abc-123") == DB_ROW_WRITABLE
 
     def test_日本語や改行を含んでも壊れない(self):
         log = {**APP_LOG, "created": "1行目\n2行目\t「引用」😀"}
@@ -231,9 +252,14 @@ class TestTextOnlyNullRow:
             assert result[key] == "", f"{key} が {result[key]!r} になっている"
 
     def test_値は必ず文字列(self):
-        # フロントは .trim() や .toLowerCase() を呼ぶ。None が混ざると落ちる
+        # フロントは .trim() や .toLowerCase() を呼ぶ。None が混ざると落ちる。
+        # **`favorite` だけは真偽値。** 文字列にすると "" が真になり、
+        # 付いていない記録に星が立つ
         result = _from_db(self.NULL_ROW)
         for key, value in result.items():
+            if key == "favorite":
+                assert isinstance(value, bool), "favorite は真偽値であること"
+                continue
             assert isinstance(value, str), f"{key} が {type(value).__name__} になっている"
 
     def test_dateがNoneでも文字列のNoneにしない(self):
@@ -286,3 +312,77 @@ class TestDeleteLogDoesNotTouchStorage:
         src = inspect.getsource(logs)
         assert "modules.photos" not in src, "削除済みのモジュールを参照している"
         assert "delete_photo" not in src
+
+
+class TestFavoriteColumnIsOptional:
+    """`favorite` 列が無くても記録を返せるか。
+
+    列を足す SQL は人の手で流す。サーバーの配備が先に済むと、
+    `select` が落ちて**記録が1件も出ない画面**になる。
+    2026-08-13 に列を足したとき、この順番の危険に気づいた。
+
+    落ちたらテストではなく `load_logs` の方を直すこと。
+    """
+
+    def test_列が無いときは外して読み直す(self, monkeypatch):
+        from modules import logs as logs_mod
+
+        tried = []
+
+        class _Q:
+            def __init__(self, select):
+                self.select_str = select
+
+            def eq(self, *a, **k):
+                return self
+
+            def order(self, *a, **k):
+                return self
+
+            def execute(self):
+                tried.append(self.select_str)
+                if "favorite" in self.select_str:
+                    raise RuntimeError('column logs.favorite does not exist')
+                return type("R", (), {"data": [dict(DB_ROW)]})()
+
+        class _Table:
+            def select(self, s):
+                return _Q(s)
+
+        monkeypatch.setattr(logs_mod, "supabase", type("S", (), {"table": lambda self, n: _Table()})())
+
+        rows = logs_mod.load_logs("abc-123")
+        assert len(tried) == 2, "1回目で落ちたら、列を外してもう一度読むこと"
+        assert "favorite" in tried[0] and "favorite" not in tried[1]
+        assert len(rows) == 1
+        # 列が無いので False になる。**落ちないことが目的**
+        assert rows[0]["favorite"] is False
+
+    def test_列があれば1回で読む(self, monkeypatch):
+        from modules import logs as logs_mod
+
+        tried = []
+
+        class _Q:
+            def __init__(self, select):
+                self.select_str = select
+
+            def eq(self, *a, **k):
+                return self
+
+            def order(self, *a, **k):
+                return self
+
+            def execute(self):
+                tried.append(self.select_str)
+                return type("R", (), {"data": [dict(DB_ROW, favorite=True)]})()
+
+        class _Table:
+            def select(self, s):
+                return _Q(s)
+
+        monkeypatch.setattr(logs_mod, "supabase", type("S", (), {"table": lambda self, n: _Table()})())
+
+        rows = logs_mod.load_logs("abc-123")
+        assert len(tried) == 1
+        assert rows[0]["favorite"] is True
