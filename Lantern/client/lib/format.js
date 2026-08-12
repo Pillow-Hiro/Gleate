@@ -19,6 +19,32 @@ export function dayLabel(dateStr) {
   return `${d.getDate()}日 ${WEEKDAYS_JA[d.getDay()]}`
 }
 
+// 一覧に出す日付。**近い日は「今日」「昨日」で出す。**
+//
+// デザイン案が `Today · 8:42 PM` / `Yesterday · 9:15 AM` と
+// 相対で出しているのに合わせた。日付の羅列より、
+// **どれが直近なのかが一目で分かる。**
+//
+// 時刻は出さない。Lantern は1日1件で、時刻を保存していない。
+export function relativeDayLabel(dateStr, today = todayStr()) {
+  if (dateStr === today) return '今日'
+  if (dateStr === shiftDays(today, -1)) return '昨日'
+  return dateDisplayJa(dateStr)
+}
+
+function todayStr() {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+function shiftDays(dateStr, days) {
+  const d = parseDate(dateStr)
+  d.setDate(d.getDate() + days)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 export function dateDisplayJa(dateStr) {
   const [, m, d] = dateStr.split('-').map(Number)
   const dt = parseDate(dateStr)

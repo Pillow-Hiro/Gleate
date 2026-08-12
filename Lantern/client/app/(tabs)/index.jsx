@@ -27,7 +27,6 @@ export default function Home() {
   const tabInset = useTabBarInset()
   const params = useLocalSearchParams()
   const router = useRouter()
-  const [quote, setQuote] = useState('')
   const [question, setQuestion] = useState('')
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,18 +51,13 @@ export default function Home() {
     ;(async () => {
       setLoading(true)
       try {
-        const [logsRes, quoteRes, questionRes] = await Promise.all([
+        const [logsRes, questionRes] = await Promise.all([
           authFetch('/api/logs'),
-          authFetch('/api/daily/quote'),
           authFetch('/api/question'),
         ])
         if (logsRes.ok) {
           const logsData = await logsRes.json()
           if (!cancelled) setLogs(logsData)
-        }
-        if (quoteRes.ok) {
-          const quoteData = await quoteRes.json()
-          if (!cancelled) setQuote(quoteData.quote || '')
         }
         if (questionRes.ok) {
           const questionData = await questionRes.json()
@@ -71,7 +65,7 @@ export default function Home() {
         }
       } catch (e) {
         // 取得できなければ空のまま表示する
-        console.warn('[Home] 記録・今日の灯りの取得に失敗', e)
+        console.warn('[書く] 記録・問いの取得に失敗', e)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -83,10 +77,8 @@ export default function Home() {
   const existingLog = logs.find((l) => l.date === targetDate) || null
   const streak = calcStreak(logs)
 
-  // Home だけ地を沈める。CLAUDE.md「Home画面のみの特例」。
-  // 「本当に暗闇に灯りが1つだけある」感覚を強めるため。
   return (
-    <SafeAreaView className="flex-1 bg-home-bg" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
@@ -108,24 +100,8 @@ export default function Home() {
 
         <MilestoneBanner />
 
-        {/* 今日の灯り */}
-        <View>
-          {/* ラベルの灯り色は home-warm。他画面の accent より一段落とす。
-              Home の地が沈んでいるぶん、同じ強さだと灯りが強く見えるため */}
-          <Text className="font-strong text-aux text-home-warm mb-3">今日の灯り</Text>
-          <View className="border-l-2 border-lantern-glow pl-4 py-1 min-h-[64px] justify-center">
-            {loading ? (
-              <View className="w-32 h-4 bg-surface-high rounded-full" />
-            ) : (
-              <Text className="text-body-lg text-ink">
-                {quote || '今日の記録が、ここに残る。'}
-              </Text>
-            )}
-          </View>
-        </View>
-
         {/* 記録とアイデアのタブ。
-            灯りはこの上に置いたまま。その日の入口はどちらにも要る。
+            今日の灯りは 2026-08-12 に「ホーム」へ移した。ここには無い。
             過去日の編集中はタブを出さない（アイデアは日付を持たないため）。 */}
         {!isEditingPast ? (
           <View className="flex-row gap-4 border-b border-border">

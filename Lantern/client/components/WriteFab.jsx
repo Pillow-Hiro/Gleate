@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import Svg, { Line, Path } from 'react-native-svg'
-import { useTabBarInset } from '../lib/tabBar'
+import { useFabOffset } from '../lib/tabBar'
 
 // 一覧から書き始めるためのボタン。**唯一の浮いた要素**
 // （DESIGN.md「Floating Action Button」）。
@@ -12,19 +12,20 @@ import { useTabBarInset } from '../lib/tabBar'
 // **押すと「書く」タブへ移る。** 新しい画面を積まない。
 // 積むとタブバーの選択と現在地が食い違う。
 //
-// **Web ではタブバーが内容の上に浮いている**ので、その分だけ上げる。
-// ネイティブは OS がタブバーの外に画面を置くため 0 でよい
-// （`lib/tabBar.js` と `tabBar.web.js`）。
+// **タブバーの裏に隠れないよう、下端は `useFabOffset()` から取る。**
+// スクロールの余白とは別の値。`NativeTabs` が入れてくれるのは
+// 中身の余白だけで、絶対配置の要素は面倒を見てくれない。
+// 2026-08-12 に実機で「隠れていて押しづらい」と指摘された。
 export default function WriteFab() {
   const router = useRouter()
-  const tabInset = useTabBarInset()
+  const bottom = useFabOffset()
 
   return (
     <Pressable
       onPress={() => router.navigate('/')}
       accessibilityLabel="書く"
       className="absolute right-5 w-14 h-14 rounded-full bg-lantern-glow items-center justify-center shadow-bloom active:opacity-80"
-      style={{ bottom: tabInset + 24 }}
+      style={{ bottom }}
     >
       {/* タブのアイコンと同じペン。線だけで組む */}
       <Svg width={24} height={24} viewBox="0 0 15 15" fill="none" stroke="#1D1D1F"

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import LogDetail from './LogDetail'
-import { dateDisplayJa } from '../lib/format'
+import { relativeDayLabel } from '../lib/format'
 
 // 一覧の1行。**日付が見出しで、本文の抜粋2行が中身。**
 //
@@ -29,7 +29,7 @@ export default function LogItem({ log, onDelete, onUpdate, isLast }) {
       <Pressable onPress={() => setOpen((o) => !o)} className="py-3.5 gap-1">
         <View className="flex-row items-center justify-between gap-3">
           <Text className="font-label text-label-md text-outline">
-            {dateDisplayJa(log.date)}
+            {relativeDayLabel(log.date)}
           </Text>
           <Text className="text-outline text-label-md">{open ? '⌃' : '⌄'}</Text>
         </View>
