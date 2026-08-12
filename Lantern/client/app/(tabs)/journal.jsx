@@ -17,7 +17,6 @@ import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
 import PhotoPicker from '../../components/PhotoPicker'
-import WriteFab from '../../components/WriteFab'
 
 const MODAL_FIELDS = [
   { field: 'created', label: 'やったこと', placeholder: '今日やったこと', minHeight: 84 },
@@ -275,10 +274,6 @@ export default function Journal() {
           </View>
         )}
       </ScrollView>
-
-      {/* FAB は記録タブのときだけ。振り返りを読んでいるときに
-          書き始めるボタンが浮いていると、読む邪魔になる */}
-      {activeTab === 'record' ? <WriteFab /> : null}
 
       {/* 記録モーダル */}
       <Modal

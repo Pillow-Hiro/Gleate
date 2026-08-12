@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import LogList from '../../components/LogList'
-import WriteFab from '../../components/WriteFab'
 
 // **直近の記録を眺める場所（2026-08-12 に新設）。**
 //
@@ -113,8 +112,6 @@ export default function Home() {
           </Pressable>
         ) : null}
       </ScrollView>
-
-      <WriteFab />
     </SafeAreaView>
   )
 }

@@ -89,7 +89,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・27ファイル）
+## 3. 部品（`client/components/`・26ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -118,7 +118,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | 書く | 今週の発見。**AIを使わない** |
-| `WriteFab.jsx` | ホーム / 記録 | 一覧から書き始める丸ボタン。**唯一の浮いた要素** |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
 
 ---
@@ -136,7 +135,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
-| `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白と、**浮くもの（FAB）の下端**。前者はネイティブで 0、後者は別の値 | — |
+| `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
 | `theme.js` | テーマの保持 | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

@@ -35,8 +35,3 @@ export function useTabBarInset() {
   if (width >= WIDE_SCREEN_MIN_WIDTH) return 0
   return TAB_BAR_HEIGHT + insets.bottom
 }
-
-/** 絶対配置で浮かせるもの（FAB）の下端。Web はタブバーの分だけ上げる。 */
-export function useFabOffset() {
-  return useTabBarInset() + 24
-}

@@ -1,5 +1,3 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
 // タブバーまわりの寸法。**ネイティブ版。Web 版は `tabBar.web.js`。**
 //
 // ネイティブは `app/(tabs)/_layout.jsx` が本物の `UITabBar`
@@ -26,18 +24,3 @@ export function useTabBarInset() {
   return 0
 }
 
-/**
- * 絶対配置で浮かせるもの（FAB）の下端。
- *
- * **スクロールの余白とは別の値が要る。**
- * `NativeTabs` が入れてくれるのは**中身の余白だけ**で、
- * 絶対配置の要素は面倒を見てくれない。
- * iOS 26 のタブバーは内容の上に浮くので、`bottom: 24` だと裏に隠れる。
- * 2026-08-12 に実機で「隠れていて押しづらい」と指摘された。
- *
- * ホームインジケータ＋タブバーの高さ＋余白の分だけ上げる。
- */
-export function useFabOffset() {
-  const insets = useSafeAreaInsets()
-  return insets.bottom + 76
-}
