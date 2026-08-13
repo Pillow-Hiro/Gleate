@@ -38,11 +38,11 @@
 
 | 項目 | 版 | 備考 |
 |---|---|---|
-| Expo SDK | 57.0.11 | 2026-06-30 リリース。SDK の寿命は約1年 |
+| Expo SDK | 57.0.12 | 2026-06-30 リリース。SDK の寿命は約1年 |
 | React Native | 0.86.2 | SDK 57 の指定 |
 | React | 19.2.3 | 同上 |
 | React Native Web | 0.21.2 | Web 出力 |
-| Expo Router | 57.0.11 | ファイルベースのルーティング |
+| Expo Router | 57.0.12 | ファイルベースのルーティング |
 | NativeWind | 4.2.6 | Tailwind の記法を React Native に持ち込む |
 | Tailwind CSS | 3.4.19 | NativeWind 4 が v3 系を要求する |
 | Node（要件） | 22.13 以上 | SDK 57 の最低要件。手元は 24.16.0 |
@@ -51,15 +51,26 @@
 
 **2026-08-08 に上流の不整合が解けた。** `expo@57.0.11` の想定表が要求する
 `expo-sharing@~57.0.10` が公開されず数日止まっていたが、公開されたので
-`expo install --fix` で揃えた（`expo-doctor` 20/20）。
+`expo install --fix` で揃えた。
+
+**2026-08-13 にパッチ版8件を上げた**（`expo-doctor` 20/20）。
+上げる時機を選んだ理由がある。**版を上げると指紋が変わり、
+配信済みのビルドへ OTA が届かなくなる。** 同じ日に
+`expo-notifications` を入れて既に指紋が変わっていたので、
+**どうせ作り直すビルドに合わせてまとめた。**
+
+このとき `expo export` が `EINVAL readlink` で落ちた。
+OneDrive 配下の `node_modules` で起きる既知のもので、
+`rm -rf node_modules .expo && npm ci` で直る。
+**上げ方の問題ではないので、版は戻していない。**
 
 配布まわりの依存も入れた。
 
 | 追加 | 版 | 目的 |
 |---|---|---|
-| `expo-splash-screen` | 57.0.5 | ネイティブの起動画面。既定の白だとテーマ切替で点滅する |
-| `expo-dev-client` | 57.0.10 | 開発用ビルド。**保存した瞬間に実機へ反映される** |
-| `expo-updates` | 57.0.12 | OTA更新。JSだけの修正をビルドせずに配る |
+| `expo-splash-screen` | 57.0.6 | ネイティブの起動画面。既定の白だとテーマ切替で点滅する |
+| `expo-dev-client` | 57.0.11 | 開発用ビルド。**保存した瞬間に実機へ反映される** |
+| `expo-updates` | 57.0.13 | OTA更新。JSだけの修正をビルドせずに配る |
 
 書体も同梱している。読み込みは `client/lib/fonts.js` だけで行う。
 どれを何に使うかは `DESIGN.md` と `CLAUDE.md`「デザインシステム」。
@@ -71,6 +82,7 @@
 | `@expo-google-fonts/hanken-grotesk` | ^0.4.3 | 欧文のワードマーク（Bold） | 0.06MB |
 | `@expo-google-fonts/inter` | ^0.4.2 | ラベル・数字（Medium / SemiBold） | 0.7MB |
 | `expo-blur` | ~57.0.2 | **Web** のタブバーのすりガラス | — |
+| `expo-notifications` | ~57.0.10 | 毎日のきっかけ。**端末の中だけで予約する** | 2026-08-13 |
 
 **合計 約11MB。**
 
