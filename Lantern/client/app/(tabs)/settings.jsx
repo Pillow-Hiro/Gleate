@@ -7,6 +7,9 @@ import { supabase, authFetch } from '../../lib/supabase'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
+import * as notify from '../../lib/notify'
+import { NOTIFY_HOURS, hourLabel } from '../../lib/notifyText'
+import { todayStr } from '../../lib/date'
 
 // 1行。**アイコン → ラベル → 操作。**
 //
@@ -73,6 +76,33 @@ export default function Settings() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21 })
+  const [notifyBlocked, setNotifyBlocked] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    notify.loadSetting().then((s) => { if (!cancelled) setNotifySetting(s) })
+    return () => { cancelled = true }
+  }, [])
+
+  // 予約は端末が持つ。**設定を触ったその場で作り直す。**
+  // 積み増すと時刻を変えたときに二重に鳴る（`lib/notify.js` が全消ししてから並べる）。
+  async function applyNotify(next) {
+    if (next.enabled && !notifySetting.enabled) {
+      // **「入」にしようとしたときにだけ許可を求める。**
+      // 起動直後に求めると、何のための通知か分からないまま拒否される
+      const ok = await notify.requestPermission()
+      if (!ok) {
+        setNotifyBlocked(true)
+        return
+      }
+      setNotifyBlocked(false)
+    }
+    setNotifySetting(next)
+    await notify.saveSetting(next)
+    const recordedToday = logs.some((l) => l.date === todayStr())
+    await notify.syncSchedule(next, recordedToday)
+  }
 
   // 記録を消してから認証の利用者を消す（サーバー側 modules/account.py）。
   // 成功したらサインアウトする。セッションだけ残ると、
@@ -138,6 +168,56 @@ export default function Settings() {
         <View>
           <Text className="font-display text-headline-md text-ink">設定</Text>
         </View>
+
+        {/* **催促ではなく、静かなきっかけ**（CLAUDE.md「習慣化の定義」）。
+            既定は「切」。**黙って鳴らさない。**
+            日数も件数も出さない文面にしてある（`lib/notifyText.js`）。
+            Web では通知を扱わないので、節ごと出さない。 */}
+        {notify.isSupported ? (
+          <Section title="通知">
+            <SettingsRow
+              icon="◔"
+              label="毎日のきっかけ"
+              description="決めた時刻に、そっと知らせます"
+              isLast={!notifySetting.enabled}
+            >
+              <RowButton
+                onPress={() => applyNotify({ ...notifySetting, enabled: !notifySetting.enabled })}
+              >
+                {notifySetting.enabled ? 'やめる' : '受け取る'}
+              </RowButton>
+            </SettingsRow>
+            {notifySetting.enabled ? (
+              <SettingsRow icon="◷" label="時刻" isLast>
+                <View className="flex-row gap-1.5">
+                  {NOTIFY_HOURS.map((h) => (
+                    <Pressable
+                      key={h}
+                      onPress={() => applyNotify({ ...notifySetting, hour: h })}
+                      className={`rounded-full px-2.5 py-2 ${
+                        notifySetting.hour === h ? 'bg-lantern-glow' : 'bg-surface-lowest'
+                      }`}
+                    >
+                      <Text
+                        className={`text-label-sm ${
+                          notifySetting.hour === h ? 'text-on-lantern' : 'text-on-surface-variant'
+                        }`}
+                      >
+                        {hourLabel(h)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </SettingsRow>
+            ) : null}
+          </Section>
+        ) : null}
+        {notifyBlocked ? (
+          // **端末の設定を開く導線は置かない。** 断った人を追いかけない
+          <Text className="text-label-md text-outline leading-relaxed">
+            端末の設定で Lantern の通知が許可されていません。
+          </Text>
+        ) : null}
 
         <Section title="表示">
           <SettingsRow icon="◐" label="テーマ" description="ボタンで手動切り替え" isLast>

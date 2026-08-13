@@ -7,6 +7,8 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import LogList from '../../components/LogList'
 import { greetingFor } from '../../lib/greeting'
+import { todayStr } from '../../lib/date'
+import * as notify from '../../lib/notify'
 
 // **直近の記録を眺める場所（2026-08-12 に新設）。**
 //
@@ -67,6 +69,26 @@ export default function Home() {
     })()
     return () => { cancelled = true }
   }, [tick])
+
+  // 通知の予約を作り直す。**開くたびに。**
+  // 1回きりの予約を数日ぶん並べているので（`lib/notifyText.js`）、
+  // 補充しないと尽きる。ここでやるのは、今日の記録があるかを
+  // 知っているのがこの画面だからで、**書いた日には送らない**ため。
+  useEffect(() => {
+    if (loading) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const setting = await notify.loadSetting()
+        if (cancelled || !setting.enabled) return
+        await notify.syncSchedule(setting, logs.some((l) => l.date === todayStr()))
+      } catch (e) {
+        // 通知が組めなくても画面は動く
+        console.warn('[Home] 通知の予約に失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [loading, logs])
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>

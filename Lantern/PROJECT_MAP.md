@@ -134,6 +134,9 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
 | `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
 | `resetLink.js` | パスワード再設定メールの戻り先。**Web に固定する** | — |
+| `greeting.js` | 時間帯の挨拶。**材料は時計だけ** | `greeting.test.js` |
+| `notifyText.js` | 通知の文面と時刻の組み立て。**日数も件数も持たない** | `notifyText.test.js` |
+| `notify.js` / `notify.web.js` | 通知の予約（端末の中だけ）。Web は「使えない」を返す | — |
 | `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
