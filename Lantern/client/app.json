@@ -51,7 +51,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+    "./plugins/withoutPushEntitlement"
     ],
     "extra": {
       "router": {},
