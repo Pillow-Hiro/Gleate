@@ -31,7 +31,7 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #9 が finished**（2026-08-13・commit `f402fb6`・版数 1.0.0 / ビルド番号 9）。通知を載せた最初のビルド。**TestFlight へはまだ上げていない**。#7 までは上げ済み |
+| ネイティブ | **iOSビルド #9 を TestFlight へアップロード済み**（2026-08-13・commit `f402fb6`・版数 1.0.0 / ビルド番号 9）。通知を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 837件 / vitest 141件 |
 
@@ -66,6 +66,9 @@ OTA（`eas update`）では届かないもの。
 **これ以降の OTA は #9 にしか届かない。**
 
     https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/4c2498c3-337c-4c30-855f-52ca263d38d4
+
+提出のとき `eas.json` に `ascAppId` を書き足し、**終わったら消した。**
+消したあと `fingerprint:compare` が `d8a1c94e…` の一致を返すことを確認済み。
 
 **1回目（#8）は落ちた。** `expo-notifications` が `aps-environment` を
 自動で足し、プロファイルに Push Notifications が無かったため。
@@ -261,7 +264,7 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | 5 | Apple の認証情報の作成 | **済** |
 | 6 | **iOSビルド** | **済。#9 が finished**（2026-08-13・commit `f402fb6`・ビルド番号9） |
 | 7 | App Store Connect にアプリを登録 | **済**（Apple ID `6798753977`） |
-| 8 | `eas submit` で TestFlight へ | #7 は済（2026-08-09）。**#9 は未提出** |
+| 8 | `eas submit` で TestFlight へ | **済**（2026-08-13・ビルド #9） |
 | 9 | TestFlight で実機確認 | 次 |
 | 10 | 審査に出す | 9 のあと。**要ユーザー判断** |
 
