@@ -82,6 +82,7 @@ export default function Home() {
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* 日付ヘッダー。
             2026-08-09 まで「8 AUG」を上に重ねていた。

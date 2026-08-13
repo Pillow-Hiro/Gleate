@@ -53,7 +53,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `(tabs)/_layout.jsx` | タブ | **ネイティブ。本物の `UITabBar`（`NativeTabs`）。iOS 26 では OS が Liquid Glass にする** |
 | `(tabs)/_layout.web.jsx` | 同上 | **Web。** 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス |
 | `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。今日の灯りは持たない |
-| `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋**を眺める（探さない） |
+| `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋3枚**（`HomeCard`）|
 | `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 ＋ 振り返りのタブ |
 | `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続いている日 ＋ YouTube / Twitch |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
@@ -100,7 +100,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。使ったものは取り消し線で残す |
-| `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない |
+| `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。開くと LogDetail |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
@@ -122,7 +122,9 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**。2026-08-14 に「書く」から移した |
-| `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**記録がある月だけ出す** |
+| `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
+| `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
+| `HourPicker.jsx` | 設定 | 通知の時刻。**24時間から選ぶ**（4列の格子） |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |

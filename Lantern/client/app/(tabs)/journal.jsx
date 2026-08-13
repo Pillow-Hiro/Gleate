@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import { Dimensions, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -15,19 +16,28 @@ import KeywordSection from '../../components/KeywordSection'
 import RecordForm from '../../components/RecordForm'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
 
+// 当月。`new Date()` から作る。UTC に寄る `toISOString()` は使わない
+function thisMonth() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
 export default function Journal() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  // 頻出キーワードから飛んでくると `?q=` が付く。その語で絞った状態で開く
+  const params = useLocalSearchParams()
+  const [search, setSearch] = useState(typeof params.q === 'string' ? params.q : '')
   const [selectedDate, setSelectedDate] = useState(null)
   // 絞り込み。'all' / 'favorite' / '2026' のような年
   const [filter, setFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('record')
   const [modalDate, setModalDate] = useState(null)
-  // 一覧を月で区切る。'all' か '2026-06' のような月
-  const [month, setMonth] = useState('all')
+  // 一覧を月で区切る。'all' か '2026-06' のような月。
+  // **既定は当月**（2026-08-14）。全部の月を最初から縦に並べない
+  const [month, setMonth] = useState(thisMonth())
 
   const [tick, setTick] = useState(0)
 
@@ -50,8 +60,20 @@ export default function Journal() {
     return () => { cancelled = true }
   }, [tick])
 
-  // チップや検索を変えたら月は「すべて」に戻す。
-  // 前の絞り込みが残っていると、記録があるのに0件に見える
+  // 頻出キーワードから来たとき。
+  // **同じ画面への遷移なので、状態は自分で合わせる。**
+  // `q` を読むだけでは、振り返りタブを開いたまま検索だけ変わって
+  // 何も起きていないように見える。記録タブへ戻す。
+  useEffect(() => {
+    const q = typeof params.q === 'string' ? params.q : ''
+    if (!q) return
+    setSearch(q)
+    setActiveTab('record')
+  }, [params.q])
+
+  // チップや検索を変えたら月の絞り込みを解く。
+  // **ここは「すべて」に戻す。** 検索は月をまたいで探すもので、
+  // 当月に固定したままだと、他の月にある記録が0件に見える
   useEffect(() => { setMonth('all') }, [filter, search])
 
   function handleDelete(date) {
@@ -124,7 +146,13 @@ export default function Journal() {
   // 月の選択肢は**チップで絞ったあとの記録**から作る。
   // 2025年を選んでいるのに 2026年の月が並ぶと、押しても0件になる。
   const months = useMemo(() => monthsOf(byChip), [byChip])
-  const filtered = month === 'all' ? byChip : byChip.filter((l) => l.date.startsWith(month))
+  // **選べない月を選んだ状態にしない。**
+  // 当月に記録が無いまま起動すると、空の一覧に「2026年8月」とだけ出る。
+  // その場合はいちばん新しい月に寄せる（記録があるのに無いように見せない）
+  const effectiveMonth =
+    month === 'all' || months.includes(month) ? month : (months[0] ?? 'all')
+  const filtered =
+    effectiveMonth === 'all' ? byChip : byChip.filter((l) => l.date.startsWith(effectiveMonth))
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
@@ -258,7 +286,7 @@ export default function Journal() {
               </View>
             ) : (
               <View className="gap-3">
-                <MonthPicker months={months} value={month} onChange={setMonth} />
+                <MonthPicker months={months} value={effectiveMonth} onChange={setMonth} />
                 <LogList
                   logs={filtered}
                   onDelete={handleDelete}
@@ -291,6 +319,8 @@ export default function Journal() {
       >
         <Pressable className="flex-1 bg-black/50 justify-end" onPress={closeModal}>
           <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
+            {/* つまみ。どこを掴めば閉じるかの目印 */}
+            <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
             <View className="flex-row items-center justify-between mb-4">
               <Text className="font-strong text-body-md text-on-surface">
                 {modalDate ? dateDisplayJa(modalDate) : ''}
@@ -300,7 +330,15 @@ export default function Journal() {
               </Pressable>
             </View>
 
-            <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
+            {/* **上まで伸ばす**（2026-08-14）。
+                `max-h-96`（384px）だと、詳しく書く欄を開いた時点で
+                中だけが小さくスクロールし、下半分が余っていた。
+                画面の高さから割り出す。 */}
+            <ScrollView
+              style={{ maxHeight: Dimensions.get('window').height * 0.7 }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
               {modalDate ? (
                 <RecordForm
                   key={modalDate}

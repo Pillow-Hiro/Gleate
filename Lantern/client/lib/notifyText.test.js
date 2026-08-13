@@ -92,10 +92,20 @@ describe('plannedTimes', () => {
     expect(times[times.length - 1].getMonth()).toBe(8)
   })
 
-  it('選べるどの時刻でも同じ本数になる', () => {
+  // 24時間すべてが選べる（2026-08-14）。**0時も選べる。**
+  // 0時30分に 0時を選べば今日ぶんは過ぎているので1本減る。
+  // 「どの時刻でも同じ本数」ではなくなった
+  it('まだ来ていない時刻なら今日ぶんを含む', () => {
     const now = new Date(2026, 7, 13, 0, 30)
     for (const h of NOTIFY_HOURS) {
-      expect(plannedTimes({ now, hour: h, recordedToday: false })).toHaveLength(SCHEDULE_DAYS)
+      const expected = h > 0 ? SCHEDULE_DAYS : SCHEDULE_DAYS - 1
+      expect(plannedTimes({ now, hour: h, recordedToday: false })).toHaveLength(expected)
     }
+  })
+
+  it('24時間すべてが選べる', () => {
+    expect(NOTIFY_HOURS).toHaveLength(24)
+    expect(NOTIFY_HOURS[0]).toBe(0)
+    expect(NOTIFY_HOURS[23]).toBe(23)
   })
 })

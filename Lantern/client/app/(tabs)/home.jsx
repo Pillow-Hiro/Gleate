@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
-import LogList from '../../components/LogList'
+import HomeCard from '../../components/HomeCard'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
 import { dailySample } from '../../lib/sample'
@@ -17,12 +17,16 @@ import * as notify from '../../lib/notify'
 // 「記録」との違いは、探すか眺めるか。
 // ここは検索もカレンダーも持たない。**開いて上から下へ読むだけ。**
 //
-// **並べるのは日替わりの抜粋**（2026-08-14）。新しい順に12件ではない。
+// **並べるのは日替わりの抜粋**（2026-08-14）。新しい順に並べるだけではない。
 // 新しい順だけだと「記録」と同じものが並び、2つある意味が無かった。
 // 抜粋にすると、しばらく開いていない記録が自分から出てくる。
 //
 // **その日のうちは同じ顔ぶれ**（`lib/sample.js`）。
 // 開き直すたびに変わると、さっき見た記録が消えたように見える。
+//
+// **出すのは結果だけ**（`HomeCard`）。やったこと・写真・Lanternの言葉。
+// 4項目を全部並べると、読み返す画面ではなく点検する画面になる。
+// そのぶん枚数を3枚に絞り、1枚を大きくした。
 //
 // **上に今日の灯りを置く。**
 // デザイン案の Home は「小さなラベル＋大きな一行」で始まる。
@@ -36,7 +40,7 @@ import * as notify from '../../lib/notify'
 // 2026-08-12 に一度「入れない」と決めたが、材料を時計だけに限れば
 // 評価にならないため入れた。理由は `lib/greeting.js` に書いてある。
 // ここに置いたのは、Home だけ見出しが無く、他のタブと形が揃っていなかったため。
-const RECENT_LIMIT = 12
+const RECENT_LIMIT = 3
 
 export default function Home() {
   const tabInset = useTabBarInset()
@@ -141,7 +145,11 @@ export default function Home() {
             <Text className="text-label-md text-outline mt-1.5">「書く」から残せます</Text>
           </View>
         ) : (
-          <LogList logs={shown} onDelete={refresh} onUpdate={refresh} />
+          <View className="gap-4">
+            {shown.map((log) => (
+              <HomeCard key={log.date} log={log} />
+            ))}
+          </View>
         )}
 
         {/* デザイン案の「Older entries」。

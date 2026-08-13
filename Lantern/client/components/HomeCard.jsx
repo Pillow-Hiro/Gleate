@@ -1,0 +1,63 @@
+import { useState } from 'react'
+import { Image, Pressable, View } from 'react-native'
+import Text from './Text'
+import RichText from './RichText'
+import PhotoLightbox from './PhotoLightbox'
+import { relativeDayLabel } from '../lib/format'
+
+// ホームに並べる1枚。
+//
+// **結果だけを見せる**（2026-08-14・作者の指摘）。
+// 出すのは3つ。**日付・やったこと・Lanternの言葉**。写真があれば添える。
+//
+// よかったこと・困ったこと・次にやることは出さない。
+// 眺める場所に4項目を並べると、記録を**読み返す**のではなく
+// **点検する**画面になる。詳しく見たい日は「記録」で開く。
+//
+// **折りたたまない。** 一覧の1行（`LogItem`）は探すための形で、
+// 押して開く。ここは眺める場所なので、開く手数を挟まず全部見せる。
+// そのぶん枚数を絞る（ホームは3件）。
+//
+// 本文は装飾つきで出す（`RichText`）。抜粋ではないので記法を外さない。
+export default function HomeCard({ log }) {
+  const [lightbox, setLightbox] = useState(false)
+  const body = log.created || ''
+  const photo = log.photo_url || log.photo_thumb_url
+
+  // 何も無い日は置かない。写真だけの日はある
+  if (!body && !photo && !log.ai_response) return null
+
+  return (
+    <View className="bg-surface-lowest rounded-lg px-5 py-5 gap-4 shadow-bloom">
+      <View className="flex-row items-center justify-between">
+        <Text className="font-label text-label-md text-outline">{relativeDayLabel(log.date)}</Text>
+        {log.favorite ? <Text className="text-lantern-glow">★</Text> : null}
+      </View>
+
+      {body ? <RichText text={body} className="text-body-lg text-on-surface" /> : null}
+
+      {photo ? (
+        <Pressable onPress={() => setLightbox(true)} accessibilityLabel="写真を開く">
+          <Image
+            source={{ uri: photo }}
+            style={{ width: '100%', height: 200 }}
+            className="rounded"
+            resizeMode="cover"
+          />
+        </Pressable>
+      ) : null}
+
+      {/* Lanternの言葉。**AIの声のトークンで出す。**
+          「LANTERN」の英字キッカーは置かない（CLAUDE.md「やらないこと」）。 */}
+      {log.ai_response ? (
+        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+          <Text className="text-body-md text-ai-ink leading-relaxed">{log.ai_response}</Text>
+        </View>
+      ) : null}
+
+      {lightbox && photo ? (
+        <PhotoLightbox src={photo} onClose={() => setLightbox(false)} />
+      ) : null}
+    </View>
+  )
+}

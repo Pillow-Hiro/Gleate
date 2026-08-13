@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import { useRouter } from 'expo-router'
 import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
@@ -20,10 +21,19 @@ import { localDateStr } from '../lib/date'
 // 「Lanternに聞く」という文言は、AIに尋ねているように読めた。
 // 開いたら出ている方が、押してから待つより短い。
 //
+// **語には `#` を付け、押すとその語で絞った一覧へ移る**（2026-08-14）。
+// 頻出語を見ても、いつ書いたのかが分からないままだった。
+// 行き先は同じ「記録」タブの検索。**専用の画面を作らない。**
+// 探した結果を見る場所が2つあると、片方だけ直る。
+//
+// `#` はタグではない。**この語で分類しているわけではない。**
+// 押せることを示す印として付けている（記録にタグは持たせない）。
+//
 // キャッシュキーに当日の日付を含めることで実質1日TTLとする方式は変えていない。
 const PERIOD = '3m'
 
 export default function KeywordSection() {
+  const router = useRouter()
   const today = localDateStr()
   const [keywords, setKeywords] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -85,13 +95,15 @@ export default function KeywordSection() {
       ) : keywords && keywords.length > 0 ? (
         <View className="flex-row flex-wrap gap-2">
           {keywords.map(({ word, count }) => (
-            <View
+            <Pressable
               key={word}
-              className="flex-row items-baseline gap-1.5 bg-surface-low rounded-full px-3 py-1.5"
+              onPress={() => router.push(`/journal?q=${encodeURIComponent(word)}`)}
+              accessibilityLabel={`${word} を含む記録を見る`}
+              className="flex-row items-baseline gap-1.5 bg-surface-low rounded-full px-3 py-2 min-h-touch justify-center active:opacity-70"
             >
-              <Text className="text-label-md text-on-surface">{word}</Text>
+              <Text className="text-label-md text-primary">#{word}</Text>
               <Text className="text-label-sm text-outline">{count}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       ) : (

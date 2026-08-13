@@ -8,7 +8,7 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
-import { NOTIFY_HOURS, hourLabel } from '../../lib/notifyText'
+import HourPicker from '../../components/HourPicker'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
 
@@ -179,25 +179,10 @@ export default function Settings() {
           ) : null}
           {notify.isSupported && notifySetting.enabled ? (
             <Row label="知らせる時刻">
-              <View className="flex-row gap-1.5">
-                {NOTIFY_HOURS.map((h) => (
-                  <Pressable
-                    key={h}
-                    onPress={() => applyNotify({ ...notifySetting, hour: h })}
-                    className={`rounded-full px-2 py-1.5 ${
-                      notifySetting.hour === h ? 'bg-lantern-glow' : 'bg-surface-low'
-                    }`}
-                  >
-                    <Text
-                      className={`text-label-sm ${
-                        notifySetting.hour === h ? 'text-on-lantern' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      {hourLabel(h)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <HourPicker
+                value={notifySetting.hour}
+                onChange={(h) => applyNotify({ ...notifySetting, hour: h })}
+              />
             </Row>
           ) : null}
           <Row label="ダークテーマ" isLast>

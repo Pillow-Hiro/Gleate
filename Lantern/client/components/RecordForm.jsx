@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Pressable, TextInput, View } from 'react-native'
+import { Keyboard, Pressable, TextInput, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
@@ -25,12 +25,29 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
   const [selection, setSelection] = useState(null)
+  // **カーソルを動かしたい一瞬だけ `selection` を渡す。**
+  //
+  // 2026-08-14 まで、記号を入れたあとの位置を state に書くだけで
+  // TextInput には渡していなかった。**押しても何も起きないように見えた。**
+  // 実際には文字は入っていたが、カーソルが末尾へ飛ぶので
+  // 「B を押す → 何も選ばれていない → 末尾に ** が2つ」になっていた。
+  //
+  // かといって常に `selection` を渡すと、指でカーソルを動かせなくなる。
+  // 渡すのは1回だけにして、次の選択変更で下ろす。
+  const [pending, setPending] = useState(null)
   const inputRef = useRef(null)
 
   function applyMark(next, cursor) {
     onChange(next)
-    // 記号を入れたぶんカーソルがずれる。押した位置に戻す
+    setPending({ start: cursor, end: cursor })
     setSelection({ start: cursor, end: cursor })
+    // ボタンを押すと入力欄から焦点が外れる。戻さないとキーボードが閉じる
+    inputRef.current?.focus()
+  }
+
+  function handleSelectionChange(e) {
+    setSelection(e.nativeEvent.selection)
+    if (pending) setPending(null)
   }
 
   // **主欄は枠を持たない。**（2026-08-14・デザイン案 `3_write`）
@@ -44,7 +61,8 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
           ref={inputRef}
           value={value}
           onChangeText={onChange}
-          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+          onSelectionChange={handleSelectionChange}
+          selection={pending ?? undefined}
           multiline
           textAlignVertical="top"
           style={{ minHeight: rows * 32 + 16 }}
@@ -53,8 +71,18 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
           placeholderTextColor="#8E8478"
         />
         {rich ? (
-          <View className="border-t border-border pt-2.5">
+          <View className="flex-row items-center justify-between border-t border-border pt-2.5">
             <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+            {/* **キーボードを下ろす。**
+                本文の欄は改行を受け付けるので、キーボードの「完了」が
+                改行になる。**下ろす方法が画面のどこにも無かった。** */}
+            <Pressable
+              onPress={() => Keyboard.dismiss()}
+              accessibilityLabel="キーボードを閉じる"
+              className="min-h-touch px-3 justify-center active:opacity-70"
+            >
+              <Text className="text-label-md text-primary">閉じる</Text>
+            </Pressable>
           </View>
         ) : null}
       </View>
@@ -68,7 +96,8 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
         ref={inputRef}
         value={value}
         onChangeText={onChange}
-        onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+        onSelectionChange={handleSelectionChange}
+        selection={pending ?? undefined}
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
