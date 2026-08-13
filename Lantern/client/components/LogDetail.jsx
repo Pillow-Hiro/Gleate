@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
+import RichText from './RichText'
 import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 
@@ -123,7 +124,11 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
         log[key] ? (
           <View key={key}>
             <Text className="text-[10px] text-ink-faint">{label}</Text>
-            <Text className="text-body text-ink leading-relaxed mt-0.5">{log[key]}</Text>
+            {/* 「やったこと」だけ装飾できる。他は素のテキスト。
+                読む側も同じ扱いにする（RichText は素の文もそのまま出す） */}
+            <View className="mt-0.5">
+              <RichText text={log[key]} className="text-body text-ink leading-relaxed" />
+            </View>
           </View>
         ) : null
       )}

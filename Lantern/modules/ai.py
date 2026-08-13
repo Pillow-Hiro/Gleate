@@ -142,7 +142,7 @@ def get_ai_response(log_entry, past_logs, goals=None):
         recent = past_logs[-3:]
         past_context = "\n\n【過去のログ（直近3件）】\n"
         for p in recent:
-            past_context += f"- {p['date']}: {p.get('created','')}\n"
+            past_context += f"- {p['date']}: {_plain(p, 'created')}\n"
         print(f"[AI] past_context データ量: {len(past_context)}文字 / {len(past_context.encode('utf-8'))}バイト")
 
     goals_context = ""
@@ -192,12 +192,12 @@ def get_ai_response(log_entry, past_logs, goals=None):
     user_message = f"""今日のログです。{past_context}{goals_context}
 
 【今日のこと（メイン）】
-{log_entry.get('created', '（未記入）')}
+{_plain(log_entry, 'created', '（未記入）')}
 
 【詳細（補足）】
-よかったこと: {log_entry.get('enjoyable', '（未記入）')}
-詰まったこと: {log_entry.get('struggled', '（未記入）')}
-次にやること: {log_entry.get('next', '（未記入）')}"""
+よかったこと: {_plain(log_entry, 'enjoyable', '（未記入）')}
+詰まったこと: {_plain(log_entry, 'struggled', '（未記入）')}
+次にやること: {_plain(log_entry, 'next', '（未記入）')}"""
 
     result = call_claude(system_prompt, user_message, max_tokens=200)
     if result:
@@ -214,6 +214,19 @@ def get_ai_response(log_entry, past_logs, goals=None):
     return random.choice(_fallbacks)
 
 
+# 記録の項目を読む唯一の口。**AI に渡すものは必ずここを通す。**
+#
+# 2026-08-13 に「やったこと」を Markdown で装飾できるようにした。
+# `**強い**` や `- 箇条書き` がそのまま渡ると、記法が
+# 「その人の言葉」として扱われ、応答にも `**` が混ざる。
+#
+# `tests/test_prompts.py` が、この関数を通さずに記録を読む書き方を弾く。
+def _plain(log, key, default=""):
+    from modules.markdown import strip_markdown
+
+    return strip_markdown(log.get(key) or "") or default
+
+
 def _fmt_logs(logs):
     text = ""
     for log in logs:
@@ -221,11 +234,11 @@ def _fmt_logs(logs):
         # 「2026-08-01: 」という無意味な入力になるためスキップする。
         if not any(log.get(k) for k in ("created", "enjoyable", "struggled", "next")):
             continue
-        text += f"\n{log['date']}: {log.get('created', '')}"
+        text += f"\n{log['date']}: {_plain(log, 'created')}"
         if log.get("enjoyable"):
-            text += f"（楽しかったこと: {log['enjoyable']}）"
+            text += f"（楽しかったこと: {_plain(log, 'enjoyable')}）"
         if log.get("struggled"):
-            text += f"（困ったこと: {log['struggled']}）"
+            text += f"（困ったこと: {_plain(log, 'struggled')}）"
     return text
 
 
@@ -332,10 +345,10 @@ def get_daily_quote(yesterday_log=None):
         return random.choice(LANTERN_MESSAGES), "fallback"
 
     fields = [
-        ("やったこと", yesterday_log.get("created", "")),
-        ("よかったこと", yesterday_log.get("enjoyable", "")),
-        ("詰まったこと", yesterday_log.get("struggled", "")),
-        ("次にやること", yesterday_log.get("next", "")),
+        ("やったこと", _plain(yesterday_log, 'created')),
+        ("よかったこと", _plain(yesterday_log, 'enjoyable')),
+        ("詰まったこと", _plain(yesterday_log, 'struggled')),
+        ("次にやること", _plain(yesterday_log, 'next')),
     ]
     content_lines = [f"{label}: {value}" for label, value in fields if value]
     if not content_lines:

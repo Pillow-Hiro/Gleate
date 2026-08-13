@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #7 を TestFlight へアップロード済み**（2026-08-09・commit `e47a369`・版数 1.0.0 / ビルド番号 7）。Liquid Glass はこれで初めて実機に載る |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 806件 / vitest 98件 |
+| 検査 | pytest 833件 / vitest 120件 |
 
 ## 1.5 ビルド #6 / #7
 
@@ -82,6 +82,10 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 
 ### 2026-08-13
 
+- **「やったこと」を装飾できるようにした**（太字・斜体・箇条書き・Markdown 保存）。
+  **AI に渡す前に記法を剥がす。** `modules/ai.py` が記録を読む口は
+  `_plain()` の1つだけ。`tests/test_markdown.py` が素の読み取りを弾く。
+  **画面での見え方は未確認**
 - **記録を Archive の形にした。** 上から 検索欄 → チップ → カレンダー → 一覧
 - **お気に入りを足した。** `logs.favorite` 列 ＋ `PUT /api/logs/<date>/favorite`。
   **記録の保存では触らない。** 一緒にすると編集のたびに星が外れる。

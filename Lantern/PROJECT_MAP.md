@@ -89,7 +89,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 ---
 
-## 3. 部品（`client/components/`・27ファイル）
+## 3. 部品（`client/components/`・29ファイル）
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
@@ -101,7 +101,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。開くと LogDetail |
-| `LogList.jsx` | 記録 / 最近 | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
+| `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
+| `MarkdownToolbar.jsx` | RecordForm | 太字・斜体・箇条書きの3つだけ。**文字数を出さない** |
 | `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード。**`flex-1` を付けない**（中身がはみ出す） |
 | `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
@@ -109,6 +110,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `PhotoPicker.web.jsx` | 同上 | **何も描かない。** 分岐ではなくファイルを分けて、expo-image-picker を Web バンドルに乗せない |
 | `RecordForm.jsx` | Home | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
+| `RichText.jsx` | LogDetail / LogSnapshot | 記録を装飾つきで出す。**出せるのは3つだけ** |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
@@ -132,6 +134,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
+| `markdown.js` | 記法の解釈と、装飾ボタンの文字列操作 | `markdown.test.js` |
 | `image.js` | 圧縮の実行 | — |
 | `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
@@ -163,6 +166,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py`・`test_prompts.py` |
 | `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
 | `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
+| `markdown.py` | **記録の記法を剥がす。AIに渡す前に必ず通す** |
 | `logs.py` | 記録の読み書きとカラム変換。**写真カラムを読み書きしない** | `test_logs_mapping.py` |
 | `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通 | `test_youtube_state.py` |

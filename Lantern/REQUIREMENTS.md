@@ -251,7 +251,7 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 | ログ | サーバーのログに記録の中身・user_id・資格情報を残さない | 満たしている（`test_privacy.py`） |
 | プライバシーポリシー | 公開URLを持つ。ログイン不要で読めること | `client/public/privacy.html`（`PRIVACY.md` から生成） |
 | 記録の暗号化 | — | **していない。** 提供者が管理者として閲覧できる。`PRIVACY.md` に明記した。設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md` |
-| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 806 + 98 件 |
+| 検査 | pytest + vitest。認証ガードは全ルート走査で固定 | 833 + 120 件 |
 | 本番の実行 | WSGIサーバー（gunicorn）で動かす。開発サーバーを公開しない | `Procfile`・`test_deploy.py` |
 | 依存 | 版を固定する。デプロイのたびに最新が入る状態にしない | `requirements.txt`・`.python-version` |
 

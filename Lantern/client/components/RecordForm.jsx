@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
+import MarkdownToolbar from './MarkdownToolbar'
 
 // **モジュールの外に置くこと。**
 //
@@ -17,13 +18,34 @@ import PhotoPicker from './PhotoPicker'
 // 記録アプリとして致命的な壊れ方だったが、Web では気づきにくく
 // （ブラウザは入力中の要素を作り直しても見た目が近い）、
 // 実機で初めて分かった。
-function Field({ value, onChange, label, rows = 2, placeholder = '（任意）' }) {
+//
+// `rich` を渡した欄だけ装飾のボタンが出る。**「やったこと」だけ。**
+// 短いメモの欄に道具立てを出すのは重すぎる（`REQUIREMENTS.md` F1）。
+function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich }) {
+  // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
+  // TextInput が教えてくれるのはこれだけなので、控えておく。
+  const [selection, setSelection] = useState(null)
+  const inputRef = useRef(null)
+
+  function applyMark(next, cursor) {
+    onChange(next)
+    // 記号を入れたぶんカーソルがずれる。押した位置に戻す
+    setSelection({ start: cursor, end: cursor })
+  }
+
   return (
     <View>
-      <Text className="text-aux text-ink-faint mb-1.5">{label}</Text>
+      <View className="flex-row items-center justify-between mb-1.5">
+        <Text className="text-aux text-ink-faint">{label}</Text>
+        {rich ? (
+          <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+        ) : null}
+      </View>
       <TextInput
+        ref={inputRef}
         value={value}
         onChangeText={onChange}
+        onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
@@ -124,6 +146,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}
         rows={5}
+        rich
         placeholder={
           question && isToday
             ? question

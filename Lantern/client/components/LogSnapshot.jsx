@@ -1,5 +1,6 @@
 import { Image, View } from 'react-native'
 import Text from './Text'
+import RichText from './RichText'
 
 // 1日の記録を1枚のカードで見せる。過去と今日を並べる用途で使う。
 // 記録が無い場合の文言は、空白期間の長さに触れない（AI憲法：離脱期間に言及しない）。
@@ -34,7 +35,7 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
             log[key] ? (
               <View key={key}>
                 {label ? <Text className="text-[9px] text-ink-faint mb-0.5">{label}</Text> : null}
-                <Text className="text-body text-ink leading-relaxed">{log[key]}</Text>
+                <RichText text={log[key]} className="text-body text-ink leading-relaxed" />
               </View>
             ) : null
           )}

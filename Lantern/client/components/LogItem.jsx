@@ -3,6 +3,7 @@ import { Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import LogDetail from './LogDetail'
 import { relativeDayLabel } from '../lib/format'
+import { stripMarkdown } from '../lib/markdown'
 
 // 一覧の1行。**日付が見出しで、本文の抜粋2行が中身。**
 //
@@ -19,7 +20,9 @@ const SNAPSHOT_ORDER = ['created', 'enjoyable', 'struggled', 'next']
 
 export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isLast }) {
   const [open, setOpen] = useState(false)
-  const body = SNAPSHOT_ORDER.map((k) => log[k]).find(Boolean) || ''
+  // **抜粋では記法を外す。** `**` が残ると、装飾ではなく文字として読まれる。
+  // 抜粋は2行しか出ないので、太字にしても区別が付かない
+  const body = stripMarkdown(SNAPSHOT_ORDER.map((k) => log[k]).find(Boolean) || '')
 
   return (
     // 区切り線は行の下に置き、カードの左右の余白の分だけ内側に入る。
