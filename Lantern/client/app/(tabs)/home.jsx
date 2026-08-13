@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import LogList from '../../components/LogList'
+import { greetingFor } from '../../lib/greeting'
 
 // **直近の記録を眺める場所（2026-08-12 に新設）。**
 //
@@ -23,8 +24,10 @@ import LogList from '../../components/LogList'
 // **「書く」からは外した。** 同じものを2画面に置くと、
 // どちらが本体なのか分からなくなる。
 //
-// 時間帯の挨拶（Good Evening）は入れない。
-// 時間帯で言葉を変えると、評価や勧誘に寄りやすい。
+// **画面の見出しは時間帯の挨拶**（2026-08-13）。
+// 2026-08-12 に一度「入れない」と決めたが、材料を時計だけに限れば
+// 評価にならないため入れた。理由は `lib/greeting.js` に書いてある。
+// ここに置いたのは、Home だけ見出しが無く、他のタブと形が揃っていなかったため。
 const RECENT_LIMIT = 12
 
 export default function Home() {
@@ -34,6 +37,8 @@ export default function Home() {
   const [quote, setQuote] = useState('')
   const [loading, setLoading] = useState(true)
   const [tick, setTick] = useState(0)
+  // 読み込みのたびに評価し直す。開きっぱなしで日付が変わる場面までは追わない
+  const greeting = greetingFor()
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
 
@@ -69,6 +74,10 @@ export default function Home() {
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
       >
+        <View>
+          <Text className="font-display text-headline-md text-ink">{greeting}</Text>
+        </View>
+
         {/* 今日の灯り。**囲まない。** 左に2pxの線だけ引く。
             いちばん静かに置きたい一文が、いちばん目立つ箱になっていた */}
         <View>
