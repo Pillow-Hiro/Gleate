@@ -48,7 +48,14 @@ const SPLASH_SEEN_KEY = 'lantern_splash_date'
 
 // セッションが無くても入れる画面。ここに足し忘れると、
 // その画面を開いた瞬間に /login へ振り替えられる。
-const AUTH_SCREENS = new Set(['login', 'signup'])
+const AUTH_SCREENS = new Set(['login', 'signup', 'forgot', 'reset'])
+
+// **セッションがあるときに追い出す画面。** 上とは別に持つ。
+//
+// パスワード再設定のリンクを踏むと、Supabase が一時的なセッションを作る。
+// `/reset` を追い出す側に入れると、**パスワードを変える前に
+// ホームへ飛ばされる。** 画面が一瞬で消えて、何が起きたか分からない。
+const SIGNED_IN_LEAVES = new Set(['login', 'signup'])
 
 function RootNavigator() {
   const [session, setSession] = useState(null)
@@ -109,10 +116,10 @@ function RootNavigator() {
   // login だけを見ていると、登録画面から本画面へ蹴り出される。
   useEffect(() => {
     if (loading) return
-    const onAuthScreen = AUTH_SCREENS.has(segments[0])
-    if (!session && !onAuthScreen) {
+    const here = segments[0]
+    if (!session && !AUTH_SCREENS.has(here)) {
       router.replace('/login')
-    } else if (session && onAuthScreen) {
+    } else if (session && SIGNED_IN_LEAVES.has(here)) {
       router.replace('/')
     }
   }, [session, loading, segments, router])
@@ -134,6 +141,8 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
+        <Stack.Screen name="forgot" />
+        <Stack.Screen name="reset" />
       </Stack>
       {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>

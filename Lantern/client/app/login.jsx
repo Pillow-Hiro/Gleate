@@ -55,7 +55,11 @@ export default function Login() {
           loading={loading}
           onSubmit={handleLogin}
         >
-          <Pressable onPress={() => router.push('/signup')} className="items-center pt-2">
+          {/* **パスワードを忘れた場合。** 2026-08-13 まで無く、忘れたら詰んだ */}
+          <Pressable onPress={() => router.push('/forgot')} className="items-center pt-1">
+            <Text className="text-label-md text-secondary">パスワードを忘れた場合</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/signup')} className="items-center pt-1">
             <Text className="text-aux text-forest">はじめての方はこちら</Text>
           </Pressable>
         </AuthForm>

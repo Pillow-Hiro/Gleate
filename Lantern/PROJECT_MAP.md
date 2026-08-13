@@ -59,6 +59,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `(tabs)/settings.jsx` | `/settings` | Settings |
 | `login.jsx` | `/login` | ログインだけ。入力欄は `AuthForm.jsx` |
 | `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
+| `forgot.jsx` | `/forgot` | パスワード再設定メールを送る。**宛先を出す・再送を置く** |
+| `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの
@@ -131,6 +133,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 |---|---|---|
 | `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
 | `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
+| `resetLink.js` | パスワード再設定メールの戻り先。**Web に固定する** | — |
 | `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |

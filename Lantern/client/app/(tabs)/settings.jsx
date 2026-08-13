@@ -8,13 +8,30 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
 
-function SettingsRow({ label, description, children }) {
+// 1行。**アイコン → ラベル → 操作。**
+//
+// デザイン案の Settings に合わせた。案はシェブロン（›）を置いているが、
+// **付けていない。** ここの行は「次の画面へ行く」ものではなく、
+// その場で効く操作。シェブロンを付けると、押したら画面が変わると読める。
+//
+// 高さは 44px 以上（HIG）。`isLast` の行には区切り線を引かない。
+// カードの縁と二重になる。
+function SettingsRow({ icon, label, description, isLast, children }) {
   return (
-    <View className="flex-row items-center justify-between py-4 border-b border-border">
+    <View
+      className={`flex-row items-center py-3.5 min-h-touch ${
+        isLast ? '' : 'border-b border-border'
+      }`}
+    >
+      {icon ? (
+        <View className="w-9 h-9 rounded bg-surface-lowest items-center justify-center mr-3">
+          <Text className="text-body-md text-on-surface-variant">{icon}</Text>
+        </View>
+      ) : null}
       <View className="flex-1 mr-4">
-        <Text className="text-body text-ink">{label}</Text>
+        <Text className="text-body-md text-on-surface">{label}</Text>
         {description ? (
-          <Text className="text-aux text-ink-faint mt-0.5">{description}</Text>
+          <Text className="text-label-md text-outline mt-0.5">{description}</Text>
         ) : null}
       </View>
       <View>{children}</View>
@@ -25,9 +42,24 @@ function SettingsRow({ label, description, children }) {
 function Section({ title, children }) {
   return (
     <View>
-      <Text className="font-strong text-aux text-ink-soft mb-2.5">{title}</Text>
-      <View className="bg-stone/50 rounded-lg px-4">{children}</View>
+      <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">{title}</Text>
+      <View className="bg-surface-low rounded-lg px-4">{children}</View>
     </View>
+  )
+}
+
+// 行の右に置く操作。**輪郭だけの控えめなボタン**（DESIGN.md の ghost）。
+function RowButton({ onPress, disabled, danger, children }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className={`border rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50 ${
+        danger ? 'border-error/30' : 'border-outline-variant'
+      }`}
+    >
+      <Text className={`text-label-md ${danger ? 'text-error' : 'text-primary'}`}>{children}</Text>
+    </Pressable>
   )
 }
 
@@ -108,39 +140,27 @@ export default function Settings() {
         </View>
 
         <Section title="表示">
-          <SettingsRow label="テーマ" description="ボタンで手動切り替え">
-            <Pressable onPress={toggleTheme} className="border border-sage/40 rounded-full px-3 py-1.5">
-              <Text className="text-aux text-forest">
-                {isDark ? 'ライトにする' : 'ダークにする'}
-              </Text>
-            </Pressable>
+          <SettingsRow icon="◐" label="テーマ" description="ボタンで手動切り替え" isLast>
+            <RowButton onPress={toggleTheme}>
+              {isDark ? 'ライトにする' : 'ダークにする'}
+            </RowButton>
           </SettingsRow>
         </Section>
 
         <Section title="データ">
-          <SettingsRow label="データのエクスポート" description="JSON形式で共有">
-            <Pressable
-              onPress={handleExport}
-              disabled={exporting}
-              className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
-            >
-              <Text className="text-aux text-forest">{exporting ? '準備中...' : 'エクスポート'}</Text>
-            </Pressable>
+          <SettingsRow icon="↧" label="データのエクスポート" description="JSON形式で共有" isLast>
+            <RowButton onPress={handleExport} disabled={exporting}>
+              {exporting ? '準備中...' : 'エクスポート'}
+            </RowButton>
           </SettingsRow>
         </Section>
-        {exportError ? <Text className="text-aux text-error">{exportError}</Text> : null}
+        {exportError ? <Text className="text-label-md text-error">{exportError}</Text> : null}
 
         <Section title="アカウント">
-          <SettingsRow label="ログアウト" description="このデバイスからサインアウトします">
-            <Pressable
-              onPress={handleSignOut}
-              disabled={signingOut}
-              className="border border-error/30 rounded-full px-3.5 py-1.5 disabled:opacity-50"
-            >
-              <Text className="text-aux text-error">
-                {signingOut ? 'ログアウト中...' : 'ログアウト'}
-              </Text>
-            </Pressable>
+          <SettingsRow icon="→" label="ログアウト" description="このデバイスからサインアウトします" isLast>
+            <RowButton onPress={handleSignOut} disabled={signingOut} danger>
+              {signingOut ? 'ログアウト中...' : 'ログアウト'}
+            </RowButton>
           </SettingsRow>
         </Section>
 
@@ -153,55 +173,47 @@ export default function Settings() {
               煽らないが、何が起きるかは省略せずに書く。 */}
           {confirmDelete ? (
             <View className="py-4 gap-3">
-              <Text className="text-body text-ink leading-relaxed">
+              <Text className="text-body-md text-on-surface leading-relaxed">
                 記録・アイデア・連携がすべて消え、元に戻せません。
               </Text>
-              <Text className="text-aux text-ink-faint leading-relaxed">
+              <Text className="text-label-md text-outline leading-relaxed">
                 端末の中にある写真は消えません。手元に残しておきたい記録があれば、
                 先にエクスポートしてください。
               </Text>
               {deleteError ? (
-                <Text className="text-aux text-error">{deleteError}</Text>
+                <Text className="text-label-md text-error">{deleteError}</Text>
               ) : null}
               <View className="flex-row gap-3">
-                <Pressable
-                  onPress={handleDeleteAccount}
-                  disabled={deleting}
-                  className="border border-error/60 rounded-full px-3.5 py-1.5 disabled:opacity-50"
-                >
-                  <Text className="text-aux text-error">
-                    {deleting ? '削除中...' : '削除する'}
-                  </Text>
-                </Pressable>
-                <Pressable
+                <RowButton onPress={handleDeleteAccount} disabled={deleting} danger>
+                  {deleting ? '削除中...' : '削除する'}
+                </RowButton>
+                <RowButton
                   onPress={() => { setConfirmDelete(false); setDeleteError('') }}
                   disabled={deleting}
-                  className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
                 >
-                  <Text className="text-aux text-forest">やめる</Text>
-                </Pressable>
+                  やめる
+                </RowButton>
               </View>
             </View>
           ) : (
             <SettingsRow
+              icon="✕"
               label="アカウントを削除する"
               description="記録とアイデアをすべて消します"
+              isLast
             >
-              <Pressable
-                onPress={() => setConfirmDelete(true)}
-                className="border border-error/30 rounded-full px-3.5 py-1.5"
-              >
-                <Text className="text-aux text-error">削除</Text>
-              </Pressable>
+              <RowButton onPress={() => setConfirmDelete(true)} danger>
+                削除
+              </RowButton>
             </SettingsRow>
           )}
         </Section>
 
         <Section title="Lanternについて">
-          <SettingsRow label="バージョン">
-            <Text className="font-mono text-aux text-ink-faint">{APP_VERSION}</Text>
+          <SettingsRow icon="◇" label="バージョン">
+            <Text className="font-mono text-label-md text-outline">{APP_VERSION}</Text>
           </SettingsRow>
-          <SettingsRow label="コンセプト" description="静かに寄り添う、あなただけの伴走者。">
+          <SettingsRow icon="✎" label="コンセプト" description="静かに寄り添う、あなただけの伴走者。" isLast>
             <View />
           </SettingsRow>
         </Section>
