@@ -2910,6 +2910,52 @@ CLAUDE.md は既に「3つがずれたら `DESIGN.md` が正」と決めてあ�
 
 ---
 
+## 2026/08/13 — iOSビルド #9（通知を載せる）
+
+通知はネイティブの追加なので、OTA では実機に出ない。作り直した。
+
+ついでに **`expo install --fix` でパッチ版8件を上げた**（`expo-doctor` 20/20）。
+版を上げると指紋が変わるが、`expo-notifications` を入れた時点で
+どのみち変わっていたので、**同じビルドにまとめた。**
+
+### 1回目（#8）は落ちた
+
+    Provisioning profile ... doesn't include the Push Notifications capability
+    Provisioning profile ... doesn't include the aps-environment entitlement
+
+`expo-notifications` を入れると iOS の権利に `aps-environment` が
+自動で足される。既存のプロファイルにその capability が無かった。
+
+**プロファイルに足すのではなく、権利の方を外した**
+（`client/plugins/withoutPushEntitlement.js`）。
+
+Lantern が使うのは端末の中だけで完結する予約で、プッシュは使わない。
+**プッシュトークンを取らないのは、誰がいつ開いたかをサーバーに
+残さないための設計上の選択**であって、あとから変える予定も無い。
+
+使わない機能を「できることにして」おくと、審査で用途を説明する対象が増え、
+あとから「プッシュも使えるのでは」と設計が揺れる。
+権利が無くてもローカル通知は動く。プッシュだけが動かない。
+**それがこのアプリの意図した状態。**
+
+`expo config --type introspect` で `entitlements: {}` になったこと、
+`UIBackgroundModes` に `remote-notification` が無いことを確かめてから投げ直した。
+
+### 途中で踏んだもの
+
+`expo export` が `EINVAL readlink` で落ちた。OneDrive 配下の
+`node_modules` で起きる既知のもので、`rm -rf node_modules .expo && npm ci`
+で直る。**上げ方の問題ではないので、版は戻していない。**
+
+**検証結果: OK**
+
+- pytest 837件 / vitest 141件 / `expo export --platform web` 成功
+- ビルド #9 finished（commit `f402fb6`・版数 1.0.0・ビルド番号 9）
+
+**未確認**: 実機での通知の発火。TestFlight に上げてからでないと確かめられない。
+
+---
+
 ---
 
 ## 進行中

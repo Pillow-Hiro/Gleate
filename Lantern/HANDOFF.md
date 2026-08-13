@@ -31,7 +31,7 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #7 を TestFlight へアップロード済み**（2026-08-09・commit `e47a369`・版数 1.0.0 / ビルド番号 7）。Liquid Glass はこれで初めて実機に載る |
+| ネイティブ | **iOSビルド #9 が finished**（2026-08-13・commit `f402fb6`・版数 1.0.0 / ビルド番号 9）。通知を載せた最初のビルド。**TestFlight へはまだ上げていない**。#7 までは上げ済み |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 837件 / vitest 141件 |
 
@@ -58,6 +58,20 @@ OTA（`eas update`）では届かないもの。
 | `d20ad20e` | 配色・書体・かたち（`DESIGN.md` 準拠） |
 | `790bed51` | Liquid Glass の読み込みを遅らせる |
 | `87eb0d9f` | 2026-08-13 の全て（タブ再編・分析・お気に入り・装飾・パスワード再設定・設定の行）。commit `5f80f61` |
+
+### ビルド #9（2026-08-13）
+
+通知（`expo-notifications`）とパッチ版8件を載せた。
+**runtime は `d8a1c94e…`。** #6 / #7 の `4ff774b0…` とは別物なので、
+**これ以降の OTA は #9 にしか届かない。**
+
+    https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/4c2498c3-337c-4c30-855f-52ca263d38d4
+
+**1回目（#8）は落ちた。** `expo-notifications` が `aps-environment` を
+自動で足し、プロファイルに Push Notifications が無かったため。
+プロファイルに足すのではなく**権利を外した**
+（`client/plugins/withoutPushEntitlement.js`）。
+プッシュは使わない設計なので、**このプラグインを外さないこと。**
 
 ### **#6 と #7 の指紋が同じ**
 
@@ -245,9 +259,9 @@ Apple のアカウントにログインする作業と、審査に出す判断�
 | 3 | プライバシーポリシーのURL | **済・公開確認済み** |
 | 4 | ネイティブ設定の確認 | **済**（`expo config --type introspect`） |
 | 5 | Apple の認証情報の作成 | **済** |
-| 6 | **iOSビルド** | **済。#7 が finished**（2026-08-09・commit `e47a369`・ビルド番号7） |
+| 6 | **iOSビルド** | **済。#9 が finished**（2026-08-13・commit `f402fb6`・ビルド番号9） |
 | 7 | App Store Connect にアプリを登録 | **済**（Apple ID `6798753977`） |
-| 8 | `eas submit` で TestFlight へ | **済**（2026-08-09・ビルド #7） |
+| 8 | `eas submit` で TestFlight へ | #7 は済（2026-08-09）。**#9 は未提出** |
 | 9 | TestFlight で実機確認 | 次 |
 | 10 | 審査に出す | 9 のあと。**要ユーザー判断** |
 
