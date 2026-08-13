@@ -1,0 +1,160 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>Lantern - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-container": "#bfbfbe", "on-primary-fixed": "#291800", "inverse-surface": "#233144", "on-secondary-fixed-variant": "#3f465c", background: "#f8f9ff", "surface-container": "#e6eeff", "primary-container": "#fbb03b", "surface-container-high": "#dde9ff", "on-surface": "#0d1c2f", "secondary-container": "#dae2fd", "on-tertiary-fixed-variant": "#464746", "surface-container-low": "#eff4ff", "on-secondary": "#ffffff", surface: "#f8f9ff", "tertiary-fixed": "#e3e2e1", "surface-dim": "#ccdbf4", "tertiary-fixed-dim": "#c7c6c5", "surface-tint": "#825500", "on-error": "#ffffff", primary: "#825500", "inverse-on-surface": "#ebf1ff", "primary-fixed": "#ffddb4", error: "#ba1a1a", tertiary: "#5e5e5e", "on-secondary-container": "#5c647a", "secondary-fixed": "#dae2fd", "on-surface-variant": "#514535", "on-primary-container": "#6c4500", "on-secondary-fixed": "#131b2e", "on-tertiary-fixed": "#1a1c1c", "surface-container-highest": "#d5e3fd", "error-container": "#ffdad6", "on-error-container": "#93000a", "surface-variant": "#d5e3fd", secondary: "#565e74", "inverse-primary": "#ffb953", "surface-container-lowest": "#ffffff", "outline-variant": "#d6c4af", "primary-fixed-dim": "#ffb953", "on-tertiary-container": "#4d4e4d", "on-primary-fixed-variant": "#633f00", outline: "#847563", "secondary-fixed-dim": "#bec6e0", "on-primary": "#ffffff", "on-background": "#0d1c2f", "on-tertiary": "#ffffff", "surface-bright": "#f8f9ff"}, borderRadius: {DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px"}, spacing: {"touch-target": "44px", "stack-md": "16px", "stack-sm": "8px", "stack-lg": "32px", "margin-mobile": "16px", "container-max": "1200px", unit: "8px", gutter: "24px", "margin-desktop": "40px", safe: "env(safe-area-inset-bottom)"}, fontFamily: {"headline-xl-mobile": ["Hanken Grotesk"], "headline-xl": ["Hanken Grotesk"], "label-sm": ["Hanken Grotesk"], "headline-lg": ["Hanken Grotesk"], "body-lg": ["Hanken Grotesk"], "label-md": ["Hanken Grotesk"], "body-md": ["Hanken Grotesk"], "headline-md": ["Hanken Grotesk"], headline: ["Hanken Grotesk"], display: ["Hanken Grotesk"], body: ["Hanken Grotesk"], label: ["Hanken Grotesk"]}, fontSize: {"headline-xl-mobile": ["30px", {lineHeight: "36px", fontWeight: "700"}], "headline-xl": ["40px", {lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700"}], "label-sm": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "headline-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}], "label-md": ["14px", {lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "500"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}], "headline-md": ["24px", {lineHeight: "32px", fontWeight: "600"}]}}}};</script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fab-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased selection:bg-primary-container/30 min-h-screen flex flex-col relative">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface w-full sticky top-0 border-b border-outline-variant/30 dark:border-outline/20 z-40 transition-shadow duration-300" id="top-bar">
+<div class="flex justify-between items-center px-margin-mobile h-touch-target w-full max-w-[680px] mx-auto">
+<button class="w-touch-target h-touch-target flex items-center justify-start text-primary dark:text-inverse-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight absolute left-1/2 -translate-x-1/2">Lantern</h1>
+<button class="w-touch-target h-touch-target flex items-center justify-end hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-150">
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A subtle, minimalist user avatar in a soft light mode aesthetic, featuring a simple geometric interpretation of a person, utilizing muted neutral tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdBq2rUDn9IwDlU6Z_03rXlpJeHWD781FV0RB14wasJkS3VCTcmZ3W84AfAOgdcBm-E5LdEJjk8Waa86DfPw3g__sf0nWwqgUkDyHgkcGC1-HMA0U_vB2RkP12SUoti0eRH9-rvgosrO5Vnxb_XSh0qkZRpMMUv3jBcJuq5XZZg1JocC4fGd79utbnHBuKQkVDmh9IQo66mOCUULRkHJ5505wlI4bZRz43Ao1yKOc5yitbjLYtssODiA">
+</div>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-[680px] mx-auto px-margin-mobile pt-stack-lg pb-32">
+<!-- Welcome Header -->
+<div class="mb-stack-lg animate-[fadeIn_0.5s_ease-out]">
+<p class="font-label-md text-label-md text-on-surface-variant mb-1 uppercase tracking-widest text-xs">Good Evening</p>
+<h2 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface">Quiet your mind.</h2>
+</div>
+<!-- Diary Entries List -->
+<div class="flex flex-col gap-stack-lg relative">
+<!-- Entry 1 -->
+<article class="group cursor-pointer">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-semibold">Today</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/50"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">8:42 PM</span>
+<div class="ml-auto w-2 h-2 rounded-full bg-primary-container" title="Calm"></div>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-primary transition-colors">The stillness of the evening</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Finally sat down with my tea. The city feels quieter tonight, a rare moment of genuine pause after a chaotic week of meetings and endless context switching.</p>
+<div class="w-24 h-px bg-outline-variant/30 mt-stack-md group-hover:bg-primary/20 transition-colors"></div>
+</article>
+<!-- Entry 2 -->
+<article class="group cursor-pointer">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-semibold">Yesterday</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/50"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">9:15 AM</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-primary transition-colors">Morning clarity</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Woke up before the alarm. There is something profoundly centering about seeing the early light hit the wooden floorboards. It puts everything into immediate perspective.</p>
+<div class="w-24 h-px bg-outline-variant/30 mt-stack-md group-hover:bg-primary/20 transition-colors"></div>
+</article>
+<!-- Entry 3 -->
+<article class="group cursor-pointer">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Oct 24</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/50"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">11:30 PM</span>
+<div class="ml-auto w-2 h-2 rounded-full bg-tertiary-container" title="Reflective"></div>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-primary transition-colors">Design reflections</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">Re-reading the HIG today made me realize how often we overcomplicate interfaces. The best tools get out of your way completely. Need to apply this to the current project.</p>
+<div class="w-24 h-px bg-outline-variant/30 mt-stack-md group-hover:bg-primary/20 transition-colors"></div>
+</article>
+<!-- Entry 4 -->
+<article class="group cursor-pointer">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Oct 21</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant/50"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">2:00 PM</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-primary transition-colors">Coffee shop observations</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">The rain hasn't stopped. Spent three hours watching people rush by with umbrellas. The contrast between the hurried outside world and the warm, slow pace inside is striking.</p>
+<div class="w-24 h-px bg-outline-variant/30 mt-stack-md group-hover:bg-primary/20 transition-colors"></div>
+</article>
+</div>
+<!-- Load More affordance -->
+<div class="mt-stack-lg flex justify-center">
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors py-2 px-4 border border-outline-variant/30 rounded-full bg-surface-container-lowest">
+                Older entries
+            </button>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<div class="fixed bottom-24 right-margin-mobile md:right-1/2 md:translate-x-[300px] z-40">
+<button class="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center text-on-primary-container fab-shadow hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="edit" data-weight="fill" style="font-variation-settings: 'FILL' 1;">edit</span>
+</button>
+</div>
+<!-- BottomNavBar -->
+<nav class="bg-surface/90 backdrop-blur-md dark:bg-surface/90 fixed bottom-0 w-full z-50 border-t border-outline-variant/30 dark:border-outline/20">
+<div class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe px-4 max-w-[680px] mx-auto relative">
+<!-- Home (Active) -->
+<button class="w-touch-target h-touch-target flex flex-col items-center justify-center text-primary dark:text-inverse-primary font-semibold hover:text-primary dark:hover:text-inverse-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<!-- Archive -->
+<button class="w-touch-target h-touch-target flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-inverse-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="auto_stories">auto_stories</span>
+<span class="font-label-sm text-label-sm">Archive</span>
+</button>
+<!-- Write (Disabled/Ghosted here as FAB handles it, but keeping structure per JSON) -->
+<button class="w-touch-target h-touch-target flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-inverse-primary active:scale-90 transition-all opacity-0 pointer-events-none w-0 md:w-touch-target md:opacity-100 md:pointer-events-auto">
+<span class="material-symbols-outlined mb-1" data-icon="edit_note">edit_note</span>
+<span class="font-label-sm text-label-sm">Write</span>
+</button>
+<!-- Insights -->
+<button class="w-touch-target h-touch-target flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-inverse-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="analytics">analytics</span>
+<span class="font-label-sm text-label-sm">Insights</span>
+</button>
+<!-- Settings -->
+<button class="w-touch-target h-touch-target flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-inverse-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</button>
+</div>
+</nav>
+<script>
+        // Simple scroll effect for TopAppBar shadow
+        const topBar = document.getElementById('top-bar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                topBar.classList.add('shadow-[0_4px_12px_rgba(0,0,0,0.02)]');
+            } else {
+                topBar.classList.remove('shadow-[0_4px_12px_rgba(0,0,0,0.02)]');
+            }
+        });
+    </script>
+</body></html>

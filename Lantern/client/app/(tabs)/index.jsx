@@ -8,7 +8,6 @@ import { authFetch } from '../../lib/supabase'
 import { todayStr, calcStreak } from '../../lib/date'
 import RecordForm from '../../components/RecordForm'
 import MilestoneBanner from '../../components/MilestoneBanner'
-import WeeklyDiscovery from '../../components/WeeklyDiscovery'
 import IdeasPanel from '../../components/IdeasPanel'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
@@ -93,34 +92,56 @@ export default function Home() {
           <View className="flex-row items-baseline">
             <Text className="font-display text-headline-md text-ink">{dateJa}</Text>
             {streak >= 2 ? (
-              <Text className="text-aux text-ink-faint ml-2">· {streak}日目</Text>
+              <Text className="text-label-md text-outline ml-2">· {streak}日目</Text>
             ) : null}
           </View>
         </View>
 
         <MilestoneBanner />
 
-        {/* 記録とアイデアのタブ。
+        {/* 記録とアイデアの切り替え。
             今日の灯りは 2026-08-12 に「ホーム」へ移した。ここには無い。
-            過去日の編集中はタブを出さない（アイデアは日付を持たないため）。 */}
+            過去日の編集中は出さない（アイデアは日付を持たないため）。
+
+            **2026-08-14 に下線タブから左右2つの区画に変えた。**
+            実機で「どっちを書いているか迷う」と指摘された。
+            原因は2つあった。
+
+            1. 「記録」の下線タブが**「記録」タブの中のタブと同じ形**をしていた
+            2. **どちらが何なのかがどこにも書いていない**
+
+            形を変え、選んでいる側に説明を1行付けた。
+            説明は選択で入れ替わるので、いま何を書いているかが
+            画面の言葉として残る。 */}
         {!isEditingPast ? (
-          <View className="flex-row gap-4 border-b border-border">
-            {[
-              { id: 'record', label: '記録' },
-              { id: 'ideas', label: 'アイデア' },
-            ].map(({ id, label }) => (
-              <Pressable
-                key={id}
-                onPress={() => setWriteTab(id)}
-                className={`px-1 pb-2.5 border-b-2 ${
-                  writeTab === id ? 'border-accent' : 'border-transparent'
-                }`}
-              >
-                <Text className={`text-body ${writeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
+          <View className="gap-2.5">
+            <View className="flex-row bg-surface-low rounded-full p-1">
+              {[
+                { id: 'record', label: '記録' },
+                { id: 'ideas', label: 'アイデア' },
+              ].map(({ id, label }) => (
+                <Pressable
+                  key={id}
+                  onPress={() => setWriteTab(id)}
+                  className={`flex-1 rounded-full py-2.5 min-h-touch justify-center items-center ${
+                    writeTab === id ? 'bg-lantern-glow' : ''
+                  }`}
+                >
+                  <Text
+                    className={`text-body-md ${
+                      writeTab === id ? 'font-strong text-on-lantern' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text className="text-label-md text-outline leading-relaxed">
+              {writeTab === 'record'
+                ? '今日あったことを残します。1日にひとつ、あとから書き直せます。'
+                : '思いついたことを1行で置きます。日付を持たず、いつでも使えます。'}
+            </Text>
           </View>
         ) : null}
 
@@ -128,10 +149,10 @@ export default function Home() {
         <View style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}>
           {isEditingPast ? (
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-aux text-ink-faint">
+              <Text className="text-label-md text-outline">
                 {dateDisplayJa(targetDate)}の記録を編集中
               </Text>
-              <Text onPress={() => router.replace('/')} className="text-aux text-ink-faint">
+              <Text onPress={() => router.replace('/')} className="text-label-md text-primary">
                 ← 今日に戻る
               </Text>
             </View>
@@ -153,8 +174,6 @@ export default function Home() {
           <IdeasPanel />
         </View>
 
-        {/* 今週の発見は記録タブのときだけ。アイデアを見ているときには要らない */}
-        {writeTab === 'record' || isEditingPast ? <WeeklyDiscovery logs={logs} /> : null}
       </ScrollView>
     </SafeAreaView>
   )

@@ -1,100 +1,102 @@
-import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { View } from 'react-native'
 import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
 import { localDateStr } from '../lib/date'
 
-const KEYWORD_PERIODS = [
-  { label: '直近1ヶ月', period: '1m' },
-  { label: '直近3ヶ月', period: '3m' },
-  { label: '直近半年', period: '6m' },
-]
+// 頻出キーワード。
+//
+// Insights AI憲法に従い、**語と出現回数だけ**を出す。
+// 感情の分類も、増えた減ったの評価もしない。
+//
+// **2026-08-14 に期間の選択をやめた。**
+// 直近1ヶ月・3ヶ月・半年を並べ、それぞれに取得ボタンを置いていた。
+// 3つ並ぶと**見比べる画面**になる。「1ヶ月では出ていた語が半年では無い」は
+// 変化の観察に見えて、実際には母数の違いでしかない。
+// 期間は3ヶ月ひとつに固定した。
+//
+// **ボタンもやめた。** 抽出は機械的な頻度処理で、AIを呼んでいない。
+// 「Lanternに聞く」という文言は、AIに尋ねているように読めた。
+// 開いたら出ている方が、押してから待つより短い。
+//
+// キャッシュキーに当日の日付を含めることで実質1日TTLとする方式は変えていない。
+const PERIOD = '3m'
 
-// Web版 Insights.jsx の KeywordSection を移植したもの。
-// キャッシュキーに当日の日付を含めることで実質1日TTLとする方式は変更していない。
-// Insights AI憲法に従い、感情分類はせず語と出現回数のみを表示する。
 export default function KeywordSection() {
   const today = localDateStr()
-  const [data, setData] = useState({})
-  const [fetching, setFetching] = useState({})
+  const [keywords, setKeywords] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  async function handleFetch(period) {
-    const cacheKey = `insights_keywords_${period}_${today}`
-    try {
-      const cached = await AsyncStorage.getItem(cacheKey)
-      if (cached) {
-        setData((d) => ({ ...d, [period]: JSON.parse(cached) }))
-        return
-      }
-    } catch (e) {
-      // 壊れたキャッシュは捨てて取得し直す。残すと同じ日付キーで失敗し続ける。
-      console.warn('[Insights] キーワードキャッシュの解析に失敗', e)
+  useEffect(() => {
+    let cancelled = false
+    const cacheKey = `insights_keywords_${PERIOD}_${today}`
+
+    ;(async () => {
       try {
-        await AsyncStorage.removeItem(cacheKey)
-      } catch (removeError) {
-        console.warn('[Insights] 壊れたキャッシュの削除に失敗', removeError)
+        const cached = await AsyncStorage.getItem(cacheKey)
+        if (cached) {
+          if (!cancelled) {
+            setKeywords(JSON.parse(cached))
+            setLoading(false)
+          }
+          return
+        }
+      } catch (e) {
+        // 壊れたキャッシュは捨てて取得し直す。残すと同じ日付キーで失敗し続ける。
+        console.warn('[Insights] キーワードキャッシュの解析に失敗', e)
+        try {
+          await AsyncStorage.removeItem(cacheKey)
+        } catch (removeError) {
+          console.warn('[Insights] 壊れたキャッシュの削除に失敗', removeError)
+        }
       }
-    }
 
-    setFetching((f) => ({ ...f, [period]: true }))
-    try {
-      const res = await authFetch(`/api/insights/keywords?period=${period}`)
-      if (!res.ok) {
-        console.warn(`[Insights] キーワード取得が ${res.status} を返した (period=${period})`)
-        return
+      try {
+        const res = await authFetch(`/api/insights/keywords?period=${PERIOD}`)
+        if (!res.ok) {
+          console.warn(`[Insights] キーワード取得が ${res.status} を返した`)
+          return
+        }
+        const json = await res.json()
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(json.keywords))
+        if (!cancelled) setKeywords(json.keywords)
+      } catch (e) {
+        // 画面には何も出さない（AI憲法：必要以上に話さない）。原因追跡のためログだけ残す。
+        console.warn('[Insights] キーワード取得に失敗', e)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      const json = await res.json()
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(json.keywords))
-      setData((d) => ({ ...d, [period]: json.keywords }))
-    } catch (e) {
-      // 画面には何も出さない（AI憲法：必要以上に話さない）。原因追跡のためログだけ残す。
-      console.warn('[Insights] キーワード取得に失敗', e)
-    } finally {
-      setFetching((f) => ({ ...f, [period]: false }))
-    }
-  }
+    })()
+
+    return () => { cancelled = true }
+  }, [today])
 
   return (
-    <View className="gap-5">
-      <Text className="font-strong text-aux text-ink-soft">キーワード</Text>
+    <View className="gap-2.5">
+      <Text className="font-strong text-label-md text-primary">頻出キーワード</Text>
 
-      {KEYWORD_PERIODS.map(({ label, period }) => (
-        <View key={period} className="gap-2.5">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-aux text-ink-soft">{label}</Text>
-            <Pressable
-              onPress={() => handleFetch(period)}
-              disabled={fetching[period]}
-              className="border border-sage/40 rounded-full px-3.5 py-1 disabled:opacity-50"
-            >
-              <Text className="text-aux text-forest">
-                {fetching[period] ? '取得中...' : data[period] ? '再取得' : 'Lanternに聞く'}
-              </Text>
-            </Pressable>
-          </View>
-
-          {data[period] ? (
-            <View className="flex-row flex-wrap gap-2">
-              {data[period].length === 0 ? (
-                <Text className="text-body text-ink-faint">
-                  この期間のキーワードを抽出できませんでした。
-                </Text>
-              ) : (
-                data[period].map(({ word, count }) => (
-                  <View
-                    key={word}
-                    className="flex-row items-baseline gap-1.5 bg-stone/60 rounded-full px-3 py-1"
-                  >
-                    <Text className="text-aux text-ink-soft">{word}</Text>
-                    <Text className="text-[10px] text-ink-faint">{count}</Text>
-                  </View>
-                ))
-              )}
-            </View>
-          ) : null}
+      {loading ? (
+        <View className="flex-row gap-2">
+          {[1, 2, 3].map((i) => (
+            <View key={i} className="w-16 h-7 bg-surface-high rounded-full" />
+          ))}
         </View>
-      ))}
+      ) : keywords && keywords.length > 0 ? (
+        <View className="flex-row flex-wrap gap-2">
+          {keywords.map(({ word, count }) => (
+            <View
+              key={word}
+              className="flex-row items-baseline gap-1.5 bg-surface-low rounded-full px-3 py-1.5"
+            >
+              <Text className="text-label-md text-on-surface">{word}</Text>
+              <Text className="text-label-sm text-outline">{count}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text className="text-body-md text-outline">まだ抽出できる言葉がありません。</Text>
+      )}
     </View>
   )
 }

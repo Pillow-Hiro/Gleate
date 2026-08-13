@@ -61,14 +61,14 @@ export default function WeeklyDiscovery({ logs }) {
 
   return (
     <View>
-      <Text className="font-strong text-aux text-ink-soft mb-3">今週の発見</Text>
-      <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4">
+      <Text className="font-strong text-label-md text-primary mb-2.5">今週の発見</Text>
+      <View className="bg-ai-surface rounded-lg px-5 py-4">
         {observations === null ? (
-          <Text className="text-body text-ink-soft">今週の記録がまだありません。</Text>
+          <Text className="text-body-md text-ai-ink">今週の記録がまだありません。</Text>
         ) : (
           <View className="gap-2">
             {observations.map((obs, i) => (
-              <Text key={i} className="text-body text-forest leading-relaxed">{obs}</Text>
+              <Text key={i} className="text-body-md text-ai-ink leading-relaxed">{obs}</Text>
             ))}
           </View>
         )}

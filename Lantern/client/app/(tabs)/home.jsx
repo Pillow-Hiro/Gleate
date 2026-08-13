@@ -8,6 +8,8 @@ import { authFetch } from '../../lib/supabase'
 import LogList from '../../components/LogList'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
+import { dailySample } from '../../lib/sample'
+import WeeklyDiscovery from '../../components/WeeklyDiscovery'
 import * as notify from '../../lib/notify'
 
 // **直近の記録を眺める場所（2026-08-12 に新設）。**
@@ -15,8 +17,12 @@ import * as notify from '../../lib/notify'
 // 「記録」との違いは、探すか眺めるか。
 // ここは検索もカレンダーも持たない。**開いて上から下へ読むだけ。**
 //
-// **記録が少ないうちは「記録」と似て見える。** 18件の現在はほぼ同じものが
-// 並ぶ。分かれるのは記録が増えてから。承知のうえで置いている。
+// **並べるのは日替わりの抜粋**（2026-08-14）。新しい順に12件ではない。
+// 新しい順だけだと「記録」と同じものが並び、2つある意味が無かった。
+// 抜粋にすると、しばらく開いていない記録が自分から出てくる。
+//
+// **その日のうちは同じ顔ぶれ**（`lib/sample.js`）。
+// 開き直すたびに変わると、さっき見た記録が消えたように見える。
 //
 // **上に今日の灯りを置く。**
 // デザイン案の Home は「小さなラベル＋大きな一行」で始まる。
@@ -41,6 +47,8 @@ export default function Home() {
   const [tick, setTick] = useState(0)
   // 読み込みのたびに評価し直す。開きっぱなしで日付が変わる場面までは追わない
   const greeting = greetingFor()
+  // 抜粋の種は日付。日が変われば顔ぶれが変わる
+  const shown = dailySample(logs, RECENT_LIMIT, todayStr())
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
 
@@ -115,6 +123,11 @@ export default function Home() {
           </View>
         </View>
 
+        {/* **今週の発見。** 2026-08-14 に「書く」から移した。
+            観察は書く前ではなく、眺める場所にある方が読まれる。
+            AIは使わない（`WeeklyDiscovery`）。 */}
+        {!loading && logs.length > 0 ? <WeeklyDiscovery logs={logs} /> : null}
+
         {loading ? (
           <View className="gap-3">
             {[1, 2, 3].map((i) => (
@@ -128,18 +141,19 @@ export default function Home() {
             <Text className="text-label-md text-outline mt-1.5">「書く」から残せます</Text>
           </View>
         ) : (
-          <LogList logs={logs} limit={RECENT_LIMIT} onDelete={refresh} onUpdate={refresh} />
+          <LogList logs={shown} onDelete={refresh} onUpdate={refresh} />
         )}
 
         {/* デザイン案の「Older entries」。
-            12件より前は「記録」で探す。ここに「もっと見る」を置いて
-            延々と伸ばすと、探すための画面と役割が重なる。 */}
+            **抜粋なので「これより前」ではない。** 全部を見るなら「記録」へ行く。
+            ここに「もっと見る」を置いて延々と伸ばすと、
+            探すための画面と役割が重なる。 */}
         {!loading && logs.length > RECENT_LIMIT ? (
           <Pressable
             onPress={() => router.navigate('/journal')}
             className="self-center border border-border rounded-full px-4 min-h-touch justify-center active:opacity-70"
           >
-            <Text className="text-label-md text-primary">これより前の記録</Text>
+            <Text className="text-label-md text-primary">すべての記録</Text>
           </Pressable>
         ) : null}
       </ScrollView>

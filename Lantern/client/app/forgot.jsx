@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
 import FormShell from '../components/FormShell'
+import AuthField from '../components/AuthField'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage } from '../lib/authError'
 import { resetRedirectTo } from '../lib/resetLink'
@@ -100,9 +101,10 @@ export default function Forgot() {
           </View>
         ) : (
           <FormShell className="gap-4" onSubmit={send}>
-            <View>
-              <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">メールアドレス</Text>
-              <TextInput
+            <View className="bg-surface-lowest rounded-lg px-4 shadow-bloom">
+              <AuthField
+                icon="mail"
+                label="メールアドレス"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -111,8 +113,7 @@ export default function Forgot() {
                 keyboardType="email-address"
                 returnKeyType="go"
                 onSubmitEditing={send}
-                className="bg-stone border border-border rounded px-3 py-3 font-body text-body text-ink"
-                placeholderTextColor="#8E8478"
+                isLast
               />
             </View>
 

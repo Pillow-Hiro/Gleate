@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { calcStreak } from '../../lib/date'
-import YearMap from '../../components/YearMap'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
 
@@ -24,6 +23,16 @@ import TwitchPanel from '../../components/TwitchPanel'
 // **数字は事実として出すが、良し悪しを添えない。**
 // 「記録した日数」「連続日数」は設定から移した。
 // 設定は道具の手入れをする場所で、歩みを見る場所ではない。
+//
+// **年間マップは 2026-08-14 に外した**（`YearMap.jsx` と `lib/yearMap.js` を削除）。
+// 記録の有無を1年ぶん並べた格子で、2状態しか持たない作りにしていたが、
+// **カレンダーは「記録」タブに1つあれば足りる。**
+// 同じものを2か所に置くと、片方だけ直る。
+// デザイン案（`4_insight`）もタイルだけで格子を持たない。
+//
+// 案には「総単語数 +12%」があるが**入れない。**
+// 書いた量を成果として測ることになり、増減率は評価そのもの
+// （`REQUIREMENTS.md`「やらないこと」）。
 //
 // タブの状態は保持しない。画面を離れたら YouTube から始まる。
 // 未連携でもタブは出す。隠すと機能があること自体に気づけないため。
@@ -74,16 +83,19 @@ export default function Dashboard() {
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
           <Text className="font-display text-headline-md text-ink">分析</Text>
+          {/* 案の "Recent writing habits." に当たる一文。
+              **「振り返り」とは書かない。** それは「記録」タブの名前で、
+              ここは俯瞰する場所。 */}
+          <Text className="text-body-md text-on-surface-variant mt-1">
+            これまでの歩みと、外に届いた形跡。
+          </Text>
         </View>
 
         {/* 継続の可視化。**数字を並べるが、良し悪しを添えない。**
             「今月は先月より少ない」と読める並べ方をしない。 */}
-        <View className="gap-6">
-          <View className="flex-row gap-4">
-            <Stat label="記録した日" value={`${logs.length}日`} />
-            <Stat label="続いている日" value={`${calcStreak(logs)}日`} />
-          </View>
-          <YearMap logs={logs} />
+        <View className="flex-row gap-4">
+          <Stat label="記録した日" value={logs.length} unit="日" />
+          <Stat label="続いている日" value={calcStreak(logs)} unit="日" />
         </View>
 
         {/* 外の世界に届いた形跡。
@@ -123,11 +135,14 @@ export default function Dashboard() {
 // 数字をそのまま置くだけ。
 // **増減の矢印も、色による良し悪しも付けない。**
 // 付けた瞬間、記録が達成すべき数字になる。
-function Stat({ label, value }) {
+function Stat({ label, value, unit }) {
   return (
-    <View className="flex-1 bg-surface-low rounded-lg px-4 py-3.5">
-      <Text className="font-label text-label-md text-outline mb-1">{label}</Text>
-      <Text className="font-strong text-headline-md text-ink">{value}</Text>
+    <View className="flex-1 bg-surface-lowest rounded-lg px-4 py-5 items-center shadow-bloom">
+      <Text className="font-label text-label-md text-outline mb-2">{label}</Text>
+      <View className="flex-row items-baseline gap-1">
+        <Text className="font-strong text-headline-lg text-ink">{value}</Text>
+        <Text className="text-body-md text-on-surface-variant">{unit}</Text>
+      </View>
     </View>
   )
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
 import FormShell from '../components/FormShell'
+import AuthField from '../components/AuthField'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage } from '../lib/authError'
 
@@ -105,9 +106,10 @@ export default function Reset() {
           </View>
         ) : (
           <FormShell className="gap-4" onSubmit={submit}>
-            <View>
-              <Text className="text-aux text-ink-faint mb-1.5 tracking-wide">新しいパスワード</Text>
-              <TextInput
+            <View className="bg-surface-lowest rounded-lg px-4 shadow-bloom">
+              <AuthField
+                icon="lock"
+                label="新しいパスワード"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -116,11 +118,9 @@ export default function Reset() {
                 textContentType="newPassword"
                 returnKeyType="go"
                 onSubmitEditing={submit}
-                className="bg-stone border border-border rounded px-3 py-3 font-body text-body text-ink"
-                placeholderTextColor="#8E8478"
               />
               {/* 条件は失敗する前に出す */}
-              <Text className="text-label-md text-outline mt-1.5">パスワードは6文字以上</Text>
+              <Text className="text-label-md text-outline py-3">パスワードは6文字以上</Text>
             </View>
 
             {error ? <Text className="text-label-md text-error">{error}</Text> : null}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - Lantern</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {error: "#ba1a1a", primary: "#825500", "system-blue": "#0066CC", "tertiary-fixed": "#c0e8ff", "inverse-on-surface": "#f0f0f2", "on-tertiary-fixed": "#001e2b", "tertiary-fixed-dim": "#71d2ff", outline: "#847563", "inverse-primary": "#ffb953", "on-tertiary-fixed-variant": "#004d66", "secondary-container": "#5095fe", "secondary-fixed": "#d7e3ff", "primary-fixed": "#ffddb4", "surface-container-low": "#f3f3f5", "surface-container-high": "#e8e8ea", "on-primary-container": "#6c4500", "surface-dim": "#d9dadc", "inverse-surface": "#2f3132", "on-surface": "#1a1c1d", "on-primary-fixed-variant": "#633f00", "on-secondary-fixed-variant": "#00458e", background: "#f9f9fb", "surface-variant": "#e2e2e4", "on-background": "#1a1c1d", "surface-container-lowest": "#ffffff", "on-error": "#ffffff", "on-tertiary": "#ffffff", surface: "#f9f9fb", secondary: "#005cba", "outline-variant": "#d6c4af", "on-secondary": "#ffffff", "surface-container": "#eeeef0", "secondary-fixed-dim": "#aac7ff", "ink-black": "#1D1D1F", "on-secondary-fixed": "#001b3e", "on-secondary-container": "#002d61", "tertiary-container": "#51cbff", "on-surface-variant": "#514535", "surface-tint": "#825500", "error-container": "#ffdad6", "on-primary-fixed": "#291800", "paper-white": "#FFFFFF", "primary-fixed-dim": "#ffb953", "lantern-glow": "#FBB03B", "on-primary": "#ffffff", tertiary: "#006687", "surface-bright": "#f9f9fb", "on-error-container": "#93000a", "primary-container": "#fbb03b", "surface-container-highest": "#e2e2e4", "on-tertiary-container": "#00546f"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"touch-target": "44px", "stack-md": "16px", "stack-sm": "8px", "stack-lg": "32px", "margin-mobile": "20px", "margin-desktop": "40px", gutter: "16px"}, fontFamily: {"headline-lg": ["Hanken Grotesk"], "label-md": ["Inter"], "label-sm": ["Inter"], "body-lg": ["\"Source Sans 3\""], display: ["Hanken Grotesk"], "headline-md": ["Hanken Grotesk"], "headline-lg-mobile": ["Hanken Grotesk"], "body-md": ["\"Source Sans 3\""], headline: ["Hanken Grotesk"], body: ["\"Source Sans 3\""], label: ["Inter"]}, fontSize: {"headline-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600"}], "label-md": ["14px", {lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500"}], "label-sm": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-lg": ["19px", {lineHeight: "32px", fontWeight: "400"}], display: ["40px", {lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-md": ["24px", {lineHeight: "30px", fontWeight: "600"}], "headline-lg-mobile": ["28px", {lineHeight: "34px", fontWeight: "600"}], "body-md": ["17px", {lineHeight: "26px", fontWeight: "400"}]}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom iOS style toggle switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #FBB03B;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #FBB03B;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface w-full sticky top-0 border-b border-outline-variant/30 dark:border-outline/20 z-40 hidden md:block">
+<div class="flex justify-between items-center px-margin-mobile h-touch-target w-full max-w-[680px] mx-auto">
+<button class="flex items-center justify-center w-touch-target h-touch-target text-on-surface hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md dark:text-on-surface text-ink-black dark:text-paper-white tracking-tight">Lantern</h1>
+<button class="flex items-center justify-center w-touch-target h-touch-target text-on-surface hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[680px] mx-auto px-margin-mobile pt-stack-lg md:pt-stack-lg pb-stack-lg flex flex-col gap-stack-lg">
+<!-- Header -->
+<div class="flex flex-col gap-stack-sm">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-ink-black">Settings</h2>
+<p class="text-on-surface-variant">Manage your Lantern preferences and account.</p>
+</div>
+<!-- Profile Section -->
+<section class="flex flex-col gap-stack-md">
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant p-4 flex items-center gap-4 hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A refined, minimalist avatar portrait of a creative individual in a bright, modern studio setting. Soft, natural lighting. Professional yet approachable. Consistent with a premium journaling app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8fHtmJb1QLNPukkpayMFkp_pM4jdmtMMmAdyM_U9SWz8uzED3Z1BseS1k4P-D_BKyM1s3k4LIb6fcWuhFrmsx7ojLcNoMZKlPPQEXwkuOMpN4tYBILBBHUBo_ep33SR1Qvt7SesD9levOA7jmg0XVwBNKtjlMK5UXVkDAWn2_1aXtIwPXzIwF5C06gb0nw60tMYrcDkDcYxyEZNAvf0VMT_QzVcV-5LZ72I3J9DiEEWRSPxb4qdCFQA"/>
+</div>
+<div class="flex-1">
+<h3 class="font-label-md text-label-md text-ink-black">Alex Rivera</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">alex.rivera@example.com</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</section>
+<!-- General Settings Group -->
+<section class="flex flex-col">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-stack-sm px-4">General</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+<!-- Notifications -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors border-b border-surface-variant">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">Notifications</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+<!-- Security -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors border-b border-surface-variant">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">Security</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+<!-- Appearance (Theme) -->
+<div class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors border-b border-surface-variant">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">Dark Mode</span>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-surface-variant" id="toggle1" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-variant cursor-pointer" for="toggle1"></label>
+</div>
+</div>
+<!-- Sync -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="cloud_sync">cloud_sync</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">Cloud Sync</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2">
+                        Updated just now
+                        <span class="material-symbols-outlined text-outline">chevron_right</span>
+</span>
+</button>
+</div>
+</section>
+<!-- About Group -->
+<section class="flex flex-col">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-stack-sm px-4">Support</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant overflow-hidden">
+<!-- Help Center -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors border-b border-surface-variant">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">Help Center</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+<!-- About -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+</div>
+<span class="font-body-md text-body-md text-ink-black">About Lantern</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-2">
+                        v2.4.1
+                        <span class="material-symbols-outlined text-outline">chevron_right</span>
+</span>
+</button>
+</div>
+</section>
+<!-- Logout -->
+<section class="flex justify-center mt-stack-md pb-stack-lg">
+<button class="font-label-md text-label-md text-error px-4 py-3 rounded-lg hover:bg-error-container/20 transition-colors">
+                Sign Out
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface/90 backdrop-blur-md dark:bg-surface/90 fixed bottom-0 w-full z-50 border-t border-outline-variant/30 dark:border-outline/20 fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 pb-safe px-4 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-lantern-glow transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-lantern-glow transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="auto_stories">auto_stories</span>
+<span class="font-label-sm text-label-sm">Archive</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-lantern-glow transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="edit_note">edit_note</span>
+<span class="font-label-sm text-label-sm">Write</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:text-primary dark:hover:text-lantern-glow transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="analytics">analytics</span>
+<span class="font-label-sm text-label-sm">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-lantern-glow font-semibold scale-90 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="settings" data-weight="fill">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+</body></html>

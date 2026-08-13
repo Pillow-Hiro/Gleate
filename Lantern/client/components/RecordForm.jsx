@@ -21,7 +21,7 @@ import MarkdownToolbar from './MarkdownToolbar'
 //
 // `rich` を渡した欄だけ装飾のボタンが出る。**「やったこと」だけ。**
 // 短いメモの欄に道具立てを出すのは重すぎる（`REQUIREMENTS.md` F1）。
-function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich }) {
+function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich, bare }) {
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
   const [selection, setSelection] = useState(null)
@@ -33,14 +33,37 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
     setSelection({ start: cursor, end: cursor })
   }
 
-  return (
-    <View>
-      <View className="flex-row items-center justify-between mb-1.5">
-        <Text className="text-aux text-ink-faint">{label}</Text>
+  // **主欄は枠を持たない。**（2026-08-14・デザイン案 `3_write`）
+  // 書くところが「入力欄」ではなく「紙」に見えるようにする。
+  // 装飾のボタンは欄の下に横一列で置く。ラベルの右に小さく並べていたときは、
+  // 押す対象が見出しの一部のように見えていた。
+  if (bare) {
+    return (
+      <View>
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={onChange}
+          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+          multiline
+          textAlignVertical="top"
+          style={{ minHeight: rows * 32 + 16 }}
+          className="font-body text-body-lg text-on-surface"
+          placeholder={placeholder}
+          placeholderTextColor="#8E8478"
+        />
         {rich ? (
-          <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+          <View className="border-t border-border pt-2.5">
+            <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+          </View>
         ) : null}
       </View>
+    )
+  }
+
+  return (
+    <View>
+      <Text className="text-label-md text-outline mb-1.5">{label}</Text>
       <TextInput
         ref={inputRef}
         value={value}
@@ -49,7 +72,7 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
-        className="bg-stone border border-border rounded px-3 py-2 font-body text-body text-ink"
+        className="bg-surface-lowest border border-border rounded px-3 py-2 font-body text-body-md text-on-surface"
         placeholder={placeholder}
         placeholderTextColor="#8E8478"
       />
@@ -126,10 +149,10 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   }
 
   return (
-    <View className="bg-stone/50 rounded-lg px-5 py-5 gap-4">
+    <View className="bg-surface-low rounded-lg px-5 py-5 gap-4">
       {existingLog ? (
-        <View className="self-start bg-sage-light rounded-full px-2 py-0.5">
-          <Text className="text-[10px] text-sage">記録済</Text>
+        <View className="self-start bg-ai-surface rounded-full px-2.5 py-0.5">
+          <Text className="text-label-sm text-ai-ink">記録済</Text>
         </View>
       ) : null}
 
@@ -145,8 +168,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}
-        rows={5}
+        rows={7}
         rich
+        bare
         placeholder={
           question && isToday
             ? question
@@ -162,10 +186,10 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           Web版はCSS gridで開閉していたが、RNにgridがないため出し分けで表現する */}
       <Pressable
         onPress={() => setDetailOpen((o) => !o)}
-        className="flex-row items-center gap-1.5"
+        className="flex-row items-center gap-1.5 min-h-touch"
       >
-        <Text className="text-aux text-ink-faint">{detailOpen ? '⌄' : '›'}</Text>
-        <Text className="text-aux text-ink-faint">
+        <Text className="text-label-md text-outline">{detailOpen ? '⌄' : '›'}</Text>
+        <Text className="text-label-md text-outline">
           {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
         </Text>
       </Pressable>
@@ -204,25 +228,24 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         disabled={loading}
         className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
       >
-        <Text className="font-strong text-body text-on-lantern">
+        <Text className="font-strong text-body-md text-on-lantern">
           {loading ? '保存中...' : '記録する'}
         </Text>
       </Pressable>
 
       {slow ? (
-        <Text className="text-aux text-ink-faint text-center">
+        <Text className="text-label-md text-outline text-center">
           まだ保存しています。もう少しかかります。
         </Text>
       ) : null}
 
       {saveError ? (
-        <Text className="text-aux text-error text-center">{saveError}</Text>
+        <Text className="text-label-md text-error text-center">{saveError}</Text>
       ) : null}
 
       {aiResponse ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 mt-4 gap-1.5">
-          <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-          <Text className="text-body leading-relaxed text-forest">{aiResponse}</Text>
+        <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
+          <Text className="text-body-md leading-relaxed text-ai-ink">{aiResponse}</Text>
         </View>
       ) : null}
     </View>

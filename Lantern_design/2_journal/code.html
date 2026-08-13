@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Lantern - Archive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {error: "#ba1a1a", primary: "#825500", "system-blue": "#0066CC", "tertiary-fixed": "#c0e8ff", "inverse-on-surface": "#f0f0f2", "on-tertiary-fixed": "#001e2b", "tertiary-fixed-dim": "#71d2ff", outline: "#847563", "inverse-primary": "#ffb953", "on-tertiary-fixed-variant": "#004d66", "secondary-container": "#5095fe", "secondary-fixed": "#d7e3ff", "primary-fixed": "#ffddb4", "surface-container-low": "#f3f3f5", "surface-container-high": "#e8e8ea", "on-primary-container": "#6c4500", "surface-dim": "#d9dadc", "inverse-surface": "#2f3132", "on-surface": "#1a1c1d", "on-primary-fixed-variant": "#633f00", "on-secondary-fixed-variant": "#00458e", background: "#f9f9fb", "surface-variant": "#e2e2e4", "on-background": "#1a1c1d", "surface-container-lowest": "#ffffff", "on-error": "#ffffff", "on-tertiary": "#ffffff", surface: "#f9f9fb", secondary: "#005cba", "outline-variant": "#d6c4af", "on-secondary": "#ffffff", "surface-container": "#eeeef0", "secondary-fixed-dim": "#aac7ff", "ink-black": "#1D1D1F", "on-secondary-fixed": "#001b3e", "on-secondary-container": "#002d61", "tertiary-container": "#51cbff", "on-surface-variant": "#514535", "surface-tint": "#825500", "error-container": "#ffdad6", "on-primary-fixed": "#291800", "paper-white": "#FFFFFF", "primary-fixed-dim": "#ffb953", "lantern-glow": "#FBB03B", "on-primary": "#ffffff", tertiary: "#006687", "surface-bright": "#f9f9fb", "on-error-container": "#93000a", "primary-container": "#fbb03b", "surface-container-highest": "#e2e2e4", "on-tertiary-container": "#00546f"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"touch-target": "44px", "stack-md": "16px", "stack-sm": "8px", "stack-lg": "32px", "margin-mobile": "20px", "margin-desktop": "40px", gutter: "16px"}, fontFamily: {"headline-lg": ["Hanken Grotesk"], "label-md": ["Inter"], "label-sm": ["Inter"], "body-lg": ["\"Source Sans 3\""], display: ["Hanken Grotesk"], "headline-md": ["Hanken Grotesk"], "headline-lg-mobile": ["Hanken Grotesk"], "body-md": ["\"Source Sans 3\""], headline: ["Hanken Grotesk"], body: ["\"Source Sans 3\""], label: ["Inter"]}, fontSize: {"headline-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600"}], "label-md": ["14px", {lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500"}], "label-sm": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-lg": ["19px", {lineHeight: "32px", fontWeight: "400"}], display: ["40px", {lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-md": ["24px", {lineHeight: "30px", fontWeight: "600"}], "headline-lg-mobile": ["28px", {lineHeight: "34px", fontWeight: "600"}], "body-md": ["17px", {lineHeight: "26px", fontWeight: "400"}]}}}};</script>
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        
+        /* Custom Scrollbar for refined look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: theme('colors.surface-variant');
+            border-radius: 20px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pt-safe font-body-md antialiased selection:bg-lantern-glow/30">
+<!-- TopAppBar (Hidden on Mobile, Visible on Desktop for consistency if needed, but per instructions we focus on mobile mostly, let's keep it clean) -->
+<header class="w-full sticky top-0 bg-surface dark:bg-surface border-b border-outline-variant/30 dark:border-outline/20 z-40 hidden md:block">
+<div class="flex justify-between items-center px-margin-mobile h-touch-target w-full max-w-[680px] mx-auto">
+<button class="flex items-center justify-center h-touch-target w-touch-target text-primary dark:text-inverse-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-2xl" data-icon="menu">menu</span>
+</button>
+<h1 class="font-display text-display text-ink-black dark:text-paper-white tracking-tight">Lantern</h1>
+<div class="flex items-center justify-center h-touch-target w-touch-target">
+<!-- Avatar Placeholder -->
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant font-label-sm">
+                    U
+                 </div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full max-w-[680px] mx-auto px-margin-mobile md:px-margin-desktop pb-24 md:pb-12 pt-stack-lg">
+<!-- Header & Search -->
+<div class="mb-stack-lg">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-ink-black mb-stack-md">Archive</h1>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-b border-outline-variant/50 focus:border-lantern-glow focus:ring-0 px-12 py-3 rounded-t-DEFAULT font-body-md text-on-surface transition-colors placeholder:text-on-surface-variant/60" placeholder="Search past thoughts..." type="text"/>
+</div>
+<!-- Quick Filters (Chips) -->
+<div class="flex gap-2 mt-stack-sm overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-4 py-1.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-high transition-colors">All Time</button>
+<button class="px-4 py-1.5 rounded-full bg-lantern-glow text-ink-black font-label-sm text-label-sm whitespace-nowrap transition-colors">2023</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-high transition-colors">2022</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap hover:bg-surface-container-high transition-colors">Favorites</button>
+</div>
+</div>
+<!-- Timeline List -->
+<div class="flex flex-col gap-stack-lg">
+<!-- Month Group: October 2023 -->
+<section>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-md sticky top-[60px] md:top-[80px] bg-background/90 backdrop-blur-sm py-2 z-10">October 2023</h2>
+<div class="flex flex-col gap-stack-md">
+<!-- Entry Item -->
+<article class="group relative pl-6">
+<!-- Timeline Line -->
+<div class="absolute left-0 top-2 bottom-[-16px] w-[1px] bg-surface-variant group-last:bottom-0"></div>
+<!-- Timeline Node -->
+<div class="absolute left-[-3px] top-2.5 w-[7px] h-[7px] rounded-full bg-outline-variant group-hover:bg-lantern-glow transition-colors"></div>
+<div class="cursor-pointer">
+<time class="font-label-sm text-label-sm text-on-surface-variant mb-1 block">Oct 28 • 09:14 AM</time>
+<h3 class="font-label-md text-label-md text-ink-black mb-1 group-hover:text-primary transition-colors">Morning Coffee Reflections</h3>
+<p class="font-body-md text-body-md text-on-surface/80 line-clamp-2 leading-relaxed">The city feels quieter today. Sat by the window watching the mist roll in over the rooftops. Decided to finally start outlining that new project.</p>
+</div>
+</article>
+<!-- Entry Item -->
+<article class="group relative pl-6">
+<div class="absolute left-0 top-2 bottom-[-16px] w-[1px] bg-surface-variant group-last:bottom-0"></div>
+<div class="absolute left-[-3px] top-2.5 w-[7px] h-[7px] rounded-full bg-outline-variant group-hover:bg-lantern-glow transition-colors"></div>
+<div class="cursor-pointer">
+<time class="font-label-sm text-label-sm text-on-surface-variant mb-1 block">Oct 15 • 11:30 PM</time>
+<h3 class="font-label-md text-label-md text-ink-black mb-1 group-hover:text-primary transition-colors">Late Night Thoughts on Design</h3>
+<p class="font-body-md text-body-md text-on-surface/80 line-clamp-2 leading-relaxed">Simplicity is deceptively difficult. Spent hours trying to reduce a complex form into three steps. It’s always about what you can remove.</p>
+</div>
+</article>
+<!-- Entry Item -->
+<article class="group relative pl-6">
+<div class="absolute left-0 top-2 bottom-[-16px] w-[1px] bg-surface-variant group-last:bottom-0"></div>
+<div class="absolute left-[-3px] top-2.5 w-[7px] h-[7px] rounded-full bg-outline-variant group-hover:bg-lantern-glow transition-colors"></div>
+<div class="cursor-pointer">
+<time class="font-label-sm text-label-sm text-on-surface-variant mb-1 block">Oct 02 • 08:00 AM</time>
+<p class="font-body-md text-body-md text-on-surface/80 line-clamp-2 leading-relaxed">Woke up early. The air is crisp. Autumn is officially here.</p>
+</div>
+</article>
+</div>
+</section>
+<!-- Month Group: September 2023 -->
+<section>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-md sticky top-[60px] md:top-[80px] bg-background/90 backdrop-blur-sm py-2 z-10">September 2023</h2>
+<div class="flex flex-col gap-stack-md">
+<!-- Entry Item -->
+<article class="group relative pl-6">
+<div class="absolute left-0 top-2 bottom-[-16px] w-[1px] bg-surface-variant group-last:bottom-0"></div>
+<div class="absolute left-[-3px] top-2.5 w-[7px] h-[7px] rounded-full bg-outline-variant group-hover:bg-lantern-glow transition-colors"></div>
+<div class="cursor-pointer">
+<time class="font-label-sm text-label-sm text-on-surface-variant mb-1 block">Sep 20 • 06:45 PM</time>
+<h3 class="font-label-md text-label-md text-ink-black mb-1 group-hover:text-primary transition-colors">Project Launch</h3>
+<p class="font-body-md text-body-md text-on-surface/80 line-clamp-2 leading-relaxed">Finally shipped v1. Exhausted but relieved. Need to take a few days off to reset before looking at metrics.</p>
+</div>
+</article>
+<!-- Entry Item -->
+<article class="group relative pl-6">
+<div class="absolute left-0 top-2 bottom-[-16px] w-[1px] bg-surface-variant group-last:bottom-0"></div>
+<div class="absolute left-[-3px] top-2.5 w-[7px] h-[7px] rounded-full bg-outline-variant group-hover:bg-lantern-glow transition-colors"></div>
+<div class="cursor-pointer">
+<time class="font-label-sm text-label-sm text-on-surface-variant mb-1 block">Sep 05 • 10:15 AM</time>
+<h3 class="font-label-md text-label-md text-ink-black mb-1 group-hover:text-primary transition-colors">Meeting Notes: Strategy</h3>
+<p class="font-body-md text-body-md text-on-surface/80 line-clamp-2 leading-relaxed">Focus on the core loop. Avoid feature bloat. Re-read HIG sections on navigation to validate the new shell architecture.</p>
+</div>
+</article>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<!-- Applying style guidelines from JSON -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md dark:bg-surface/90 border-t border-outline-variant/30 dark:border-outline/20 flex justify-around items-center h-16 pb-safe px-4 shadow-none">
+<!-- Inactive: Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline font-label-sm text-label-sm-mobile hover:text-primary dark:hover:text-lantern-glow w-touch-target h-touch-target group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform" data-icon="home">home</span>
+<span>Home</span>
+</a>
+<!-- Active: Archive (matches 'Records' intent) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-lantern-glow font-semibold font-label-sm text-label-sm-mobile hover:text-primary dark:hover:text-lantern-glow w-touch-target h-touch-target active:scale-90 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="auto_stories" data-weight="fill" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span>Archive</span>
+</a>
+<!-- Inactive: Write -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline font-label-sm text-label-sm-mobile hover:text-primary dark:hover:text-lantern-glow w-touch-target h-touch-target group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform" data-icon="edit_note">edit_note</span>
+<span>Write</span>
+</a>
+<!-- Inactive: Insights -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline font-label-sm text-label-sm-mobile hover:text-primary dark:hover:text-lantern-glow w-touch-target h-touch-target group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform" data-icon="analytics">analytics</span>
+<span>Insights</span>
+</a>
+<!-- Inactive: Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline font-label-sm text-label-sm-mobile hover:text-primary dark:hover:text-lantern-glow w-touch-target h-touch-target group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</body></html>
