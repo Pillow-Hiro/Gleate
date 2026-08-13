@@ -50,13 +50,14 @@ OTA（`eas update`）では届かないもの。
 
     https://expo.dev/accounts/pillow_hiro/projects/lantern/builds/ba1ed9a4-2968-4c95-943b-a1b56fede5f2
 
-配信済みの OTA は2つ。どちらも runtime `4ff774b0…` で、**#6 と #7 の
+配信済みの OTA は3つ。どれも runtime `4ff774b0…` で、**#6 と #7 の
 両方に届く。**
 
 | 更新 | 内容 |
 |---|---|
 | `d20ad20e` | 配色・書体・かたち（`DESIGN.md` 準拠） |
 | `790bed51` | Liquid Glass の読み込みを遅らせる |
+| `87eb0d9f` | 2026-08-13 の全て（タブ再編・分析・お気に入り・装飾・パスワード再設定・設定の行）。commit `5f80f61` |
 
 ### **#6 と #7 の指紋が同じ**
 
