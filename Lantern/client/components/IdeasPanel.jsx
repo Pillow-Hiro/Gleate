@@ -69,8 +69,8 @@ function CheckCircle({ checked }) {
 // RN 標準の `PanResponder` で作る。依存を足すと指紋が変わり、
 // 配信済みのビルドへ OTA が届かなくなる。
 const TRASH_WIDTH = 80
-// これ以上払ったら開く。浅いと、縦に滑らせただけで開いてしまう
-const OPEN_AT = 40
+// これ以上払ったら開く
+const OPEN_AT = 32
 
 function TrashIcon({ color = '#FFFFFF' }) {
   return (
@@ -103,9 +103,17 @@ function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
 
   const pan = useRef(
     PanResponder.create({
-      // **横に払ったときだけ拾う。** 縦は一覧のスクロールに渡す
-      onMoveShouldSetPanResponder: (_e, g) =>
-        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      // **横に払ったときだけ拾う。** 縦は一覧のスクロールに渡す。
+      //
+      // `Capture` を使う（2026-08-15）。実機で「縦スクロールの方が強い」と
+      // 言われた。`onMoveShouldSetPanResponder` は親が先に手を挙げたあとに
+      // 呼ばれるので、**上の `ScrollView` に先を越されていた。**
+      // `Capture` は親より先に判定される。
+      //
+      // 横が縦より明らかに勝っているときだけ奪う。
+      // 少しでも斜めなら渡す方に倒す（一覧のスクロールの方が使う回数が多い）。
+      onMoveShouldSetPanResponderCapture: (_e, g) =>
+        Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
       onPanResponderMove: (_e, g) => {
         const base = openRef.current ? -TRASH_WIDTH : 0
         const next = Math.min(0, Math.max(-TRASH_WIDTH, base + g.dx))

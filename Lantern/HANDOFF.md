@@ -98,6 +98,24 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 
 ## 2. 直近にやったこと
 
+### 2026-08-15（装飾の列をキーボードへ・2回目）
+
+- **`InputAccessoryView` は実機で出ていなかった。**
+  RN 0.86（New Architecture）では当てにできない。
+  **キーボードの高さを測って自分で置く**形に作り直した（`EditorToolbar.jsx`）
+- 列は**画面の一番外**（`_layout.jsx`）。`Modal` の中にはもう1つ置く
+- **欄の下の列は消した**（作者の判断）
+- 並びは Apple の「メモ」に合わせ、太字・斜体・箇条書き・写真
+- 払う操作が縦スクロールに負けていた。
+  `onMoveShouldSetPanResponderCapture` に変え、親より先に判定する
+- `MarkdownToolbar.jsx` を削除
+
+**次にやると決まっていること**
+
+- **ファイル追加**（`expo-document-picker`）。置き場所は**端末の中だけ**（写真と同じ）。
+  ネイティブを持つので**ビルド #10 と同時**に入れる
+- WebView のエディタ（Tiptap 等）は、いまの形を実機で見てから判断する
+
 ### 2026-08-15（リッチテキストエディタ）
 
 - **`RichEditor.jsx` を作った。** `TextInput` の children に

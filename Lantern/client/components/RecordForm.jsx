@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { InputAccessoryView, Keyboard, Platform, Pressable, TextInput, View } from 'react-native'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import RichText from './RichText'
@@ -8,7 +8,7 @@ import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
-import MarkdownToolbar from './MarkdownToolbar'
+import { useEditorToolbar } from './EditorToolbar'
 
 // **モジュールの外に置くこと。**
 //
@@ -25,10 +25,9 @@ import MarkdownToolbar from './MarkdownToolbar'
 // `rich` を渡した欄だけ装飾のボタンが出る。**「やったこと」だけ。**
 // 短いメモの欄に道具立てを出すのは重すぎる（`REQUIREMENTS.md` F1）。
 //
-// 装飾の道具は iOS ではキーボードの上に載せる（`InputAccessoryView`）。
-// Android にこの仕組みは無いので、そちらは欄の下に置く。
-const ACCESSORY_ID = 'lantern-record-toolbar'
-const USE_ACCESSORY = Platform.OS === 'ios'
+// **道具はキーボードの上にしか置かない**（2026-08-15）。
+// 実装は `EditorToolbar.jsx`。欄の下には置かない — 作者の判断。
+// この欄は「いま書いているのは自分だ」と登録するだけ。
 
 // 「やったこと」以外の3項目。**畳んで並べる。**
 const EXTRA_FIELDS = [
@@ -56,7 +55,7 @@ function Field({
   placeholder = '（任意）',
   rich,
   bare,
-  extra,
+  onPhoto,
   onClose,
   closeLabel,
 }) {
@@ -66,26 +65,28 @@ function Field({
   // TextInput が教えてくれるのはこれだけなので、控えておく。
   const [selection, setSelection] = useState(null)
   // **カーソルを動かしたい一瞬だけ `selection` を渡す。**
-  //
-  // 2026-08-14 まで、記号を入れたあとの位置を state に書くだけで
-  // TextInput には渡していなかった。**押しても何も起きないように見えた。**
-  // 実際には文字は入っていたが、カーソルが末尾へ飛ぶので
-  // 「B を押す → 何も選ばれていない → 末尾に ** が2つ」になっていた。
-  //
-  // かといって常に `selection` を渡すと、指でカーソルを動かせなくなる。
-  // 渡すのは1回だけにして、次の選択変更で下ろす。
+  // 常に渡すと、指でカーソルを動かせなくなる。
   const [pending, setPending] = useState(null)
   const inputRef = useRef(null)
+  const owner = useId()
+  const { register, release } = useEditorToolbar()
 
   function applyMark(next, cursor) {
-    // 書いていないときに押されたら、そのまま書き始められるようにする
-    setEditing(true)
     onChange(next)
     setPending({ start: cursor, end: cursor })
     setSelection({ start: cursor, end: cursor })
     // ボタンを押すと入力欄から焦点が外れる。戻さないとキーボードが閉じる
     inputRef.current?.focus()
   }
+
+  // **キーボードの上の道具に、いまの中身を渡し続ける。**
+  // 渡さないと、装飾を押したときに古い文へ書き戻す。
+  useEffect(() => {
+    if (!rich || !editing) return
+    register({ owner, value, selection, onChange: applyMark, onPhoto })
+    return () => release(owner)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rich, editing, value, selection, owner])
 
   function handleSelectionChange(e) {
     setSelection(e.nativeEvent.selection)
@@ -94,92 +95,43 @@ function Field({
 
   // **主欄は枠を持たない。**（2026-08-14・デザイン案 `3_write`）
   // 書くところが「入力欄」ではなく「紙」に見えるようにする。
-  // 装飾のボタンは欄の下に横一列で置く。ラベルの右に小さく並べていたときは、
-  // 押す対象が見出しの一部のように見えていた。
   if (bare) {
-    const bar = (
-      <View className="flex-row items-center justify-between px-1">
-        <MarkdownToolbar value={value} selection={selection} onChange={applyMark} extra={extra} />
-        <Pressable
-          onPress={() => Keyboard.dismiss()}
-          accessibilityLabel="キーボードを閉じる"
-          className="min-h-touch px-3 justify-center active:opacity-70"
-        >
-          <Text className="font-strong text-label-md text-primary">完了</Text>
-        </Pressable>
-      </View>
-    )
-
     // **触れただけでキーボードが開かないようにする**（2026-08-14）。
     //
     // 主欄は画面の大半を占める。そこに素の `TextInput` を敷くと、
     // スクロールのために指を置いただけで焦点が入り、キーボードが上がる。
-    // 実機で「感度が良すぎる」と言われた。
     //
-    // **書いていないときは入力欄を置かない。** 読む面を置き、
-    // 押されたときに入力欄へ差し替える。指を滑らせただけでは開かない。
-    //
-    // 書いている最中の装飾は `RichEditor` が見せる（2026-08-15）。
-    // 離れているあいだは `RichText`。**どちらでも太字は太字に見える。**
+    // 書いていないあいだは読む面を置き、押されたら入力欄に差し替える。
+    // 装飾は `RichEditor` が書いている最中にも見せる。
     if (!editing) {
       return (
-        <View>
-          <Pressable
-            onPress={() => setEditing(true)}
-            accessibilityLabel={placeholder}
-            style={{ minHeight: rows * 32 + 16 }}
-            className="justify-start"
-          >
-            {value ? (
-              <RichText text={value} className="text-body-lg text-on-surface" />
-            ) : (
-              <Text className="text-body-lg text-outline">{placeholder}</Text>
-            )}
-          </Pressable>
-
-          {/* **書いていないときも道具を出す**（2026-08-14）。
-              キーボードの上へ移したら「装飾どこにいった」と言われた。
-              キーボードが出ていない間はどこにも無かった。
-
-              押せば書き始まる（`applyMark` が編集に入る）。
-              書き始めたら、この列は消えてキーボードの上へ移る。 */}
-          {rich ? <View className="border-t border-border pt-2.5">{bar}</View> : null}
-        </View>
+        <Pressable
+          onPress={() => setEditing(true)}
+          accessibilityLabel={placeholder}
+          style={{ minHeight: rows * 32 + 16 }}
+          className="justify-start"
+        >
+          {value ? (
+            <RichText text={value} className="text-body-lg text-on-surface" />
+          ) : (
+            <Text className="text-body-lg text-outline">{placeholder}</Text>
+          )}
+        </Pressable>
       )
     }
 
     return (
-      <View>
-        <RichEditor
-          ref={inputRef}
-          value={value}
-          onChange={onChange}
-          onSelectionChange={handleSelectionChange}
-          onBlur={() => setEditing(false)}
-          selection={pending ?? undefined}
-          inputAccessoryViewID={USE_ACCESSORY ? ACCESSORY_ID : undefined}
-          autoFocus
-          minHeight={rows * 32 + 16}
-          placeholder={placeholder}
-        />
-
-        {/* **道具はキーボードの上に載せる**（2026-08-14）。
-            欄の下に置いていたときは、キーボードが出た瞬間に隠れていた。
-            「閉じる」も同じ場所にあったので、**キーボードを下ろすための
-            ボタンが、キーボードに隠れて押せなかった。**
-
-            iOS には入力補助ビュー（`InputAccessoryView`）があり、
-            キーボードに貼り付いて上がってくる。これが正しい置き場所。
-            Android には無いので、そちらは欄の下に置いたままにする。 */}
-        {rich && USE_ACCESSORY ? (
-          <InputAccessoryView nativeID={ACCESSORY_ID}>
-            <View className="bg-surface-low border-t border-border py-1">{bar}</View>
-          </InputAccessoryView>
-        ) : null}
-        {rich && !USE_ACCESSORY ? (
-          <View className="border-t border-border pt-2.5">{bar}</View>
-        ) : null}
-      </View>
+      <RichEditor
+        ref={inputRef}
+        value={value}
+        onChange={onChange}
+        onSelectionChange={handleSelectionChange}
+        onBlur={() => setEditing(false)}
+        selection={pending ?? undefined}
+        autoFocus
+        minHeight={rows * 32 + 16}
+        placeholder={placeholder}
+      />
     )
   }
 
@@ -255,6 +207,13 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     setPhotoUrl(savePhoto(targetDate, photo, thumb).photo_url)
   }
 
+  // 写真を選ぶ手続きは `PhotoPicker` が持っている。
+  // キーボードの上のボタンからも同じ手続きを呼べるように、口を預かる
+  const pickRef = useRef(null)
+  function pickPhoto() {
+    pickRef.current?.()
+  }
+
   async function handlePhotoRemove() {
     removePhoto(targetDate)
     setPhotoUrl(null)
@@ -327,18 +286,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         rows={7}
         rich
         bare
-        extra={
-          // **写真は道具の列に入れる**（2026-08-14・デザイン案 `3_write`）。
-          // 別の区画に置いていたので、装飾の道具と別物に見えていた。
-          // クリップ（任意のファイル添付）は付けない。**扱えるのは写真だけ。**
-          <PhotoPicker
-            photoUrl={photoUrl}
-            onSelect={handlePhotoSelect}
-            onRemove={handlePhotoRemove}
-            disabled={loading}
-            compact
-          />
-        }
+        // 写真の入口はキーボードの上の列に入る（`EditorToolbar`）
+        onPhoto={pickPhoto}
         placeholder={
           question && isToday
             ? question
@@ -386,13 +335,14 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         />
       ))}
 
-      {/* 選んだ写真の見た目。**選ぶボタンは道具の列にある** */}
+      {/* 選んだ写真の見た目。**選ぶボタンはキーボードの上にある** */}
       <PhotoPicker
         photoUrl={photoUrl}
         onSelect={handlePhotoSelect}
         onRemove={handlePhotoRemove}
         disabled={loading}
         previewOnly
+        onReady={(pick) => { pickRef.current = pick }}
       />
 
       <Pressable

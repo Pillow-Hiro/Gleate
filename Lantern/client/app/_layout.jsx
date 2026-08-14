@@ -13,6 +13,7 @@ import { ThemeProvider, useThemeContext } from '../lib/theme'
 import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
+import { EditorToolbarProvider } from '../components/EditorToolbar'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
 //
@@ -180,7 +181,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        <RootNavigator />
+        {/* 装飾の列はキーボードに貼り付く。**画面の一番外に置く。**
+            記録フォームの中だと `ScrollView` と一緒に流れてしまう */}
+        <EditorToolbarProvider>
+          <RootNavigator />
+        </EditorToolbarProvider>
       </SafeAreaProvider>
     </ThemeProvider>
   )

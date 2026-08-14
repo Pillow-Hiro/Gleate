@@ -7,5 +7,7 @@
 // 1つのファイルの中で分岐すると、expo-image-picker と写真まわりの文言が
 // Web にも乗る。呼び出し側は分岐を持たず、Metro がこちらを選ぶ。
 export default function PhotoPicker() {
+  // `onReady` を呼ばないので、キーボードの上の列にも写真は出ない。
+  // Web には置き場所が無い（`lib/photoStore.web.js`）
   return null
 }

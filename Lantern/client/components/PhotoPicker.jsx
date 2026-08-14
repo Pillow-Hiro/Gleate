@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
@@ -26,7 +26,15 @@ function ImageIcon({ color = '#514535' }) {
 
 // `compact` … 道具の列に置くアイコンだけの入口
 // `previewOnly` … 選んだ写真の見た目だけ（入口は別の場所にある）
-export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled, compact, previewOnly }) {
+export default function PhotoPicker({
+  photoUrl,
+  onSelect,
+  onRemove,
+  disabled,
+  compact,
+  previewOnly,
+  onReady,
+}) {
   const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -60,6 +68,13 @@ export default function PhotoPicker({ photoUrl, onSelect, onRemove, disabled, co
       setBusy(false)
     }
   }
+
+  // **選ぶ手続きだけを外へ渡す。**
+  // キーボードの上のボタン（`EditorToolbar`）から呼ぶため。
+  // 権限の確認も圧縮もここが持っているので、二重に書かない。
+  useEffect(() => {
+    if (onReady) onReady(handlePick)
+  })
 
   async function handleRemove() {
     setBusy(true)

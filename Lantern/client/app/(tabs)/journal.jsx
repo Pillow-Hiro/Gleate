@@ -17,6 +17,7 @@ import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
 import RecordForm from '../../components/RecordForm'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
+import { EditorToolbarBar } from '../../components/EditorToolbar'
 
 // 当月。`new Date()` から作る。UTC に寄る `toISOString()` は使わない
 function thisMonth() {
@@ -383,6 +384,11 @@ export default function Journal() {
               ) : null}
             </ScrollView>
           </Pressable>
+
+          {/* 装飾の列。**Modal の中にも置く。**
+              RN の Modal は画面の一番外より上に出るので、
+              根元（`_layout.jsx`）に置いた列はここでは隠れる */}
+          <EditorToolbarBar />
         </Pressable>
       </Modal>
     </SafeAreaView>
