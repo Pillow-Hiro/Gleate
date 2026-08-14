@@ -3642,6 +3642,44 @@ Web の書き出しでは別物（`WebEditor.web.jsx` が動く）。
 日本語の変換・カーソル・高さの伸び・装飾の効き方は、
 すべて実機で初めて分かる。
 
+## 2026/08/15 — iOSビルド #12（1回落ちた）
+
+### 指紋が食い違って止まった
+
+    Runtime version mismatch:
+    - local: d7ae613d…
+    - EAS:   ab1c3362…
+
+ログの差分は1点だけだった。
+
+    EAS only: ['expo-keep-awake']
+
+`expo install --fix` と `npm install` を重ねた結果、
+**手元の `node_modules` が壊れて自動リンクから外れていた。**
+EAS はロックファイルから入れ直すので正しく含まれ、食い違った。
+
+`rm -rf node_modules && npm ci` で解消。自動リンクの一覧に戻り（34件）、
+`expo-doctor` も 21/21 に戻った。
+
+**OneDrive 配下の `node_modules` が壊れる件は前から記録してある**が、
+これまでは「`expo export` が `EINVAL readlink` で落ちる」形で出ていた。
+**今回は「ビルドの指紋が合わない」という別の顔で出た。**
+ビルドの前に `npm ci` を通す方が安い。
+
+### できたもの
+
+ビルド **#12**（`ab1c3362…` / commit `963f0de`）。
+**#10 と #11 は落ちたぶん**（番号は自動で進む）。
+
+局所の指紋がビルドと一致することを確認済み。**以降の OTA は #12 に届く。**
+
+**検証結果: OK（画面は見ていない）**
+
+- pytest 857件 / vitest 177件 / `expo export --platform web` 成功
+- `expo-doctor` 21/21
+
+**未確認**: 編集画面・ファイルの添付とも、**実機で初めて動く。**
+
 ---
 
 ## 進行中
