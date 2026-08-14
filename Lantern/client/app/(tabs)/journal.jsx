@@ -7,6 +7,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
+import { todayStr } from '../../lib/date'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import AppHeader from '../../components/AppHeader'
@@ -121,14 +122,22 @@ export default function Journal() {
     }
   }
 
+  // **今日は書く場所が別にある**（2026-08-14）。
+  //
+  // 記録の無い日を押すと記録モーダルを開いていたが、
+  // 今日については「書く」タブが本体で、そちらの方が広く、
+  // 装飾も写真も問いも揃っている。
+  // ここで小さいモーダルを開くと、**同じことをする場所が2つ**になる。
+  //
+  // 過去の日は「書く」から遡れないので、モーダルのままにする。
   function handleDateClick(date) {
     const existingLog = logs.find((l) => l.date === date)
     if (existingLog) {
       setSelectedDate(date)
-    } else {
-      setSelectedDate(null)
-      setModalDate(date)
+      return
     }
+    setSelectedDate(date)
+    if (date !== todayStr()) setModalDate(date)
   }
 
   function closeModal() {
@@ -275,7 +284,11 @@ export default function Journal() {
               ) : null}
 
               {selectedDate && !selectedLog ? (
-                <Text className="text-aux text-ink-faint text-center mt-3">この日の記録はありません</Text>
+                <Text className="text-label-md text-outline text-center mt-3">
+                  {selectedDate === todayStr()
+                    ? '今日の記録はまだありません。「書く」から残せます。'
+                    : 'この日の記録はありません'}
+                </Text>
               ) : null}
             </View>
 

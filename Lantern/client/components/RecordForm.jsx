@@ -29,6 +29,15 @@ import MarkdownToolbar from './MarkdownToolbar'
 const ACCESSORY_ID = 'lantern-record-toolbar'
 const USE_ACCESSORY = Platform.OS === 'ios'
 
+// 「やったこと」以外の3項目。**畳んで並べる。**
+const EXTRA_FIELDS = [
+  { key: 'enjoyable', chip: 'よかったこと', label: 'よかったこと・楽しかったこと' },
+  { key: 'struggled', chip: '困ったこと', label: '詰まったこと・困ったこと' },
+  // 次にやることは「あったこと」ではなく予定で、他の3つと性質が違う。
+  // アイデアの溜め場とも役割が重なるため、ここに置く。
+  { key: 'next', chip: '次にやること', label: '次にやること' },
+]
+
 // 日付の行に置く小さな暦。**絵文字は使わない**ので図形で描く
 function CalendarIcon({ color = '#847563' }) {
   return (
@@ -57,6 +66,8 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
   const inputRef = useRef(null)
 
   function applyMark(next, cursor) {
+    // 書いていないときに押されたら、そのまま書き始められるようにする
+    setEditing(true)
     onChange(next)
     setPending({ start: cursor, end: cursor })
     setSelection({ start: cursor, end: cursor })
@@ -101,18 +112,28 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
     // 離れると太字は太字として描かれる（`RichText`）。
     if (!editing) {
       return (
-        <Pressable
-          onPress={() => setEditing(true)}
-          accessibilityLabel={placeholder}
-          style={{ minHeight: rows * 32 + 16 }}
-          className="justify-start"
-        >
-          {value ? (
-            <RichText text={value} className="text-body-lg text-on-surface" />
-          ) : (
-            <Text className="text-body-lg text-outline">{placeholder}</Text>
-          )}
-        </Pressable>
+        <View>
+          <Pressable
+            onPress={() => setEditing(true)}
+            accessibilityLabel={placeholder}
+            style={{ minHeight: rows * 32 + 16 }}
+            className="justify-start"
+          >
+            {value ? (
+              <RichText text={value} className="text-body-lg text-on-surface" />
+            ) : (
+              <Text className="text-body-lg text-outline">{placeholder}</Text>
+            )}
+          </Pressable>
+
+          {/* **書いていないときも道具を出す**（2026-08-14）。
+              キーボードの上へ移したら「装飾どこにいった」と言われた。
+              キーボードが出ていない間はどこにも無かった。
+
+              押せば書き始まる（`applyMark` が編集に入る）。
+              書き始めたら、この列は消えてキーボードの上へ移る。 */}
+          {rich ? <View className="border-t border-border pt-2.5">{bar}</View> : null}
+        </View>
       )
     }
 
@@ -190,7 +211,22 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     struggled: existingLog?.struggled || '',
     next: existingLog?.next || '',
   })
-  const [detailOpen, setDetailOpen] = useState(false)
+  // **開いている欄。**（2026-08-14）
+  //
+  // それまでは「もっと詳しく書く」ひとつで3項目をまとめて畳んでいた。
+  // 実機で「ユーザーが迷うかも」と言われた。畳まれていると
+  // **何が書けるのかが分からない**まま、開くかどうかを決めることになる。
+  //
+  // 項目ごとのチップにした。**名前が見えているので、開く前に分かる。**
+  // 押した欄だけが現れるので、既定の姿は1段のまま。
+  //
+  // **欄そのものは消さない**（CLAUDE.md）。実測で
+  // 次にやること 16.7% / よかった 5.6% / 困った 5.6% と低いが、使われている。
+  // 消すと後から分け直せない。
+  const initiallyOpen = new Set(
+    EXTRA_FIELDS.filter(({ key }) => existingLog?.[key]).map(({ key }) => key)
+  )
+  const [openFields, setOpenFields] = useState(initiallyOpen)
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
@@ -296,44 +332,32 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
             : `${isToday ? '今日' : 'この日'}どんなことをしましたか？`
         }
       />
-      {/* 既定で見えているのは「やったこと」だけにする。
-          実測（2026-08-06・全20件）で 17/20 が この1項目だけで完結しており、
-          次にやること 15% / よかったこと 5% / 困ったこと 5% だった。
-          既定の姿を実態に合わせ、4段の3（邪魔なUIがない）に寄せる。
-          欄は消さない。5%とはいえ使われており、消すと後から分けられない。
-
-          Web版はCSS gridで開閉していたが、RNにgridがないため出し分けで表現する */}
-      <Pressable
-        onPress={() => setDetailOpen((o) => !o)}
-        className="flex-row items-center gap-1.5 min-h-touch"
-      >
-        <Text className="text-label-md text-outline">{detailOpen ? '⌄' : '›'}</Text>
-        <Text className="text-label-md text-outline">
-          {detailOpen ? 'もっと詳しく書く（閉じる）' : 'もっと詳しく書く'}
-        </Text>
-      </Pressable>
-
-      {detailOpen ? (
-        <View className="gap-4 pt-1">
-          <Field
-            value={form.enjoyable}
-            onChange={(v) => setForm((f) => ({ ...f, enjoyable: v }))}
-            label="よかったこと・楽しかったこと"
-          />
-          <Field
-            value={form.struggled}
-            onChange={(v) => setForm((f) => ({ ...f, struggled: v }))}
-            label="詰まったこと・困ったこと"
-          />
-          {/* 次にやることは「あったこと」ではなく予定で、他の3つと性質が違う。
-              アイデアの溜め場とも役割が重なるため、ここに置く。 */}
-          <Field
-            value={form.next}
-            onChange={(v) => setForm((f) => ({ ...f, next: v }))}
-            label="次にやること"
-          />
+      {/* **まだ開いていない欄をチップで出す。**
+          押した欄だけが現れる。既定の姿は「やったこと」1段のまま。
+          全部開いたらチップの列は消える。 */}
+      {EXTRA_FIELDS.some(({ key }) => !openFields.has(key)) ? (
+        <View className="flex-row flex-wrap gap-2">
+          {EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => (
+            <Pressable
+              key={key}
+              onPress={() => setOpenFields((prev) => new Set(prev).add(key))}
+              className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 min-h-touch justify-center active:opacity-70"
+            >
+              <Text className="text-label-md text-primary">＋</Text>
+              <Text className="text-label-md text-on-surface-variant">{chip}</Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
+
+      {EXTRA_FIELDS.filter(({ key }) => openFields.has(key)).map(({ key, label }) => (
+        <Field
+          key={key}
+          value={form[key]}
+          onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
+          label={label}
+        />
+      ))}
 
       {/* 選んだ写真の見た目。**選ぶボタンは道具の列にある** */}
       <PhotoPicker

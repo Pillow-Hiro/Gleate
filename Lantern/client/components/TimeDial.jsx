@@ -16,8 +16,10 @@ import Text from './Text'
 //
 // **分は5分刻み。** 1分刻みだと 60 段を回すことになり、
 // 21:37 に意味が無いのは前と同じ。
+// **見える段を増やした**（2026-08-14）。3段だと、いま選んでいる時刻の
+// 前後が1つずつしか見えず、どこを回しているのか分からなかった。
 const ITEM_HEIGHT = 44
-const VISIBLE = 3
+const VISIBLE = 5
 const HEIGHT = ITEM_HEIGHT * VISIBLE
 
 export const MINUTE_STEP = 5
@@ -55,13 +57,13 @@ function Column({ values, value, onChange, label }) {
     <ScrollView
       ref={ref}
       accessibilityLabel={label}
-      style={{ height: HEIGHT, width: 80 }}
+      style={{ height: HEIGHT, width: 96 }}
       showsVerticalScrollIndicator={false}
       snapToInterval={ITEM_HEIGHT}
       decelerationRate="fast"
       onMomentumScrollEnd={handleEnd}
       onScrollEndDrag={handleEnd}
-      contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+      contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * Math.floor(VISIBLE / 2) }}
     >
       {values.map((v) => (
         // 回すだけでなく、押しても選べるようにする。
@@ -93,7 +95,7 @@ export default function TimeDial({ hour, minute, onChange }) {
         <View
           pointerEvents="none"
           className="absolute left-0 right-0 bg-surface-high rounded"
-          style={{ height: ITEM_HEIGHT, top: ITEM_HEIGHT }}
+          style={{ height: ITEM_HEIGHT, top: ITEM_HEIGHT * Math.floor(VISIBLE / 2) }}
         />
         <Column
           label="時"

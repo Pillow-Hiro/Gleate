@@ -1,11 +1,16 @@
 // タブバーまわりの寸法。**ネイティブ版。Web 版は `tabBar.web.js`。**
 //
 // ネイティブは `app/(tabs)/_layout.jsx` が本物の `UITabBar`
-// （`NativeTabs`）を出す。**内容の余白は OS が持つ**ので、
-// 画面側は下を空けない。空けると二重になる。
+// （`NativeTabs`）を出す。
 //
-// Web は自前のタブバーを絶対配置で浮かせているため、
-// 画面側が余白を持つ必要がある。そちらは `tabBar.web.js`。
+// **2026-08-14 まで 0 を返していた。** OS が内容の余白を入れる前提だったが、
+// 実機で「ボトムバーが他の要素と被る」と言われた。
+// iOS 26 のタブバーは**浮いたカプセル**で、内容の上に重なる。
+// 素の `ScrollView` には余白が入らない。
+//
+// **足りないより余る方がよい。** 下に空きができるだけで済むが、
+// 足りないと最後の記録が読めない。
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export const WIDE_SCREEN_MIN_WIDTH = 768
 
@@ -18,9 +23,10 @@ export const BOTTOM_GAP = 40
 /**
  * 画面の一番下に空ける余白。
  *
- * **ネイティブでは 0。** `NativeTabs` が内容の余白を入れる。
+ * タブバーの高さ ＋ ホームインジケータの分。
  */
 export function useTabBarInset() {
-  return 0
+  const insets = useSafeAreaInsets()
+  return TAB_BAR_HEIGHT + insets.bottom
 }
 
