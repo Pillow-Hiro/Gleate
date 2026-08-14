@@ -85,6 +85,20 @@ function Photo({ color }) {
   )
 }
 
+function Clip({ color }) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M20 11.5l-8 8a5 5 0 01-7-7l8.5-8.5a3.4 3.4 0 014.8 4.8L9.7 17.4a1.8 1.8 0 01-2.5-2.5l7.8-7.8"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
 const INK = '#514535'
 
 export function EditorToolbarProvider({ children }) {
@@ -155,7 +169,14 @@ function ToolbarBar({ field }) {
   // 書いている欄が無いか、キーボードが出ていないときは何も置かない
   if (!field || height === 0) return null
 
+  // **欄が自分で効かせられるならそちらに任せる。**
+  // WebView の編集画面は中の選択範囲を持っており、
+  // こちらから文字列を組み直すと、その選択が失われる。
   function apply(kind) {
+    if (field.exec) {
+      field.exec(kind)
+      return
+    }
     const { value, selection, onChange } = field
     const start = selection?.start ?? value.length
     const end = selection?.end ?? start
@@ -166,6 +187,13 @@ function ToolbarBar({ field }) {
     onChange(next.text, next.cursor)
   }
 
+  function dismiss() {
+    // WebView の中の欄は `Keyboard.dismiss()` では下りない。
+    // 中へ「焦点を外せ」と伝える
+    if (field.exec) field.exec('blur')
+    Keyboard.dismiss()
+  }
+
   const buttons = [
     { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
     { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
@@ -173,6 +201,9 @@ function ToolbarBar({ field }) {
   ]
   if (field.onPhoto) {
     buttons.push({ id: 'photo', label: '写真を追加', Icon: Photo, onPress: field.onPhoto })
+  }
+  if (field.onFile) {
+    buttons.push({ id: 'file', label: 'ファイルを追加', Icon: Clip, onPress: field.onFile })
   }
 
   return (
@@ -201,7 +232,7 @@ function ToolbarBar({ field }) {
         <View className="flex-1" />
 
         <Pressable
-          onPress={() => Keyboard.dismiss()}
+          onPress={dismiss}
           accessibilityLabel="キーボードを閉じる"
           className="min-h-touch px-3 justify-center active:opacity-70"
         >

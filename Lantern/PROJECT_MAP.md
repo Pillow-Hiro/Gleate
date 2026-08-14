@@ -113,7 +113,9 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RecordForm.jsx` | 書く / 記録のモーダル | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `RichText.jsx` | LogDetail / LogSnapshot | 記録を装飾つきで出す。**出せるのは3つだけ** |
-| `RichEditor.jsx` | RecordForm | **書いている最中に装飾が見える入力欄。** 記号は消さず薄くする |
+| `RichEditor.jsx` | WebEditor.web | Web 用の入力欄。記号は消さず薄くする |
+| `WebEditor.jsx` ＋ `WebEditor.web.jsx` | RecordForm | **本物の編集画面**（WebView の `contenteditable`）。記号が見えない |
+| `FileList.jsx` | RecordForm | 添えたファイルの一覧。**端末の中だけ**。件数は出さない |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
@@ -156,6 +158,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `theme.js` | テーマの保持 | — |
 | `sample.js` | ホームに並べる記録を選ぶ。**その日のうちは同じ顔ぶれ** | `sample.test.js` |
 | `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
+| `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
+| `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
 | `openPrivacy.js` / `openPrivacy.web.js` | プライバシーポリシーを開く。**アプリ内に複製しない** | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

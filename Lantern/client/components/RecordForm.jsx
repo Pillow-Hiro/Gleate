@@ -1,9 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
+import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import RichText from './RichText'
-import RichEditor from './RichEditor'
+import WebEditor from './WebEditor'
+import FileList from './FileList'
+import { list as listFiles, save as saveFile } from '../lib/fileStore'
+import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
@@ -56,11 +60,14 @@ function Field({
   rich,
   bare,
   onPhoto,
+  onFile,
   onClose,
   closeLabel,
 }) {
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
+  const editorRef = useRef(null)
+  const { isDark } = useThemeContext()
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
   const [selection, setSelection] = useState(null)
@@ -79,14 +86,21 @@ function Field({
     inputRef.current?.focus()
   }
 
-  // **キーボードの上の道具に、いまの中身を渡し続ける。**
-  // 渡さないと、装飾を押したときに古い文へ書き戻す。
+  // **キーボードの上の道具に、いまの欄を渡す。**
+  //
+  // `bare` の欄は WebView なので、**装飾は中で効かせる**（`exec`）。
+  // こちらから文字列を組み直すと、中の選択が失われる。
   useEffect(() => {
     if (!rich || !editing) return
-    register({ owner, value, selection, onChange: applyMark, onPhoto })
+    register({
+      owner,
+      exec: (cmd) => editorRef.current?.exec(cmd),
+      onPhoto,
+      onFile,
+    })
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rich, editing, value, selection, owner])
+  }, [rich, editing, owner])
 
   function handleSelectionChange(e) {
     setSelection(e.nativeEvent.selection)
@@ -121,14 +135,13 @@ function Field({
     }
 
     return (
-      <RichEditor
-        ref={inputRef}
+      <WebEditor
+        ref={editorRef}
         value={value}
         onChange={onChange}
-        onSelectionChange={handleSelectionChange}
         onBlur={() => setEditing(false)}
-        selection={pending ?? undefined}
         autoFocus
+        isDark={isDark}
         minHeight={rows * 32 + 16}
         placeholder={placeholder}
       />
@@ -214,6 +227,26 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     pickRef.current?.()
   }
 
+  // 添えたファイル。**端末の中だけ**（`lib/fileStore.js`）
+  const [files, setFiles] = useState(() => listFiles(targetDate))
+  function refreshFiles() {
+    setFiles(listFiles(targetDate))
+  }
+
+  async function pickFile() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
+      if (res.canceled) return
+      for (const asset of res.assets ?? []) {
+        saveFile(targetDate, asset.uri, asset.name || 'file')
+      }
+      refreshFiles()
+    } catch (e) {
+      // 選べなくても記録は書ける
+      console.warn('[File] 追加に失敗', e)
+    }
+  }
+
   async function handlePhotoRemove() {
     removePhoto(targetDate)
     setPhotoUrl(null)
@@ -286,8 +319,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         rows={7}
         rich
         bare
-        // 写真の入口はキーボードの上の列に入る（`EditorToolbar`）
+        // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
         onPhoto={pickPhoto}
+        onFile={pickFile}
         placeholder={
           question && isToday
             ? question
@@ -334,6 +368,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           closeLabel={form[key] ? '消して閉じる' : '閉じる'}
         />
       ))}
+
+      {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ） */}
+      <FileList files={files} onChange={refreshFiles} />
 
       {/* 選んだ写真の見た目。**選ぶボタンはキーボードの上にある** */}
       <PhotoPicker
