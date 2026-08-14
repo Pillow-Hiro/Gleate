@@ -3,6 +3,7 @@ import { InputAccessoryView, Keyboard, Platform, Pressable, TextInput, View } fr
 import Svg, { Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import RichText from './RichText'
+import RichEditor from './RichEditor'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
@@ -47,7 +48,18 @@ function CalendarIcon({ color = '#847563' }) {
     </Svg>
   )
 }
-function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich, bare, extra }) {
+function Field({
+  value,
+  onChange,
+  label,
+  rows = 2,
+  placeholder = '（任意）',
+  rich,
+  bare,
+  extra,
+  onClose,
+  closeLabel,
+}) {
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
@@ -107,9 +119,8 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
     // **書いていないときは入力欄を置かない。** 読む面を置き、
     // 押されたときに入力欄へ差し替える。指を滑らせただけでは開かない。
     //
-    // 副産物として、**装飾が効いていることが目で分かる。**
-    // 入力中は Markdown の記号がそのまま見えるが、
-    // 離れると太字は太字として描かれる（`RichText`）。
+    // 書いている最中の装飾は `RichEditor` が見せる（2026-08-15）。
+    // 離れているあいだは `RichText`。**どちらでも太字は太字に見える。**
     if (!editing) {
       return (
         <View>
@@ -139,22 +150,17 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
 
     return (
       <View>
-        <TextInput
+        <RichEditor
           ref={inputRef}
           value={value}
-          onChangeText={onChange}
+          onChange={onChange}
           onSelectionChange={handleSelectionChange}
           onBlur={() => setEditing(false)}
           selection={pending ?? undefined}
           inputAccessoryViewID={USE_ACCESSORY ? ACCESSORY_ID : undefined}
           autoFocus
-          multiline
-          scrollEnabled={false}
-          textAlignVertical="top"
-          style={{ minHeight: rows * 32 + 16 }}
-          className="font-body text-body-lg text-on-surface"
+          minHeight={rows * 32 + 16}
           placeholder={placeholder}
-          placeholderTextColor="#8E8478"
         />
 
         {/* **道具はキーボードの上に載せる**（2026-08-14）。
@@ -179,7 +185,14 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
 
   return (
     <View>
-      <Text className="text-label-md text-outline mb-1.5">{label}</Text>
+      <View className="flex-row items-center justify-between mb-1.5">
+        <Text className="text-label-md text-outline">{label}</Text>
+        {onClose ? (
+          <Pressable onPress={onClose} className="min-h-touch px-1 justify-center active:opacity-70">
+            <Text className="text-label-md text-outline">{closeLabel}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       <TextInput
         ref={inputRef}
         value={value}
@@ -356,6 +369,20 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           value={form[key]}
           onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
           label={label}
+          // **畳めるようにする**（2026-08-15）。開いたら戻せなかった。
+          //
+          // 中身があるまま畳むと、**見えていない文が保存される。**
+          // だから畳むときは消す。押す前にそう書いてある
+          // （空なら「やめる」、書いてあれば「消して閉じる」）。
+          onClose={() => {
+            setForm((f) => ({ ...f, [key]: '' }))
+            setOpenFields((prev) => {
+              const next = new Set(prev)
+              next.delete(key)
+              return next
+            })
+          }}
+          closeLabel={form[key] ? '消して閉じる' : 'やめる'}
         />
       ))}
 

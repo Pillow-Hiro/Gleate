@@ -51,8 +51,11 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
       }),
       Animated.timing(fade, {
         toValue: next ? 1 : 0,
-        // 閉じるときは先に消す。中身が残ったまま畳むとちらつく
-        duration: next ? 260 : 120,
+        // **開くときは少し待つ**（2026-08-15）。
+        // 高さが伸びるより先に文字が出ると、動きと中身が別々に見えた。
+        // 閉じるときは待たない。中身が残ったまま畳むとちらつく
+        delay: next ? 120 : 0,
+        duration: next ? 260 : 100,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),

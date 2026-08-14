@@ -15,10 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 export const WIDE_SCREEN_MIN_WIDTH = 768
 
 // Web 版と同じ名前を出しておく。画面はどちらでも同じ書き方で済む。
-export const TAB_BAR_HEIGHT = 56
+// **iOS の `UITabBar` の高さ。** Web の自前バー（56）とは別物。
+// 2026-08-15 に 56 → 49 にした。多く取りすぎて下が空きすぎていた。
+export const TAB_BAR_HEIGHT = 49
 
-// 画面の一番下と内容のあいだの余白（元は className の `pb-10`）。
-export const BOTTOM_GAP = 40
+// 画面の一番下と内容のあいだの余白。
+// **ネイティブでは小さくする**（2026-08-15）。
+// タブバーぶんを別に取っているので、ここまで 40 取ると空きすぎる。
+export const BOTTOM_GAP = 8
 
 /**
  * 画面の一番下に空ける余白。

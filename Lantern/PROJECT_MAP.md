@@ -99,7 +99,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `AuthForm.jsx` | login / signup | カードに載せた2欄。空欄のまま送らせない。欄そのものは `AuthField` |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
-| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。**丸いチェックで使ったものを下へ落とす** |
+| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱** |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
@@ -113,6 +113,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RecordForm.jsx` | 書く / 記録のモーダル | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `RichText.jsx` | LogDetail / LogSnapshot | 記録を装飾つきで出す。**出せるのは3つだけ** |
+| `RichEditor.jsx` | RecordForm | **書いている最中に装飾が見える入力欄。** 記号は消さず薄くする |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
@@ -145,7 +146,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `fonts.js` | `useAppFonts()`。読み込む書体はここだけで決める | — |
 | `format.js` | 表示用の整形 | `format.test.js` |
 | `imageMath.js` | 縮小後の寸法計算 | `imageMath.test.js` |
-| `markdown.js` | 記法の解釈と、装飾ボタンの文字列操作 | `markdown.test.js` |
+| `markdown.js` | 記法の解釈と、装飾ボタンの文字列操作。`parseWithMarkers` は**つなぎ直すと元に戻る** | `markdown.test.js` |
 | `image.js` | 圧縮の実行 | — |
 | `photoPath.js` | 端末内の写真のファイル名を組み立てる／読み解く | `photoPath.test.js` |
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |

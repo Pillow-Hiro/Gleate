@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Pressable, TextInput, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, PanResponder, Pressable, TextInput, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
@@ -59,60 +59,105 @@ function CheckCircle({ checked }) {
   )
 }
 
-// 1行。**チェックと文だけ。** 削除は開いたときにだけ出す。
+// 1行。**チェックと文だけ。**
 //
-// **畳んである。** 1行のメモに削除ボタンが常に添えてあると、
-// 一覧が操作の並びに見える。押して開いた行にだけ出す。
+// 削除は**左に払うとゴミ箱が出る**（2026-08-15・iOS の作法）。
+// それまでは行を押して開き、中の「削除」を押し、確認をもう一度押す
+// という3手で、**押して開く操作が「使った」と紛らわしかった。**
+//
+// `react-native-gesture-handler` は直接の依存に入れていないので、
+// RN 標準の `PanResponder` で作る。依存を足すと指紋が変わり、
+// 配信済みのビルドへ OTA が届かなくなる。
+const TRASH_WIDTH = 80
+// これ以上払ったら開く。浅いと、縦に滑らせただけで開いてしまう
+const OPEN_AT = 40
+
+function TrashIcon({ color = '#FFFFFF' }) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 7h16M10 4h4M6 7l1 13h10l1-13M10 11v6M14 11v6"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
 function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
-  const [open, setOpen] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const picked = Boolean(idea.picked_at)
+  const slide = useRef(new Animated.Value(0)).current
+  const openRef = useRef(false)
+
+  function settle(toValue) {
+    openRef.current = toValue !== 0
+    Animated.spring(slide, {
+      toValue,
+      useNativeDriver: true,
+      bounciness: 0,
+      speed: 18,
+    }).start()
+  }
+
+  const pan = useRef(
+    PanResponder.create({
+      // **横に払ったときだけ拾う。** 縦は一覧のスクロールに渡す
+      onMoveShouldSetPanResponder: (_e, g) =>
+        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderMove: (_e, g) => {
+        const base = openRef.current ? -TRASH_WIDTH : 0
+        const next = Math.min(0, Math.max(-TRASH_WIDTH, base + g.dx))
+        slide.setValue(next)
+      },
+      onPanResponderRelease: (_e, g) => {
+        const base = openRef.current ? -TRASH_WIDTH : 0
+        settle(base + g.dx < -OPEN_AT ? -TRASH_WIDTH : 0)
+      },
+      onPanResponderTerminate: () => settle(0),
+    })
+  ).current
 
   return (
     <View className={isLast ? '' : 'border-b border-border'}>
-      <View className="flex-row items-start gap-3 py-3">
-        <Pressable
-          onPress={() => onTogglePicked(idea)}
-          accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
-          hitSlop={10}
-          className="min-h-touch justify-center"
-        >
-          <CheckCircle checked={picked} />
-        </Pressable>
+      <View>
+        {/* ゴミ箱は下に敷いておく。払うと行がずれて現れる */}
+        <View className="absolute right-0 top-0 bottom-0 justify-center">
+          <Pressable
+            onPress={() => onDelete(idea)}
+            accessibilityLabel="このアイデアを削除する"
+            style={{ width: TRASH_WIDTH }}
+            className="h-full bg-error items-center justify-center rounded active:opacity-80"
+          >
+            <TrashIcon />
+          </Pressable>
+        </View>
 
-        <Pressable
-          onPress={() => { setOpen((o) => !o); setConfirmDelete(false) }}
-          className="flex-1 min-h-touch justify-center"
+        <Animated.View
+          {...pan.panHandlers}
+          style={{ transform: [{ translateX: slide }] }}
+          className="flex-row items-center gap-3 py-3 bg-surface-low"
         >
+          <Pressable
+            onPress={() => onTogglePicked(idea)}
+            accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
+            hitSlop={10}
+            className="min-h-touch justify-center"
+          >
+            <CheckCircle checked={picked} />
+          </Pressable>
+
           <Text
-            className={`text-body-md leading-relaxed ${
+            className={`flex-1 text-body-md leading-relaxed ${
               picked ? 'text-outline' : 'text-on-surface'
             }`}
             style={picked ? { textDecorationLine: 'line-through' } : undefined}
           >
             {idea.text}
           </Text>
-        </Pressable>
+        </Animated.View>
       </View>
-
-      {open ? (
-        <View className="flex-row justify-end gap-4 pb-3">
-          {confirmDelete ? (
-            <>
-              <Pressable onPress={() => setConfirmDelete(false)} className="min-h-touch justify-center">
-                <Text className="text-label-md text-outline">やめる</Text>
-              </Pressable>
-              <Pressable onPress={() => onDelete(idea)} className="min-h-touch justify-center">
-                <Text className="text-label-md text-error">削除する</Text>
-              </Pressable>
-            </>
-          ) : (
-            <Pressable onPress={() => setConfirmDelete(true)} className="min-h-touch justify-center">
-              <Text className="text-label-md text-error">削除</Text>
-            </Pressable>
-          )}
-        </View>
-      ) : null}
     </View>
   )
 }

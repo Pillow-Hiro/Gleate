@@ -75,6 +75,75 @@ function walk(text, bold, italic) {
 }
 
 /**
+ * **書いている最中の本文**を、記号ごと断片に割る。
+ *
+ * `parseInline` は記号を捨てる（読むための形）。こちらは**捨てない。**
+ * 返した `text` をつなぐと、渡した文字列にそのまま戻る。
+ *
+ * 入力欄の中で装飾を見せるために使う。記号を消してしまうと、
+ * 画面の文字と入力欄の中身がずれ、打つたびにカーソルが飛ぶ。
+ * **記号は残したまま薄くする。**
+ *
+ * 返すのは `{ text, bold, italic, marker }` の配列。
+ * `marker` は `**` や `- ` のような記号そのもの。
+ */
+export function parseWithMarkers(text) {
+  if (!text) return []
+  const out = []
+
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) out.push({ text: '\n', bold: false, italic: false, marker: false })
+
+    const bulletMatch = line.match(BULLET)
+    let rest = line
+    if (bulletMatch) {
+      out.push({ text: bulletMatch[0], bold: false, italic: false, marker: true })
+      rest = line.slice(bulletMatch[0].length)
+    }
+    walkMarked(rest, false, false, out)
+  })
+
+  return out
+}
+
+function walkMarked(text, bold, italic, out) {
+  if (!text) return
+
+  const b = bold ? null : BOLD.exec(text)
+  const i = italic ? null : ITALIC.exec(text)
+
+  let m = null
+  let nextBold = bold
+  let nextItalic = italic
+  if (b && (!i || b.index <= i.index)) {
+    m = b
+    nextBold = true
+  } else if (i) {
+    m = i
+    nextItalic = true
+  }
+
+  if (!m) {
+    out.push({ text, bold, italic, marker: false })
+    return
+  }
+
+  if (m.index > 0) out.push({ text: text.slice(0, m.index), bold, italic, marker: false })
+
+  // 記号は本体の前後に同じ長さで付く（`**` なら 2 文字ずつ）
+  const inner = m[1] ?? m[2] ?? ''
+  const markLen = (m[0].length - inner.length) / 2
+  const open = m[0].slice(0, markLen)
+  const close = m[0].slice(m[0].length - markLen)
+
+  out.push({ text: open, bold: nextBold, italic: nextItalic, marker: true })
+  walkMarked(inner, nextBold, nextItalic, out)
+  out.push({ text: close, bold: nextBold, italic: nextItalic, marker: true })
+
+  walkMarked(text.slice(m.index + m[0].length), bold, italic, out)
+}
+
+/**
  * 本文を行の配列に割る。
  *
  * 返すのは `{ bullet, spans }` の配列。

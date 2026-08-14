@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseBlocks, parseInline, stripMarkdown, toggleBullet, wrapSelection } from './markdown'
+import { parseBlocks, parseInline, stripMarkdown, toggleBullet, wrapSelection, parseWithMarkers } from './markdown'
 
 const plain = (spans) => spans.map((s) => s.text).join('')
 
@@ -133,5 +133,59 @@ describe('toggleBullet', () => {
     const start = src.indexOf('対象')
     const r = toggleBullet(src, start, start + 2)
     expect(r.text).toBe('上の行\n- 対象\n下の行')
+  })
+})
+
+describe('parseWithMarkers', () => {
+  // **いちばん大事な性質。** つなぎ直して元に戻らないと、
+  // 入力欄の中身と画面の文字がずれ、打つたびにカーソルが飛ぶ
+  const samples = [
+    '',
+    'ふつうの文',
+    '**強い**',
+    'これは**強い**言葉',
+    '*斜め*と**強い**',
+    '- 箇条書き',
+    '- **強い**箇条書き',
+    '1行目\n2行目',
+    '空行を挟む\n\n次の行',
+    '**閉じていない',
+    '*a* *b* *c*',
+    '記号だけ ** ',
+    '__下線の太字__',
+    '_下線の斜体_',
+  ]
+
+  it('つなぎ直すと元の文字列に戻る', () => {
+    for (const s of samples) {
+      expect(parseWithMarkers(s).map((x) => x.text).join('')).toBe(s)
+    }
+  })
+
+  it('記号には marker が立つ', () => {
+    const spans = parseWithMarkers('これは**強い**')
+    const markers = spans.filter((s) => s.marker).map((s) => s.text)
+    expect(markers).toEqual(['**', '**'])
+  })
+
+  it('記号の中身に bold が立つ', () => {
+    const spans = parseWithMarkers('**強い**')
+    const body = spans.find((s) => !s.marker && s.text === '強い')
+    expect(body.bold).toBe(true)
+  })
+
+  it('箇条書きの行頭は marker', () => {
+    const spans = parseWithMarkers('- あれ')
+    expect(spans[0]).toEqual({ text: '- ', bold: false, italic: false, marker: true })
+  })
+
+  it('改行はそのまま1つの断片になる', () => {
+    const spans = parseWithMarkers('あ\nい')
+    expect(spans.map((s) => s.text)).toEqual(['あ', '\n', 'い'])
+  })
+
+  it('斜体も本体に印が立つ', () => {
+    const spans = parseWithMarkers('*斜め*')
+    expect(spans.find((s) => !s.marker && s.text === '斜め').italic).toBe(true)
   })
 })
