@@ -331,7 +331,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
               return next
             })
           }}
-          closeLabel={form[key] ? '消して閉じる' : 'やめる'}
+          closeLabel={form[key] ? '消して閉じる' : '閉じる'}
         />
       ))}
 

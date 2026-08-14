@@ -10,6 +10,7 @@ import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
 import TimeDial from '../../components/TimeDial'
+import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
@@ -71,6 +72,10 @@ export default function Settings() {
   const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
   const [notifyBlocked, setNotifyBlocked] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
+  // **アドレスは押すまで出さない**（2026-08-15）。
+  // 設定を開くたびに自分のメールアドレスが並ぶのは、
+  // 画面を人に見せるときに困る。押せば出る
+  const [emailShown, setEmailShown] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -162,12 +167,29 @@ export default function Settings() {
           <Text className="font-display text-headline-md text-ink">設定</Text>
         </View>
 
-        {/* 誰として使っているか。**顔写真は置かない。**
-            プロフィールは持たない（`REQUIREMENTS.md`）。
-            自分のアドレスが見えれば、どのアカウントかは分かる。 */}
+        {/* 誰として使っているか。
+            **顔写真は持たない**（プロフィールは要件に含まない）。
+            代わりにアドレスから決まる印を出す（`AccountMark`）。
+            同じアドレスなら同じ色・同じ文字になるので、
+            取り違えていないかが一目で分かる。 */}
         {email ? (
           <Group>
-            <Row label="アカウント" value={email} isLast />
+            <Pressable
+              onPress={() => setEmailShown((v) => !v)}
+              accessibilityLabel={emailShown ? 'メールアドレスを隠す' : 'メールアドレスを表示する'}
+              className="flex-row items-center gap-3 py-3.5 min-h-touch active:opacity-70"
+            >
+              <AccountMark email={email} />
+              <View className="flex-1">
+                <Text className="text-body-md text-on-surface">アカウント</Text>
+                {emailShown ? (
+                  <Text className="text-label-md text-outline mt-0.5">{email}</Text>
+                ) : (
+                  <Text className="text-label-md text-outline mt-0.5">タップして表示</Text>
+                )}
+              </View>
+              <Text className="text-label-md text-outline">{emailShown ? '⌃' : '⌄'}</Text>
+            </Pressable>
           </Group>
         ) : null}
 

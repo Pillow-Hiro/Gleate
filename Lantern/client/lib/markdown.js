@@ -157,13 +157,34 @@ export function parseBlocks(text) {
   })
 }
 
-/** 選択範囲を記号で囲む。入力欄の装飾ボタンが使う。 */
+// 語の切れ目。**日本語には空白が無い**ので、空白と改行と約物で切る。
+// 完全な語の判定は要らない。**囲む範囲の見当が付けばよい。**
+const WORD_BREAK = /[\s、。，．・「」『』（）()!?！？:：;；]/
+
+/**
+ * 選択範囲を記号で囲む。入力欄の装飾ボタンが使う。
+ *
+ * **何も選んでいないときは、カーソルのある語を囲む**（2026-08-15）。
+ * それまでは記号だけ置いていたので、押すと `****` が現れていた。
+ * 実機で「****が表示されるのは良くない」と言われた。
+ *
+ * Apple の「メモ」は押した時点から先を太字にするが、
+ * こちらは記法を本文に持つので、**いま書いている語**を対象にする。
+ * 語が見当たらないとき（空行・空白の上）だけ、記号を置いてその間に戻す。
+ */
 export function wrapSelection(text, start, end, mark) {
-  const selected = text.slice(start, end)
-  // 何も選んでいなければ記号だけ置き、間にカーソルを戻す
-  const body = selected || ''
-  const next = text.slice(0, start) + mark + body + mark + text.slice(end)
-  return { text: next, cursor: start + mark.length + body.length }
+  let from = start
+  let to = end
+
+  if (start === end) {
+    // カーソルの左右へ、切れ目に当たるまで伸ばす
+    while (from > 0 && !WORD_BREAK.test(text[from - 1])) from -= 1
+    while (to < text.length && !WORD_BREAK.test(text[to])) to += 1
+  }
+
+  const body = text.slice(from, to)
+  const next = text.slice(0, from) + mark + body + mark + text.slice(to)
+  return { text: next, cursor: from + mark.length + body.length }
 }
 
 /** 選択している行の頭に `- ` を付ける／外す。 */

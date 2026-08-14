@@ -127,6 +127,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
+| `AccountMark.jsx` | 設定 | アカウントの印。**顔写真は持たない**。アドレスから決まる |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
@@ -154,6 +155,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
 | `theme.js` | テーマの保持 | — |
 | `sample.js` | ホームに並べる記録を選ぶ。**その日のうちは同じ顔ぶれ** | `sample.test.js` |
+| `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
 | `openPrivacy.js` / `openPrivacy.web.js` | プライバシーポリシーを開く。**アプリ内に複製しない** | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

@@ -96,10 +96,50 @@ describe('wrapSelection', () => {
     expect(r.text.slice(0, r.cursor)).toBe('**あ')
   })
 
-  it('選択が無ければ記号だけ置く', () => {
+  // **何も選ばずに押したら、いまいる語を囲む**（2026-08-15）。
+  // それまでは `****` が現れ、実機で「良くない」と言われた
+  it('選択が無ければカーソルのある語を囲む', () => {
+    const r = wrapSelection('今日は曲を書いた', 4, 4, '**')
+    expect(r.text).toBe('**今日は曲を書いた**')
+  })
+
+  it('句読点で語が切れる', () => {
+    const r = wrapSelection('今日は、曲を書いた', 6, 6, '**')
+    expect(r.text).toBe('今日は、**曲を書いた**')
+  })
+
+  it('空白で語が切れる', () => {
+    const r = wrapSelection('hello world', 2, 2, '**')
+    expect(r.text).toBe('**hello** world')
+  })
+
+  it('行をまたがない', () => {
+    const r = wrapSelection('1行目\n2行目', 8, 8, '**')
+    expect(r.text).toBe('1行目\n**2行目**')
+  })
+
+  it('語が無いところでは記号だけ置く', () => {
     const r = wrapSelection('', 0, 0, '**')
     expect(r.text).toBe('****')
     expect(r.cursor).toBe(2)
+  })
+
+  it('前後とも切れ目なら記号だけ置く', () => {
+    // 空白と空白のあいだ。**囲む語が無い**
+    const r = wrapSelection('あ  い', 2, 2, '**')
+    expect(r.text).toBe('あ **** い')
+  })
+
+  // カーソルが語のすぐ右にあるときは、その語を囲む。
+  // 「打ち終えて B を押す」がいちばん多い形なので、ここを外さない
+  it('語の直後でもその語を囲む', () => {
+    const r = wrapSelection('あ い', 1, 1, '**')
+    expect(r.text).toBe('**あ** い')
+  })
+
+  it('囲んだあとカーソルは閉じ記号の手前', () => {
+    const r = wrapSelection('曲', 1, 1, '**')
+    expect(r.text.slice(0, r.cursor)).toBe('**曲')
   })
 })
 

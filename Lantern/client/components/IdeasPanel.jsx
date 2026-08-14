@@ -110,10 +110,13 @@ function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
       // 呼ばれるので、**上の `ScrollView` に先を越されていた。**
       // `Capture` は親より先に判定される。
       //
-      // 横が縦より明らかに勝っているときだけ奪う。
-      // 少しでも斜めなら渡す方に倒す（一覧のスクロールの方が使う回数が多い）。
+      // 横が縦より勝っているときに奪う。
+      //
+      // **2026-08-15 に条件を緩めた。** 2倍を求めると、
+      // 指がわずかに斜めに動いただけで一覧のスクロールに取られていた。
+      // 1.2 倍で足りる（真横に払うつもりの指は、たいてい 2 倍を超えない）。
       onMoveShouldSetPanResponderCapture: (_e, g) =>
-        Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+        Math.abs(g.dx) > 4 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
       onPanResponderMove: (_e, g) => {
         const base = openRef.current ? -TRASH_WIDTH : 0
         const next = Math.min(0, Math.max(-TRASH_WIDTH, base + g.dx))
@@ -145,7 +148,7 @@ function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
         <Animated.View
           {...pan.panHandlers}
           style={{ transform: [{ translateX: slide }] }}
-          className="flex-row items-center gap-3 py-3 bg-surface-low"
+          className="flex-row items-center gap-3 px-4 py-3 bg-surface-lowest"
         >
           <Pressable
             onPress={() => onTogglePicked(idea)}
@@ -275,7 +278,7 @@ export default function IdeasPanel() {
         // **使ったものを下へ落とす。** 混ざっていると、
         // まだ使っていないものを目で拾い直すことになる。
         // 消さないので、下には残り続ける
-        <View className="bg-surface-low rounded-lg px-4">
+        <View className="bg-surface-lowest border border-border rounded-lg overflow-hidden shadow-bloom">
           {[...ideas]
             .sort((a, b) => Number(Boolean(a.picked_at)) - Number(Boolean(b.picked_at)))
             .map((idea, i, arr) => (
