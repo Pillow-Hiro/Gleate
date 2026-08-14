@@ -31,9 +31,9 @@
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
-| ネイティブ | **iOSビルド #12 が finished**（2026-08-15・commit `963f0de`・版数 1.0.0 / ビルド番号 12・runtime `ab1c3362…`）。編集画面とファイル添付を載せた。**TestFlight へはまだ上げていない**。#9 までは上げ済み |
+| ネイティブ | **iOSビルド #13 を TestFlight へアップロード済み**（2026-08-15・commit `f6b2eca`・版数 1.0.0 / ビルド番号 13・runtime `ab1c3362…`）。編集画面（WebView）とファイル添付を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 857件 / vitest 177件 |
+| 検査 | pytest 857件 / vitest 188件 |
 
 ## 1.5 ビルド #6 / #7
 
@@ -97,6 +97,20 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 **#6 向けのOTAが #4 や #5 に配られることはない。**
 
 ## 2. 直近にやったこと
+
+### 2026-08-15（ビルド #13・提出済み）
+
+- **記号の見えない編集画面**（`WebEditor` ＝ WebView の `contenteditable`）。
+  保存の形は Markdown のまま、出入りで変換する（`lib/htmlMarkdown.js`）
+- **ファイルの添付**（`expo-document-picker`・**端末の中だけ**）。
+  エクスポートには入らない
+- **提出前の精査で変換のバグを2件見つけて直した。**
+  `lib/editorPage.js` を切り出して実ブラウザで打ち、`innerHTML` を控えて
+  変換にかけた。控えた HTML はそのまま検査に入れてある
+- ビルド **#10 / #11 / #12 は失敗か未提出**。#13 が提出したもの
+
+**まだ実機で見ていない**: WebView という器そのもの（日本語変換の見え方・
+カーソル・キーボードの高さ・自動の焦点）と、ファイル添付の一連の流れ。
 
 ### 2026-08-15（`****` と未確定の波線）
 
