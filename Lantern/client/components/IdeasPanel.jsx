@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
+import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 
@@ -23,49 +24,95 @@ import { authFetch } from '../lib/supabase'
 //
 // 使ったものには取り消し線を引く。**消さずに残す。**
 // アイデアは減らすものではなく、溜まってよいもの。
+//
+// **2026-08-14 に「使った」「使いました」という字をやめた。**
+// 意味は正しかったが、1行のメモに対して**字が多すぎた。**
+// 丸いチェックに置き換えている（iOS のリマインダーと同じ形）。
+// 押せば入り、もう一度押せば戻る。説明が要らない。
+//
+// **「完了」ではない**という考え方は変えていない。
+// チェックは済んだ印ではなく、**使ったかどうかの印。**
+// だから消えないし、件数も出さない。
 
-function IdeaRow({ idea, onTogglePicked, onDelete }) {
+// 丸いチェック。**絵文字は使わない**ので図形で描く
+function CheckCircle({ checked }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke={checked ? '#FBB03B' : '#847563'}
+        strokeWidth="1.8"
+        fill={checked ? '#FBB03B' : 'none'}
+      />
+      {checked ? (
+        <Path
+          d="M7.5 12.3l3 3 6-6.2"
+          stroke="#1D1D1F"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : null}
+    </Svg>
+  )
+}
+
+// 1行。**チェックと文だけ。** 削除は開いたときにだけ出す。
+//
+// **畳んである。** 1行のメモに削除ボタンが常に添えてあると、
+// 一覧が操作の並びに見える。押して開いた行にだけ出す。
+function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
+  const [open, setOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const picked = Boolean(idea.picked_at)
 
   return (
-    <View className="border-b border-border py-3">
-      <Pressable onPress={() => onTogglePicked(idea)}>
-        <Text
-          className={`text-body leading-relaxed ${picked ? 'text-ink-faint' : 'text-ink'}`}
-          style={picked ? { textDecorationLine: 'line-through' } : undefined}
+    <View className={isLast ? '' : 'border-b border-border'}>
+      <View className="flex-row items-start gap-3 py-3">
+        <Pressable
+          onPress={() => onTogglePicked(idea)}
+          accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
+          hitSlop={10}
+          className="min-h-touch justify-center"
         >
-          {idea.text}
-        </Text>
-      </Pressable>
+          <CheckCircle checked={picked} />
+        </Pressable>
 
-      <View className="flex-row items-center justify-between mt-1.5">
-        <Text className="text-[10px] text-ink-faint">
-          {picked ? '使いました' : ''}
-        </Text>
-
-        {confirmDelete ? (
-          <View className="flex-row items-center gap-3">
-            <Pressable onPress={() => setConfirmDelete(false)}>
-              <Text className="text-aux text-ink-faint">キャンセル</Text>
-            </Pressable>
-            <Pressable onPress={() => onDelete(idea)}>
-              <Text className="text-aux text-error">削除する</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View className="flex-row items-center gap-3">
-            <Pressable onPress={() => onTogglePicked(idea)}>
-              <Text className="text-aux text-ink-faint">
-                {picked ? '戻す' : '使った'}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setConfirmDelete(true)}>
-              <Text className="text-aux text-error">削除</Text>
-            </Pressable>
-          </View>
-        )}
+        <Pressable
+          onPress={() => { setOpen((o) => !o); setConfirmDelete(false) }}
+          className="flex-1 min-h-touch justify-center"
+        >
+          <Text
+            className={`text-body-md leading-relaxed ${
+              picked ? 'text-outline' : 'text-on-surface'
+            }`}
+            style={picked ? { textDecorationLine: 'line-through' } : undefined}
+          >
+            {idea.text}
+          </Text>
+        </Pressable>
       </View>
+
+      {open ? (
+        <View className="flex-row justify-end gap-4 pb-3">
+          {confirmDelete ? (
+            <>
+              <Pressable onPress={() => setConfirmDelete(false)} className="min-h-touch justify-center">
+                <Text className="text-label-md text-outline">やめる</Text>
+              </Pressable>
+              <Pressable onPress={() => onDelete(idea)} className="min-h-touch justify-center">
+                <Text className="text-label-md text-error">削除する</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable onPress={() => setConfirmDelete(true)} className="min-h-touch justify-center">
+              <Text className="text-label-md text-error">削除</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
     </View>
   )
 }
@@ -135,47 +182,58 @@ export default function IdeasPanel() {
 
   return (
     <View className="gap-4">
-      {/* 入力は1行だけ。ラベルも項目も置かない。
-          メモ書き程度のものに4項目のフォームを出すのは重すぎる。 */}
-      <View className="flex-row items-center gap-2">
+      {/* 入力はラベルも項目も置かない。
+          メモ書き程度のものに4項目のフォームを出すのは重すぎる。
+
+          **欄を大きくした**（2026-08-14）。1行だと、思いついたことが
+          1行に収まる長さかどうかを先に考えることになっていた。
+          複数行を受けるが、**返るのは1件**（性質は変えない）。 */}
+      <View className="bg-surface-lowest rounded-lg p-4 gap-3 shadow-bloom">
         <TextInput
           value={text}
           onChangeText={setText}
-          onSubmitEditing={handleAdd}
-          returnKeyType="done"
+          multiline
+          textAlignVertical="top"
+          style={{ minHeight: 76 }}
           placeholder="思いついたこと"
           placeholderTextColor="#8E8478"
-          className="flex-1 bg-stone border border-border rounded px-3 py-2.5 font-body text-body text-ink"
+          className="font-body text-body-md text-on-surface"
         />
         <Pressable
           onPress={handleAdd}
           disabled={!text.trim() || saving}
-          className="border border-sage/40 rounded-full px-3.5 py-2 disabled:opacity-50"
+          className="self-end bg-lantern-glow rounded-full px-5 min-h-touch justify-center disabled:opacity-40 active:opacity-80"
         >
-          <Text className="text-aux text-forest">置く</Text>
+          <Text className="font-strong text-label-md text-on-lantern">置く</Text>
         </Pressable>
       </View>
 
       {ideas === null ? (
         <View className="gap-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <View key={i} className="h-4 bg-parchment rounded-full w-3/4" />
+            <View key={i} className="h-4 bg-surface-high rounded-full w-3/4" />
           ))}
         </View>
       ) : ideas.length === 0 ? (
-        <Text className="text-body text-ink-faint py-6">
+        <Text className="text-body-md text-outline py-6">
           思いついたことを、ここに置いておけます。
         </Text>
       ) : (
-        <View>
-          {ideas.map((idea) => (
-            <IdeaRow
-              key={idea.id}
-              idea={idea}
-              onTogglePicked={handleTogglePicked}
-              onDelete={handleDelete}
-            />
-          ))}
+        // **使ったものを下へ落とす。** 混ざっていると、
+        // まだ使っていないものを目で拾い直すことになる。
+        // 消さないので、下には残り続ける
+        <View className="bg-surface-low rounded-lg px-4">
+          {[...ideas]
+            .sort((a, b) => Number(Boolean(a.picked_at)) - Number(Boolean(b.picked_at)))
+            .map((idea, i, arr) => (
+              <IdeaRow
+                key={idea.id}
+                idea={idea}
+                onTogglePicked={handleTogglePicked}
+                onDelete={handleDelete}
+                isLast={i === arr.length - 1}
+              />
+            ))}
         </View>
       )}
     </View>

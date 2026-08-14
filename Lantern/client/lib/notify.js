@@ -1,7 +1,12 @@
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
-import { notifyBody, plannedTimes, DEFAULT_NOTIFY_HOUR } from './notifyText'
+import {
+  notifyBody,
+  plannedTimes,
+  DEFAULT_NOTIFY_HOUR,
+  DEFAULT_NOTIFY_MINUTE,
+} from './notifyText'
 
 // 静かなきっかけ（2026-08-13）。
 //
@@ -19,19 +24,28 @@ const CHANNEL = 'lantern-daily'
 
 export const isSupported = true
 
-// { enabled: boolean, hour: number }
+// { enabled: boolean, hour: number, minute: number }
+//
+// `minute` は 2026-08-14 に足した。**古い設定には入っていない**ので、
+// 無ければ 0 として読む。読み替えを忘れると `NaN` 時に予約される。
 export async function loadSetting() {
+  const fallback = {
+    enabled: false,
+    hour: DEFAULT_NOTIFY_HOUR,
+    minute: DEFAULT_NOTIFY_MINUTE,
+  }
   try {
     const raw = await AsyncStorage.getItem(KEY)
-    if (!raw) return { enabled: false, hour: DEFAULT_NOTIFY_HOUR }
+    if (!raw) return fallback
     const v = JSON.parse(raw)
     return {
       enabled: Boolean(v?.enabled),
       hour: Number.isInteger(v?.hour) ? v.hour : DEFAULT_NOTIFY_HOUR,
+      minute: Number.isInteger(v?.minute) ? v.minute : DEFAULT_NOTIFY_MINUTE,
     }
   } catch {
     // 読めなければ「切」。**勝手に鳴らさない**
-    return { enabled: false, hour: DEFAULT_NOTIFY_HOUR }
+    return fallback
   }
 }
 
@@ -70,7 +84,7 @@ export async function hasPermission() {
 //
 // `recordedToday` は呼び出し側が渡す。ここでは記録を取りに行かない。
 // 通知のために記録を読みに行くと、通信の失敗が通知の有無を左右する。
-export async function syncSchedule({ enabled, hour }, recordedToday) {
+export async function syncSchedule({ enabled, hour, minute = 0 }, recordedToday) {
   await Notifications.cancelAllScheduledNotificationsAsync()
   if (!enabled) return 0
   if (!(await hasPermission())) return 0
@@ -78,7 +92,7 @@ export async function syncSchedule({ enabled, hour }, recordedToday) {
   await ensureChannel()
 
   const now = new Date()
-  const times = plannedTimes({ now, hour, recordedToday })
+  const times = plannedTimes({ now, hour, minute, recordedToday })
   for (let i = 0; i < times.length; i += 1) {
     const at = times[i]
     await Notifications.scheduleNotificationAsync({

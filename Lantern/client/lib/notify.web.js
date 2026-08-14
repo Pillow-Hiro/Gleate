@@ -1,4 +1,4 @@
-import { DEFAULT_NOTIFY_HOUR } from './notifyText'
+import { DEFAULT_NOTIFY_HOUR, DEFAULT_NOTIFY_MINUTE } from './notifyText'
 
 // Web では通知を扱わない。
 //
@@ -11,7 +11,7 @@ import { DEFAULT_NOTIFY_HOUR } from './notifyText'
 export const isSupported = false
 
 export async function loadSetting() {
-  return { enabled: false, hour: DEFAULT_NOTIFY_HOUR }
+  return { enabled: false, hour: DEFAULT_NOTIFY_HOUR, minute: DEFAULT_NOTIFY_MINUTE }
 }
 
 export async function saveSetting() {}

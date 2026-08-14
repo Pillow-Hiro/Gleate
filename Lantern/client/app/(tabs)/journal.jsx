@@ -71,6 +71,12 @@ export default function Journal() {
     setActiveTab('record')
   }, [params.q])
 
+  // ホームの「すべての記録」から来たとき。**必ず記録タブを開く。**
+  // 振り返りを開いたままだと、押しても一覧が出なかった
+  useEffect(() => {
+    if (params.tab === 'record') setActiveTab('record')
+  }, [params.tab])
+
   // チップや検索を変えたら月の絞り込みを解く。
   // **ここは「すべて」に戻す。** 検索は月をまたいで探すもので、
   // 当月に固定したままだと、他の月にある記録が0件に見える

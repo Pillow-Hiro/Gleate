@@ -33,20 +33,20 @@ export function allNotifyBodies() {
   return [...LINES]
 }
 
-// 選べる時刻。**24時間すべてから選べる。**
+// 時刻は**ダイヤルで決める**（`components/TimeDial.jsx`）。
 //
-// 2026-08-14 まで 8/12/18/21/23 の5つだけだった。
-// 5つ並べると選択肢の一覧に見え、しかも**自分の時間に合う時刻が無い**。
-// 早朝に書く人も、明け方に書く人もいる。
-// 決め打ちで5つ出すのは、こちらの想定を押しつけていた。
+// 2026-08-14 に二度変えている。
+// 5つの決め打ち → 24時間の格子 → hh:mm のダイヤル。
+// どちらの中間も「用意された選択肢から選ぶ」形で、
+// **自分の時間をそのまま指定できなかった。**
 //
-// **分は選ばせない。** 21:37 に意味は無く、決めることを増やすだけになる。
-export const NOTIFY_HOURS = Array.from({ length: 24 }, (_, h) => h)
-
+// **分は5分刻み。** 1分刻みにすると 60 段を回すことになり、
+// 21:37 に意味が無いのは変わらない。
 export const DEFAULT_NOTIFY_HOUR = 21
+export const DEFAULT_NOTIFY_MINUTE = 0
 
-export function hourLabel(hour) {
-  return `${String(hour).padStart(2, '0')}:00`
+export function timeLabel(hour, minute = 0) {
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
 }
 
 // 何日先まで予約を作るか。
@@ -61,10 +61,10 @@ export const SCHEDULE_DAYS = 7
 //
 // - 今日ぶんは、まだ時刻が来ていない かつ 今日の記録がない ときだけ入れる
 // - 明日以降は、記録があるかどうかを知りようがないので必ず入れる
-export function plannedTimes({ now, hour, recordedToday, days = SCHEDULE_DAYS }) {
+export function plannedTimes({ now, hour, minute = 0, recordedToday, days = SCHEDULE_DAYS }) {
   const out = []
   for (let d = 0; d < days; d += 1) {
-    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, hour, 0, 0, 0)
+    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, hour, minute, 0, 0)
     if (d === 0 && (recordedToday || at <= now)) continue
     out.push(at)
   }

@@ -112,15 +112,20 @@ export default function Home() {
           <Text className="font-display text-headline-md text-ink">{greeting}</Text>
         </View>
 
-        {/* 今日の灯り。**囲まない。** 左に2pxの線だけ引く。
-            いちばん静かに置きたい一文が、いちばん目立つ箱になっていた */}
+        {/* 今日の灯り。**画面でいちばん強い面にする**（2026-08-14）。
+            それまでは左に2pxの線を引くだけで、実機で「地味で気づきにくい」
+            と言われた。静かに置くつもりが、**無いのと同じ**になっていた。
+
+            琥珀で塗る。CLAUDE.md の「1画面に灯り色を2箇所以上置かない」は
+            守れている — **この画面で琥珀に塗るのはここだけ。**
+            今週の発見は灰、Lanternの言葉は砂。3つとも地の色が違う。 */}
         <View>
           <Text className="font-strong text-label-md text-primary mb-2.5">今日の灯り</Text>
-          <View className="border-l-2 border-lantern-glow pl-4 py-1 min-h-[64px] justify-center">
+          <View className="bg-lantern-glow rounded-lg px-5 py-5 min-h-[88px] justify-center shadow-bloom">
             {loading ? (
-              <View className="w-40 h-4 bg-surface-high rounded-full" />
+              <View className="w-40 h-4 bg-on-lantern/10 rounded-full" />
             ) : (
-              <Text className="text-body-lg text-ink">
+              <Text className="text-body-lg text-on-lantern leading-relaxed">
                 {quote || '今日の記録が、ここに残る。'}
               </Text>
             )}
@@ -153,12 +158,14 @@ export default function Home() {
         )}
 
         {/* デザイン案の「Older entries」。
+            **行き先は「記録」タブに固定する**（2026-08-14）。
+            振り返りを開いたままだと、押しても一覧が出なかった。
             **抜粋なので「これより前」ではない。** 全部を見るなら「記録」へ行く。
             ここに「もっと見る」を置いて延々と伸ばすと、
             探すための画面と役割が重なる。 */}
         {!loading && logs.length > RECENT_LIMIT ? (
           <Pressable
-            onPress={() => router.navigate('/journal')}
+            onPress={() => router.navigate('/journal?tab=record')}
             className="self-center border border-border rounded-full px-4 min-h-touch justify-center active:opacity-70"
           >
             <Text className="text-label-md text-primary">すべての記録</Text>

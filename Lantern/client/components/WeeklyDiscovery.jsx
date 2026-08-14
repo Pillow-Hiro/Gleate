@@ -61,14 +61,19 @@ export default function WeeklyDiscovery({ logs }) {
 
   return (
     <View>
-      <Text className="font-strong text-label-md text-primary mb-2.5">今週の発見</Text>
-      <View className="bg-ai-surface rounded-lg px-5 py-4">
+      <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">今週の発見</Text>
+      {/* **地を砂色から灰へ変えた**（2026-08-14）。
+          砂色は「Lanternの言葉」の色で、同じ画面に両方あると
+          どちらも AI が書いたものに見えていた。
+          **ここは AI を使っていない。** 記録から機械的に組み立てた観察。
+          色が同じだと、その違いが伝わらない。 */}
+      <View className="bg-surface-high rounded-lg px-5 py-4">
         {observations === null ? (
-          <Text className="text-body-md text-ai-ink">今週の記録がまだありません。</Text>
+          <Text className="text-body-md text-on-surface-variant">今週の記録がまだありません。</Text>
         ) : (
           <View className="gap-2">
             {observations.map((obs, i) => (
-              <Text key={i} className="text-body-md text-ai-ink leading-relaxed">{obs}</Text>
+              <Text key={i} className="text-body-md text-on-surface leading-relaxed">{obs}</Text>
             ))}
           </View>
         )}

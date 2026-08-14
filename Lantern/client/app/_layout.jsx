@@ -1,7 +1,7 @@
 import '../global.css'
 
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import Text from '../components/Text'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -11,7 +11,19 @@ import { supabase } from '../lib/supabase'
 import { localDateStr } from '../lib/date'
 import { ThemeProvider, useThemeContext } from '../lib/theme'
 import { useAppFonts } from '../lib/fonts'
+import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
+
+// **起動画面が2回出ていた**（2026-08-14・実機）。
+//
+// OS の起動画面（`expo-splash-screen`）が消える → 読み込み中の丸が出る →
+// Lantern の起動画面が出る、という3段になっていた。
+// 目には「スプラッシュ → 別のスプラッシュ」と映る。
+//
+// OS の起動画面を**こちらで消すまで出したままにする。**
+// 判定が終わってから消せば、下から Lantern の起動画面が現れる。
+// 間に何も挟まらないので、1回に見える。
+NativeSplash.preventAutoHideAsync().catch(() => {})
 
 // Web版 components/ErrorBoundary.jsx と同じ役割。
 // expo-router は _layout から ErrorBoundary という名前で export すると
@@ -81,16 +93,21 @@ function RootNavigator() {
         // 読めなければ出さない。毎回出るより出ない方が邪魔にならない
         console.warn('[Splash] 表示履歴の読み込みに失敗', e)
       }
-      if (!cancelled) setShowSplash(next)
+      if (cancelled) return
+      setShowSplash(next)
+      // **出すと決めた時点で記録する。** 閉じたときではない。
+      // 閉じる前に画面が作り直されると、もう一度最初から出てしまう
+      if (next) {
+        AsyncStorage.setItem(SPLASH_SEEN_KEY, localDateStr()).catch((e) => {
+          console.warn('[Splash] 表示履歴の保存に失敗', e)
+        })
+      }
     })()
     return () => { cancelled = true }
   }, [])
 
   function handleSplashClose() {
     setShowSplash(false)
-    AsyncStorage.setItem(SPLASH_SEEN_KEY, localDateStr()).catch((e) => {
-      console.warn('[Splash] 表示履歴の保存に失敗', e)
-    })
   }
   const segments = useSegments()
   const router = useRouter()
@@ -124,14 +141,20 @@ function RootNavigator() {
     }
   }, [session, loading, segments, router])
 
+  // 判定が済んだら OS の起動画面を下ろす。
+  // **下ろすまで、この下で何を描いていても見えない。**
+  useEffect(() => {
+    if (loading || showSplash === null) return
+    NativeSplash.hideAsync().catch(() => {})
+  }, [loading, showSplash])
+
   // 認証とスプラッシュの判定が両方済むまで、本画面を描画しない。
   // どちらかが遅れて確定すると、その分だけ画面が入れ替わって見える。
+  //
+  // ここは OS の起動画面の裏になる。**読み込み中の丸を出さない。**
+  // 出しても見えないうえ、消し忘れたときに「3枚目」として現れる。
   if (loading || showSplash === null) {
-    return (
-      <View className="flex-1 items-center justify-center bg-cream">
-        <ActivityIndicator />
-      </View>
-    )
+    return <View className="flex-1 bg-cream" />
   }
 
   return (

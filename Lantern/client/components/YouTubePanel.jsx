@@ -297,6 +297,43 @@ export default function YouTubePanel() {
             )}
           </View>
 
+          {/* **「AIの観察」から「Lanternが見つけたこと」へ**（2026-08-14）。
+              実機で「AIという単語に拒否反応があるかもしれない」と指摘された。
+              Lantern の AI は**静かな伴走者**であって、
+              「AI」という肩書きを名乗る理由がない。
+              画面の他の場所（今日の灯り・今週の発見）も「AI」とは書いていない。
+
+              **位置も上げた。** 一覧の下に置いていたので、
+              スクロールし切らないと存在に気づけなかった。 */}
+          <View>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="font-strong text-label-md text-primary">Lanternが見つけたこと</Text>
+              <Pressable
+                onPress={handleChannelInsight}
+                disabled={channelInsightLoading || !videos?.length}
+                className="border border-outline-variant rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50"
+              >
+                <Text className="text-label-md text-primary">
+                  {channelInsightLoading ? '読んでいます...' : channelInsight ? 'もう一度' : '見てもらう'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {channelInsightLoading ? (
+              <View className="bg-ai-surface rounded-lg px-5 py-4 gap-2">
+                <View className="h-3 bg-ai-ink/15 rounded-full w-full" />
+                <View className="h-3 bg-ai-ink/15 rounded-full w-4/5" />
+                <View className="h-3 bg-ai-ink/15 rounded-full w-2/3" />
+              </View>
+            ) : null}
+
+            {!channelInsightLoading && channelInsight ? (
+              <View className="bg-ai-surface rounded-lg px-5 py-4">
+                <Text className="text-body-md leading-relaxed text-ai-ink">{channelInsight}</Text>
+              </View>
+            ) : null}
+          </View>
+
           {/* 動画一覧 */}
           <View>
             <Text className="font-strong text-aux text-ink-soft mb-3">動画</Text>
@@ -316,36 +353,6 @@ export default function YouTubePanel() {
             )}
           </View>
 
-          {/* AIの観察（チャンネル全体）。Web版と同じ位置・同じ挙動 */}
-          <View>
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="font-strong text-aux text-ink-soft">AIの観察</Text>
-              <Pressable
-                onPress={handleChannelInsight}
-                disabled={channelInsightLoading || !videos?.length}
-                className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
-              >
-                <Text className="text-aux text-forest">
-                  {channelInsightLoading ? '生成中...' : channelInsight ? '再生成' : 'Lanternに聞く'}
-                </Text>
-              </Pressable>
-            </View>
-
-            {channelInsightLoading ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-2">
-                <View className="h-3 bg-sage/20 rounded-full w-full" />
-                <View className="h-3 bg-sage/20 rounded-full w-4/5" />
-                <View className="h-3 bg-sage/20 rounded-full w-2/3" />
-              </View>
-            ) : null}
-
-            {!channelInsightLoading && channelInsight ? (
-              <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-1.5">
-                <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-                <Text className="text-body leading-relaxed text-forest">{channelInsight}</Text>
-              </View>
-            ) : null}
-          </View>
         </>
       )}
     </>

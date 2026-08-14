@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, Switch, View } from 'react-native'
+import { Modal, Pressable, ScrollView, Switch, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -8,7 +8,8 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
-import HourPicker from '../../components/HourPicker'
+import TimeDial from '../../components/TimeDial'
+import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
 
@@ -66,8 +67,9 @@ export default function Settings() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
-  const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21 })
+  const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
   const [notifyBlocked, setNotifyBlocked] = useState(false)
+  const [timeOpen, setTimeOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -178,11 +180,13 @@ export default function Settings() {
             </Row>
           ) : null}
           {notify.isSupported && notifySetting.enabled ? (
-            <Row label="知らせる時刻">
-              <HourPicker
-                value={notifySetting.hour}
-                onChange={(h) => applyNotify({ ...notifySetting, hour: h })}
-              />
+            <Row label="知らせる時刻" onPress={() => setTimeOpen(true)}>
+              <View className="flex-row items-center gap-1.5">
+                <Text className="font-strong text-body-md text-primary">
+                  {timeLabel(notifySetting.hour, notifySetting.minute)}
+                </Text>
+                <Text className="text-label-md text-outline">⌄</Text>
+              </View>
             </Row>
           ) : null}
           <Row label="ダークテーマ" isLast>
@@ -266,6 +270,30 @@ export default function Settings() {
           </Pressable>
         )}
       </ScrollView>
+
+      {/* 時刻はダイヤルで決める。**その場で効く。**
+          「決定」を押させると、回した結果が効いていないように見える間ができる */}
+      <Modal visible={timeOpen} animationType="slide" transparent onRequestClose={() => setTimeOpen(false)}>
+        <Pressable className="flex-1 bg-black/40 justify-end" onPress={() => setTimeOpen(false)}>
+          <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
+            <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="font-strong text-body-md text-on-surface">知らせる時刻</Text>
+              <Pressable
+                onPress={() => setTimeOpen(false)}
+                className="min-h-touch px-2 justify-center active:opacity-70"
+              >
+                <Text className="font-strong text-body-md text-primary">完了</Text>
+              </Pressable>
+            </View>
+            <TimeDial
+              hour={notifySetting.hour}
+              minute={notifySetting.minute}
+              onChange={({ hour, minute }) => applyNotify({ ...notifySetting, hour, minute })}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   )
 }

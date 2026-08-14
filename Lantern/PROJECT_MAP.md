@@ -99,7 +99,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `AuthForm.jsx` | login / signup | カードに載せた2欄。空欄のまま送らせない。欄そのものは `AuthField` |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
-| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。使ったものは取り消し線で残す |
+| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。**丸いチェックで使ったものを下へ落とす** |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。開くと LogDetail |
@@ -121,10 +121,10 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
-| `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**。2026-08-14 に「書く」から移した |
+| `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**ので地は灰（砂はLanternの言葉の色） |
 | `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
 | `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
-| `HourPicker.jsx` | 設定 | 通知の時刻。**24時間から選ぶ**（4列の格子） |
+| `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |

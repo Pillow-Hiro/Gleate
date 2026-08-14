@@ -3,11 +3,13 @@ import {
   notifyBody,
   allNotifyBodies,
   plannedTimes,
-  hourLabel,
-  NOTIFY_HOURS,
+  timeLabel,
   DEFAULT_NOTIFY_HOUR,
+  DEFAULT_NOTIFY_MINUTE,
   SCHEDULE_DAYS,
 } from './notifyText'
+
+const EVERY_HOUR = Array.from({ length: 24 }, (_, h) => h)
 
 describe('通知の文面', () => {
   it('日ごとに順に選ぶ', () => {
@@ -42,14 +44,15 @@ describe('通知の文面', () => {
     }
   })
 
-  it('時刻の表示は分を持たない', () => {
-    expect(hourLabel(8)).toBe('08:00')
-    expect(hourLabel(21)).toBe('21:00')
-    for (const h of NOTIFY_HOURS) expect(hourLabel(h).endsWith(':00')).toBe(true)
+  it('時刻は hh:mm で表示する', () => {
+    expect(timeLabel(8)).toBe('08:00')
+    expect(timeLabel(21, 30)).toBe('21:30')
+    expect(timeLabel(0, 5)).toBe('00:05')
   })
 
-  it('既定の時刻は選べる時刻の中にある', () => {
-    expect(NOTIFY_HOURS).toContain(DEFAULT_NOTIFY_HOUR)
+  it('既定の時刻は 24 時間の中にある', () => {
+    expect(EVERY_HOUR).toContain(DEFAULT_NOTIFY_HOUR)
+    expect(DEFAULT_NOTIFY_MINUTE).toBe(0)
   })
 })
 
@@ -97,15 +100,34 @@ describe('plannedTimes', () => {
   // 「どの時刻でも同じ本数」ではなくなった
   it('まだ来ていない時刻なら今日ぶんを含む', () => {
     const now = new Date(2026, 7, 13, 0, 30)
-    for (const h of NOTIFY_HOURS) {
+    for (const h of EVERY_HOUR) {
       const expected = h > 0 ? SCHEDULE_DAYS : SCHEDULE_DAYS - 1
       expect(plannedTimes({ now, hour: h, recordedToday: false })).toHaveLength(expected)
     }
   })
 
-  it('24時間すべてが選べる', () => {
-    expect(NOTIFY_HOURS).toHaveLength(24)
-    expect(NOTIFY_HOURS[0]).toBe(0)
-    expect(NOTIFY_HOURS[23]).toBe(23)
+  // 分も指定できる（2026-08-14）
+  it('分を指定できる', () => {
+    const now = new Date(2026, 7, 13, 9, 0)
+    const times = plannedTimes({ now, hour: 21, minute: 35, recordedToday: false })
+    expect(times[0].getHours()).toBe(21)
+    expect(times[0].getMinutes()).toBe(35)
+  })
+
+  it('分を省くと 0 分になる', () => {
+    const now = new Date(2026, 7, 13, 9, 0)
+    const times = plannedTimes({ now, hour: 21, recordedToday: false })
+    expect(times[0].getMinutes()).toBe(0)
+  })
+
+  // 同じ時の中でも、分が来ていなければ今日ぶんが入る
+  it('同じ時でも分が来ていなければ今日ぶんを含む', () => {
+    const now = new Date(2026, 7, 13, 21, 10)
+    expect(
+      plannedTimes({ now, hour: 21, minute: 30, recordedToday: false })[0].getDate()
+    ).toBe(13)
+    expect(
+      plannedTimes({ now, hour: 21, minute: 5, recordedToday: false })[0].getDate()
+    ).toBe(14)
   })
 })

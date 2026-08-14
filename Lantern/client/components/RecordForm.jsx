@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { Keyboard, Pressable, TextInput, View } from 'react-native'
+import { InputAccessoryView, Keyboard, Platform, Pressable, TextInput, View } from 'react-native'
+import Svg, { Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
@@ -21,6 +22,21 @@ import MarkdownToolbar from './MarkdownToolbar'
 //
 // `rich` を渡した欄だけ装飾のボタンが出る。**「やったこと」だけ。**
 // 短いメモの欄に道具立てを出すのは重すぎる（`REQUIREMENTS.md` F1）。
+//
+// 装飾の道具は iOS ではキーボードの上に載せる（`InputAccessoryView`）。
+// Android にこの仕組みは無いので、そちらは欄の下に置く。
+const ACCESSORY_ID = 'lantern-record-toolbar'
+const USE_ACCESSORY = Platform.OS === 'ios'
+
+// 日付の行に置く小さな暦。**絵文字は使わない**ので図形で描く
+function CalendarIcon({ color = '#847563' }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Rect x="3" y="5" width="18" height="16" rx="3" stroke={color} strokeWidth="1.8" />
+      <Path d="M3 10h18M8 3v4M16 3v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  )
+}
 function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich, bare }) {
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
@@ -55,6 +71,19 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
   // 装飾のボタンは欄の下に横一列で置く。ラベルの右に小さく並べていたときは、
   // 押す対象が見出しの一部のように見えていた。
   if (bare) {
+    const bar = (
+      <View className="flex-row items-center justify-between px-1">
+        <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+        <Pressable
+          onPress={() => Keyboard.dismiss()}
+          accessibilityLabel="キーボードを閉じる"
+          className="min-h-touch px-3 justify-center active:opacity-70"
+        >
+          <Text className="font-strong text-label-md text-primary">完了</Text>
+        </Pressable>
+      </View>
+    )
+
     return (
       <View>
         <TextInput
@@ -63,27 +92,31 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
           onChangeText={onChange}
           onSelectionChange={handleSelectionChange}
           selection={pending ?? undefined}
+          inputAccessoryViewID={USE_ACCESSORY ? ACCESSORY_ID : undefined}
           multiline
+          scrollEnabled={false}
           textAlignVertical="top"
           style={{ minHeight: rows * 32 + 16 }}
           className="font-body text-body-lg text-on-surface"
           placeholder={placeholder}
           placeholderTextColor="#8E8478"
         />
-        {rich ? (
-          <View className="flex-row items-center justify-between border-t border-border pt-2.5">
-            <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
-            {/* **キーボードを下ろす。**
-                本文の欄は改行を受け付けるので、キーボードの「完了」が
-                改行になる。**下ろす方法が画面のどこにも無かった。** */}
-            <Pressable
-              onPress={() => Keyboard.dismiss()}
-              accessibilityLabel="キーボードを閉じる"
-              className="min-h-touch px-3 justify-center active:opacity-70"
-            >
-              <Text className="text-label-md text-primary">閉じる</Text>
-            </Pressable>
-          </View>
+
+        {/* **道具はキーボードの上に載せる**（2026-08-14）。
+            欄の下に置いていたときは、キーボードが出た瞬間に隠れていた。
+            「閉じる」も同じ場所にあったので、**キーボードを下ろすための
+            ボタンが、キーボードに隠れて押せなかった。**
+
+            iOS には入力補助ビュー（`InputAccessoryView`）があり、
+            キーボードに貼り付いて上がってくる。これが正しい置き場所。
+            Android には無いので、そちらは欄の下に置いたままにする。 */}
+        {rich && USE_ACCESSORY ? (
+          <InputAccessoryView nativeID={ACCESSORY_ID}>
+            <View className="bg-surface-low border-t border-border py-1">{bar}</View>
+          </InputAccessoryView>
+        ) : null}
+        {rich && !USE_ACCESSORY ? (
+          <View className="border-t border-border pt-2.5">{bar}</View>
         ) : null}
       </View>
     )
@@ -113,6 +146,10 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
 // 文言・保存先・項目は変更していない。
 export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
   const isToday = targetDate === todayStr()
+  const [y, m, d] = targetDate.split('-')
+  const dateLabel = `${y}年${Number(m)}月${Number(d)}日`
+  const stamp = existingLog?.saved_at ? new Date(existingLog.saved_at) : new Date()
+  const timeLabel = `${String(stamp.getHours()).padStart(2, '0')}:${String(stamp.getMinutes()).padStart(2, '0')}`
   const [form, setForm] = useState({
     created: existingLog?.created || '',
     enjoyable: existingLog?.enjoyable || '',
@@ -178,12 +215,19 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   }
 
   return (
-    <View className="bg-surface-low rounded-lg px-5 py-5 gap-4">
-      {existingLog ? (
-        <View className="self-start bg-ai-surface rounded-full px-2.5 py-0.5">
-          <Text className="text-label-sm text-ai-ink">記録済</Text>
-        </View>
-      ) : null}
+    <View className="bg-surface-lowest rounded-lg px-5 py-5 gap-4 shadow-bloom">
+      {/* **日付の行**（2026-08-14・デザイン案 `3_write`）。
+          暦 → 日付 → 時刻。書いている紙の上端にあたる。
+          時刻は、すでにある記録なら保存した時刻、無ければ今の時刻。 */}
+      <View className="flex-row items-center gap-2">
+        <CalendarIcon />
+        <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
+        <Text className="text-label-md text-outline">·</Text>
+        <Text className="font-label text-label-md text-outline">{timeLabel}</Text>
+        {existingLog ? (
+          <Text className="font-label text-label-md text-outline ml-auto">記録済</Text>
+        ) : null}
+      </View>
 
       {/* 問いはプレースホルダとして入力欄の中に出す。
           欄の上に別行で置くと「読むもの」が増えるが、中に出せば
