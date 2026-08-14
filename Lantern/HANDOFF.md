@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #9 を TestFlight へアップロード済み**（2026-08-13・commit `f402fb6`・版数 1.0.0 / ビルド番号 9）。通知を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 845件 / vitest 141件 |
+| 検査 | pytest 847件 / vitest 141件 |
 
 ## 1.5 ビルド #6 / #7
 
@@ -97,6 +97,37 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 **#6 向けのOTAが #4 や #5 に配られることはない。**
 
 ## 2. 直近にやったこと
+
+### 2026-08-14（3回目・Journaling Suggestions）
+
+**フェーズB を実装した。未検証。**（`PROGRESS.md` の 2026/08/14 参照）
+
+**⚠ いま作者の操作が1つ要る。**
+
+ビルド #10 は**プロビジョニングプロファイルに capability が無い**ため落ちた。
+
+    Provisioning profile ... doesn't include the Journaling Suggestions capability
+
+**Apple にログインし直してプロファイルを作り直す必要がある。**
+私（Claude）は Apple のアカウントに入れないので、ここは代われない。
+
+```
+cd client
+npx eas-cli build --platform ios --profile production
+```
+
+`--non-interactive` を**付けない**こと。付けると Apple に入り直さないので
+capability の同期が起きず、同じ場所で落ちる。
+Apple にログインすると、EAS が権利を見て App ID に
+Journaling Suggestions を足し、プロファイルを作り直す。
+
+**指紋が変わっている**（`d8a1c94e…` → `3a3cf1df…`）。
+**この先の OTA は #9 に届かない。** 先に OTA を配りたい場合は
+`git revert 02b5dce` で Journaling Suggestions を外せば `d8a1c94e…` に戻る。
+
+**ビルドは 77 秒で落ちた**（#9 は 387 秒）。署名の検査で止まっており、
+**Swift は一度もコンパイルされていない。**
+自作モジュールが通るかどうかは、まだ何も分かっていない。
 
 ### 2026-08-14（2回目・実機レビュー6件）
 
