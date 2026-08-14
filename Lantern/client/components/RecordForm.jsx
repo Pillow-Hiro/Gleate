@@ -6,7 +6,6 @@ import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 import MarkdownToolbar from './MarkdownToolbar'
-import SuggestionButton from './SuggestionButton'
 
 // **モジュールの外に置くこと。**
 //
@@ -194,24 +193,6 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           今日の記録のときだけ差し替える。過去の日を編集するときに
           今日の問いを出しても合わない。
           問いが取れなかったときは元の固定文に戻る。 */}
-      {/* **書きはじめの1行を、端末の中の出来事から選べる**（2026-08-14）。
-          受け取るのは見出しだけで、続きは利用者が書く。
-          出せない端末では何も描かれない（`SuggestionButton`）。
-
-          **今日の記録のときだけ。** 過去の日を編集しているときに
-          「今日の出来事」を勧めても合わない。 */}
-      {isToday ? (
-        <SuggestionButton
-          onSelect={(title) =>
-            setForm((f) => ({
-              ...f,
-              created: f.created ? `${f.created}
-${title}` : title,
-            }))
-          }
-        />
-      ) : null}
-
       <Field
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}

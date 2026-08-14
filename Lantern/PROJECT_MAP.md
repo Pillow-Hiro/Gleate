@@ -125,7 +125,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
 | `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
 | `HourPicker.jsx` | 設定 | 通知の時刻。**24時間から選ぶ**（4列の格子） |
-| `SuggestionButton.jsx` ＋ `.web.jsx` | RecordForm | Journaling Suggestions の入口。**出せない端末では描かない** |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
@@ -158,14 +157,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
 | `constants.js`（`client/` 直下） | `APP_VERSION` | — |
-
-### `client/modules/`（自作のネイティブモジュール）
-
-| ファイル | 役割 |
-|---|---|
-| `journaling-suggestions/` | Apple の Journaling Suggestions（iOS 17.2+）。**受け取るのは見出しだけ** |
-| `plugins/withoutPushEntitlement.js` | `aps-environment` を外す。**プッシュは使わない** |
-| `plugins/withJournalingSuggestions.js` | `com.apple.developer.journal.allow` を足す |
 
 対で持つファイルは省略せず両方書く。片方だけ足したときに
 `tests/test_docs.py` が気づけなくなるため。
