@@ -21,8 +21,17 @@ import { groupByMonth, monthLabel } from '../lib/format'
 // 区切り線で分ける）なので、案の中で孤立した形にはなっていない。
 //
 // カードの地は `surface-lowest`（明るいテーマで純白）。
-// 画面の地（`surface` = #F9F9FB）との段差で浮かせる。
-// **影は使わない。** DESIGN.md の Tonal Layers に従う。
+//
+// **2026-08-14 に区分けを強めた。** 実機で「視認性が悪い」と言われた。
+// 白い地に白いカードで、段差が `#F9F9FB` と `#FFFFFF` の差しか無く、
+// **どこからどこまでが1か月なのかが見えていなかった。**
+//
+// 足したのは3つ。
+//
+// 1. 月の見出しに**灯りの点**を添える。月の始まりが目で拾える
+// 2. カードに**輪郭**を付ける。地の差だけに頼らない
+// 3. 影（`shadow-bloom`）を敷く。DESIGN.md は Tonal Layers を基本とするが、
+//    **上限として `shadow-bloom` を許している**（CLAUDE.md）
 export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, limit }) {
   const shown = limit ? logs.slice(0, limit) : logs
   const groups = groupByMonth(shown)
@@ -34,10 +43,14 @@ export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, li
         const items = groups[month]
         return (
           <View key={month}>
-            <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">
-              {monthLabel(items[0].date)}
-            </Text>
-            <View className="bg-surface-lowest rounded-lg px-4">
+            <View className="flex-row items-center gap-2 mb-2.5">
+              <View className="w-1.5 h-1.5 rounded-full bg-lantern-glow" />
+              <Text className="font-strong text-label-md text-on-surface-variant">
+                {monthLabel(items[0].date)}
+              </Text>
+              <View className="flex-1 h-[1px] bg-border" />
+            </View>
+            <View className="bg-surface-lowest border border-border rounded-lg px-4 shadow-bloom">
               {items.map((log, i) => (
                 <LogItem
                   key={log.date}

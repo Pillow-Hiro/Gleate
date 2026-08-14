@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Dimensions, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import Text from '../../components/Text'
@@ -9,6 +9,7 @@ import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
+import AppHeader from '../../components/AppHeader'
 import LogList from '../../components/LogList'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
@@ -80,7 +81,17 @@ export default function Journal() {
   // チップや検索を変えたら月の絞り込みを解く。
   // **ここは「すべて」に戻す。** 検索は月をまたいで探すもので、
   // 当月に固定したままだと、他の月にある記録が0件に見える
-  useEffect(() => { setMonth('all') }, [filter, search])
+  //
+  // **初回は走らせない**（2026-08-14）。走らせていたので、
+  // 既定を当月にしたのに開いた瞬間「すべての月」に戻されていた。
+  const firstFilter = useRef(true)
+  useEffect(() => {
+    if (firstFilter.current) {
+      firstFilter.current = false
+      return
+    }
+    setMonth('all')
+  }, [filter, search])
 
   function handleDelete(date) {
     setLogs((prev) => prev.filter((l) => l.date !== date))
@@ -162,6 +173,7 @@ export default function Journal() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <AppHeader />
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
         {/* ヘッダー */}
         <View>

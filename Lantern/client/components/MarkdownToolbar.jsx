@@ -12,13 +12,18 @@ import { toggleBullet, wrapSelection } from '../lib/markdown'
 //
 // **残り3項目（よかった・困った・次）には付けない。**
 // 短いメモに道具立てを出すのは重すぎる。
+//
+// `extra` に写真の入口が入る（2026-08-14・デザイン案 `3_write`）。
+// 案には**クリップ（任意のファイル添付）**もあるが付けていない。
+// 扱えるのは写真だけで、置き場所は端末の中と決めてある。
+// 押せるのに何も起きないボタンは、無い方がよい。
 const ACTIONS = [
   { id: 'bold', label: 'B', mark: '**', strong: true },
   { id: 'italic', label: 'I', mark: '*', italic: true },
   { id: 'bullet', label: '•' },
 ]
 
-export default function MarkdownToolbar({ value, selection, onChange }) {
+export default function MarkdownToolbar({ value, selection, onChange, extra }) {
   function apply(action) {
     const start = selection?.start ?? value.length
     const end = selection?.end ?? start
@@ -48,6 +53,12 @@ export default function MarkdownToolbar({ value, selection, onChange }) {
           </Text>
         </Pressable>
       ))}
+      {extra ? (
+        <>
+          <View className="w-[1px] h-5 bg-border mx-1 self-center" />
+          {extra}
+        </>
+      ) : null}
     </View>
   )
 }

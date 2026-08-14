@@ -95,20 +95,20 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 
 | ファイル | 使う側 | 役割 |
 |---|---|---|
-| `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ |
+| `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ。**「今月」は月を戻すだけ** |
 | `AuthForm.jsx` | login / signup | カードに載せた2欄。空欄のまま送らせない。欄そのものは `AuthField` |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。**丸いチェックで使ったものを下へ落とす** |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
-| `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。開くと LogDetail |
+| `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
 | `MarkdownToolbar.jsx` | RecordForm | 太字・斜体・箇条書きの3つだけ。**文字数を出さない** |
 | `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード。**`flex-1` を付けない**（中身がはみ出す） |
 | `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
-| `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。圧縮して端末に置く |
+| `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。`compact` で道具の列に入る |
 | `PhotoPicker.web.jsx` | 同上 | **何も描かない。** 分岐ではなくファイルを分けて、expo-image-picker を Web バンドルに乗せない |
 | `RecordForm.jsx` | 書く / 記録のモーダル | 記録フォーム。既定で見えるのは「やったこと」だけ |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
@@ -125,6 +125,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
 | `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
+| `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |

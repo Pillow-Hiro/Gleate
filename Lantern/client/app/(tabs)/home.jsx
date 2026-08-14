@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
+import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
@@ -104,6 +105,7 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}

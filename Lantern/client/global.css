@@ -96,6 +96,11 @@
        面は彩度の低い砂、文字は濃い茶。**灯りの #FBB03B は使わない。**
        灯りは1画面に1つだけにしたいので、AIの面と競合させない。 */
     --color-ai-surface: 255 240 219;
+    /* 今週の発見。**AIではない観察**の面。
+       灰にしたら「暖色系に」と言われたので、砂より一段濃い生成りにする。
+       Lanternの言葉（`ai-surface`）より暗く、輪郭も持たせて見分ける。 */
+    --color-discovery-surface: 242 230 214;
+    --color-discovery-ink: 81 69 53;
     --color-ai-ink: 108 69 0;
     --color-sage: 108 69 0;
     --color-sage-light: 255 240 219;
@@ -168,6 +173,8 @@
     /* 暗い地では、砂を沈めて文字を明るい側に振る */
     --color-ai-surface: 56 42 20;
     --color-ai-ink: 255 221 180;
+    --color-discovery-surface: 45 38 28;
+    --color-discovery-ink: 226 214 196;
     --color-sage: 255 221 180;
     --color-sage-light: 56 42 20;
 

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { InputAccessoryView, Keyboard, Platform, Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import Text from './Text'
+import RichText from './RichText'
 import { authFetch } from '../lib/supabase'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
@@ -37,7 +38,9 @@ function CalendarIcon({ color = '#847563' }) {
     </Svg>
   )
 }
-function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich, bare }) {
+function Field({ value, onChange, label, rows = 2, placeholder = '（任意）', rich, bare, extra }) {
+  // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
+  const [editing, setEditing] = useState(false)
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
   const [selection, setSelection] = useState(null)
@@ -73,7 +76,7 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
   if (bare) {
     const bar = (
       <View className="flex-row items-center justify-between px-1">
-        <MarkdownToolbar value={value} selection={selection} onChange={applyMark} />
+        <MarkdownToolbar value={value} selection={selection} onChange={applyMark} extra={extra} />
         <Pressable
           onPress={() => Keyboard.dismiss()}
           accessibilityLabel="キーボードを閉じる"
@@ -84,6 +87,35 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
       </View>
     )
 
+    // **触れただけでキーボードが開かないようにする**（2026-08-14）。
+    //
+    // 主欄は画面の大半を占める。そこに素の `TextInput` を敷くと、
+    // スクロールのために指を置いただけで焦点が入り、キーボードが上がる。
+    // 実機で「感度が良すぎる」と言われた。
+    //
+    // **書いていないときは入力欄を置かない。** 読む面を置き、
+    // 押されたときに入力欄へ差し替える。指を滑らせただけでは開かない。
+    //
+    // 副産物として、**装飾が効いていることが目で分かる。**
+    // 入力中は Markdown の記号がそのまま見えるが、
+    // 離れると太字は太字として描かれる（`RichText`）。
+    if (!editing) {
+      return (
+        <Pressable
+          onPress={() => setEditing(true)}
+          accessibilityLabel={placeholder}
+          style={{ minHeight: rows * 32 + 16 }}
+          className="justify-start"
+        >
+          {value ? (
+            <RichText text={value} className="text-body-lg text-on-surface" />
+          ) : (
+            <Text className="text-body-lg text-outline">{placeholder}</Text>
+          )}
+        </Pressable>
+      )
+    }
+
     return (
       <View>
         <TextInput
@@ -91,8 +123,10 @@ function Field({ value, onChange, label, rows = 2, placeholder = '（任意）',
           value={value}
           onChangeText={onChange}
           onSelectionChange={handleSelectionChange}
+          onBlur={() => setEditing(false)}
           selection={pending ?? undefined}
           inputAccessoryViewID={USE_ACCESSORY ? ACCESSORY_ID : undefined}
+          autoFocus
           multiline
           scrollEnabled={false}
           textAlignVertical="top"
@@ -244,6 +278,18 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         rows={7}
         rich
         bare
+        extra={
+          // **写真は道具の列に入れる**（2026-08-14・デザイン案 `3_write`）。
+          // 別の区画に置いていたので、装飾の道具と別物に見えていた。
+          // クリップ（任意のファイル添付）は付けない。**扱えるのは写真だけ。**
+          <PhotoPicker
+            photoUrl={photoUrl}
+            onSelect={handlePhotoSelect}
+            onRemove={handlePhotoRemove}
+            disabled={loading}
+            compact
+          />
+        }
         placeholder={
           question && isToday
             ? question
@@ -289,11 +335,13 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         </View>
       ) : null}
 
+      {/* 選んだ写真の見た目。**選ぶボタンは道具の列にある** */}
       <PhotoPicker
         photoUrl={photoUrl}
         onSelect={handlePhotoSelect}
         onRemove={handlePhotoRemove}
         disabled={loading}
+        previewOnly
       />
 
       <Pressable

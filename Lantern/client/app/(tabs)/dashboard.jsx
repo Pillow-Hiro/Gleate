@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { calcStreak } from '../../lib/date'
+import AppHeader from '../../components/AppHeader'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
 
@@ -80,6 +81,7 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <AppHeader />
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
           <Text className="font-display text-headline-md text-ink">分析</Text>

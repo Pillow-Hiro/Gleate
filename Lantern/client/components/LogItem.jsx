@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Image, Pressable, View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Animated, Easing, Image, LayoutAnimation, Platform, Pressable, UIManager, View } from 'react-native'
 import Text from './Text'
 import LogDetail from './LogDetail'
 import { relativeDayLabel } from '../lib/format'
@@ -18,8 +18,46 @@ import { stripMarkdown } from '../lib/markdown'
 // 3行だと一覧が縦に伸びて「探す」ための一覧でなくなる。
 const SNAPSHOT_ORDER = ['created', 'enjoyable', 'struggled', 'next']
 
+// Android では明示的に許可しないと `LayoutAnimation` が効かない。
+// **一度だけ。** 描画のたびに呼ぶと警告が出る。
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
+}
+
+// 開くときの動き。**高さは OS に補間させ、中身は自分で薄く出す。**
+// 高さを自分で測ると、記録の長さごとに測り直すことになる。
+const EXPAND = {
+  duration: 220,
+  update: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+  delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+}
+
 export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isLast }) {
   const [open, setOpen] = useState(false)
+  // 山形の向きと、中身の濃さ
+  const turn = useRef(new Animated.Value(0)).current
+  const fade = useRef(new Animated.Value(0)).current
+
+  function toggle() {
+    const next = !open
+    LayoutAnimation.configureNext(EXPAND)
+    setOpen(next)
+    Animated.parallel([
+      Animated.timing(turn, {
+        toValue: next ? 1 : 0,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fade, {
+        toValue: next ? 1 : 0,
+        // 閉じるときは先に消す。中身が残ったまま畳むとちらつく
+        duration: next ? 260 : 120,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }
   // **抜粋では記法を外す。** `**` が残ると、装飾ではなく文字として読まれる。
   // 抜粋は2行しか出ないので、太字にしても区別が付かない
   const body = stripMarkdown(SNAPSHOT_ORDER.map((k) => log[k]).find(Boolean) || '')
@@ -29,7 +67,7 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
     // DESIGN.md の「Dividers should have horizontal insets」。
     // **最後の行には引かない。** カードの縁と二重になる。
     <View className={isLast ? '' : 'border-b border-border'}>
-      <Pressable onPress={() => setOpen((o) => !o)} className="py-3.5 gap-1">
+      <Pressable onPress={toggle} className="py-3.5 gap-1">
         <View className="flex-row items-center justify-between gap-3">
           <Text className="font-label text-label-md text-outline">
             {relativeDayLabel(log.date)}
@@ -50,7 +88,22 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
                 </Text>
               </Pressable>
             ) : null}
-            <Text className="text-outline text-label-md">{open ? '⌃' : '⌄'}</Text>
+            {/* 山形は回す。**字を差し替えない。**
+                差し替えると、開く動きと無関係に一瞬で変わる */}
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: turn.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '180deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Text className="text-outline text-label-md">⌄</Text>
+            </Animated.View>
           </View>
         </View>
 
@@ -76,9 +129,9 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
       </Pressable>
 
       {open ? (
-        <View className="pb-1">
+        <Animated.View className="pb-1" style={{ opacity: fade }}>
           <LogDetail log={log} onDelete={onDelete} onUpdate={onUpdate} />
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   )

@@ -6,6 +6,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { todayStr, calcStreak } from '../../lib/date'
+import AppHeader from '../../components/AppHeader'
 import RecordForm from '../../components/RecordForm'
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
@@ -78,6 +79,7 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}

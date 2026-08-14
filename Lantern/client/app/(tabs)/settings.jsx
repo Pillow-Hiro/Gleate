@@ -8,6 +8,7 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
+import AppHeader from '../../components/AppHeader'
 import TimeDial from '../../components/TimeDial'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
@@ -152,6 +153,7 @@ export default function Settings() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
