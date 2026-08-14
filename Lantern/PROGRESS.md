@@ -3160,6 +3160,78 @@ Lantern が使うのは端末の中だけで完結する予約で、プッシュ
 カーソルの挙動は Web と iOS で別物で、今回直したのは
 `TextInput` の `selection` という**ネイティブ側の振る舞い**にあたる。
 
+## 2026/08/14 — Journaling Suggestions を入れる（未検証）
+
+フェーズB。A7（TestFlight）に到達したので着手した。
+
+### 調べたこと
+
+| | |
+|---|---|
+| 対象 | iOS 17.2+。iPadOS は 26.0+。**シミュレータでは出ない** |
+| 権利 | `com.apple.developer.journal.allow = ["suggestions"]` |
+| 申請 | **要らない。** Xcode の capability を入れると付く類のもの |
+| 追加の許可 | **求めない。** 選ぶまでアプリからは中身が見えない設計のため |
+| 既存の部品 | **無い。** Expo にも npm にもモジュールが無く、自作した |
+
+Mac Catalyst ではボタンを押しても何も起きない、と Apple が明記している。
+
+### 受け取るのは見出しだけ
+
+提案には写真・運動・心拍・場所の座標・State of Mind まで入ってくる。
+**`title` 以外は受け取らない。**
+
+- 写真は端末の中だけに置くと決めてある。新しい経路を開けない
+- **State of Mind は気分の分類そのもの**で、Insights AI憲法が禁じている
+- 運動や心拍は、記録アプリが持つ理由がない
+
+`title` は「渋谷」「8月12日の写真」のような短い事実の label。
+それを「やったこと」の欄に1行差し込み、**続きは利用者が書く。**
+
+### 差別化の話と矛盾しないのか
+
+CLAUDE.md は「Apple の Journaling Suggestions は端末内の行動データを
+材料にするが、Lantern は利用者が自分の言葉で書いたものを材料にできる」と
+書いている。導入すると逆を向くように見えるが、**担当する段が違う。**
+
+Journaling Suggestions が効くのは「記録しやすさの4段」の
+**2（書き始められる）**。観察や問いの材料ではない。
+`modules/questions/` と AI の観察は、いままでどおり書かれた言葉だけを見る。
+**行動データを AI に渡さない。** 渡るのは、利用者が自分の記録として
+残すことにした文だけ。
+
+### 作ったもの
+
+| | |
+|---|---|
+| `client/modules/journaling-suggestions/` | 自作のネイティブモジュール（Swift ＋ JS） |
+| `plugins/withJournalingSuggestions.js` | 権利を足す config plugin |
+| `components/SuggestionButton.jsx` ＋ `.web.jsx` | 入口。**出せない端末では描かない** |
+
+ピッカーはボタンそのものが SwiftUI のビューなので、
+プログラムから開くのではなく**ビューとして埋め込んでいる。**
+Apple の作法どおり、押すのは利用者。
+
+読み込みは `Platform.OS === 'ios'` かつ try/catch。
+**権利の無い古いビルドに、このJSがOTAで届いても落ちない。**
+2026-08-09 に `expo-glass-effect` で同じ形を踏んでいる。
+
+**検証結果: 未検証**
+
+- pytest 847件 / vitest 141件 / `expo export --platform web` 成功
+- `expo-doctor` 20/20
+- 配信物に `JournalingSuggestions` が**1つも入っていない**ことを確認（Web）
+- `expo config --type introspect` で権利が付くことを確認
+
+**Swift はここでは一度もコンパイルしていない。** EAS のビルドが初めての検査になる。
+**ピッカーが出るかどうかは、iOS 17.2 以上の実機でしか分からない。**
+
+### プロビジョニングプロファイルの作り直しが要る
+
+権利を足したので、ビルド #8 と同じ落とし方をする。
+あのときは使わない権利（プッシュ）だったので外したが、**今回は使う権利**なので、
+プロファイル側に capability を足す必要がある。
+
 ---
 
 ## 進行中
