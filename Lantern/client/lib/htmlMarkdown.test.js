@@ -89,3 +89,51 @@ describe('escapeHtml', () => {
     expect(escapeHtml('&lt;')).toBe('&amp;lt;')
   })
 })
+
+// **実ブラウザで打って取った HTML。**
+//
+// 2026-08-15 に `lib/editorPage.js` をブラウザで開き、
+// 太字・斜体・箇条書きを実際に押して `innerHTML` を控えた。
+// ここで壊れると、実機の編集画面も壊れる。
+describe('実ブラウザが返した HTML', () => {
+  const captured = {
+    '選択して太字': ['<div><b>ふつうの文</b></div>', '**ふつうの文**'],
+    '選択して斜体': ['<div><i>ふつうの文</i></div>', '*ふつうの文*'],
+    '2行を箇条書き': ['<div><ul><li>あ</li><li>い</li></ul></div>', '- あ\n- い'],
+    '太字を外す': ['<div>強い</div>', '強い'],
+    '空から打つ': ['あたらしい行', 'あたらしい行'],
+    '改行して打つ': ['<div>あ</div><div>い</div>', 'あ\nい'],
+    '隣の太字と溶ける': [
+      '<div>これは<b>強い言葉</b></div><ul><li>あ</li></ul>',
+      'これは**強い言葉**\n- あ',
+    ],
+  }
+
+  for (const [name, [html, md]] of Object.entries(captured)) {
+    it(name, () => {
+      expect(htmlToMarkdown(html)).toBe(md)
+    })
+  }
+
+  // **入れ子で壊した。** 対を正規表現で数えると、
+  // 外側の div が最初の </li> で閉じたことになる
+  it('塊が包まれていても数えない', () => {
+    expect(htmlToMarkdown('<div><div><div>あ</div></div></div>')).toBe('あ')
+  })
+
+  // **箇条書きを外すと、外れた行が裸で </ul> の後ろに残る。**
+  // 切れ目を入れないと前の項目とくっつく
+  it('箇条書きを外した行が前の行とくっつかない', () => {
+    expect(
+      htmlToMarkdown('<ul><li>詰まった</li></ul>直した')
+    ).toBe('- 詰まった\n直した')
+  })
+
+  it('箇条書きのあとに塊が続いても空行を足さない', () => {
+    expect(htmlToMarkdown('<ul><li>あ</li></ul><div>い</div>')).toBe('- あ\nい')
+  })
+
+  it('箇条書きで終わっても空行を足さない', () => {
+    expect(htmlToMarkdown('<ul><li>あ</li></ul>')).toBe('- あ')
+  })
+})

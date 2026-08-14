@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'reac
 import { View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { htmlToMarkdown, markdownToHtml } from '../lib/htmlMarkdown'
+import { editorPage } from '../lib/editorPage'
 
 // 本物の編集画面。**記号が見えない。**
 //
@@ -28,67 +29,6 @@ import { htmlToMarkdown, markdownToHtml } from '../lib/htmlMarkdown'
 // WebView は中身の高さを自分で伝えないので、**中から知らせる。**
 // 伝えないと、書いた分だけ下が切れる。
 
-function page({ html, placeholder, color, muted, minHeight, autoFocus }) {
-  return `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<style>
-  html, body { margin:0; padding:0; background:transparent; -webkit-text-size-adjust:100%; }
-  #ed {
-    outline: none;
-    min-height: ${minHeight}px;
-    font-family: -apple-system, "Noto Sans JP", sans-serif;
-    font-size: 19px;
-    line-height: 32px;
-    color: ${color};
-    caret-color: ${color};
-    word-break: break-word;
-  }
-  #ed:empty:before { content: attr(data-ph); color: ${muted}; }
-  #ed ul { margin: 0; padding-left: 1.2em; }
-  #ed b, #ed strong { font-weight: 700; }
-</style>
-</head><body>
-<div id="ed" contenteditable="true" data-ph="${placeholder}">${html}</div>
-<script>
-  var AUTOFOCUS = ${autoFocus ? 'true' : 'false'};
-  var ed = document.getElementById('ed');
-  var lastHeight = 0;
-
-  function post(msg) {
-    window.ReactNativeWebView.postMessage(JSON.stringify(msg));
-  }
-  function sendHeight() {
-    var h = Math.max(document.body.scrollHeight, ed.scrollHeight);
-    if (h !== lastHeight) { lastHeight = h; post({ type: 'height', height: h }); }
-  }
-  function sendHtml() {
-    post({ type: 'change', html: ed.innerHTML });
-    sendHeight();
-  }
-
-  ed.addEventListener('input', sendHtml);
-  ed.addEventListener('focus', function () { post({ type: 'focus' }); });
-  ed.addEventListener('blur', function () { post({ type: 'blur' }); });
-
-  // RN からの命令。**選択は消さない**（実行前に欄へ戻す）
-  window.lanternExec = function (cmd) {
-    ed.focus();
-    if (cmd === 'bold') document.execCommand('bold');
-    else if (cmd === 'italic') document.execCommand('italic');
-    else if (cmd === 'bullet') document.execCommand('insertUnorderedList');
-    else if (cmd === 'blur') ed.blur();
-    sendHtml();
-  };
-
-  setTimeout(sendHeight, 0);
-  if (AUTOFOCUS) setTimeout(function () { ed.focus(); }, 60);
-  document.addEventListener('selectionchange', sendHeight);
-</script>
-</body></html>`
-}
-
 const WebEditor = forwardRef(function WebEditor(
   { value, onChange, onFocus, onBlur, placeholder = '', minHeight = 220, isDark, autoFocus },
   ref
@@ -101,7 +41,7 @@ const WebEditor = forwardRef(function WebEditor(
   // 以後の中身は WebView が持ち、こちらは受け取るだけ。
   const source = useMemo(
     () => ({
-      html: page({
+      html: editorPage({
         html: markdownToHtml(value),
         placeholder,
         color: isDark ? '#EDEDEF' : '#1D1D1F',

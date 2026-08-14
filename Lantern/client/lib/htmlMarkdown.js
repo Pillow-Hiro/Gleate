@@ -15,6 +15,7 @@
 
 // 箇条書きの行に付ける目印。**本文に出ない文字**を使う
 const LI = ''
+const NL = '\n'
 
 export function escapeHtml(text) {
   return text.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;')
@@ -53,7 +54,7 @@ export function markdownToHtml(markdown) {
     }
   }
 
-  for (const line of markdown.split('\n')) {
+  for (const line of markdown.split(NL)) {
     const bullet = /^[ \t]*[-*+][ \t]+/.exec(line)
     if (bullet) {
       const body = inlineToHtml(line.slice(bullet[0].length))
@@ -78,7 +79,6 @@ function inlineToMarkdown(html) {
     .replace(/<\/(b|strong)>/gi, '**')
     .replace(/<(i|em)(\s[^>]*)?>/gi, '*')
     .replace(/<\/(i|em)>/gi, '*')
-    .replace(/<br\s*\/?>/gi, '')
     // 残った要素は落とす。**中身は残す**（文字が消えるより記号が消える方がよい）
     .replace(/<[^>]+>/g, '')
 
@@ -90,25 +90,44 @@ function inlineToMarkdown(html) {
 /**
  * `contenteditable` の HTML を Markdown に戻す。
  *
- * **行の外枠だけを見る。** `div` / `p` / `li` が1行にあたる。
- * それ以外の入れ子は書式として読む。
+ * **入れ子は数えない。塊の切れ目を改行に置き換えるだけ。**
+ *
+ * 対を正規表現で数えようとして壊した（2026-08-15）。
+ * ブラウザは `<div><ul><li>…</li></ul></div>` のように塊を包むことがあり、
+ * 対を非貪欲で拾うと**外側の `<div>` が最初の `</li>` で閉じたことになる。**
+ * 実ブラウザで打って確かめたときに見つけた。
+ *
+ * 切れ目を改行にするだけなら、何段包まれていても結果は変わらない。
  */
 export function htmlToMarkdown(html) {
   if (!html) return ''
 
-  // 箇条書きは目印を付けてから、ふつうの行と同じ扱いにする
-  const work = html
-    .replace(/<\/?(ul|ol)(\s[^>]*)?>/gi, '')
-    .replace(/<li(\s[^>]*)?>/gi, `<div>${LI}`)
-    .replace(/<\/li>/gi, '</div>')
+  const startsWithBlock = /^\s*</.test(html)
 
-  const lines = []
-  const re = /<(div|p)(\s[^>]*)?>([\s\S]*?)<\/\1>/gi
-  let match
-  while ((match = re.exec(work)) !== null) lines.push(match[3])
+  const text = html
+    // **塊をそのまま包んだだけの `<div>` は外す。**
+    // すぐ次にまた塊が始まるものは、行ではなく入れ物。
+    // 残すと、包まれた段の数だけ空行が増える。
+    // 閉じ側は下でまとめて落とすので、開き側だけ消せばよい
+    .replace(/<div[^>]*>(?=\s*<(?:div|ul|ol|p)\b)/gi, '')
+    // 空の行
+    .replace(/<(div|p)[^>]*>\s*<br\s*\/?>\s*<\/(?:div|p)>/gi, NL)
+    // **箇条書きを外した直後は、外れた行が裸で `</ul>` の後ろに残る。**
+    // 実ブラウザで箇条書きを外して確かめたときに見つけた。
+    // 行の切れ目を入れないと、前の項目とくっつく。
+    // 次が別の塊なら、その塊が自分で切れ目を作るので入れない
+    .replace(/<\/(ul|ol)>(?=\s*[^\s<])/gi, NL)
+    .replace(/<\/?(ul|ol)[^>]*>/gi, '')
+    .replace(/<li[^>]*>/gi, NL + LI)
+    .replace(/<\/li>/gi, '')
+    .replace(/<(div|p)[^>]*>/gi, NL)
+    .replace(/<\/(div|p)>/gi, '')
+    .replace(/<br\s*\/?>/gi, NL)
 
-  // 外枠が無いとき（1行だけ打った直後など）はそのまま1行として扱う
-  if (lines.length === 0) lines.push(work)
+  const lines = text.split(NL)
+  // 先頭の塊が作った空行を1つだけ落とす。
+  // **全部は落とさない。** 書いた人が頭で改行していることがある
+  if (startsWithBlock && lines[0] === '') lines.shift()
 
   return lines
     .map((line) => {
@@ -116,6 +135,6 @@ export function htmlToMarkdown(html) {
       const body = inlineToMarkdown(bullet ? line.slice(LI.length) : line)
       return bullet ? `- ${body}` : body
     })
-    .join('\n')
+    .join(NL)
     .replace(/[ \t]+$/gm, '')
 }
