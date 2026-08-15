@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, PanResponder, Pressable, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
 import WebEditor from './WebEditor'
@@ -61,18 +61,13 @@ function CheckCircle({ checked }) {
   )
 }
 
-// 1行。**チェックと文だけ。**
-//
 // 削除は**左に払うとゴミ箱が出る**（2026-08-15・iOS の作法）。
 // それまでは行を押して開き、中の「削除」を押し、確認をもう一度押す
 // という3手で、**押して開く操作が「使った」と紛らわしかった。**
 //
-// `react-native-gesture-handler` は直接の依存に入れていないので、
-// RN 標準の `PanResponder` で作る。依存を足すと指紋が変わり、
-// 配信済みのビルドへ OTA が届かなくなる。
+// `react-native-gesture-handler` は直接の依存に入れていない
+// （足すと指紋が変わり、配信済みのビルドへ OTA が届かなくなる）。
 const TRASH_WIDTH = 80
-// これ以上払ったら開く
-const OPEN_AT = 32
 
 function TrashIcon({ color = '#FFFFFF' }) {
   return (
@@ -88,91 +83,91 @@ function TrashIcon({ color = '#FFFFFF' }) {
   )
 }
 
+// 1行。**チェックと文だけ。**
+//
+// 削除は**左に払うとゴミ箱が出る**（iOS の作法）。
+//
+// ## 払う仕組みを作り直した（2026-08-15・三度目）
+//
+// `PanResponder` で「横が縦より動いていたら奪う」と書いていたが、
+// **一覧の縦スクロールに勝てなかった。** 比率を 2倍 → 1.2倍 → 同数と
+// 緩めても、実機では取られ続けた。
+//
+// **判定を自分で書くのをやめた。** 行そのものを横スクロールにすると、
+// 縦と横のどちらの操作なのかは **OS が裁く。**
+// iOS の「メール」も同じ作り（入れ子のスクロール）で、
+// 縦に流れている最中でも横に払える。
+//
+// 自分で角度を測るより、端末が持っている裁定に任せる方が強い。
+//
+// 幅は測って渡す。`onLayout` を待つあいだは行だけを描く
+// （0 のまま横に並べると、ゴミ箱が画面の左端に見えてしまう）。
 function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
   const picked = Boolean(idea.picked_at)
-  const slide = useRef(new Animated.Value(0)).current
-  const openRef = useRef(false)
+  const [width, setWidth] = useState(0)
+  const scroller = useRef(null)
 
-  function settle(toValue) {
-    openRef.current = toValue !== 0
-    Animated.spring(slide, {
-      toValue,
-      useNativeDriver: true,
-      bounciness: 0,
-      speed: 18,
-    }).start()
+  function handleDelete() {
+    // 消す前に閉じておく。開いたまま次の行が繰り上がると、
+    // 触っていない行のゴミ箱が出ているように見える
+    scroller.current?.scrollTo({ x: 0, animated: false })
+    onDelete(idea)
   }
 
-  const pan = useRef(
-    PanResponder.create({
-      // **横に払ったときだけ拾う。** 縦は一覧のスクロールに渡す。
-      //
-      // `Capture` を使う（2026-08-15）。実機で「縦スクロールの方が強い」と
-      // 言われた。`onMoveShouldSetPanResponder` は親が先に手を挙げたあとに
-      // 呼ばれるので、**上の `ScrollView` に先を越されていた。**
-      // `Capture` は親より先に判定される。
-      //
-      // 横が縦より勝っているときに奪う。
-      //
-      // **三度緩めた**（2倍 → 1.2倍 → 同数）。
-      // 実機では指がまっすぐ横に動かず、少しの斜めで一覧に取られていた。
-      // **横が縦と同じだけ動いていれば、払うつもりと見なす。**
-      // しきい値も 4px → 3px。取りこぼすより、少し敏感な方がよい
-      // （開いても、指を離せば戻る）。
-      onMoveShouldSetPanResponderCapture: (_e, g) =>
-        Math.abs(g.dx) > 3 && Math.abs(g.dx) >= Math.abs(g.dy),
-      onPanResponderMove: (_e, g) => {
-        const base = openRef.current ? -TRASH_WIDTH : 0
-        const next = Math.min(0, Math.max(-TRASH_WIDTH, base + g.dx))
-        slide.setValue(next)
-      },
-      onPanResponderRelease: (_e, g) => {
-        const base = openRef.current ? -TRASH_WIDTH : 0
-        settle(base + g.dx < -OPEN_AT ? -TRASH_WIDTH : 0)
-      },
-      onPanResponderTerminate: () => settle(0),
-    })
-  ).current
+  const row = (
+    <View
+      style={width ? { width } : undefined}
+      className="flex-row items-center gap-3 px-4 py-3 bg-surface-lowest"
+    >
+      <Pressable
+        onPress={() => onTogglePicked(idea)}
+        accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
+        hitSlop={10}
+        className="min-h-touch justify-center"
+      >
+        <CheckCircle checked={picked} />
+      </Pressable>
+
+      <Text
+        className={`flex-1 text-body-md leading-relaxed ${
+          picked ? 'text-outline' : 'text-on-surface'
+        }`}
+        style={picked ? { textDecorationLine: 'line-through' } : undefined}
+      >
+        {idea.text}
+      </Text>
+    </View>
+  )
 
   return (
-    <View className={isLast ? '' : 'border-b border-border'}>
-      <View>
-        {/* ゴミ箱は下に敷いておく。払うと行がずれて現れる */}
-        <View className="absolute right-0 top-0 bottom-0 justify-center">
+    <View className={isLast ? '' : 'border-b border-border'} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {width === 0 ? (
+        row
+      ) : (
+        <ScrollView
+          ref={scroller}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          // **吸い付く位置は2つだけ。** 閉じているか、開いているか
+          snapToOffsets={[0, TRASH_WIDTH]}
+          snapToEnd={false}
+          decelerationRate="fast"
+          bounces={false}
+          overScrollMode="never"
+          // 行の中のチェックは押せたままにする
+          keyboardShouldPersistTaps="handled"
+        >
+          {row}
           <Pressable
-            onPress={() => onDelete(idea)}
-            accessibilityLabel="このアイデアを削除する"
+            onPress={handleDelete}
+            accessibilityLabel={`${idea.text} を削除する`}
             style={{ width: TRASH_WIDTH }}
-            className="h-full bg-error items-center justify-center rounded active:opacity-80"
+            className="bg-error items-center justify-center"
           >
             <TrashIcon />
           </Pressable>
-        </View>
-
-        <Animated.View
-          {...pan.panHandlers}
-          style={{ transform: [{ translateX: slide }] }}
-          className="flex-row items-center gap-3 px-4 py-3 bg-surface-lowest"
-        >
-          <Pressable
-            onPress={() => onTogglePicked(idea)}
-            accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
-            hitSlop={10}
-            className="min-h-touch justify-center"
-          >
-            <CheckCircle checked={picked} />
-          </Pressable>
-
-          <Text
-            className={`flex-1 text-body-md leading-relaxed ${
-              picked ? 'text-outline' : 'text-on-surface'
-            }`}
-            style={picked ? { textDecorationLine: 'line-through' } : undefined}
-          >
-            {idea.text}
-          </Text>
-        </Animated.View>
-      </View>
+        </ScrollView>
+      )}
     </View>
   )
 }

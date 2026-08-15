@@ -100,7 +100,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `AuthForm.jsx` | login / signup | カードに載せた2欄。空欄のまま送らせない。欄そのものは `AuthField` |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
-| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱** |
+| `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱**（行が横スクロール。方向の裁定は OS に任せる） |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
