@@ -3,6 +3,7 @@ import { Animated, Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
 import { splashImageFor } from '../lib/splashImage'
+import { cacheForNextTime, loadCached } from '../lib/splashPhoto'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || ''
@@ -38,7 +39,17 @@ export default function SplashScreen({ onClose }) {
   const [quote, setQuote] = useState(
     () => FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)]
   )
-  const background = splashImageFor(localDateStr())
+  // 地は**描く前に1つ決めて、そのあと変えない**（2026-08-16）。
+  //
+  // 前回までに覚えた写真があればそれを、無ければ同梱の地を使う。
+  // どちらも端末の中にあるので、**開いた瞬間に出る。**
+  //
+  // `useState` の初期値で決めているのは、描いている最中に変えないため。
+  // 見ている最中に背景が差し替わるのは、作者が嫌がった動き。
+  const [background] = useState(() => {
+    const cached = loadCached()
+    return cached ? { uri: cached } : splashImageFor(localDateStr())
+  })
 
   const dateOpacity = useFadeIn(100)
   const logoOpacity = useFadeIn(250)
@@ -53,6 +64,10 @@ export default function SplashScreen({ onClose }) {
         const data = await res.json()
         if (cancelled) return
         if (data.quote) setQuote(data.quote)
+        // **次回のために置くだけ。** いま出ている地は変えない。
+        // 1日ずれる（前に取った写真が今日出る）が、起動画面の写真は
+        // その日を表すものではないので困らない
+        if (data.photo_url) cacheForNextTime(data.photo_url)
       } catch (e) {
         // 取れなければ、こちらが持っている一文のままにする
         console.warn('[Splash] 起動画面コンテンツの取得に失敗', e)

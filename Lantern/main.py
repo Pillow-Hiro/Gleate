@@ -55,6 +55,10 @@ CORS(app, origins=[
     'http://localhost:8081',
 ])
 
+# 起動画面の写真。Unsplash の呼び出しを減らすためプロセス内に6時間持つ。
+# ワーカーやインスタンスをまたいでは共有されないが、その場合でも
+# 増えるのは「6時間あたりの取得回数がワーカー数まで」で、
+# Unsplash の無料枠（50回/時）には十分収まる。共有ストアは持ち込まない。
 # 受け取る本文の上限（2026-08-15）。
 # **記録は文章だけ。** 写真も添付も端末の中に置くので、サーバーへは来ない。
 # 上限が無いと、大きな本文を投げるだけでメモリを食わせられる。
@@ -77,6 +81,7 @@ def require_ai_budget(f):
 
 
 
+_splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 
 
 @app.route("/save", methods=["POST"])
@@ -500,16 +505,44 @@ def splash_content_api():
     # 見せたいのは種類の変化であって順番ではないので、その都度選ぶ。
     quote_type = random.choice(("zen", "snoopy"))
 
-    # **写真はもう返さない**（2026-08-16）。
-    # 起動画面の地はアプリの中に持つことにした（`client/lib/splashImage.js`）。
-    # 外から取っていた頃は、届くまで濃紺のままで写真が遅れて現れていた。
-    # 使わない呼び出しを残すと、開くたびに Unsplash を叩き続ける。
+    now = time.time()
+    if now - _splash_photo_cache["cached_at"] > 21600:
+        unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY", "")
+        photo_url = ""
+        photographer = ""
+        if unsplash_key:
+            try:
+                r = http_req.get(
+                    "https://api.unsplash.com/photos/random",
+                    params={"query": "nature landscape", "orientation": "portrait", "content_filter": "high"},
+                    headers={"Authorization": f"Client-ID {unsplash_key}"},
+                    timeout=5,
+                )
+                if r.ok:
+                    data = r.json()
+                    photo_url = data["urls"]["regular"]
+                    photographer = data["user"]["name"]
+                    print(f"[Splash] Unsplash取得成功: {photo_url[:60]}...")
+                else:
+                    print(f"[Splash] Unsplash HTTPエラー: {r.status_code}")
+            except Exception as e:
+                print(f"[Splash] Unsplash error: {e}")
+        else:
+            print("[Splash] UNSPLASH_ACCESS_KEY未設定 - Picsumフォールバック使用")
+
+        _splash_photo_cache.update({
+            "photo_url": photo_url,
+            "photographer": photographer,
+            "cached_at": now,
+        })
 
     from modules.ai import get_splash_quote
     quote = get_splash_quote(quote_type)
     print(f"[Splash] quote_type={quote_type}")
 
     return jsonify({
+        "photo_url": _splash_photo_cache["photo_url"],
+        "photographer": _splash_photo_cache["photographer"],
         "quote": quote,
         "quote_type": quote_type,
     })

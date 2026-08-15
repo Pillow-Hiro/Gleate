@@ -622,7 +622,7 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
 | `ANTHROPIC_API_KEY` | AI |
 | `YOUTUBE_*` / `TWITCH_*` | 各OAuth。`*_REDIRECT_URI` は本番で明示設定が要る |
 | `FRONTEND_ORIGIN` | OAuth後の戻り先 |
-| ~~`UNSPLASH_ACCESS_KEY`~~ | **2026-08-16 に不要になった。** 起動画面の地はアプリの中に持つ |
+| `UNSPLASH_ACCESS_KEY` | 起動画面の背景（無くても動く） |
 
 `GET /api/debug/version` が、どのリダイレクトURIで動いているかを返す。
 値そのものは出さない。設定ミスの検出用。

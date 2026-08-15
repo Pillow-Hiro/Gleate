@@ -162,6 +162,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `avatarStore.js` ＋ `avatarStore.web.js` | アカウントの画像。**端末の中だけ** | — |
 | `splashPref.js` | 起動画面を毎回出すか。**本来は1日1回** | — |
 | `splashImage.js` | 起動画面の地。**アプリの中に持つ**（日替わり・`assets/splash/`） | — |
+| `splashPhoto.js` ＋ `splashPhoto.web.js` | Unsplash の写真を端末に覚えさせる。**次回から即座に出る** | — |
 | `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
