@@ -18,45 +18,22 @@ from modules.youtube import (
 )
 
 
-class TestBuildState:
-    def test_platform_を明示すると_user_idと連結される(self):
-        assert build_state("abc-123", "app") == "abc-123|app"
-
-    def test_platform_省略時は_web(self):
-        assert build_state("abc-123") == "abc-123|web"
-
-
-class TestParseState:
-    def test_新形式を_user_idと_platformに分解する(self):
-        assert parse_state("abc-123|app") == ("abc-123", "app")
-
-    def test_旧形式_platformなし_は_web扱い(self):
-        # 既存のWebフロントは platform を含まない state を送る。
-        # ここが web にフォールバックしないと、Web利用者が lantern:// へ飛ばされる。
-        assert parse_state("abc-123") == ("abc-123", "web")
-
-    def test_空文字は_user_idなし_web(self):
-        assert parse_state("") == (None, "web")
-
-    def test_Noneは_user_idなし_web(self):
-        # Google が state を返さなかった場合。例外ではなく None を返す契約。
-        assert parse_state(None) == (None, "web")
-
-    def test_platformが空文字なら_webにフォールバックする(self):
-        assert parse_state("abc-123|") == ("abc-123", "web")
-
-    def test_user_idが空なら_Noneを返す(self):
-        assert parse_state("|app") == (None, "app")
-
+# state の形式そのものの検査は `tests/test_oauth_state.py` へ移した。
+# **2026-08-15 に署名を足した**ので、`"abc-123|app"` のような
+# 素の文字列はもう通らない。ここでは「YouTube から呼んでも同じものが使える」
+# ことだけを見る（実体は `modules/oauth_state.py` の再輸出）。
+class TestState往復:
     @pytest.mark.parametrize("platform", ["web", "app"])
     @pytest.mark.parametrize("user_id", ["abc-123", "5efc736a-e32c-4904-af2e-98a6b9768032"])
     def test_build_state_と_parse_state_は往復する(self, user_id, platform):
         assert parse_state(build_state(user_id, platform)) == (user_id, platform)
 
-    def test_区切り文字が複数あっても最初の1つで分解する(self):
-        # user_id は UUID なので '|' を含まない。仮に含んでも
-        # partition が最初の1つだけを見るため platform 側に寄る、という現状の挙動を固定する。
-        assert parse_state("abc|def|ghi") == ("abc", "def|ghi")
+    def test_署名の無い文字列は通らない(self):
+        assert parse_state("abc-123|app") == (None, "web")
+
+    def test_空とNoneは_user_idなし(self):
+        assert parse_state("") == (None, "web")
+        assert parse_state(None) == (None, "web")
 
 
 class TestPkce:

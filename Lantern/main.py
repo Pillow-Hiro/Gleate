@@ -37,7 +37,12 @@ from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
 app = Flask(__name__)
 CORS(app, origins=[
     'https://lantern-inky-three.vercel.app',
-    re.compile(r'https://lantern-.*\.vercel\.app'),
+    # **前後を留める**（2026-08-15）。
+    # `re.compile(r'https://lantern-.*\.vercel\.app')` は後ろが開いており、
+    # flask-cors は `re.match`（先頭一致）で見るため
+    # `https://lantern-x.vercel.app.attacker.example` まで通っていた。
+    # `.*` も広すぎる（`lantern-` で始まる vercel.app は誰でも作れる）。
+    re.compile(r'^https://lantern-[a-z0-9-]+\.vercel\.app$'),
     # Expo Web の開発サーバー（React Nativeのネイティブfetchはブラウザではないため
     # CORSの対象外だが、Expo Web はブラウザ実行なので許可が必要）
     #
@@ -51,6 +56,11 @@ CORS(app, origins=[
 # ワーカーやインスタンスをまたいでは共有されないが、その場合でも
 # 増えるのは「6時間あたりの取得回数がワーカー数まで」で、
 # Unsplash の無料枠（50回/時）には十分収まる。共有ストアは持ち込まない。
+# 受け取る本文の上限（2026-08-15）。
+# **記録は文章だけ。** 写真も添付も端末の中に置くので、サーバーへは来ない。
+# 上限が無いと、大きな本文を投げるだけでメモリを食わせられる。
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+
 _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 
 

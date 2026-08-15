@@ -77,8 +77,13 @@ def _upsert_one(row):
 
 # ── ログ ─────────────────────────────────────────────────────────
 
-def load_logs(user_id=None):
-    """記録を読む。
+def load_logs(user_id):
+    """記録を読む。**`user_id` は必ず渡す。**
+
+    既定値を持たせていた頃は、渡し忘れると `.eq("user_id", ...)` が
+    付かず、**全員の記録が返っていた。** 呼び出し側は全部渡していたが、
+    「渡さなくても動く」形を残しておく理由が無い。
+    
 
     **`favorite` 列が無くても記録を返す。**
     列を足す SQL は人の手で流す。サーバーの配備が先に済むと、
@@ -86,13 +91,13 @@ def load_logs(user_id=None):
     順番に依存させないため、列が無ければ外して読み直す。
     列を足したあとは1回目で通るので、この道は使われなくなる。
     """
+    if not user_id:
+        raise ValueError("load_logs には user_id が要る")
     if not supabase:
         return []
     for select in (_DB_SELECT, _DB_SELECT_BASE):
         try:
-            q = supabase.table("logs").select(select)
-            if user_id:
-                q = q.eq("user_id", user_id)
+            q = supabase.table("logs").select(select).eq("user_id", user_id)
             result = q.order("date").execute()
             return [_from_db(r) for r in (result.data or [])]
         except Exception as e:
@@ -101,7 +106,7 @@ def load_logs(user_id=None):
     return []
 
 
-def save_logs(logs, user_id=None):
+def save_logs(logs, user_id):
     if not supabase or not logs:
         return
     for l in logs:
@@ -128,14 +133,14 @@ def set_favorite(date, favorite, user_id):
     )
 
 
-def delete_log_by_date(date, user_id=None):
+def delete_log_by_date(date, user_id):
     # 写真の削除はここでは行わない。写真は端末の中にしか無い（2026-08-06〜）。
     # 端末側は lib/photoStore.js の remove() が受け持つ。
     if not supabase:
         return
-    q = supabase.table("logs").delete().eq("date", date)
-    if user_id:
-        q = q.eq("user_id", user_id)
+    if not user_id:
+        raise ValueError("delete_log_by_date には user_id が要る")
+    q = supabase.table("logs").delete().eq("date", date).eq("user_id", user_id)
     q.execute()
 
 

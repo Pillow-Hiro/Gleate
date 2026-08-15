@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #13 を TestFlight へアップロード済み**（2026-08-15・commit `f6b2eca`・版数 1.0.0 / ビルド番号 13・runtime `ab1c3362…`）。編集画面（WebView）とファイル添付を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 859件 / vitest 188件 |
+| 検査 | pytest 872件 / vitest 195件 |
 
 ## 1.5 ビルド #6 / #7
 
@@ -569,6 +569,8 @@ App Store Connect 側で差し替えられる。
 
 | 内容 | 状態 |
 |---|---|
+| AI を呼ぶ経路の回数制限 | **無い**（2026-08-15 の精査）。認証は要るが、1人が叩き続ければ Anthropic の課金が増える。gunicorn は複数ワーカーなのでプロセス内カウンタでは足りず、入れるなら日ごとの上限を DB に持つ |
+| Supabase の RLS | service_role 鍵で触っているため RLS を通らない。安全性は全クエリの `user_id` 絞りに依存している。**表側で RLS を有効にすると、絞り漏れが起きても守られる** |
 | プライバシーポリシーのURL | **公開済み・確認済み**（2026-08-07）。`https://lantern-inky-three.vercel.app/privacy.html`。ログイン不要で開ける。App Store Connect にはこのURLを入れる |
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
