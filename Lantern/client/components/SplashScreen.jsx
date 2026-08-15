@@ -3,7 +3,8 @@ import { Animated, Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
 import { splashImageFor } from '../lib/splashImage'
-import { cacheForNextTime, loadCached } from '../lib/splashPhoto'
+import { cacheForNextTime as cachePhoto, loadCached as loadPhoto } from '../lib/splashPhoto'
+import { cacheForNextTime as cacheQuote, loadCached as loadQuote } from '../lib/splashQuote'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || ''
@@ -36,18 +37,19 @@ export default function SplashScreen({ onClose }) {
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
 
-  const [quote, setQuote] = useState(
-    () => FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)]
-  )
-  // 地は**描く前に1つ決めて、そのあと変えない**（2026-08-16）。
+  // 一言も地も、**描く前に1つ決めて、そのあと変えない**（2026-08-16）。
   //
-  // 前回までに覚えた写真があればそれを、無ければ同梱の地を使う。
+  // 前回までに覚えたものがあればそれを、無ければ手元のものを使う。
   // どちらも端末の中にあるので、**開いた瞬間に出る。**
   //
   // `useState` の初期値で決めているのは、描いている最中に変えないため。
-  // 見ている最中に背景が差し替わるのは、作者が嫌がった動き。
+  // 見ている最中に差し替わるのは、作者が嫌がった動き。
+  // 一言は「言葉が2回出てくる」として報告された。
+  const [quote] = useState(
+    () => loadQuote() || FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)]
+  )
   const [background] = useState(() => {
-    const cached = loadCached()
+    const cached = loadPhoto()
     return cached ? { uri: cached } : splashImageFor(localDateStr())
   })
 
@@ -63,13 +65,13 @@ export default function SplashScreen({ onClose }) {
         const res = await fetch(`${API_BASE}/api/splash/content`)
         const data = await res.json()
         if (cancelled) return
-        if (data.quote) setQuote(data.quote)
-        // **次回のために置くだけ。** いま出ている地は変えない。
-        // 1日ずれる（前に取った写真が今日出る）が、起動画面の写真は
+        // **次回のために置くだけ。** いま出ている一言も地も変えない。
+        // 1日ずれる（前に取ったものが今日出る）が、起動画面の一言と写真は
         // その日を表すものではないので困らない
-        if (data.photo_url) cacheForNextTime(data.photo_url)
+        if (data.quote) cacheQuote(data.quote)
+        if (data.photo_url) cachePhoto(data.photo_url)
       } catch (e) {
-        // 取れなければ、こちらが持っている一文のままにする
+        // 取れなければ、覚えているものがそのまま出る
         console.warn('[Splash] 起動画面コンテンツの取得に失敗', e)
       }
     })()
