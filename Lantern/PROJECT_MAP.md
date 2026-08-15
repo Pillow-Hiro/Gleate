@@ -117,6 +117,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `RichEditor.jsx` | WebEditor.web | Web 用の入力欄。記号は消さず薄くする |
 | `WebEditor.jsx` ＋ `WebEditor.web.jsx` | RecordForm | **本物の編集画面**（WebView の `contenteditable`）。記号が見えない |
 | `FileList.jsx` | RecordForm | 添えたファイルの一覧。**端末の中だけ**。件数は出さない |
+| `SuggestionButton.jsx` ＋ `.web.jsx` | RecordForm | Journaling Suggestions の入口。**出せない端末では描かない** |
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
@@ -167,6 +168,14 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
 | `constants.js`（`client/` 直下） | `APP_VERSION` | — |
+
+### `client/modules/`（自作のネイティブモジュール）
+
+| ファイル | 役割 |
+|---|---|
+| `journaling-suggestions/` | Apple の Journaling Suggestions（iOS 17.2+）。**受け取るのは見出しだけ** |
+| `plugins/withoutPushEntitlement.js` | `aps-environment` を外す。**プッシュは使わない** |
+| `plugins/withJournalingSuggestions.js` | `com.apple.developer.journal.allow` を足す |
 
 対で持つファイルは省略せず両方書く。片方だけ足したときに
 `tests/test_docs.py` が気づけなくなるため。
