@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Animated, ImageBackground, Pressable, View } from 'react-native'
+import { Animated, Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
 
@@ -95,16 +95,38 @@ export default function SplashScreen({ onClose }) {
     </Pressable>
   )
 
-  if (!photoUrl) {
-    // 写真取得前・取得失敗時のフォールバック背景
-    return <View className="absolute inset-0 z-50 bg-[#16213e]">{content}</View>
-  }
-
+  // **形を変えない**（2026-08-16）。
+  //
+  // それまでは写真が無い間ただの `View` を返し、届いたら
+  // `ImageBackground` で包んで返していた。
+  // **返す形が変わると React は中身を作り直す。**
+  // 作り直された `content` は最初から出直すので、
+  // 日付もロゴも一文も**もう一度フェードインする。**
+  // 実機では「起動画面が2回出て、2回目にだけ写真が出る」ように見えていた。
+  //
+  // 写真は**包まず、後ろに敷く**。中身の位置は変わらないので作り直されない。
+  // 地の色は外側に置く。写真が来るまでの間と、失敗したときの背景になる。
   return (
-    <View className="absolute inset-0 z-50">
-      <ImageBackground source={{ uri: photoUrl }} resizeMode="cover" className="flex-1">
-        {content}
-      </ImageBackground>
+    <View className="absolute inset-0 z-50 bg-[#16213e]">
+      {/* 写真は**中身の後ろに敷くだけ**。包まない。
+          包むと、届いた瞬間に中身が包み直されて作り直される */}
+      {/* **写真は淡く出さない**（2026-08-16）。
+          `Animated` で 0 → 1 にしてみたが、**この構成では値が style に
+          反映されず、写真が一度も出なかった**（ブラウザで確かめた。
+          `complete: true` なのに親の opacity が 0 のまま）。
+          `onLoad` 待ち・配列 style・素のオブジェクトのどれでも動かない。
+
+          淡く出るのは飾りで、**写真が出ることの方が大事。**
+          中身は作り直されないので、地が変わるだけの静かな切り替わりになる。 */}
+      {photoUrl ? (
+        <Image
+          source={{ uri: photoUrl }}
+          resizeMode="cover"
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      ) : null}
+      {content}
     </View>
   )
 }
