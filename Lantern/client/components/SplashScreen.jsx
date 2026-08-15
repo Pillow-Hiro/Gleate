@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Animated, Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
+import { splashImageFor } from '../lib/splashImage'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || ''
@@ -37,7 +38,7 @@ export default function SplashScreen({ onClose }) {
   const [quote, setQuote] = useState(
     () => FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)]
   )
-  const [photoUrl, setPhotoUrl] = useState(null)
+  const background = splashImageFor(localDateStr())
 
   const dateOpacity = useFadeIn(100)
   const logoOpacity = useFadeIn(250)
@@ -52,9 +53,8 @@ export default function SplashScreen({ onClose }) {
         const data = await res.json()
         if (cancelled) return
         if (data.quote) setQuote(data.quote)
-        setPhotoUrl(data.photo_url || `https://picsum.photos/seed/${localDateStr()}/800/1400`)
       } catch (e) {
-        // 取得失敗時はグラデーション背景とフォールバック文言のままにする
+        // 取れなければ、こちらが持っている一文のままにする
         console.warn('[Splash] 起動画面コンテンツの取得に失敗', e)
       }
     })()
@@ -95,37 +95,26 @@ export default function SplashScreen({ onClose }) {
     </Pressable>
   )
 
-  // **形を変えない**（2026-08-16）。
+  // **地はアプリの中に持つ**（2026-08-16）。開いた瞬間から出る。
   //
-  // それまでは写真が無い間ただの `View` を返し、届いたら
-  // `ImageBackground` で包んで返していた。
-  // **返す形が変わると React は中身を作り直す。**
-  // 作り直された `content` は最初から出直すので、
-  // 日付もロゴも一文も**もう一度フェードインする。**
-  // 実機では「起動画面が2回出て、2回目にだけ写真が出る」ように見えていた。
+  // それまでは Unsplash から取っていた。届くまでの数秒（サーバーが眠って
+  // いれば数十秒）は濃紺で、**写真は遅れて現れていた。**
   //
-  // 写真は**包まず、後ろに敷く**。中身の位置は変わらないので作り直されない。
-  // 地の色は外側に置く。写真が来るまでの間と、失敗したときの背景になる。
+  // しかも、写真が無い間は `View`、届いたら `ImageBackground` で包む、と
+  // **返す形を変えていた。** 形が変わると React は中身を作り直すので、
+  // 日付もロゴも一文ももう一度フェードインする。
+  // それが「起動画面が2回出る」の正体だった。
+  //
+  // いまは差し替わるものが無いので、そもそも作り直されない。
+  // 外側の濃紺は、画像が描かれるまでの1フレームぶんの下地。
   return (
     <View className="absolute inset-0 z-50 bg-[#16213e]">
-      {/* 写真は**中身の後ろに敷くだけ**。包まない。
-          包むと、届いた瞬間に中身が包み直されて作り直される */}
-      {/* **写真は淡く出さない**（2026-08-16）。
-          `Animated` で 0 → 1 にしてみたが、**この構成では値が style に
-          反映されず、写真が一度も出なかった**（ブラウザで確かめた。
-          `complete: true` なのに親の opacity が 0 のまま）。
-          `onLoad` 待ち・配列 style・素のオブジェクトのどれでも動かない。
-
-          淡く出るのは飾りで、**写真が出ることの方が大事。**
-          中身は作り直されないので、地が変わるだけの静かな切り替わりになる。 */}
-      {photoUrl ? (
-        <Image
-          source={{ uri: photoUrl }}
-          resizeMode="cover"
-          pointerEvents="none"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        />
-      ) : null}
+      <Image
+        source={background}
+        resizeMode="cover"
+        pointerEvents="none"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
       {content}
     </View>
   )
