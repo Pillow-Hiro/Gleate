@@ -98,6 +98,34 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 
 ## 2. 直近にやったこと
 
+### 2026-08-15（Journaling は `journaling-suggestions` ブランチにある）
+
+**⚠ main には入っていない。** ビルドが2度落ちたあと、
+main を OTA できる状態に保つために revert した。
+
+    git checkout journaling-suggestions   # 実装はここ
+
+**残っているのは Apple の操作1つだけ。**
+
+    Provisioning profile ... doesn't include the Journaling Suggestions capability
+
+`com.apple.developer.journal.allow` を足したので、プロファイルを
+作り直す必要がある。**申請は要らない**（Xcode の capability 相当）。
+
+```
+git checkout journaling-suggestions
+cd client
+npx eas-cli build --platform ios --profile production
+```
+
+**`--non-interactive` を付けないこと。** 付けると Apple に入り直さないので
+capability の同期が起きず、同じ場所で落ちる。
+Apple にログインすると、EAS が権利を見て App ID に
+Journaling Suggestions を足し、プロファイルを作り直す。
+
+通ったら main へマージする（`git merge journaling-suggestions`）。
+**マージした時点で main の指紋が変わり、OTA は新しいビルドにしか届かない。**
+
 ### 2026-08-15（ビルド #13・提出済み）
 
 - **記号の見えない編集画面**（`WebEditor` ＝ WebView の `contenteditable`）。
