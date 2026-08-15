@@ -570,7 +570,7 @@ App Store Connect 側で差し替えられる。
 | 内容 | 状態 |
 |---|---|
 | AI を呼ぶ経路の回数制限 | **入れた**（`modules/ratelimit.py`・1日60回）。**`docs/sql/ai_usage.sql` を流すまでは素通しする。** 流すと効き始める |
-| Supabase の RLS | service_role 鍵で触っているため RLS を通らない。安全性は全クエリの `user_id` 絞りに依存している。**表側で RLS を有効にすると、絞り漏れが起きても守られる** |
+| Supabase の RLS | **SQL を用意した**（`docs/sql/rls.sql`）。流すだけ。service_role は RLS を無視するので**サーバーの動きは変わらない**。流すと、絞り漏れがあっても anon 鍵からは読めなくなる |
 | プライバシーポリシーのURL | **公開済み・確認済み**（2026-08-07）。`https://lantern-inky-three.vercel.app/privacy.html`。ログイン不要で開ける。App Store Connect にはこのURLを入れる |
 | 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
