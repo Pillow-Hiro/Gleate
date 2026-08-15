@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Easing, Image, Pressable, View } from 'react-native'
+import { Animated, Easing, Image, Pressable, useWindowDimensions, View } from 'react-native'
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
 import { splashImageFor } from '../lib/splashImage'
@@ -18,7 +19,26 @@ const FALLBACKS = [
   '今日のことが、言葉になる。',
 ]
 
-function useFadeIn(delay) {
+// 去るときの間合い（2026-08-16）。**全部で約560ms。**
+//
+// 押した瞬間に消す → 薄くするだけ、と2度直して、
+// **3度目に「演出が欲しい」と言われた。**
+// 1枚が黙って消えるのではなく、**灯りが引き取る**形にする。
+//
+//   言葉が下から順に去る → 灯りがひと呼吸ふくらむ → 1枚が退く
+//
+// 順番があることが演出になる。同時に動かすと、ただのフェードに戻る。
+const WORD_OUT_MS = 260
+const WORD_STAGGER_MS = 50
+const BLOOM_DELAY_MS = 100
+const BLOOM_MS = 440
+const SHEET_DELAY_MS = 140
+const SHEET_MS = 420
+
+// 言葉が上がってくる幅。出るときも去るときも同じだけ動く
+const RISE = 12
+
+function useReveal(delay) {
   const value = useRef(new Animated.Value(0)).current
   useEffect(() => {
     const anim = Animated.timing(value, {
@@ -33,9 +53,32 @@ function useFadeIn(delay) {
   return value
 }
 
+// 出る側と去る側を**別の値で持つ**。
+//
+// 1つの値を 0→1→2 で使い回すと、**出きる前に押されたときに
+// 言葉が一瞬現れてから去る。** 押されるのは大抵すぐなので、
+// その道が普通に通る。掛け算にしておけば、出ていない言葉は出ないまま去る。
+function wordStyle(enter, out) {
+  return {
+    opacity: Animated.multiply(
+      enter,
+      out.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+    ),
+    transform: [
+      {
+        translateY: Animated.add(
+          enter.interpolate({ inputRange: [0, 1], outputRange: [RISE, 0] }),
+          out.interpolate({ inputRange: [0, 1], outputRange: [0, -RISE] })
+        ),
+      },
+    ],
+  }
+}
+
 export default function SplashScreen({ onClose }) {
   const now = new Date()
   const dateLabel = `${now.getDate()} ${MONTHS_EN[now.getMonth()]}`
+  const { width, height } = useWindowDimensions()
 
   // 一言も地も、**描く前に1つ決めて、そのあと変えない**（2026-08-16）。
   //
@@ -53,22 +96,23 @@ export default function SplashScreen({ onClose }) {
     return cached ? { uri: cached } : splashImageFor(localDateStr())
   })
 
-  const dateOpacity = useFadeIn(100)
-  const logoOpacity = useFadeIn(250)
-  const quoteOpacity = useFadeIn(500)
-  const hintOpacity = useFadeIn(900)
+  const dateIn = useReveal(100)
+  const logoIn = useReveal(250)
+  const quoteIn = useReveal(500)
+  const hintIn = useReveal(900)
 
-  // **去り方を持たせる**（2026-08-16）。
-  //
-  // それまでは押した瞬間に消えていた。下のログイン画面が
-  // 突然そこにある状態になり、作者は「急に切り替わるのが違和感」と言った。
-  //
-  // 起動画面は**手前に浮いている1枚**として作ってある（`absolute inset-0`）。
-  // ならば去るときも、下の画面が来るのではなく**この1枚が退く**方が合う。
-  // わずかに近づきながら薄くなる。持ち上げて外した、くらいの動き。
-  //
-  // 0 が出ている状態、1 が去った状態。
-  const leave = useRef(new Animated.Value(0)).current
+  const dateOut = useRef(new Animated.Value(0)).current
+  const logoOut = useRef(new Animated.Value(0)).current
+  const quoteOut = useRef(new Animated.Value(0)).current
+  const hintOut = useRef(new Animated.Value(0)).current
+
+  // 1枚が退く。0 が出ている状態、1 が去った状態
+  const sheet = useRef(new Animated.Value(0)).current
+  // 灯り。0 →1 を一度だけ通る（途中でふくらんで、終わりで消える）
+  const bloom = useRef(new Animated.Value(0)).current
+  // 押されている間のへこみ。**触れたことを画面が返す**
+  const press = useRef(new Animated.Value(0)).current
+
   const leaving = useRef(false)
 
   const close = useCallback(() => {
@@ -84,17 +128,54 @@ export default function SplashScreen({ onClose }) {
       return
     }
     leaving.current = true
-    Animated.timing(leave, {
-      toValue: 1,
-      duration: 420,
-      // 最初に動いて最後に落ち着く。等速だと機械が消したように見える
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
+
+    // 出ている途中なら止める。**去りながら出てくるのを防ぐ**
+    ;[dateIn, logoIn, quoteIn, hintIn].forEach((v) => v.stopAnimation())
+
+    const wordsOut = Animated.stagger(
+      WORD_STAGGER_MS,
+      // 下から順に。**目は下（タップして続ける）から離れていく**
+      [hintOut, quoteOut, logoOut, dateOut].map((v) =>
+        Animated.timing(v, {
+          toValue: 1,
+          duration: WORD_OUT_MS,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        })
+      )
+    )
+
+    Animated.parallel([
+      wordsOut,
+      Animated.timing(bloom, {
+        toValue: 1,
+        duration: BLOOM_MS,
+        delay: BLOOM_DELAY_MS,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheet, {
+        toValue: 1,
+        duration: SHEET_MS,
+        delay: SHEET_DELAY_MS,
+        // 最初に動いて最後に落ち着く。等速だと機械が消したように見える
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       // 途中で止められた場合も閉じる。**閉じないと出たままになる**
       onClose?.()
     })
-  }, [leave, onClose])
+  }, [bloom, dateIn, dateOut, hintIn, hintOut, logoIn, logoOut, onClose, quoteIn, quoteOut, sheet])
+
+  function dip(toValue, duration) {
+    Animated.timing(press, {
+      toValue,
+      duration,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start()
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -117,26 +198,31 @@ export default function SplashScreen({ onClose }) {
   }, [])
 
   const content = (
-    <Pressable className="flex-1 items-center justify-center" onPress={close}>
+    <Pressable
+      className="flex-1 items-center justify-center"
+      onPress={close}
+      onPressIn={() => dip(1, 120)}
+      onPressOut={() => dip(0, 220)}
+    >
       {/* グラデーションオーバーレイの代わりに一様な暗幕を敷く（RNに線形グラデーションがないため）。
           pointerEvents を切らないと暗幕がタップを奪い、画面を閉じられなくなる。 */}
       <View pointerEvents="none" className="absolute inset-0 bg-black/40" />
 
       {/* className は Animated.Text には効かない（NativeWind がラップするのは素の Text）。
           効かないと色もサイズも既定値に落ち、写真の上に黒い小さな文字が出る。
-          opacity のアニメーションは Animated.View に持たせ、見た目は Text に置く。 */}
+          動きは Animated.View に持たせ、見た目は Text に置く。 */}
       <View className="px-10 w-full max-w-sm items-center">
-        <Animated.View style={{ opacity: dateOpacity }}>
+        <Animated.View style={wordStyle(dateIn, dateOut)}>
           <Text className="text-white/80 tracking-[4px] mb-5 text-aux">{dateLabel}</Text>
         </Animated.View>
 
-        <Animated.View style={{ opacity: logoOpacity }}>
+        <Animated.View style={wordStyle(logoIn, logoOut)}>
           <Text className="font-latin text-display text-white mb-7">
             Lantern
           </Text>
         </Animated.View>
 
-        <Animated.View style={{ opacity: quoteOpacity }}>
+        <Animated.View style={wordStyle(quoteIn, quoteOut)}>
           <Text className="text-white/90 text-body leading-loose text-center">
             {quote}
           </Text>
@@ -144,10 +230,54 @@ export default function SplashScreen({ onClose }) {
       </View>
 
       {/* ここも className は効かないので位置指定は style で持つ（bottom-14 = 56px） */}
-      <Animated.View style={{ opacity: hintOpacity, position: 'absolute', bottom: 56 }}>
+      <Animated.View
+        style={{ ...wordStyle(hintIn, hintOut), position: 'absolute', bottom: 56 }}
+      >
         <Text className="text-aux text-white/40">タップして続ける</Text>
       </Animated.View>
     </Pressable>
+  )
+
+  // **灯りが引き取る。**
+  //
+  // 円を1枚置くと縁が立って「輪が広がった」に見える。
+  // 中心から外へ薄れていく塗り（`RadialGradient`）にすると、
+  // 縁が消えて**灯りがふくらんだ**ように見える。
+  // `react-native-svg` は既に入っているので、足したものは無い。
+  //
+  // 色は灯りの `#FBB03B`。この画面に他の琥珀は無いので、
+  // 「1画面に灯り色を2箇所以上置かない」に反しない。
+  const bloomSize = Math.max(width, height) * 1.2
+  const glow = (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: (width - bloomSize) / 2,
+        top: (height - bloomSize) / 2,
+        width: bloomSize,
+        height: bloomSize,
+        // 出ていない間は 0。**押されるまで灯りは無い**
+        opacity: bloom.interpolate({
+          inputRange: [0, 0.35, 1],
+          outputRange: [0, 1, 0],
+        }),
+        transform: [
+          { scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.7] }) },
+        ],
+      }}
+    >
+      <Svg width={bloomSize} height={bloomSize}>
+        <Defs>
+          <RadialGradient id="lanternGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#FBB03B" stopOpacity="0.42" />
+            <Stop offset="45%" stopColor="#FBB03B" stopOpacity="0.16" />
+            <Stop offset="100%" stopColor="#FBB03B" stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Rect width={bloomSize} height={bloomSize} fill="url(#lanternGlow)" />
+      </Svg>
+    </Animated.View>
   )
 
   // **地はアプリの中に持つ**（2026-08-16）。開いた瞬間から出る。
@@ -161,36 +291,42 @@ export default function SplashScreen({ onClose }) {
   // それが「起動画面が2回出る」の正体だった。
   //
   // いまは差し替わるものが無いので、そもそも作り直されない。
-  // 外側の濃紺は、画像が描かれるまでの1フレームぶんの下地。
+  //
+  // **灯りは1枚の外に出す。** 中に入れると1枚が薄くなるのに巻き込まれ、
+  // 一番ふくらむ頃にはもう見えない。
   //
   // **className ではなく style で書いている。** NativeWind が包むのは素の
   // `View` で、`Animated.View` には効かない。効かないと位置指定ごと落ち、
   // 起動画面が画面いっぱいに広がらなくなる。
   return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 50,
-        backgroundColor: '#16213e',
-        opacity: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-        // 薄くなるだけだと「消えた」に見える。**わずかに近づけて「退いた」にする。**
-        // 大きく動かすと演出になるので 1.06 に留める
-        transform: [
-          { scale: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) },
-        ],
-      }}
-    >
-      <Image
-        source={background}
-        resizeMode="cover"
-        pointerEvents="none"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-      {content}
-    </Animated.View>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          // 画像が描かれるまでの1フレームぶんの下地
+          backgroundColor: '#16213e',
+          opacity: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+          transform: [
+            // 押されている間わずかにへこむ。**触れたことを返す**
+            { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] }) },
+            // 薄くなるだけだと「消えた」に見える。**近づけて「退いた」にする**
+            { scale: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }) },
+          ],
+        }}
+      >
+        <Image
+          source={background}
+          resizeMode="cover"
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+        {content}
+      </Animated.View>
+      {glow}
+    </View>
   )
 }
