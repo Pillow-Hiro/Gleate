@@ -53,7 +53,13 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
 
   // **いまカーソルがいる場所に効いている装飾。**
   // 押した本人にしか分からない状態を、ボタンの側に返す。
-  // `queryCommandState` はブラウザが持っている（自分で判定しない）。
+  // queryCommandState はブラウザが持っている（自分で判定しない）。
+  //
+  // **この中でバッククォートを書かないこと。** ここは丸ごと
+  // テンプレート文字列の中なので、1つ書いた時点で文字列が閉じる。
+  // 2026-08-15 にそれでビルドが落ちた。Web の書き出しでは気づけない
+  // （Web は WebEditor.web.jsx を選ぶので、この関数を通らない）。
+  // 検査は lib/editorPage.test.js が持っている。
   function sendState() {
     try {
       post({
