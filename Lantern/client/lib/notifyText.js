@@ -40,8 +40,7 @@ export function allNotifyBodies() {
 // どちらの中間も「用意された選択肢から選ぶ」形で、
 // **自分の時間をそのまま指定できなかった。**
 //
-// **分は5分刻み。** 1分刻みにすると 60 段を回すことになり、
-// 21:37 に意味が無いのは変わらない。
+// **分は1分刻み**（2026-08-15）。5分刻みから変えた。
 export const DEFAULT_NOTIFY_HOUR = 21
 export const DEFAULT_NOTIFY_MINUTE = 0
 

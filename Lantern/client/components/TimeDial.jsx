@@ -14,15 +14,16 @@ import Text from './Text'
 // 配信済みのビルドへ OTA が届かなくなる（2026-08-13 に踏んだ）。
 // 縦のスクロールに吸着させれば、同じ操作感を JS だけで作れる。
 //
-// **分は5分刻み。** 1分刻みだと 60 段を回すことになり、
-// 21:37 に意味が無いのは前と同じ。
+// **分は1分刻み**（2026-08-15）。5分刻みから変えた。
+// 「その時刻でないと困る」人がいる、という作者の判断。
+// 60 段になるので、見える段の広さがそのまま探しやすさになる。
 // **見える段を増やした**（2026-08-14）。3段だと、いま選んでいる時刻の
 // 前後が1つずつしか見えず、どこを回しているのか分からなかった。
 const ITEM_HEIGHT = 44
-const VISIBLE = 5
+const VISIBLE = 7
 const HEIGHT = ITEM_HEIGHT * VISIBLE
 
-export const MINUTE_STEP = 5
+export const MINUTE_STEP = 1
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => i * MINUTE_STEP)

@@ -67,6 +67,9 @@ function Field({
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
   const editorRef = useRef(null)
+  // いま効いている装飾。**欄が知らせてくる。**
+  // これが無いと、押したボタンが効いたのかどうかが分からない
+  const [active, setActive] = useState(null)
   const { isDark } = useThemeContext()
   // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
   // TextInput が教えてくれるのはこれだけなので、控えておく。
@@ -97,10 +100,11 @@ function Field({
       exec: (cmd) => editorRef.current?.exec(cmd),
       onPhoto,
       onFile,
+      active,
     })
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rich, editing, owner])
+  }, [rich, editing, owner, active])
 
   function handleSelectionChange(e) {
     setSelection(e.nativeEvent.selection)
@@ -139,6 +143,7 @@ function Field({
         ref={editorRef}
         value={value}
         onChange={onChange}
+        onState={(s) => setActive({ bold: s.bold, italic: s.italic, bullet: s.bullet })}
         onBlur={() => setEditing(false)}
         autoFocus
         isDark={isDark}

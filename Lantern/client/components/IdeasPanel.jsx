@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, PanResponder, Pressable, TextInput, View } from 'react-native'
+import { Animated, PanResponder, Pressable, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
+import WebEditor from './WebEditor'
 import { authFetch } from '../lib/supabase'
+import { useThemeContext } from '../lib/theme'
 
 // アイデアの溜め場。
 //
@@ -112,11 +114,13 @@ function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
       //
       // 横が縦より勝っているときに奪う。
       //
-      // **2026-08-15 に条件を緩めた。** 2倍を求めると、
-      // 指がわずかに斜めに動いただけで一覧のスクロールに取られていた。
-      // 1.2 倍で足りる（真横に払うつもりの指は、たいてい 2 倍を超えない）。
+      // **三度緩めた**（2倍 → 1.2倍 → 同数）。
+      // 実機では指がまっすぐ横に動かず、少しの斜めで一覧に取られていた。
+      // **横が縦と同じだけ動いていれば、払うつもりと見なす。**
+      // しきい値も 4px → 3px。取りこぼすより、少し敏感な方がよい
+      // （開いても、指を離せば戻る）。
       onMoveShouldSetPanResponderCapture: (_e, g) =>
-        Math.abs(g.dx) > 4 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+        Math.abs(g.dx) > 3 && Math.abs(g.dx) >= Math.abs(g.dy),
       onPanResponderMove: (_e, g) => {
         const base = openRef.current ? -TRASH_WIDTH : 0
         const next = Math.min(0, Math.max(-TRASH_WIDTH, base + g.dx))
@@ -177,6 +181,10 @@ export default function IdeasPanel() {
   const [ideas, setIdeas] = useState(null)
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
+  const { isDark } = useThemeContext()
+  // 置いたあとに欄を空にする。**中身は WebView が持っている**ので、
+  // こちらから空にするには作り直すしかない
+  const [editorKey, setEditorKey] = useState(0)
 
   const load = useCallback(async () => {
     try {
@@ -201,6 +209,7 @@ export default function IdeasPanel() {
       if (res.ok) {
         setIdeas((await res.json()).ideas ?? [])
         setText('')
+        setEditorKey((k) => k + 1)
       }
     } catch (e) {
       console.warn('[Ideas] 追加に失敗', e)
@@ -245,15 +254,20 @@ export default function IdeasPanel() {
           1行に収まる長さかどうかを先に考えることになっていた。
           複数行を受けるが、**返るのは1件**（性質は変えない）。 */}
       <View className="bg-surface-lowest rounded-lg p-4 gap-3 shadow-bloom">
-        <TextInput
+        {/* **記録と同じ欄を使う**（2026-08-15）。
+            素の `TextInput` では日本語の未確定の波線が出なかった。
+            記録の欄（`WebEditor`）は中が本物の入力なので、
+            変換中の見え方も OS が描いたものになる。
+
+            **装飾は付けない。** キーボードの上の列に登録しないので、
+            太字も箇条書きも出ない。1行のメモに道具立ては要らない。 */}
+        <WebEditor
+          key={editorKey}
           value={text}
-          onChangeText={setText}
-          multiline
-          textAlignVertical="top"
-          style={{ minHeight: 76 }}
+          onChange={setText}
+          isDark={isDark}
+          minHeight={76}
           placeholder="思いついたこと"
-          placeholderTextColor="#8E8478"
-          className="font-body text-body-md text-on-surface"
         />
         <Pressable
           onPress={handleAdd}

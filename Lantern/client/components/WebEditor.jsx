@@ -30,7 +30,7 @@ import { editorPage } from '../lib/editorPage'
 // 伝えないと、書いた分だけ下が切れる。
 
 const WebEditor = forwardRef(function WebEditor(
-  { value, onChange, onFocus, onBlur, placeholder = '', minHeight = 220, isDark, autoFocus },
+  { value, onChange, onFocus, onBlur, onState, placeholder = '', minHeight = 220, isDark, autoFocus },
   ref
 ) {
   const webRef = useRef(null)
@@ -68,6 +68,7 @@ const WebEditor = forwardRef(function WebEditor(
       return
     }
     if (msg.type === 'change') onChange(htmlToMarkdown(msg.html))
+    else if (msg.type === 'state') onState?.(msg)
     else if (msg.type === 'height') setHeight(Math.max(minHeight, msg.height))
     else if (msg.type === 'focus') onFocus?.()
     else if (msg.type === 'blur') onBlur?.()

@@ -51,7 +51,23 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sendHeight();
   }
 
-  ed.addEventListener('input', sendHtml);
+  // **いまカーソルがいる場所に効いている装飾。**
+  // 押した本人にしか分からない状態を、ボタンの側に返す。
+  // `queryCommandState` はブラウザが持っている（自分で判定しない）。
+  function sendState() {
+    try {
+      post({
+        type: 'state',
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        bullet: document.queryCommandState('insertUnorderedList'),
+      });
+    } catch (e) {}
+  }
+
+  ed.addEventListener('input', function () { sendHtml(); sendState(); });
+  ed.addEventListener('keyup', sendState);
+  ed.addEventListener('mouseup', sendState);
   ed.addEventListener('focus', function () { post({ type: 'focus' }); });
   ed.addEventListener('blur', function () { post({ type: 'blur' }); });
 
@@ -63,11 +79,12 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     else if (cmd === 'bullet') document.execCommand('insertUnorderedList');
     else if (cmd === 'blur') ed.blur();
     sendHtml();
+    sendState();
   };
 
-  setTimeout(sendHeight, 0);
+  setTimeout(function () { sendHeight(); sendState(); }, 0);
   if (AUTOFOCUS) setTimeout(function () { ed.focus(); }, 60);
-  document.addEventListener('selectionchange', sendHeight);
+  document.addEventListener('selectionchange', function () { sendHeight(); sendState(); });
 </script>
 </body></html>`
 }

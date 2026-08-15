@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #13 を TestFlight へアップロード済み**（2026-08-15・commit `f6b2eca`・版数 1.0.0 / ビルド番号 13・runtime `ab1c3362…`）。編集画面（WebView）とファイル添付を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 857件 / vitest 188件 |
+| 検査 | pytest 859件 / vitest 188件 |
 
 ## 1.5 ビルド #6 / #7
 

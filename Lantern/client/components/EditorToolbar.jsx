@@ -194,6 +194,9 @@ function ToolbarBar({ field }) {
     Keyboard.dismiss()
   }
 
+  // **いま効いている装飾**。欄が知らせてくる（`WebEditor` の `state`）
+  const active = field.active || {}
+
   const buttons = [
     { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
     { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
@@ -218,16 +221,27 @@ function ToolbarBar({ field }) {
       className="bg-surface-low border-t border-border"
     >
       <View className="flex-row items-center px-3 py-1">
-        {buttons.map(({ id, label, Icon, onPress }) => (
-          <Pressable
-            key={id}
-            onPress={onPress}
-            accessibilityLabel={label}
-            className="min-w-touch min-h-touch items-center justify-center rounded active:bg-surface-high"
-          >
-            <Icon color={INK} />
-          </Pressable>
-        ))}
+        {/* **効いている装飾は塗る。**
+            押しても何も変わらないと、効いたのかどうかが分からない。
+            Apple の「メモ」も同じで、選ばれているボタンだけ地が付く。
+            色は琥珀。ここは1画面に1つの灯り色ではなく、
+            **キーボードの上という別の面**なので競合しない。 */}
+        {buttons.map(({ id, label, Icon, onPress }) => {
+          const on = Boolean(active[id])
+          return (
+            <Pressable
+              key={id}
+              onPress={onPress}
+              accessibilityLabel={label}
+              accessibilityState={{ selected: on }}
+              className={`min-w-touch min-h-touch items-center justify-center rounded ${
+                on ? 'bg-lantern-glow' : 'active:bg-surface-high'
+              }`}
+            >
+              <Icon color={on ? '#1D1D1F' : INK} />
+            </Pressable>
+          )
+        })}
 
         <View className="flex-1" />
 

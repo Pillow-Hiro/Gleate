@@ -14,6 +14,7 @@ import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
+import { useRouter } from 'expo-router'
 
 // 設定。**道具の手入れをする場所。**
 //
@@ -60,22 +61,16 @@ function Group({ title, children }) {
 export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
+  const router = useRouter()
   const { isDark, toggleTheme } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
   const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
   const [notifyBlocked, setNotifyBlocked] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
-  // **アドレスは押すまで出さない**（2026-08-15）。
-  // 設定を開くたびに自分のメールアドレスが並ぶのは、
-  // 画面を人に見せるときに困る。押せば出る
-  const [emailShown, setEmailShown] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -120,24 +115,6 @@ export default function Settings() {
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
   }
 
-  // 記録を消してから認証の利用者を消す（サーバー側 modules/account.py）。
-  // 成功したらサインアウトする。セッションだけ残ると、
-  // 消えたはずのアカウントで画面が開いたままになる。
-  async function handleDeleteAccount() {
-    setDeleting(true)
-    setDeleteError('')
-    try {
-      const res = await authFetch('/api/account', { method: 'DELETE' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      await supabase.auth.signOut()
-    } catch (e) {
-      // 消えていないのに消えたように見せない
-      console.warn('[Settings] アカウントの削除に失敗', e)
-      setDeleteError('削除できませんでした。通信を確認してもう一度お試しください。')
-      setDeleting(false)
-    }
-  }
-
   // 実装はプラットフォームで分かれる（lib/exportLogs.js と lib/exportLogs.web.js）。
   // ネイティブは共有シート、Webは従来通りファイルのダウンロード。
   async function handleExport() {
@@ -167,28 +144,19 @@ export default function Settings() {
           <Text className="font-display text-headline-md text-ink">設定</Text>
         </View>
 
-        {/* 誰として使っているか。
-            **顔写真は持たない**（プロフィールは要件に含まない）。
-            代わりにアドレスから決まる印を出す（`AccountMark`）。
-            同じアドレスなら同じ色・同じ文字になるので、
-            取り違えていないかが一目で分かる。 */}
+        {/* **押すと画面が変わる**（2026-08-15）。
+            それまでは同じ画面でアドレスが開くだけで、めくった感じがしなかった。
+            中身は `app/account.jsx`。アカウントの削除もそちらへ移した。 */}
         {email ? (
           <Group>
             <Pressable
-              onPress={() => setEmailShown((v) => !v)}
-              accessibilityLabel={emailShown ? 'メールアドレスを隠す' : 'メールアドレスを表示する'}
+              onPress={() => router.push('/account')}
+              accessibilityLabel="アカウント"
               className="flex-row items-center gap-3 py-3.5 min-h-touch active:opacity-70"
             >
               <AccountMark email={email} />
-              <View className="flex-1">
-                <Text className="text-body-md text-on-surface">アカウント</Text>
-                {emailShown ? (
-                  <Text className="text-label-md text-outline mt-0.5">{email}</Text>
-                ) : (
-                  <Text className="text-label-md text-outline mt-0.5">タップして表示</Text>
-                )}
-              </View>
-              <Text className="text-label-md text-outline">{emailShown ? '⌃' : '⌄'}</Text>
+              <Text className="flex-1 text-body-md text-on-surface">アカウント</Text>
+              <Text className="text-label-md text-outline">›</Text>
             </Pressable>
           </Group>
         ) : null}
@@ -250,49 +218,6 @@ export default function Settings() {
           </Text>
         </Pressable>
 
-        {/* App Store のガイドライン 5.1.1(v) が、アカウントを作れるアプリに
-            アプリ内からの削除を求めている。無効化では足りない。
-
-            2段階にしているのは、取り返しがつかないため。
-            押し間違いで全部消えることがないようにする。
-            煽らないが、何が起きるかは省略せずに書く。 */}
-        {confirmDelete ? (
-          <View className="bg-surface-low rounded-lg p-4 gap-3">
-            <Text className="text-body-md text-on-surface leading-relaxed">
-              記録・アイデア・連携がすべて消え、元に戻せません。
-            </Text>
-            <Text className="text-label-md text-outline leading-relaxed">
-              端末の中にある写真は消えません。手元に残しておきたい記録があれば、
-              先にエクスポートしてください。
-            </Text>
-            {deleteError ? <Text className="text-label-md text-error">{deleteError}</Text> : null}
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={handleDeleteAccount}
-                disabled={deleting}
-                className="border border-error/30 rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50"
-              >
-                <Text className="text-label-md text-error">
-                  {deleting ? '削除中...' : '削除する'}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => { setConfirmDelete(false); setDeleteError('') }}
-                disabled={deleting}
-                className="border border-outline-variant rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50"
-              >
-                <Text className="text-label-md text-primary">やめる</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setConfirmDelete(true)}
-            className="items-center min-h-touch justify-center"
-          >
-            <Text className="text-label-md text-outline underline">アカウントを削除する</Text>
-          </Pressable>
-        )}
       </ScrollView>
 
       {/* 時刻はダイヤルで決める。**その場で効く。**

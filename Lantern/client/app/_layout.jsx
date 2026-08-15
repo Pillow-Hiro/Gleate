@@ -167,6 +167,7 @@ function RootNavigator() {
         <Stack.Screen name="signup" />
         <Stack.Screen name="forgot" />
         <Stack.Screen name="reset" />
+        <Stack.Screen name="account" />
       </Stack>
       {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>
