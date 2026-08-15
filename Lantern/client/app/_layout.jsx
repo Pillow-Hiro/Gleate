@@ -13,6 +13,7 @@ import { ThemeProvider, useThemeContext } from '../lib/theme'
 import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
+import { loadAlways } from '../lib/splashPref'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
@@ -88,6 +89,12 @@ function RootNavigator() {
     ;(async () => {
       let next = false
       try {
+        // **毎回出す設定なら、既読は見ない**（2026-08-15）。
+        // 表示を確かめるために日付を跨ぐのを待たなくてよいようにする
+        if (await loadAlways()) {
+          if (!cancelled) setShowSplash(true)
+          return
+        }
         const seen = await AsyncStorage.getItem(SPLASH_SEEN_KEY)
         next = seen !== localDateStr()
       } catch (e) {

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Image, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import * as ImagePicker from 'expo-image-picker'
 import Text from '../components/Text'
 import AccountMark from '../components/AccountMark'
+import AuthField from '../components/AuthField'
 import { supabase, authFetch } from '../lib/supabase'
+import { authErrorMessage } from '../lib/authError'
+import * as avatar from '../lib/avatarStore'
+import { compressPhoto } from '../lib/image'
 
 // アカウント。**設定から1枚めくったところ。**
 //
@@ -38,6 +43,16 @@ export default function Account() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
+  // **「削除」と打たせる**（2026-08-15）。押し間違いで全部消えない
+  const [typed, setTyped] = useState('')
+
+  const [avatarUri, setAvatarUri] = useState(() => avatar.load())
+  const [avatarError, setAvatarError] = useState('')
+
+  const [password, setPassword] = useState('')
+  const [changing, setChanging] = useState(false)
+  const [passwordDone, setPasswordDone] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -52,6 +67,55 @@ export default function Account() {
     })
     return () => { cancelled = true }
   }, [])
+
+  // アカウントの画像。**端末の中だけ**（`lib/avatarStore.js`）。
+  // サーバーに置けば開発者が顔写真を見られる。記録の写真より本人に近い。
+  async function pickAvatar() {
+    setAvatarError('')
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+      })
+      if (result.canceled) return
+      const asset = result.assets[0]
+      // 記録の写真と同じ手順で縮める。大きいまま端末に置かない
+      const { photo } = await compressPhoto(asset.uri, asset.width, asset.height)
+      setAvatarUri(avatar.save(photo))
+    } catch (e) {
+      console.warn('[Account] 画像の設定に失敗', e)
+      setAvatarError('画像を設定できませんでした。')
+    }
+  }
+
+  function clearAvatar() {
+    avatar.remove()
+    setAvatarUri(null)
+  }
+
+  // パスワードの変更。**いまのセッションで変える。**
+  // 古いパスワードは聞かない（Supabase が求めていない）。
+  // 端末が他人の手にある状況はアプリの外の問題で、
+  // ここで1枚挟んでも守れない。
+  async function changePassword() {
+    if (password.length < 6) {
+      setPasswordError('パスワードは6文字以上で設定してください')
+      return
+    }
+    setChanging(true)
+    setPasswordError('')
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password })
+      if (err) throw err
+      setPassword('')
+      setPasswordDone(true)
+    } catch (e) {
+      setPasswordError(authErrorMessage(e))
+    } finally {
+      setChanging(false)
+    }
+  }
 
   // 記録を消してから認証の利用者を消す（サーバー側 modules/account.py）。
   // 成功したらサインアウトする。セッションだけ残ると、
@@ -85,7 +149,31 @@ export default function Account() {
 
       <ScrollView contentContainerClassName="px-5 pt-4 gap-6 w-full max-w-read self-center">
         <View className="items-center gap-3 py-4">
-          <AccountMark email={email} size={64} />
+          {avatarUri ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={{ width: 96, height: 96 }}
+              className="rounded-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <AccountMark email={email} size={96} />
+          )}
+          {avatar.isSupported ? (
+            <View className="flex-row gap-4">
+              <Pressable onPress={pickAvatar} className="min-h-touch justify-center active:opacity-70">
+                <Text className="text-label-md text-primary">
+                  {avatarUri ? '画像を変える' : '画像を設定'}
+                </Text>
+              </Pressable>
+              {avatarUri ? (
+                <Pressable onPress={clearAvatar} className="min-h-touch justify-center active:opacity-70">
+                  <Text className="text-label-md text-outline">外す</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+          {avatarError ? <Text className="text-label-md text-error">{avatarError}</Text> : null}
           <Text className="text-body-md text-on-surface">{email}</Text>
         </View>
 
@@ -95,50 +183,112 @@ export default function Account() {
           <Row label="使いはじめた日" value={since} isLast />
         </View>
 
+        {/* パスワードの変更 */}
+        <View>
+          <Text className="font-strong text-label-md text-on-surface-variant mb-2">
+            パスワードの変更
+          </Text>
+          <View className="bg-surface-lowest rounded-lg px-4 shadow-bloom">
+            <AuthField
+              icon="lock"
+              label="新しいパスワード"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="go"
+              onSubmitEditing={changePassword}
+            />
+            {/* 条件は失敗する前に出す */}
+            <Text className="text-label-md text-outline py-3">パスワードは6文字以上</Text>
+          </View>
+          {passwordError ? (
+            <Text className="text-label-md text-error mt-2">{passwordError}</Text>
+          ) : null}
+          {passwordDone ? (
+            <Text className="text-label-md text-ai-ink mt-2">新しいパスワードを設定しました。</Text>
+          ) : null}
+          <Pressable
+            onPress={changePassword}
+            disabled={changing || !password}
+            className="self-end border border-outline-variant rounded-full px-4 min-h-touch justify-center mt-3 disabled:opacity-40"
+          >
+            <Text className="text-label-md text-primary">
+              {changing ? '変更中...' : '変更する'}
+            </Text>
+          </Pressable>
+        </View>
+
         <Text className="text-label-md text-outline leading-relaxed">
           記録とアイデアはこのアカウントに紐づいています。
-          写真と添付は端末の中だけにあり、サーバーには送っていません。
+          写真・添付・アカウントの画像は端末の中だけにあり、サーバーには送っていません。
         </Text>
 
         {/* App Store のガイドライン 5.1.1(v)。無効化では足りない。
-            2段階にしているのは、取り返しがつかないため。 */}
-        {confirmDelete ? (
-          <View className="bg-surface-low rounded-lg p-4 gap-3">
-            <Text className="text-body-md text-on-surface leading-relaxed">
-              記録・アイデア・連携がすべて消え、元に戻せません。
-            </Text>
-            <Text className="text-label-md text-outline leading-relaxed">
-              端末の中にある写真と添付は消えません。手元に残しておきたい記録があれば、
-              先にエクスポートしてください。
-            </Text>
-            {error ? <Text className="text-label-md text-error">{error}</Text> : null}
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={handleDelete}
-                disabled={deleting}
-                className="border border-error/30 rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50"
-              >
-                <Text className="text-label-md text-error">
-                  {deleting ? '削除中...' : '削除する'}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => { setConfirmDelete(false); setError('') }}
-                disabled={deleting}
-                className="border border-outline-variant rounded-full px-3.5 min-h-touch justify-center disabled:opacity-50"
-              >
-                <Text className="text-label-md text-primary">やめる</Text>
-              </Pressable>
+
+            **「削除」と打たせる**（2026-08-15）。
+            2段階の確認は押し間違いを防ぐが、**続けて2回押すのは案外簡単**。
+            打つ手間を挟むと、何をしようとしているかを一度読むことになる。 */}
+        <Pressable
+          onPress={() => { setConfirmDelete(true); setTyped(''); setError('') }}
+          className="items-center min-h-touch justify-center"
+        >
+          <Text className="text-label-md text-outline underline">アカウントを削除する</Text>
+        </Pressable>
+
+        <Modal
+          visible={confirmDelete}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setConfirmDelete(false)}
+        >
+          <View className="flex-1 bg-black/50 items-center justify-center px-6">
+            <View className="w-full max-w-sm bg-surface rounded-lg p-5 gap-3">
+              <Text className="font-strong text-body-md text-on-surface">アカウントを削除する</Text>
+              <Text className="text-body-md text-on-surface leading-relaxed">
+                記録・アイデア・連携がすべて消え、元に戻せません。
+              </Text>
+              <Text className="text-label-md text-outline leading-relaxed">
+                端末の中にある写真と添付は消えません。手元に残しておきたい記録があれば、
+                先にエクスポートしてください。
+              </Text>
+              <Text className="text-label-md text-on-surface-variant mt-1">
+                続けるには「削除」と入力してください。
+              </Text>
+              <TextInput
+                value={typed}
+                onChangeText={setTyped}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="削除"
+                placeholderTextColor="#8E8478"
+                className="bg-surface-low border border-border rounded px-3 py-3 font-body text-body-md text-on-surface"
+              />
+              {error ? <Text className="text-label-md text-error">{error}</Text> : null}
+              <View className="flex-row justify-end gap-3 pt-1">
+                <Pressable
+                  onPress={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="min-h-touch px-3 justify-center disabled:opacity-50"
+                >
+                  <Text className="text-label-md text-primary">やめる</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleDelete}
+                  disabled={deleting || typed.trim() !== '削除'}
+                  className="border border-error/40 rounded-full px-4 min-h-touch justify-center disabled:opacity-30"
+                >
+                  <Text className="font-strong text-label-md text-error">
+                    {deleting ? '削除中...' : '削除する'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        ) : (
-          <Pressable
-            onPress={() => setConfirmDelete(true)}
-            className="items-center min-h-touch justify-center"
-          >
-            <Text className="text-label-md text-outline underline">アカウントを削除する</Text>
-          </Pressable>
-        )}
+        </Modal>
+
       </ScrollView>
     </SafeAreaView>
   )

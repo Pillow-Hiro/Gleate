@@ -159,6 +159,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `theme.js` | テーマの保持 | — |
 | `sample.js` | ホームに並べる記録を選ぶ。**その日のうちは同じ顔ぶれ** | `sample.test.js` |
 | `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
+| `avatarStore.js` ＋ `avatarStore.web.js` | アカウントの画像。**端末の中だけ** | — |
+| `splashPref.js` | 起動画面を毎回出すか。**本来は1日1回** | — |
 | `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
@@ -190,7 +192,8 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `markdown.py` | **記録の記法を剥がす。AIに渡す前に必ず通す** |
 | `logs.py` | 記録の読み書きとカラム変換。**写真カラムを読み書きしない** | `test_logs_mapping.py` |
 | `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
-| `oauth_state.py` | OAuth state。YouTube / Twitch 共通 | `test_youtube_state.py` |
+| `oauth_state.py` | OAuth state。YouTube / Twitch 共通。**HMAC で署名し10分で切れる** | `test_oauth_state.py` |
+| `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
 | `timeutil.py` | JST基準の日付 | `test_timeutil.py` |
 | `twitch.py` | Twitch OAuth・VODの保存 | `test_twitch.py` |

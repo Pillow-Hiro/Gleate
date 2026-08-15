@@ -29,7 +29,10 @@ from modules.ai import (
     generate_milestone_reflection,
     generate_keyword_frequency,
 )
+from functools import wraps
+
 from modules.auth import require_auth
+from modules.ratelimit import check_and_count
 # 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
 # JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
 from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
@@ -60,6 +63,23 @@ CORS(app, origins=[
 # **記録は文章だけ。** 写真も添付も端末の中に置くので、サーバーへは来ない。
 # 上限が無いと、大きな本文を投げるだけでメモリを食わせられる。
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+
+
+def require_ai_budget(f):
+    """AI を呼ぶ経路にだけ付ける、1日あたりの上限。
+
+    **認証の後ろに置くこと。** `g.user_id` が要る。
+    表が無い間は素通しする（`modules/ratelimit.py`）。
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not check_and_count(g.user_id):
+            # 何回まで、とは書かない。**数を出すと、数を意識させる**
+            return jsonify({"error": "今日はここまでにしましょう。また明日。"}), 429
+        return f(*args, **kwargs)
+    return decorated
+
+
 
 _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 
@@ -289,17 +309,34 @@ def twitch_streams():
     取得に失敗しても保存済みのものは返す。VODが消えた後でも
     これまでの記録が見えなくならないようにするため。
     """
-    from modules.twitch import get_valid_access_token, get_videos, save_streams, load_streams
+    from modules.twitch import (
+        attach_thumbnails,
+        get_live_stream,
+        get_valid_access_token,
+        get_videos,
+        load_streams,
+        save_streams,
+    )
 
     access_token, broadcaster_id = get_valid_access_token(g.user_id)
+    videos = []
+    live = None
     if access_token and broadcaster_id:
         try:
-            save_streams(g.user_id, get_videos(access_token, broadcaster_id))
+            videos = get_videos(access_token, broadcaster_id)
+            save_streams(g.user_id, videos)
         except Exception as e:
             # 取り逃した件数は画面に出さない（離脱期間を評価しない原則）
             print(f"[Twitch] 配信の取得に失敗: {type(e).__name__}: {e}")
+        try:
+            # **同時接続数は配信中にしか取れない。** 過去には遡れない
+            live = get_live_stream(access_token, broadcaster_id)
+        except Exception as e:
+            print(f"[Twitch] 配信中かどうかの取得に失敗: {type(e).__name__}: {e}")
 
-    return jsonify({"streams": load_streams(g.user_id)})
+    # サムネイルは**いま取れたぶんだけ**重ねる（保存はしない）
+    streams = attach_thumbnails(load_streams(g.user_id), videos)
+    return jsonify({"streams": streams, "live": live})
 
 
 @app.route("/api/twitch/channel")
@@ -328,6 +365,7 @@ def twitch_channel():
 
 @app.route("/api/twitch/stream-insight", methods=["POST"])
 @require_auth
+@require_ai_budget
 def twitch_stream_insight():
     """配信の傾向を観察する。数字で評価しないことは
     modules/ai.py の generate_stream_insight のプロンプトで担保している。"""
@@ -342,6 +380,7 @@ def twitch_stream_insight():
 
 @app.route("/api/review/generate", methods=["POST"])
 @require_auth
+@require_ai_budget
 def generate_review():
     data = request.get_json(silent=True) or {}
     review_type = data.get("type", "weekly")
@@ -652,6 +691,7 @@ def youtube_analytics():
 
 @app.route("/api/youtube/video-insight", methods=["POST"])
 @require_auth
+@require_ai_budget
 def youtube_video_insight():
     from modules.logs import load_logs
     from modules.ai import generate_video_insight
@@ -698,6 +738,7 @@ def youtube_video_insight():
 
 @app.route("/api/youtube/channel-insight", methods=["POST"])
 @require_auth
+@require_ai_budget
 def youtube_channel_insight():
     data = request.get_json(silent=True) or {}
     videos = data.get("videos", [])
@@ -726,6 +767,7 @@ def _clamp_months_ago(raw):
 
 @app.route("/api/timeline-reflection")
 @require_auth
+@require_ai_budget
 def timeline_reflection():
     import calendar as _cal
 
@@ -822,6 +864,7 @@ def milestone_reflection():
 
 @app.route("/api/insights/keywords")
 @require_auth
+@require_ai_budget
 def insights_keywords():
     """指定期間のログから頻出キーワードを抽出して返す。キャッシュはフロントエンドで管理。"""
     import calendar as _cal

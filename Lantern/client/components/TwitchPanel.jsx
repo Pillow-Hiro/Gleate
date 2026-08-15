@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Image, Linking, Pressable, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import { startConnect, readConnectResult, clearConnectResult } from '../lib/twitchConnect'
@@ -27,18 +27,70 @@ function formatDate(iso) {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
 }
 
+// **サムネイルは保存していない**（`modules/twitch.py`）。
+// TwitchのURLはVODと一緒に死ぬので、保存すると壊れた枠が残る。
+// いま取れたぶんだけサーバーが重ねて返すので、
+// **生きている配信には出て、消えた配信には出ない。**
 function StreamRow({ stream }) {
   const duration = formatDuration(stream.duration_seconds)
   return (
     <View className="border-b border-border py-3.5">
-      <Text className="text-aux text-ink-faint mb-1">{formatDate(stream.started_at)}</Text>
-      <Pressable onPress={() => stream.url && Linking.openURL(stream.url)}>
-        <Text className="text-body text-ink leading-snug">{stream.title || '（タイトルなし）'}</Text>
+      <Text className="text-label-md text-outline mb-1.5">{formatDate(stream.started_at)}</Text>
+      <Pressable
+        onPress={() => stream.url && Linking.openURL(stream.url)}
+        className="flex-row gap-3"
+      >
+        {stream.thumbnail_url ? (
+          <Image
+            source={{ uri: stream.thumbnail_url }}
+            style={{ width: 96, height: 54 }}
+            className="rounded"
+            resizeMode="cover"
+          />
+        ) : null}
+        <View className="flex-1">
+          <Text className="text-body-md text-on-surface leading-snug">
+            {stream.title || '（タイトルなし）'}
+          </Text>
+          <View className="flex-row items-center gap-3 mt-1">
+            {duration ? <Text className="text-label-md text-outline">{duration}</Text> : null}
+            <Text className="text-label-md text-outline">
+              {(stream.view_count ?? 0).toLocaleString()} 回
+            </Text>
+          </View>
+        </View>
       </Pressable>
-      <View className="flex-row items-center gap-3 mt-1">
-        {duration ? <Text className="text-aux text-ink-faint">{duration}</Text> : null}
-        <Text className="text-aux text-ink-faint">{(stream.view_count ?? 0).toLocaleString()} 回</Text>
+    </View>
+  )
+}
+
+// 配信中のときだけ出す帯。
+//
+// **同時接続数は配信中にしか取れない。** 過去の配信について
+// 「その時に何人が同時に見ていたか」を Twitch は返さない。
+// 録っていない数字は、あとから作れない。
+//
+// 数は事実として出す。**増減にも多寡にも触れない**（CLAUDE.md）。
+function LiveNow({ live }) {
+  if (!live) return null
+  return (
+    <View className="bg-discovery-surface border border-outline-variant rounded-lg p-4 gap-2">
+      <View className="flex-row items-center gap-2">
+        <View className="w-2 h-2 rounded-full bg-error" />
+        <Text className="font-strong text-label-md text-discovery-ink">配信中</Text>
       </View>
+      {live.thumbnail_url ? (
+        <Image
+          source={{ uri: live.thumbnail_url }}
+          style={{ width: '100%', height: 160 }}
+          className="rounded"
+          resizeMode="cover"
+        />
+      ) : null}
+      <Text className="text-body-md text-on-surface leading-snug">{live.title}</Text>
+      <Text className="text-label-md text-discovery-ink">
+        いま見ている人 {(live.viewer_count ?? 0).toLocaleString()} 人
+      </Text>
     </View>
   )
 }
@@ -52,6 +104,7 @@ export default function TwitchPanel() {
     () => (readConnectResult() === 'connected' ? 'Twitchと繋がりました。' : '')
   )
   const [streams, setStreams] = useState(null)
+  const [live, setLive] = useState(null)
   const [followerCount, setFollowerCount] = useState(null)
   const [loading, setLoading] = useState(false)
   const [insight, setInsight] = useState('')
@@ -78,7 +131,11 @@ export default function TwitchPanel() {
         authFetch('/api/twitch/streams'),
         authFetch('/api/twitch/channel'),
       ])
-      if (sRes.ok) setStreams((await sRes.json()).streams ?? [])
+      if (sRes.ok) {
+        const body = await sRes.json()
+        setStreams(body.streams ?? [])
+        setLive(body.live ?? null)
+      }
       if (cRes.ok) setFollowerCount((await cRes.json()).follower_count ?? null)
     } catch (e) {
       console.warn('[Twitch] 配信の取得に失敗', e)
@@ -204,10 +261,14 @@ export default function TwitchPanel() {
             )}
           </View>
 
+          {/* 配信中の帯。**いま起きていることなので上に置く。**
+              フォロワー数を上に置かないのとは別の理由 */}
+          <LiveNow live={live} />
+
           {/* 配信の一覧を主、数字を従とする配置。
               フォロワー数は最も外部評価に近い指標のため上に置かない。 */}
           <View>
-            <Text className="font-strong text-aux text-ink-soft mb-1">配信</Text>
+            <Text className="font-strong text-label-md text-primary mb-1">配信</Text>
             {loading && streams === null ? (
               <View className="gap-3 pt-2">
                 {[1, 2, 3].map((i) => (

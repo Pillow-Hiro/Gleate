@@ -14,6 +14,7 @@ import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
+import { loadAlways, saveAlways } from '../../lib/splashPref'
 import { useRouter } from 'expo-router'
 
 // 設定。**道具の手入れをする場所。**
@@ -71,6 +72,7 @@ export default function Settings() {
   const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
   const [notifyBlocked, setNotifyBlocked] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
+  const [splashAlways, setSplashAlways] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -88,6 +90,7 @@ export default function Settings() {
       if (!cancelled) setEmail(data?.user?.email || '')
     })
     notify.loadSetting().then((s) => { if (!cancelled) setNotifySetting(s) })
+    loadAlways().then((v) => { if (!cancelled) setSplashAlways(v) })
     return () => { cancelled = true }
   }, [])
 
@@ -181,8 +184,18 @@ export default function Settings() {
               </View>
             </Row>
           ) : null}
-          <Row label="ダークテーマ" isLast>
+          <Row label="ダークテーマ">
             <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ true: '#FBB03B' }} />
+          </Row>
+          {/* **本来は1日1回**（`app/_layout.jsx`）。
+              表示を確かめるために日付を跨ぐのを待たなくてよいよう、
+              毎回出せるようにしてある（2026-08-15） */}
+          <Row label="起動画面を毎回出す" isLast>
+            <Switch
+              value={splashAlways}
+              onValueChange={(v) => { setSplashAlways(v); saveAlways(v) }}
+              trackColor={{ true: '#FBB03B' }}
+            />
           </Row>
         </Group>
 

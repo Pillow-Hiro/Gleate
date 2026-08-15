@@ -137,8 +137,13 @@ def parse_duration(duration):
 def video_to_stream(video, user_id):
     """Twitch の VOD を twitch_streams の1行に変換する。
 
-    サムネイルは保存しない。TwitchのサムネイルURLはVODと一緒に死ぬため、
+    **サムネイルは保存しない。** TwitchのサムネイルURLはVODと一緒に死ぬため、
     保存しても壊れたリンクが残るだけになる。
+
+    2026-08-15 に「サムネイルは出せないか」と聞かれた。
+    **保存はしないまま、取れたときだけ返す**形にした（`attach_thumbnails`）。
+    生きている VOD には出て、消えた VOD には出ない。
+    保存すると、消えたあとに壊れた枠が残る。
     """
     return {
         "user_id": user_id,
@@ -252,6 +257,26 @@ def save_streams(user_id, videos):
     return len(rows)
 
 
+def attach_thumbnails(streams, videos):
+    """いま取れた VOD のサムネイルだけを、保存済みの一覧に重ねる。
+
+    **保存しない。** 返す一覧の上でだけ持つ。
+    消えた VOD には何も付かないので、壊れたリンクは出ない。
+    """
+    if not videos:
+        return streams
+    by_id = {
+        str(v.get("id", "")): _sized_thumbnail(v.get("thumbnail_url"))
+        for v in videos
+        if v.get("id")
+    }
+    for s in streams:
+        thumb = by_id.get(str(s.get("video_id", "")))
+        if thumb:
+            s["thumbnail_url"] = thumb
+    return streams
+
+
 def load_streams(user_id, limit=50):
     """保存済みの配信を新しい順に返す。"""
     db = _db()
@@ -297,6 +322,42 @@ def get_videos(access_token, broadcaster_id, limit=20):
     )
     res.raise_for_status()
     return res.json().get("data") or []
+
+
+def get_live_stream(access_token, broadcaster_id):
+    """いま配信中なら、その情報を返す。していなければ None。
+
+    **同時接続数はここでしか取れない。**
+    VOD（過去配信）が持っているのは通算の再生数で、
+    「その時に何人が同時に見ていたか」は Twitch が後から返さない。
+    録っていない数字は、あとから作れない。
+    """
+    r = requests.get(
+        f"{API_BASE}/streams",
+        headers=_headers(access_token),
+        params={"user_id": broadcaster_id},
+        timeout=10,
+    )
+    r.raise_for_status()
+    data = r.json().get("data") or []
+    if not data:
+        return None
+    live = data[0]
+    return {
+        "title": live.get("title") or "",
+        "started_at": live.get("started_at") or "",
+        "viewer_count": live.get("viewer_count") or 0,
+        "thumbnail_url": _sized_thumbnail(live.get("thumbnail_url")),
+    }
+
+
+# サムネイルの寸法。Twitch は URL に差し込み口を置いて返す
+def _sized_thumbnail(url, width=320, height=180):
+    if not url:
+        return ""
+    return url.replace("%{width}", str(width)).replace("%{height}", str(height)).replace(
+        "{width}", str(width)
+    ).replace("{height}", str(height))
 
 
 def get_follower_count(access_token, broadcaster_id):
