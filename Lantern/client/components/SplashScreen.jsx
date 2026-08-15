@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Animated, Image, Pressable, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, Easing, Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
 import { splashImageFor } from '../lib/splashImage'
@@ -58,6 +58,44 @@ export default function SplashScreen({ onClose }) {
   const quoteOpacity = useFadeIn(500)
   const hintOpacity = useFadeIn(900)
 
+  // **去り方を持たせる**（2026-08-16）。
+  //
+  // それまでは押した瞬間に消えていた。下のログイン画面が
+  // 突然そこにある状態になり、作者は「急に切り替わるのが違和感」と言った。
+  //
+  // 起動画面は**手前に浮いている1枚**として作ってある（`absolute inset-0`）。
+  // ならば去るときも、下の画面が来るのではなく**この1枚が退く**方が合う。
+  // わずかに近づきながら薄くなる。持ち上げて外した、くらいの動き。
+  //
+  // 0 が出ている状態、1 が去った状態。
+  const leave = useRef(new Animated.Value(0)).current
+  const leaving = useRef(false)
+
+  const close = useCallback(() => {
+    // **2回目は待たせない。**
+    //
+    // 去る動きが止まると、この画面は出たまま操作を受け付けなくなる。
+    // ブラウザは表に出ていない間 `requestAnimationFrame` を止めるし、
+    // アプリを裏に回しても同じことが起きる。
+    // 押されているのに何も起きない画面を作らないため、
+    // 2回目の押下は動きを飛ばしてそのまま閉じる。
+    if (leaving.current) {
+      onClose?.()
+      return
+    }
+    leaving.current = true
+    Animated.timing(leave, {
+      toValue: 1,
+      duration: 420,
+      // 最初に動いて最後に落ち着く。等速だと機械が消したように見える
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      // 途中で止められた場合も閉じる。**閉じないと出たままになる**
+      onClose?.()
+    })
+  }, [leave, onClose])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -79,7 +117,7 @@ export default function SplashScreen({ onClose }) {
   }, [])
 
   const content = (
-    <Pressable className="flex-1 items-center justify-center" onPress={onClose}>
+    <Pressable className="flex-1 items-center justify-center" onPress={close}>
       {/* グラデーションオーバーレイの代わりに一様な暗幕を敷く（RNに線形グラデーションがないため）。
           pointerEvents を切らないと暗幕がタップを奪い、画面を閉じられなくなる。 */}
       <View pointerEvents="none" className="absolute inset-0 bg-black/40" />
@@ -124,8 +162,28 @@ export default function SplashScreen({ onClose }) {
   //
   // いまは差し替わるものが無いので、そもそも作り直されない。
   // 外側の濃紺は、画像が描かれるまでの1フレームぶんの下地。
+  //
+  // **className ではなく style で書いている。** NativeWind が包むのは素の
+  // `View` で、`Animated.View` には効かない。効かないと位置指定ごと落ち、
+  // 起動画面が画面いっぱいに広がらなくなる。
   return (
-    <View className="absolute inset-0 z-50 bg-[#16213e]">
+    <Animated.View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+        backgroundColor: '#16213e',
+        opacity: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        // 薄くなるだけだと「消えた」に見える。**わずかに近づけて「退いた」にする。**
+        // 大きく動かすと演出になるので 1.06 に留める
+        transform: [
+          { scale: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) },
+        ],
+      }}
+    >
       <Image
         source={background}
         resizeMode="cover"
@@ -133,6 +191,6 @@ export default function SplashScreen({ onClose }) {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
       {content}
-    </View>
+    </Animated.View>
   )
 }
