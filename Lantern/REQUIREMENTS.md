@@ -283,8 +283,8 @@ Flask テンプレート・`logs.json`・`/logs` ページという
 
 | 項目 | 状態 |
 |---|---|
-| ネイティブ配布 | 進行中。**iOSビルド #7 を TestFlight へ提出済み**（2026-08-09）。審査が残る |
-| Journaling Suggestions API | A7 の後。`com.apple.developer.journal.allow` とネイティブモジュールの自作が要る |
+| ネイティブ配布 | 進行中。**iOSビルド #9 を TestFlight へ提出済み**（2026-08-13）。審査が残る |
+| Journaling Suggestions API | **実装したが未検証**（2026-08-14）。実機（iOS 17.2+ の iPhone）でしか動かず、ビルド #10 が要る |
 | 7日/30日継続率 | 計測の器はできた（`scripts/report_metrics.py`）が母数が足りない |
 | 否定的表現の発生率 | 未計測 |
 | 「また明日も記録しよう」と思えるか | **未検証。** 実ユーザーは作者1人、記録18件 |
