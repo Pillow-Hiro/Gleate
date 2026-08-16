@@ -1,7 +1,14 @@
 import ExpoModulesCore
 import SwiftUI
 
-#if canImport(JournalingSuggestions)
+// **シミュレータには JournalingSuggestions が無い**（Apple の仕様）。
+// `canImport` だけでは足りず、2026-08-17 のビルド #16 は
+// 「cannot find 'JournalingSuggestionsPicker' in scope」で落ちた。
+// module は見えるのに型が見えない、という状態になる。
+//
+// 出せる条件をここで1つに決めて、以下すべてこの名前で分岐する。
+// **条件を3か所に書くと、1つ直し忘れて同じ落ち方をする。**
+#if canImport(JournalingSuggestions) && !targetEnvironment(simulator)
 import JournalingSuggestions
 #endif
 
@@ -30,9 +37,13 @@ public class JournalingSuggestionsModule: Module {
     // iOS 17.2 未満・iPad の一部・シミュレータでは出せない。
     // **出せない端末で入口を描かない**ため、JS 側から先に聞く。
     Function("isAvailable") { () -> Bool in
+      // **シミュレータでは false。** framework が無いので、
+      // 版だけ見て true を返すと入口だけ描かれて何も起きない
+      #if canImport(JournalingSuggestions) && !targetEnvironment(simulator)
       if #available(iOS 17.2, *) {
         return true
       }
+      #endif
       return false
     }
 
@@ -66,7 +77,7 @@ public class JournalingPickerView: ExpoView {
     host?.view.removeFromSuperview()
     host = nil
 
-    #if canImport(JournalingSuggestions)
+    #if canImport(JournalingSuggestions) && !targetEnvironment(simulator)
     guard #available(iOS 17.2, *) else { return }
     let root = LanternSuggestionsPicker(title: title) { [weak self] payload in
       self?.onSelect(payload)
@@ -85,7 +96,7 @@ public class JournalingPickerView: ExpoView {
   }
 }
 
-#if canImport(JournalingSuggestions)
+#if canImport(JournalingSuggestions) && !targetEnvironment(simulator)
 @available(iOS 17.2, *)
 private struct LanternSuggestionsPicker: View {
   let title: String
