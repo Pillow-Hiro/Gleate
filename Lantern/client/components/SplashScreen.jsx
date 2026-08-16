@@ -28,8 +28,7 @@ const FALLBACKS = [
 //
 // 起動画面が消えてログイン画面が出る、のではない。
 // **地はつながったまま、上に載っているものだけが入れ替わる。**
-// だから1枚を大きく動かさない（`SHEET_SCALE`）。動かすと写真がずれて、
-// つながって見えなくなる。
+// だから1枚を動かさない。動かすと下の写真とずれて、つながって見えなくなる。
 //
 // ログイン側の間合いは `app/login.jsx` にある。ここと足し合わせて
 // 約1.1秒になるように置いてある。
@@ -39,8 +38,12 @@ const BLOOM_DELAY_MS = 80
 const BLOOM_MS = 820
 const SHEET_DELAY_MS = 240
 const SHEET_MS = 620
-// 1枚が退く量。**ほとんど動かさない。** 地がつながって見えることを優先する
-const SHEET_SCALE = 1.02
+// **1枚は動かさない。**
+//
+// 2026-08-16、実機を見た作者の判断で「退く演出」をやめた。
+// 1.02 でも、下のログイン画面の写真は動かないので**ずれが出る。**
+// 地がつながって見えることの方が、退く手応えより大事だった。
+// 薄れるだけにする。
 
 // 言葉が上がってくる幅。出るときも去るときも同じだけ動く
 const RISE = 12
@@ -343,8 +346,8 @@ export default function SplashScreen({ onClose }) {
           opacity: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
           transform: [
             // 押されている間わずかにへこむ。**触れたことを返す**
+            // 去るときは動かさない（上の `SHEET_MS` の項を参照）
             { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] }) },
-            { scale: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, SHEET_SCALE] }) },
           ],
         }}
       >
