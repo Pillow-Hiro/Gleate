@@ -33,6 +33,7 @@ from functools import wraps
 
 from modules.auth import require_auth
 from modules.ratelimit import check_and_count
+from modules.plan import daily_limit, is_paid, require_paid
 # 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
 # JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
 from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
@@ -65,17 +66,40 @@ CORS(app, origins=[
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
 
 
+def spend_ai_budget(user_id):
+    """AI を1回ぶん数える。上限を超えていれば False。
+
+    **プランで上限が変わる**（`modules/plan.py`）。無料10回、有料60回。
+    表が無い間は素通しする（`modules/ratelimit.py`）。
+
+    デコレータと別に関数を置いているのは、**実際に AI を呼ぶ直前で
+    数えたい経路がある**ため。今日の灯りと節目の振り返りは、
+    キャッシュに当たれば AI を呼ばない。入口で数えると、
+    画面を開き直すだけで枠が減る。
+    """
+    return check_and_count(user_id, daily_limit(user_id))
+
+
+def _budget_exhausted():
+    # 何回まで、とは書かない。**数を出すと、数を意識させる**
+    #
+    # 2026-08-16 まで「今日はここまでにしましょう」だった。
+    # 「〜しましょう」は AI憲法 の禁止ワード（`tests/test_ui_words.py`）。
+    # 画面の文言は検査しているのに、**サーバーが返す文言は誰も見ていなかった。**
+    return jsonify({"error": "今日はここまでです。また明日。"}), 429
+
+
 def require_ai_budget(f):
     """AI を呼ぶ経路にだけ付ける、1日あたりの上限。
 
     **認証の後ろに置くこと。** `g.user_id` が要る。
-    表が無い間は素通しする（`modules/ratelimit.py`）。
+    呼べば必ず AI を使う経路にだけ付ける。
+    途中で引き返す経路は `spend_ai_budget()` を直接呼ぶこと。
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not check_and_count(g.user_id):
-            # 何回まで、とは書かない。**数を出すと、数を意識させる**
-            return jsonify({"error": "今日はここまでにしましょう。また明日。"}), 429
+        if not spend_ai_budget(g.user_id):
+            return _budget_exhausted()
         return f(*args, **kwargs)
     return decorated
 
@@ -120,6 +144,18 @@ def save():
         print(f"[/save] DB error: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return jsonify({"error": f"保存に失敗しました: {e}"}), 500
+
+    # **枠が尽きても記録は残す**（2026-08-16）。
+    #
+    # 保存はもう終わっている。ここで 429 を返すと、画面には
+    # 「保存に失敗した」と映る。**書くことは決して止めない。**
+    # 灯りが付かないだけにする。
+    #
+    # ここで数えるのは、**保存のたびに AI を呼んでいる**ため。
+    # 書き直すたびに1回使う。1日1回ではない
+    # （無料の上限を10回にしてあるのはそのぶんの余裕）。
+    if not spend_ai_budget(user_id):
+        return jsonify({"status": "ok", "ai_response": entry["ai_response"]})
 
     try:
         ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
@@ -365,6 +401,7 @@ def twitch_channel():
 
 @app.route("/api/twitch/stream-insight", methods=["POST"])
 @require_auth
+@require_paid
 @require_ai_budget
 def twitch_stream_insight():
     """配信の傾向を観察する。数字で評価しないことは
@@ -380,10 +417,27 @@ def twitch_stream_insight():
 
 @app.route("/api/review/generate", methods=["POST"])
 @require_auth
-@require_ai_budget
 def generate_review():
     data = request.get_json(silent=True) or {}
     review_type = data.get("type", "weekly")
+
+    # **今週は無料、月次は有料**（2026-08-16）。
+    #
+    # 同じ経路で2つを返しているので、デコレータでは分けられない。
+    # 線は「今日と今週のことは無料。積み重ねを掘るのは有料」
+    # （`modules/plan.py`）。月次はひと月ぶんを横断して読むので有料側。
+    if review_type != "weekly" and not is_paid(g.user_id):
+        return jsonify({
+            "error": "paid_required",
+            "message": "月次の振り返りはプランに含まれています。",
+        }), 402
+
+    # `@require_ai_budget` を外して、**断ったあとで数える**。
+    # デコレータのままだと、月次を押して断られるたびに
+    # 無料の枠が1つ減っていた
+    if not spend_ai_budget(g.user_id):
+        return _budget_exhausted()
+
     logs = load_logs(g.user_id)
     goals = load_goals()
 
@@ -424,6 +478,12 @@ def daily_quote():
     cached = load_daily_quote(g.user_id, today)
     if cached:
         return jsonify({"quote": cached, "cached": True})
+
+    # **キャッシュに当たった後で数える**（2026-08-16）。
+    # 入口で数えると、画面を開き直すだけで枠が減る。
+    # 尽きたときは何も出さない（灯りが無い日になるだけ）
+    if not spend_ai_budget(g.user_id):
+        return jsonify({"quote": None, "cached": False})
 
     logs = load_logs(g.user_id)
     yesterday = days_ago_str(1)
@@ -691,6 +751,7 @@ def youtube_analytics():
 
 @app.route("/api/youtube/video-insight", methods=["POST"])
 @require_auth
+@require_paid
 @require_ai_budget
 def youtube_video_insight():
     from modules.logs import load_logs
@@ -738,6 +799,7 @@ def youtube_video_insight():
 
 @app.route("/api/youtube/channel-insight", methods=["POST"])
 @require_auth
+@require_paid
 @require_ai_budget
 def youtube_channel_insight():
     data = request.get_json(silent=True) or {}
@@ -767,6 +829,7 @@ def _clamp_months_ago(raw):
 
 @app.route("/api/timeline-reflection")
 @require_auth
+@require_paid
 @require_ai_budget
 def timeline_reflection():
     import calendar as _cal
@@ -858,12 +921,18 @@ def milestone_reflection():
     if hit_milestone is None or hit_milestone != days_param:
         return jsonify({"reflection": None})
 
+    # 節目に当たった回だけ数える（2026-08-16）。
+    # 入口で数えると、節目でない日に開くたびに枠が減る
+    if not spend_ai_budget(g.user_id):
+        return jsonify({"reflection": None})
+
     reflection = generate_milestone_reflection(period_logs, hit_milestone)
     return jsonify({"reflection": reflection})
 
 
 @app.route("/api/insights/keywords")
 @require_auth
+@require_paid
 @require_ai_budget
 def insights_keywords():
     """指定期間のログから頻出キーワードを抽出して返す。キャッシュはフロントエンドで管理。"""

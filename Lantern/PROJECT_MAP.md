@@ -199,6 +199,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通。**HMAC で署名し10分で切れる** | `test_oauth_state.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
+| `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
 | `timeutil.py` | JST基準の日付 | `test_timeutil.py` |
 | `twitch.py` | Twitch OAuth・VODの保存 | `test_twitch.py` |
