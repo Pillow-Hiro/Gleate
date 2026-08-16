@@ -14,6 +14,7 @@ import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy, openTerms, openTokushoho } from '../../lib/openLegal'
+import { isAvailable as canPurchase, restore } from '../../lib/purchases'
 import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
 import { useRouter } from 'expo-router'
 
@@ -75,6 +76,44 @@ export default function Settings() {
   // 既定と同じ値で始める。ここだけ true にしていると、
   // 読み込みが終わるまでの一瞬だけ入って見える
   const [splashAlways, setSplashAlways] = useState(DEFAULT_ALWAYS)
+  // プラン。**取れるまでは何も言わない**（「無料」と出してから
+  // 「有料」に変わると、一瞬だけ嘘をついたことになる）
+  const [paid, setPaid] = useState(null)
+  const [restoring, setRestoring] = useState(false)
+  const [restoreNotice, setRestoreNotice] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch('/api/plan')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setPaid(Boolean(data.paid))
+      } catch (e) {
+        // 取れなくても設定は開ける。**プランの行だけ空にする**
+        console.warn('[設定] プランの取得に失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // 取れるまでは空。**「無料」と出してから「有料」に変わると
+  // 一瞬だけ嘘をついたことになる**
+  const planLabel = paid === null ? '' : paid ? '購読中' : '無料'
+
+  async function handleRestore() {
+    setRestoring(true)
+    setRestoreNotice('')
+    const r = await restore()
+    setRestoring(false)
+    if (r.ok) {
+      setRestoreNotice('購入を復元しました。')
+      setPaid(true)
+      return
+    }
+    setRestoreNotice('復元できる購入は見つかりませんでした。')
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -217,6 +256,26 @@ export default function Settings() {
           <Text className="text-label-md text-outline leading-relaxed">
             端末の設定で Lantern の通知が許可されていません。
           </Text>
+        ) : null}
+
+        {/* **プラン。** いま無料か有料かを見せ、復元の導線を置く。
+            復元は Apple の審査要件（機種変更・再インストールのため）。
+
+            ここに購入ボタンは置かない。**設定は道具の手入れをする場所**で、
+            売る場所ではない。買うのは断られた画面から
+            （`components/Paywall.jsx`）。 */}
+        <Group title="プラン">
+          <Row label="いまのプラン" value={planLabel} isLast={!canPurchase()} />
+          {canPurchase() ? (
+            <Row
+              label={restoring ? '復元中...' : '購入を復元'}
+              onPress={restoring ? undefined : handleRestore}
+              isLast
+            />
+          ) : null}
+        </Group>
+        {restoreNotice ? (
+          <Text className="text-label-md text-outline">{restoreNotice}</Text>
         ) : null}
 
         <Group title="データ">

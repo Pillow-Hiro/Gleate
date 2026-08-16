@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router'
 import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
+import { paywallMessage, readMaybePaywall } from '../lib/plan'
+import Paywall from './Paywall'
 import { localDateStr } from '../lib/date'
 
 // 頻出キーワード。
@@ -37,6 +39,8 @@ export default function KeywordSection() {
   const today = localDateStr()
   const [keywords, setKeywords] = useState(null)
   const [loading, setLoading] = useState(true)
+  // 断られたときの一文。**null なら断られていない**
+  const [paywall, setPaywall] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -64,11 +68,16 @@ export default function KeywordSection() {
 
       try {
         const res = await authFetch(`/api/insights/keywords?period=${PERIOD}`)
-        if (!res.ok) {
+        // **断られたのは失敗ではない。** プランの案内を出す
+        const { paidRequired, body: json } = await readMaybePaywall(res)
+        if (paidRequired) {
+          if (!cancelled) setPaywall(paywallMessage(json))
+          return
+        }
+        if (!res.ok || !json) {
           console.warn(`[Insights] キーワード取得が ${res.status} を返した`)
           return
         }
-        const json = await res.json()
         await AsyncStorage.setItem(cacheKey, JSON.stringify(json.keywords))
         if (!cancelled) setKeywords(json.keywords)
       } catch (e) {
@@ -81,6 +90,11 @@ export default function KeywordSection() {
 
     return () => { cancelled = true }
   }, [today])
+
+  // 断られている間は本来の中身を出さない。**2つを同時に見せない**
+  if (paywall) {
+    return <Paywall message={paywall} onClose={() => setPaywall(null)} />
+  }
 
   return (
     <View className="gap-2.5">

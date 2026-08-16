@@ -24,6 +24,10 @@ PUBLIC_ENDPOINTS = {
     "splash_content_api": "起動画面の写真と引用。ユーザー個別のデータを含まない",
     "youtube_callback": "GoogleからのOAuthリダイレクト先。stateで本人性を確認する",
     "twitch_callback": "TwitchからのOAuthリダイレクト先。stateで本人性を確認する",
+    # サーバー同士の経路。利用者のJWTは来ない。
+    # Authorization ヘッダを共有の秘密と突き合わせ、未設定なら503で閉じる
+    # （modules/billing.py）。
+    "revenuecat_webhook": "RevenueCatからの購読状態の通知。共有の秘密で認証する",
 }
 
 # 削除済みのルート。復活していないことを確認する。

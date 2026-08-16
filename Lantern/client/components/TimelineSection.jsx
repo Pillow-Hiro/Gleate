@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
+import { paywallMessage, readMaybePaywall } from '../lib/plan'
+import Paywall from './Paywall'
 import { localDateStr, monthsAgoStr, findNearestLog } from '../lib/date'
 import { PatternCard } from './ReviewSection'
 import LogSnapshot from './LogSnapshot'
@@ -31,6 +33,8 @@ export default function TimelineSection({ logs = [] }) {
   // useEffect で消すのではなく描画時に導出することで、余分な再レンダリングを避ける。
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  // 断られたときの一文。**null なら断られていない**
+  const [paywall, setPaywall] = useState(null)
 
   const data = result?.months === months ? result.data : null
 
@@ -42,16 +46,34 @@ export default function TimelineSection({ logs = [] }) {
 
   async function handleReflect() {
     setLoading(true)
+    setPaywall(null)
     try {
       const res = await authFetch(`/api/timeline-reflection?months_ago=${months}`)
-      if (!res.ok) throw new Error(`timeline-reflection returned ${res.status}`)
-      setResult({ months, data: await res.json() })
+      // **断られたのは失敗ではない。** プランの案内を出す
+      const { paidRequired, body } = await readMaybePaywall(res)
+      if (paidRequired) {
+        setPaywall(paywallMessage(body))
+        return
+      }
+      if (!res.ok || !body) throw new Error(`timeline-reflection returned ${res.status}`)
+      setResult({ months, data: body })
     } catch (e) {
       console.warn('[Timeline] 過去との対話の取得に失敗', e)
       setResult(null)
     } finally {
       setLoading(false)
     }
+  }
+
+  // 断られている間は本来の中身を出さない。**2つを同時に見せない**
+  if (paywall) {
+    return (
+      <Paywall
+        message={paywall}
+        onClose={() => setPaywall(null)}
+        onPurchased={() => { setPaywall(null); handleReflect() }}
+      />
+    )
   }
 
   return (

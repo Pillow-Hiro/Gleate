@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。34ルール / 32パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。36ルール / 34パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -124,6 +124,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
 | `OverviewPanel.jsx` | Dashboard | つないでいる場所を横に並べる。**合計も増減も出さない** |
+| `Paywall.jsx` | 振り返り / 過去 / キーワード | 断られたときの面。**Apple 3.1.2 の6項目を満たす** |
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**ので地は灰（砂はLanternの言葉の色） |
@@ -168,6 +169,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `splashBackground.js` | 起動画面とログイン画面が**同じ1枚**を選ぶための場所 | — |
 | `splashHandoff.js` | 起動画面が去り始めたことをログイン画面に知らせる | `splashHandoff.test.js` |
 | `platforms.js` | つないでいる場所の表。**足すのはここに1行** | `platforms.test.js` |
+| `plan.js` | 402 の見分けと断り文。**機能を開けているのはサーバー** | `plan.test.js` |
+| `purchases.js` ＋ `purchases.web.js` | RevenueCat 経由の購入。**鍵が無ければ出さない**／Web は買えない | — |
 | `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
@@ -202,6 +205,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通。**HMAC で署名し10分で切れる** | `test_oauth_state.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
+| `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
 | `timeutil.py` | JST基準の日付 | `test_timeutil.py` |
 | `twitch.py` | Twitch OAuth・VODの保存 | `test_twitch.py` |
@@ -217,7 +221,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・34ルール / 32パス）
+## 6. API（`main.py`・36ルール / 34パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。

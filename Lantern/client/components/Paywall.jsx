@@ -1,0 +1,180 @@
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Pressable, View } from 'react-native'
+import Text from './Text'
+import { isAvailable, loadOfferings, purchase, restore } from '../lib/purchases'
+import { openPrivacy, openTerms, openTokushoho } from '../lib/openLegal'
+
+// 断られたときに出す面。
+//
+// ## Apple が画面に求めるもの
+//
+// 審査ガイドライン 3.1.2 は、自動更新の購読について**購入する画面に**
+// 次を出すことを求めている。抜けると差し戻される。
+//
+// 1. 何が含まれるか
+// 2. 期間（1か月／1年）
+// 3. 価格（**ストアが返した文字列をそのまま**。自分で組み立てない）
+// 4. 自動更新であること・解約しなければ更新されること
+// 5. 利用規約とプライバシーポリシーへの導線
+// 6. 購入を復元する導線
+//
+// ## 煽らない
+//
+// 「今だけ」「お得」の類は書かない。`tests/test_ui_words.py` が
+// 画面の文言を見張っている。**断る場所がいちばん煽りたくなる場所**なので、
+// ここは特に気をつける。
+//
+// ## 鍵が無いとき
+//
+// `EXPO_PUBLIC_REVENUECAT_IOS_KEY` が未設定なら、購入は出さずに
+// 「準備中」とだけ書く。**押せるのに必ず失敗するボタンを出さない。**
+
+const PERIOD_LABEL = {
+  MONTHLY: '1か月',
+  ANNUAL: '1年',
+  TWO_MONTH: '2か月',
+  THREE_MONTH: '3か月',
+  SIX_MONTH: '6か月',
+  WEEKLY: '1週間',
+  LIFETIME: '買い切り',
+}
+
+function periodOf(pkg) {
+  return PERIOD_LABEL[pkg.period] || pkg.period || ''
+}
+
+export default function Paywall({ message, onClose, onPurchased }) {
+  const [packages, setPackages] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const list = await loadOfferings()
+      if (!cancelled) setPackages(list)
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  async function handleBuy(pkg) {
+    setBusy(true)
+    setNotice('')
+    const r = await purchase(pkg)
+    setBusy(false)
+    // **やめたのは失敗ではない。** 何も出さずに戻る
+    if (r.cancelled) return
+    if (r.ok) {
+      onPurchased?.()
+      return
+    }
+    setNotice('購入を完了できませんでした。')
+  }
+
+  async function handleRestore() {
+    setBusy(true)
+    setNotice('')
+    const r = await restore()
+    setBusy(false)
+    if (r.ok) {
+      onPurchased?.()
+      setNotice('購入を復元しました。')
+      return
+    }
+    setNotice('復元できる購入は見つかりませんでした。')
+  }
+
+  return (
+    <View className="bg-surface-lowest rounded-lg px-5 py-6 shadow-bloom gap-5">
+      <View className="gap-2">
+        <Text className="font-strong text-headline-md text-on-surface">
+          積み重ねを掘る
+        </Text>
+        <Text className="text-body-md text-on-surface-variant leading-relaxed">
+          {message}
+        </Text>
+      </View>
+
+      {/* 1. 何が含まれるか。**無料側も書く。**
+          何を失うのかではなく、どちらに何があるのかを見せる */}
+      <View className="gap-2">
+        <Text className="text-label-md text-outline">プランに含まれるもの</Text>
+        {[
+          '月ごとの振り返り',
+          '過去との対話',
+          '頻出キーワード',
+          'YouTube / Twitch のまとめ',
+        ].map((line) => (
+          <Text key={line} className="text-body-md text-on-surface">
+            {line}
+          </Text>
+        ))}
+        <Text className="text-label-md text-outline leading-relaxed mt-1">
+          記録・写真・アイデア・検索・書き出し、今日の灯りと今週の発見は
+          これまでどおり無料です。
+        </Text>
+      </View>
+
+      {/* 2〜3. 期間と価格。**ストアが返した文字列をそのまま出す** */}
+      {!isAvailable() ? (
+        <Text className="text-body-md text-on-surface-variant">
+          いまは購入の準備中です。
+        </Text>
+      ) : packages === null ? (
+        <ActivityIndicator />
+      ) : packages.length === 0 ? (
+        <Text className="text-body-md text-on-surface-variant">
+          いまは購入の準備中です。
+        </Text>
+      ) : (
+        <View className="gap-2">
+          {packages.map((pkg) => (
+            <Pressable
+              key={pkg.id}
+              onPress={() => handleBuy(pkg)}
+              disabled={busy}
+              className="bg-lantern-glow rounded-full py-4 px-6 items-center active:opacity-80"
+            >
+              <Text className="font-strong text-body-md text-on-lantern">
+                {periodOf(pkg)}　{pkg.price}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {notice ? (
+        <Text className="text-label-md text-on-surface-variant">{notice}</Text>
+      ) : null}
+
+      {/* 4. 自動更新の説明。**審査で最初に見られる一文** */}
+      <Text className="text-label-sm text-outline leading-relaxed">
+        購読は自動更新されます。期間終了の24時間前までに解約しない限り更新され、
+        更新のタイミングで App Store アカウントに請求されます。
+        解約は iOS の「設定 › Apple ID › サブスクリプション」から行えます。
+      </Text>
+
+      {/* 5〜6. 規約・ポリシー・復元 */}
+      <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
+        <Pressable onPress={handleRestore} disabled={busy} className="min-h-touch justify-center">
+          <Text className="text-label-md text-secondary">購入を復元</Text>
+        </Pressable>
+        <Pressable onPress={openTerms} className="min-h-touch justify-center">
+          <Text className="text-label-md text-secondary">利用規約</Text>
+        </Pressable>
+        <Pressable onPress={openPrivacy} className="min-h-touch justify-center">
+          <Text className="text-label-md text-secondary">プライバシーポリシー</Text>
+        </Pressable>
+        <Pressable onPress={openTokushoho} className="min-h-touch justify-center">
+          <Text className="text-label-md text-secondary">特定商取引法に基づく表記</Text>
+        </Pressable>
+      </View>
+
+      {onClose ? (
+        <Pressable onPress={onClose} className="min-h-touch justify-center items-center">
+          <Text className="text-label-md text-outline">閉じる</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  )
+}

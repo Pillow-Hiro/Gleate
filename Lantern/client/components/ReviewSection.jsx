@@ -3,6 +3,8 @@ import { Pressable, View } from 'react-native'
 import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
+import { paywallMessage, readMaybePaywall } from '../lib/plan'
+import Paywall from './Paywall'
 import { formatAge } from '../lib/format'
 
 export function PatternCard({ observation, question }) {
@@ -23,6 +25,8 @@ export default function ReviewSection({ title, type, description }) {
   const [generatedAt, setGeneratedAt] = useState('')
   const [loading, setLoading] = useState(false)
   const [restored, setRestored] = useState(false)
+  // 断られたときの一文。**null なら断られていない**
+  const [paywall, setPaywall] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -47,13 +51,19 @@ export default function ReviewSection({ title, type, description }) {
   async function generate() {
     setLoading(true)
     setPatterns([])
+    setPaywall(null)
     try {
       const res = await authFetch('/api/review/generate', {
         method: 'POST',
         body: JSON.stringify({ type }),
       })
-      if (!res.ok) throw new Error()
-      const data = await res.json()
+      // **断られたのは失敗ではない。** プランの案内を出す
+      const { paidRequired, body: data } = await readMaybePaywall(res)
+      if (paidRequired) {
+        setPaywall(paywallMessage(data))
+        return
+      }
+      if (!res.ok || !data) throw new Error()
       const now = new Date().toISOString()
       const newPatterns = data.patterns || []
       setPatterns(newPatterns)
@@ -69,6 +79,19 @@ export default function ReviewSection({ title, type, description }) {
 
   const hasPatterns = patterns !== null && patterns.length > 0
   const isEmpty = patterns !== null && patterns.length === 0
+
+  // 断られている間は本来の中身を出さない。**2つを同時に見せない**
+  if (paywall) {
+    return (
+      <View className="gap-3">
+        <Paywall
+          message={paywall}
+          onClose={() => setPaywall(null)}
+          onPurchased={() => { setPaywall(null); generate() }}
+        />
+      </View>
+    )
+  }
 
   return (
     <View className="gap-3">

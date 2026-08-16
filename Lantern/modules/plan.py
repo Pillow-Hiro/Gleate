@@ -52,6 +52,15 @@ from modules.timeutil import now_utc_iso
 FREE_DAILY_AI = 10
 PAID_DAILY_AI = 60
 
+# 有料として扱う状態。**ここが唯一の定義**。
+# `modules/billing.py` はこれを import する。2か所に書くと、
+# 片方だけ足したときに「買ったのに使えない」「解約したのに使える」が起きる。
+#
+# `active`         … 課金中
+# `trialing`       … 無料お試し中
+# `in_grace_period`… 決済が通らないが猶予期間（Apple が再試行している）
+ACTIVE_STATUSES = ("active", "trialing", "in_grace_period")
+
 
 def _db():
     from modules.logs import supabase
@@ -82,7 +91,7 @@ def is_paid(user_id):
         return False
 
     row = rows[0]
-    if row.get("status") not in ("active", "trialing", "in_grace_period"):
+    if row.get("status") not in ACTIVE_STATUSES:
         return False
 
     # 期限が切れていないか。**空なら切れていない扱い**

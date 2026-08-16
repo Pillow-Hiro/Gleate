@@ -15,6 +15,7 @@ import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
 import { loadAlways } from '../lib/splashPref'
 import { markShowing, markSkipped } from '../lib/splashHandoff'
+import { configure as configurePurchases } from '../lib/purchases'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
@@ -142,6 +143,18 @@ function RootNavigator() {
 
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  // **買った人と記録の持ち主を結び付ける**（2026-08-16）。
+  //
+  // RevenueCat に Supabase の user_id を渡しておくと、webhook が
+  // `app_user_id` として返してくる（`modules/billing.py`）。
+  // 渡し忘れると、買ったことは分かっても**誰が買ったかが分からない。**
+  //
+  // 鍵が無い間は何もしない（`lib/purchases.js`）。
+  useEffect(() => {
+    if (!session?.user?.id) return
+    configurePurchases(session.user.id)
+  }, [session?.user?.id])
 
   // 認証ガード。セッションの有無と現在地が食い違っていれば振り替える。
   //

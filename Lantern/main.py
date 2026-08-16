@@ -213,6 +213,48 @@ def debug_version():
     })
 
 
+@app.route("/api/plan")
+@require_auth
+def plan_api():
+    """いま無料か有料か。**画面がペイウォールを出すかどうかの判断に使う。**
+
+    ここを信じて機能を開けているわけではない。
+    実際の判定は各経路の `@require_paid` が持つ。
+    ここが嘘をついても、有料の経路は 402 を返す。
+    """
+    paid = is_paid(g.user_id)
+    return jsonify({
+        "paid": paid,
+        # 上限も返す。画面には出さないが、問い合わせのときに要る
+        "daily_ai_limit": daily_limit(g.user_id),
+    })
+
+
+@app.route("/api/billing/revenuecat", methods=["POST"])
+def revenuecat_webhook():
+    """RevenueCat からの知らせ。**利用者の認証は通らない。**
+
+    サーバー同士の経路なので `Authorization` ヘッダの合わせだけで守る
+    （`modules/billing.py`）。合わなければ 401、
+    設定されていなければ**受け口ごと閉じる**（503）。
+    """
+    from modules.billing import apply_event, authorized, secret
+
+    if not secret():
+        # 既定値を持たせない。設定を忘れたまま誰でも書ける口を開けない
+        print("[Billing] REVENUECAT_WEBHOOK_SECRET が未設定。受け口を閉じている")
+        return jsonify({"error": "not_configured"}), 503
+
+    if not authorized(request.headers.get("Authorization", "")):
+        return jsonify({"error": "unauthorized"}), 401
+
+    ok, detail = apply_event(request.get_json(silent=True))
+    if not ok:
+        # 2xx 以外を返すと RevenueCat が再送する。**握りつぶさない**
+        return jsonify({"error": detail}), 500
+    return jsonify({"status": "ok", "detail": detail})
+
+
 @app.route("/api/logs", methods=["GET"])
 @require_auth
 def get_logs_api():
