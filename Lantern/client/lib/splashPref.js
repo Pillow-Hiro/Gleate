@@ -8,11 +8,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 // **2026-08-15 に切り替えを足した。** 作者が
 // 「正しく表示されているか確かめたいので毎回出したい」と決めた。
 // 確かめるたびに日付を跨ぐのを待つわけにはいかない。
+// そのあいだ既定を「毎回」にしていた。
 //
-// **いまの既定は「毎回」。** 確認が済んだら切って（あるいは既定を戻して）よい。
+// **2026-08-16 に既定を「1日1回」へ戻した。** 確認が済んだため。
+// 切り替えは設定に残してある。毎回見たい人は自分で入にできる。
 const KEY = 'lantern.splash_always'
 
-export const DEFAULT_ALWAYS = true
+export const DEFAULT_ALWAYS = false
 
 export async function loadAlways() {
   try {

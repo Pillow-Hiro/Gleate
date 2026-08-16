@@ -14,7 +14,7 @@ import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy } from '../../lib/openPrivacy'
-import { loadAlways, saveAlways } from '../../lib/splashPref'
+import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
 import { useRouter } from 'expo-router'
 
 // 設定。**道具の手入れをする場所。**
@@ -72,7 +72,9 @@ export default function Settings() {
   const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
   const [notifyBlocked, setNotifyBlocked] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
-  const [splashAlways, setSplashAlways] = useState(true)
+  // 既定と同じ値で始める。ここだけ true にしていると、
+  // 読み込みが終わるまでの一瞬だけ入って見える
+  const [splashAlways, setSplashAlways] = useState(DEFAULT_ALWAYS)
 
   useEffect(() => {
     let cancelled = false
@@ -187,10 +189,15 @@ export default function Settings() {
           <Row label="ダークテーマ">
             <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ true: '#FBB03B' }} />
           </Row>
-          {/* **本来は1日1回**（`app/_layout.jsx`）。
-              表示を確かめるために日付を跨ぐのを待たなくてよいよう、
-              毎回出せるようにしてある（2026-08-15） */}
-          <Row label="起動画面を毎回出す" isLast>
+          {/* **既定は1日1回**（`app/_layout.jsx`）。毎回見たい人だけ入にする。
+
+              行の名前は「起動画面」だけにしてある（2026-08-16）。
+              それまでは「起動画面を毎回出す」で、**入り切りの行に
+              動詞が入って読みにくかった。** 隣の行も名詞
+              （毎日のきっかけ・知らせる時刻・ダークテーマ）で揃えている。
+              **切っても消えるわけではない**ので、
+              入と切が何を指すのかは下の一文で言う。 */}
+          <Row label="起動画面" isLast>
             <Switch
               value={splashAlways}
               onValueChange={(v) => { setSplashAlways(v); saveAlways(v) }}
@@ -198,6 +205,12 @@ export default function Settings() {
             />
           </Row>
         </Group>
+
+        {/* **切っても消えない。** 入と切がそれぞれ何になるのかを書く。
+            switch の行の名前だけでは「切ると出なくなる」に読めてしまう */}
+        <Text className="text-label-md text-outline leading-relaxed">
+          入にすると、開くたびに出ます。切ると1日に1回です。
+        </Text>
 
         {/* **端末の設定を開く導線は置かない。** 断った人を追いかけない */}
         {notifyBlocked ? (
