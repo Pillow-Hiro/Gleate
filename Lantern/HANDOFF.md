@@ -197,7 +197,7 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
   「今日と今週のことは無料。積み重ねを掘るのは有料」
 - **課金**（`modules/billing.py` ＋ `client/lib/purchases.js`）。RevenueCat 経由
 - **まとめタブ**（`client/lib/platforms.js` ＋ `components/OverviewPanel.jsx`）
-- **Journaling Suggestions を戻した**（`45245f1` の revert を revert）
+- **Journaling Suggestions は外した**（下記）
 
 #### 実装を読んで見つけた3つのずれ
 
@@ -206,11 +206,44 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 3. 上限に達したときの文言が禁止ワードだった（「〜しましょう」）。
    **画面は見張っていたが、サーバーが返す文言は誰も見ていなかった**
 
+#### Journaling Suggestions は3回落ちて外した（2026-08-17）
+
+| ビルド | commit | 落ち方 |
+|---|---|---|
+| #15 | `733183d` | プロビジョニングに capability が無い |
+| #16 | `9a0295f` | `cannot find 'JournalingSuggestionsPicker' in scope` |
+| #17 | `a005a10` | **同じ**（弱リンク＋シミュレータ除外を足しても変わらず） |
+
+**プロビジョニングの問題は解けている**（#16 以降は署名を通過して
+コンパイルまで進んでいる）。残っているのは Swift の型解決だけ。
+
+分かっていること。
+
+- `#if canImport(JournalingSuggestions)` は**真になる**。
+  `import` も通る。しかし `JournalingSuggestionsPicker` が見つからない。
+  **module は見えているのに型が見えていない**
+- podspec に `s.weak_frameworks = 'JournalingSuggestions'` を足しても変わらない
+- `!targetEnvironment(simulator)` を足しても変わらない
+  （production は端末向けなので、そもそも効く場面ではなかった）
+- API の使い方自体は Apple のドキュメントと一致している
+  （`onCompletion` は非 async、`suggestion.title` で見出しが取れる）
+
+**次に試すなら、まず実際の Xcode ログを読むこと。**
+EAS のビルド画面の "Xcode Logs" に、コンパイル時の
+`-sdk` と `-target`、および `import` 直前の警告が出ている。
+`module 'JournalingSuggestions' is unavailable` のような行があれば、
+そこで原因が確定する。**推測で podspec をいじる段階は終わっている。**
+
+実装は `git revert` で外しただけなので、履歴には残っている。
+
+    git show 523e7fd   # 実装
+    git show a005a10   # 弱リンクとシミュレータ除外
+
 #### 残っているのは作者の操作
 
 | # | 作業 | 誰が |
 |---|---|---|
-| 1 | **iOSビルド**（Journaling ＋ 課金。指紋が変わっている） | 作者 |
+| 1 | **iOSビルド**（課金。指紋が変わっている） | 作者 |
 | 2 | RevenueCat のアカウントと商品、`EXPO_PUBLIC_REVENUECAT_IOS_KEY` | 作者 |
 | 3 | App Store Connect の有料契約・銀行・税務、Small Business Program | 作者 |
 | 4 | バーチャルオフィス契約後に `TOKUSHOHO.md` を差し替え → `python scripts/build_legal.py` | 作者 |
@@ -221,8 +254,8 @@ cd C:\dev\apps\Lantern\client
 npx eas-cli build --platform ios --profile production
 ```
 
-**`--non-interactive` を付けないこと。** 付けると Apple に入り直さないので
-`com.apple.developer.journal.allow` の同期が起きず、同じ場所で落ちる。
+Journaling を外したので、**`--non-interactive` を付けても構わない。**
+足していた権利（`com.apple.developer.journal.allow`）はもう無い。
 
 > ⚠️ **`subscriptions.sql` を先に流さないこと。**
 > 表が無い間は全員が有料の扱いになる（`modules/plan.py`）。
