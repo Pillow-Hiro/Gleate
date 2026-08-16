@@ -170,9 +170,20 @@ export default function Login() {
                 ただの説明なのかが読み取れなかった。
 
                 2026-08-16 にカードの中へ入れた。**外に出すと写真の上に載る。**
-                独立して見えることは、区切り線と余白で保っている。 */}
-            <View className="border-t border-outline-variant/30 mt-8 pt-5 flex-row justify-center items-center gap-1.5">
-              <Text className="text-body-md text-on-surface-variant">アカウントをお持ちでない方は</Text>
+                独立して見えることは、区切り線と余白で保っている。
+
+                **`flex-wrap` と `shrink` を付けている。** 1行に収まるのは
+                案が英語（Don't have an account? Sign up）だったからで、
+                和文だと 13文字 ＋ 8文字。スマホの幅（カードの中は約302px）に
+                入らず、**実機で左右にはみ出した。**
+
+                Web では文字が勝手に折り返すので気づけない。
+                **React Native の既定は `flexShrink: 0`** で、
+                横並びの中の `Text` は縮まずにはみ出す。
+                `flex-wrap` で2行に分かれるようにし、`shrink` で
+                それでも足りないときに文の側が折れるようにしている。 */}
+            <View className="border-t border-outline-variant/30 mt-8 pt-5 flex-row flex-wrap justify-center items-center gap-x-1.5">
+              <Text className="shrink text-body-md text-on-surface-variant text-center">アカウントをお持ちでない方は</Text>
               <Pressable
                 onPress={() => router.push('/signup')}
                 className="min-h-touch justify-center active:opacity-70"
