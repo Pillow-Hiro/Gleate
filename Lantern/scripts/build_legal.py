@@ -1,12 +1,24 @@
-"""PRIVACY.md から client/public/privacy.html を作る。
+"""法務の文書から client/public/*.html を作る。
 
-    python scripts/build_privacy.py
+    python scripts/build_legal.py
+
+いま作るのは3つ。
+
+| 原本 | 生成物 |
+|---|---|
+| `PRIVACY.md` | `client/public/privacy.html` |
+| `TERMS.md` | `client/public/terms.html` |
+| `TOKUSHOHO.md` | `client/public/tokushoho.html` |
+
+**2026-08-16 に `build_privacy.py` から名前を変えた。**
+有料化に伴って利用規約と特定商取引法に基づく表記が要るようになり、
+同じ変換を3つに使うため。
 
 ## なぜ生成するのか
 
 同じ文面を2か所に置くと必ずずれる。このプロジェクトでは
 PROJECT_MAP.md と MVP_SPEC.md が実際にずれた。
-**PRIVACY.md を唯一の原本とし、HTML は生成物とする。**
+**Markdown を唯一の原本とし、HTML は生成物とする。**
 `tests/test_docs.py` が両者の一致を検査する。
 
 ## なぜ public/ に置くのか
@@ -35,8 +47,17 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE = os.path.join(ROOT, "PRIVACY.md")
-TARGET = os.path.join(ROOT, "client", "public", "privacy.html")
+
+# 原本と生成物と、ブラウザのタブに出す題。
+#
+# **`client/public/` に置く。** SPA のルーティングを通らないので、
+# ログインしていなくても開ける（下の「なぜ public/ に置くのか」を参照）。
+# 審査担当者も、まだ登録していない人も読める。
+DOCS = [
+    ("PRIVACY.md", "privacy.html", "プライバシーポリシー"),
+    ("TERMS.md", "terms.html", "利用規約"),
+    ("TOKUSHOHO.md", "tokushoho.html", "特定商取引法に基づく表記"),
+]
 
 STYLE = """
 :root { color-scheme: light dark; }
@@ -153,13 +174,13 @@ def to_html(md):
     return "\n".join(blocks)
 
 
-def render(md):
+def render(md, title="プライバシーポリシー"):
     return (
         "<!doctype html>\n"
         '<html lang="ja">\n<head>\n'
         '<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-        "<title>プライバシーポリシー — Lantern</title>\n"
+        f"<title>{html.escape(title)} — Lantern</title>\n"
         f"<style>{STYLE}</style>\n"
         "</head>\n<body>\n"
         f"{to_html(md)}\n"
@@ -168,13 +189,18 @@ def render(md):
 
 
 def build():
-    md = io.open(SOURCE, encoding="utf-8").read()
-    os.makedirs(os.path.dirname(TARGET), exist_ok=True)
-    io.open(TARGET, "w", encoding="utf-8", newline="\n").write(render(md))
-    return TARGET
+    out = []
+    for source, target, title in DOCS:
+        md = io.open(os.path.join(ROOT, source), encoding="utf-8").read()
+        path = os.path.join(ROOT, "client", "public", target)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        io.open(path, "w", encoding="utf-8", newline="\n").write(render(md, title))
+        out.append(path)
+    return out
 
 
 if __name__ == "__main__":
-    path = build()
+    paths = build()
     sys.stdout.reconfigure(encoding="utf-8")
-    print(f"生成: {os.path.relpath(path, ROOT)}")
+    for path in paths:
+        print(f"生成: {os.path.relpath(path, ROOT)}")

@@ -229,11 +229,18 @@ class TestVersionConsistency:
             "世代と版数が同じ値になっている。別物として扱えているか確認すること"
 
 
+def _legal_module():
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    import build_legal
+
+    return build_legal
+
+
 class TestPrivacyPage:
     """PRIVACY.md と、そこから作る privacy.html がずれていないか。
 
     同じ文面を2か所に置くと必ずずれる。原本は PRIVACY.md で、
-    HTML は `scripts/build_privacy.py` の生成物とする。
+    HTML は `scripts/build_legal.py` の生成物とする。
 
     掲載先は `client/public/`。expo export が出力の直下へ複製するため、
     SPAのルーティングを通らず**ログインしていなくても開ける**。
@@ -242,16 +249,13 @@ class TestPrivacyPage:
     """
 
     def _built(self):
-        sys.path.insert(0, os.path.join(ROOT, "scripts"))
-        import build_privacy
-
-        return build_privacy.render(read("PRIVACY.md"))
+        return _legal_module().render(read("PRIVACY.md"))
 
     def test_生成物が最新である(self):
         current = read("client", "public", "privacy.html")
         assert current == self._built(), (
             "PRIVACY.md を直して privacy.html を作り直していない。"
-            "python scripts/build_privacy.py を実行すること"
+            "python scripts/build_legal.py を実行すること"
         )
 
     def test_見出しがすべて入っている(self):
@@ -278,6 +282,68 @@ class TestPrivacyPage:
     def test_アカウント削除の案内がある(self):
         # App Store 5.1.1(v) に対応した機能を、文書側でも示す
         assert "アカウントの削除" in read("PRIVACY.md")
+
+
+class TestLegalPages:
+    """利用規約と特定商取引法に基づく表記（2026-08-16・有料化のため）。
+
+    プライバシーポリシーと同じ扱い。**Markdown が原本で HTML は生成物。**
+    ずれたらここで落ちる。
+
+    特商法の表記は**有料で売るなら日本では必須**。
+    書き漏らすと出せない項目があるので、機械に数えさせる。
+    """
+
+    def test_生成物が最新である(self):
+        mod = _legal_module()
+        for source, target, title in mod.DOCS:
+            current = read("client", "public", target)
+            assert current == mod.render(read(source), title), (
+                f"{source} を直して {target} を作り直していない。"
+                "python scripts/build_legal.py を実行すること"
+            )
+
+    def test_特商法に必要な項目がそろっている(self):
+        # 特定商取引法第11条（通信販売についての広告）。
+        # 落とすと表示義務違反になるものだけを並べる
+        page = read("TOKUSHOHO.md")
+        for item in (
+            "販売事業者",
+            "運営統括責任者",
+            "所在地",
+            "電話番号",
+            "メールアドレス",
+            "販売価格",
+            "商品代金以外に必要な費用",
+            "支払方法",
+            "支払時期",
+            "役務の提供時期",
+            "返品",
+            "動作環境",
+        ):
+            assert item in page, f"特商法の表記に項目が無い: {item}"
+
+    def test_自動更新と解約の場所が書いてある(self):
+        # App Store のサブスクリプション審査で必ず見られる。
+        # アプリ内で解約できないことを隠さない
+        for path in ("TERMS.md", "TOKUSHOHO.md"):
+            page = read(path)
+            assert "自動更新" in page, f"{path} に自動更新の説明が無い"
+            assert "サブスクリプション" in page, f"{path} に解約の場所が無い"
+
+    def test_無料のままにするものを約束している(self):
+        # **エクスポートを人質にしない。** ここが崩れたら気づけるようにする
+        terms = read("TERMS.md")
+        assert "これらを有料に移すことはありません" in terms
+        assert "記録のエクスポート" in terms
+
+    def test_AIの文章が助言ではないと書いてある(self):
+        assert "これは助言ではありません" in read("TERMS.md")
+
+    def test_記録の権利が利用者にあると書いてある(self):
+        terms = read("TERMS.md")
+        assert "記録の著作権は利用者に帰属します" in terms
+        assert "AI の学習には使いません" in terms
 
 
 class TestStack:

@@ -13,7 +13,7 @@ import TimeDial from '../../components/TimeDial'
 import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
-import { openPrivacy } from '../../lib/openPrivacy'
+import { openPrivacy, openTerms, openTokushoho } from '../../lib/openLegal'
 import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
 import { useRouter } from 'expo-router'
 
@@ -229,8 +229,16 @@ export default function Settings() {
         </Group>
         {exportError ? <Text className="text-label-md text-error">{exportError}</Text> : null}
 
+        {/* **3つとも外のページを開く。** アプリの中に複製を作らない。
+            App Store Connect に出す URL と中身がずれると、
+            どちらが本当かを外から確かめられなくなる（`lib/openLegal.js`）。
+
+            特定商取引法に基づく表記は**有料で売るなら日本では必須**。
+            置き場所として設定のここが一番見つけやすい（2026-08-16）。 */}
         <Group title="Lanternについて">
+          <Row label="利用規約" value="↗" onPress={openTerms} />
           <Row label="プライバシーポリシー" value="↗" onPress={openPrivacy} />
+          <Row label="特定商取引法に基づく表記" value="↗" onPress={openTokushoho} />
           <Row label="バージョン" value={APP_VERSION} isLast />
         </Group>
 

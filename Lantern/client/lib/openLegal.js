@@ -1,0 +1,32 @@
+import * as WebBrowser from 'expo-web-browser'
+
+// 法務の文書を開く。
+//
+// **アプリの中にページを作らない。** 同じ文書が2か所にあると、
+// App Store Connect に出したURLと中身がずれる。
+// ずれた瞬間、どちらが本当かを外から確かめられなくなる。
+//
+// **2026-08-16 に `openPrivacy.js` から名前を変えた。**
+// 有料化で利用規約と特定商取引法に基づく表記が要るようになり、
+// 開く先が3つになったため。
+//
+// ネイティブはアプリ内ブラウザで開く。外のブラウザに飛ばすと
+// アプリから出てしまい、戻り方が端末任せになる。
+// Web は `openLegal.web.js` が別タブで開く。
+const BASE = 'https://lantern-inky-three.vercel.app'
+
+export const PRIVACY_URL = `${BASE}/privacy.html`
+export const TERMS_URL = `${BASE}/terms.html`
+export const TOKUSHOHO_URL = `${BASE}/tokushoho.html`
+
+export async function openPrivacy() {
+  await WebBrowser.openBrowserAsync(PRIVACY_URL)
+}
+
+export async function openTerms() {
+  await WebBrowser.openBrowserAsync(TERMS_URL)
+}
+
+export async function openTokushoho() {
+  await WebBrowser.openBrowserAsync(TOKUSHOHO_URL)
+}

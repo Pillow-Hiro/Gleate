@@ -169,7 +169,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
-| `openPrivacy.js` / `openPrivacy.web.js` | プライバシーポリシーを開く。**アプリ内に複製しない** | — |
+| `openLegal.js` / `openLegal.web.js` | 規約・プライバシー・特商法を開く。**アプリ内に複製しない** | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
@@ -261,10 +261,12 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 | ファイル | 元 | 作り方 |
 |---|---|---|
-| `client/public/privacy.html` | `PRIVACY.md` | `python scripts/build_privacy.py` |
+| `client/public/privacy.html` | `PRIVACY.md` | `python scripts/build_legal.py` |
+| `client/public/terms.html` | `TERMS.md` | 同上 |
+| `client/public/tokushoho.html` | `TOKUSHOHO.md` | 同上 |
 
-**手で直さないこと。** `tests/test_docs.py::TestPrivacyPage` が一致を検査する。
-原本を直したら作り直す。
+**手で直さないこと。** `tests/test_docs.py` の `TestPrivacyPage` と
+`TestLegalPages` が一致を検査する。原本を直したら作り直す。
 
 ---
 
