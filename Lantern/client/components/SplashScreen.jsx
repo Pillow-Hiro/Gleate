@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Easing, Image, Pressable, useWindowDimensions, View } from 'react-native'
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 import Text from './Text'
-import { localDateStr } from '../lib/date'
-import { splashImageFor } from '../lib/splashImage'
-import { cacheForNextTime as cachePhoto, loadCached as loadPhoto } from '../lib/splashPhoto'
+import { currentSplashBackground } from '../lib/splashBackground'
+import { cacheForNextTime as cachePhoto } from '../lib/splashPhoto'
 import { cacheForNextTime as cacheQuote, loadCached as loadQuote } from '../lib/splashQuote'
+import { markLeaving } from '../lib/splashHandoff'
 
 const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || ''
@@ -19,24 +19,38 @@ const FALLBACKS = [
   '今日のことが、言葉になる。',
 ]
 
-// 去るときの間合い（2026-08-16）。**全部で約560ms。**
+// 去るときの間合い（2026-08-16・案 `code.html` に合わせた）。**全部で約1.1秒。**
 //
-// 押した瞬間に消す → 薄くするだけ、と2度直して、
-// **3度目に「演出が欲しい」と言われた。**
-// 1枚が黙って消えるのではなく、**灯りが引き取る**形にする。
+// **写真は去らない。** 案の演出はこうなっている。
 //
-//   言葉が下から順に去る → 灯りがひと呼吸ふくらむ → 1枚が退く
+//   言葉が上へ抜ける → 灯りがふくらむ → 鮮明な写真が薄れ、
+//   下にあるログイン画面の**ぼけた同じ写真**が現れ、カードが下から上がる
 //
-// 順番があることが演出になる。同時に動かすと、ただのフェードに戻る。
-const WORD_OUT_MS = 260
-const WORD_STAGGER_MS = 50
-const BLOOM_DELAY_MS = 100
-const BLOOM_MS = 440
-const SHEET_DELAY_MS = 140
-const SHEET_MS = 420
+// 起動画面が消えてログイン画面が出る、のではない。
+// **地はつながったまま、上に載っているものだけが入れ替わる。**
+// だから1枚を大きく動かさない（`SHEET_SCALE`）。動かすと写真がずれて、
+// つながって見えなくなる。
+//
+// ログイン側の間合いは `app/login.jsx` にある。ここと足し合わせて
+// 約1.1秒になるように置いてある。
+const WORD_OUT_MS = 300
+const WORD_STAGGER_MS = 60
+const BLOOM_DELAY_MS = 80
+const BLOOM_MS = 820
+const SHEET_DELAY_MS = 240
+const SHEET_MS = 620
+// 1枚が退く量。**ほとんど動かさない。** 地がつながって見えることを優先する
+const SHEET_SCALE = 1.02
 
 // 言葉が上がってくる幅。出るときも去るときも同じだけ動く
 const RISE = 12
+
+// 地がゆっくり動く（案の ken-burns）。**20秒で片道。**
+// 止まった写真より、息をしている方が「待っている画面」に見える。
+// 気づかせるためではないので、大きさも速さも気づかない程度に留める。
+const KEN_MS = 20000
+const KEN_SCALE = 1.05
+const KEN_SHIFT = 0.01
 
 function useReveal(delay) {
   const value = useRef(new Animated.Value(0)).current
@@ -91,10 +105,9 @@ export default function SplashScreen({ onClose }) {
   const [quote] = useState(
     () => loadQuote() || FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)]
   )
-  const [background] = useState(() => {
-    const cached = loadPhoto()
-    return cached ? { uri: cached } : splashImageFor(localDateStr())
-  })
+  // **ログイン画面と同じ1枚を使う**（`lib/splashBackground.js`）。
+  // 別々に選ぶと、受け渡しの途中で写真が入れ替わる
+  const [background] = useState(() => currentSplashBackground())
 
   const dateIn = useReveal(100)
   const logoIn = useReveal(250)
@@ -112,8 +125,25 @@ export default function SplashScreen({ onClose }) {
   const bloom = useRef(new Animated.Value(0)).current
   // 押されている間のへこみ。**触れたことを画面が返す**
   const press = useRef(new Animated.Value(0)).current
+  // 地のゆっくりした動き
+  const ken = useRef(new Animated.Value(0)).current
 
   const leaving = useRef(false)
+
+  useEffect(() => {
+    // 行って戻るを繰り返す。`Animated.loop` は往復しないので、
+    // 往路と復路を並べたものを回す
+    const leg = (toValue) =>
+      Animated.timing(ken, {
+        toValue,
+        duration: KEN_MS,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      })
+    const anim = Animated.loop(Animated.sequence([leg(1), leg(0)]))
+    anim.start()
+    return () => anim.stop()
+  }, [ken])
 
   const close = useCallback(() => {
     // **2回目は待たせない。**
@@ -128,6 +158,9 @@ export default function SplashScreen({ onClose }) {
       return
     }
     leaving.current = true
+
+    // **下のログイン画面に知らせる。** あちらのカードはこれを合図に上がる
+    markLeaving()
 
     // 出ている途中なら止める。**去りながら出てくるのを防ぐ**
     ;[dateIn, logoIn, quoteIn, hintIn].forEach((v) => v.stopAnimation())
@@ -263,15 +296,15 @@ export default function SplashScreen({ onClose }) {
           outputRange: [0, 1, 0],
         }),
         transform: [
-          { scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.7] }) },
+          { scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [0.4, 2] }) },
         ],
       }}
     >
       <Svg width={bloomSize} height={bloomSize}>
         <Defs>
           <RadialGradient id="lanternGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor="#FBB03B" stopOpacity="0.42" />
-            <Stop offset="45%" stopColor="#FBB03B" stopOpacity="0.16" />
+            <Stop offset="0%" stopColor="#FBB03B" stopOpacity="0.55" />
+            <Stop offset="45%" stopColor="#FBB03B" stopOpacity="0.22" />
             <Stop offset="100%" stopColor="#FBB03B" stopOpacity="0" />
           </RadialGradient>
         </Defs>
@@ -289,8 +322,6 @@ export default function SplashScreen({ onClose }) {
   // **返す形を変えていた。** 形が変わると React は中身を作り直すので、
   // 日付もロゴも一文ももう一度フェードインする。
   // それが「起動画面が2回出る」の正体だった。
-  //
-  // いまは差し替わるものが無いので、そもそも作り直されない。
   //
   // **灯りは1枚の外に出す。** 中に入れると1枚が薄くなるのに巻き込まれ、
   // 一番ふくらむ頃にはもう見えない。
@@ -313,16 +344,36 @@ export default function SplashScreen({ onClose }) {
           transform: [
             // 押されている間わずかにへこむ。**触れたことを返す**
             { scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.985] }) },
-            // 薄くなるだけだと「消えた」に見える。**近づけて「退いた」にする**
-            { scale: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }) },
+            { scale: sheet.interpolate({ inputRange: [0, 1], outputRange: [1, SHEET_SCALE] }) },
           ],
         }}
       >
-        <Image
+        <Animated.Image
           source={background}
           resizeMode="cover"
           pointerEvents="none"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            transform: [
+              { scale: ken.interpolate({ inputRange: [0, 1], outputRange: [1, KEN_SCALE] }) },
+              {
+                translateX: ken.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -width * KEN_SHIFT],
+                }),
+              },
+              {
+                translateY: ken.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -height * KEN_SHIFT],
+                }),
+              },
+            ],
+          }}
         />
         {content}
       </Animated.View>

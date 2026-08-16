@@ -14,6 +14,7 @@ import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
 import { loadAlways } from '../lib/splashPref'
+import { markShowing, markSkipped } from '../lib/splashHandoff'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
@@ -92,7 +93,13 @@ function RootNavigator() {
         // **毎回出す設定なら、既読は見ない**（2026-08-15）。
         // 表示を確かめるために日付を跨ぐのを待たなくてよいようにする
         if (await loadAlways()) {
-          if (!cancelled) setShowSplash(true)
+          if (!cancelled) {
+            // **本画面より先に知らせる。** ログイン画面はこれを見て、
+            // 自分の入り方を決める（起動画面を待つか、すぐ上がるか）。
+            // 下の早期 return があるので、決まるまで本画面は描かれない
+            markShowing()
+            setShowSplash(true)
+          }
           return
         }
         const seen = await AsyncStorage.getItem(SPLASH_SEEN_KEY)
@@ -102,6 +109,8 @@ function RootNavigator() {
         console.warn('[Splash] 表示履歴の読み込みに失敗', e)
       }
       if (cancelled) return
+      if (next) markShowing()
+      else markSkipped()
       setShowSplash(next)
       // **出すと決めた時点で記録する。** 閉じたときではない。
       // 閉じる前に画面が作り直されると、もう一度最初から出てしまう
