@@ -6,6 +6,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
+import OverviewPanel from '../../components/OverviewPanel'
 import YouTubePanel from '../../components/YouTubePanel'
 import TwitchPanel from '../../components/TwitchPanel'
 
@@ -35,9 +36,17 @@ import TwitchPanel from '../../components/TwitchPanel'
 // 書いた量を成果として測ることになり、増減率は評価そのもの
 // （`REQUIREMENTS.md`「やらないこと」）。
 //
-// タブの状態は保持しない。画面を離れたら YouTube から始まる。
+// タブの状態は保持しない。画面を離れたら「まとめ」から始まる。
 // 未連携でもタブは出す。隠すと機能があること自体に気づけないため。
+//
+// **「まとめ」を先頭に置いた**（2026-08-16）。
+// それまでは YouTube から始まり、Twitch を見るには必ずタブを踏んだ。
+// 場所が増えるほど「全部を見る」のに手数がかかる作りだった。
+//
+// 場所を足すときは `lib/platforms.js` の配列と、この TABS の両方。
+// まとめの中身は配列だけで増える。
 const TABS = [
+  { id: 'overview', label: 'まとめ' },
   { id: 'youtube', label: 'YouTube' },
   { id: 'twitch', label: 'Twitch' },
 ]
@@ -46,7 +55,7 @@ export default function Dashboard() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
-  const [activeTab, setActiveTab] = useState('youtube')
+  const [activeTab, setActiveTab] = useState('overview')
   // **一度開いたパネルは残す。**
   //
   // 2026-08-07 まで `activeTab === 'youtube' ? <A/> : <B/>` で
@@ -56,7 +65,7 @@ export default function Dashboard() {
   //
   // 開いたものだけ描画し、以後は隠すだけにする。
   // 最初から両方読むと初回が重くなるので、開くまでは作らない。
-  const [opened, setOpened] = useState({ youtube: true, twitch: false })
+  const [opened, setOpened] = useState({ overview: true, youtube: false, twitch: false })
 
   function selectTab(id) {
     setActiveTab(id)
@@ -119,6 +128,11 @@ export default function Dashboard() {
         </View>
 
         {/* display:'none' で隠す。unmount しないので状態と取得結果が残る */}
+        {opened.overview ? (
+          <View style={activeTab === 'overview' ? undefined : { display: 'none' }}>
+            <OverviewPanel onOpen={selectTab} />
+          </View>
+        ) : null}
         {opened.youtube ? (
           <View style={activeTab === 'youtube' ? undefined : { display: 'none' }}>
             <YouTubePanel />

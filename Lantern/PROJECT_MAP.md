@@ -123,6 +123,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
+| `OverviewPanel.jsx` | Dashboard | つないでいる場所を横に並べる。**合計も増減も出さない** |
 | `VideoTimeline.jsx` | YouTubePanel | 動画一覧。1本ずつ観察を取れる |
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**ので地は灰（砂はLanternの言葉の色） |
@@ -166,6 +167,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `splashQuote.js` ＋ `splashQuote.web.js` | 起動画面の一言を端末に覚えさせる。**描いたあとで差し替えない** | `splashQuote.test.js` |
 | `splashBackground.js` | 起動画面とログイン画面が**同じ1枚**を選ぶための場所 | — |
 | `splashHandoff.js` | 起動画面が去り始めたことをログイン画面に知らせる | `splashHandoff.test.js` |
+| `platforms.js` | つないでいる場所の表。**足すのはここに1行** | `platforms.test.js` |
 | `htmlMarkdown.js` | 編集画面の HTML と保存の Markdown を行き来する。**往復で戻る** | `htmlMarkdown.test.js` |
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
