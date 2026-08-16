@@ -33,7 +33,7 @@
 | API | `https://api.golantern.app`（Render Starter・gunicorn） |
 | ネイティブ | **iOSビルド #13 を TestFlight へアップロード済み**（2026-08-15・commit `f6b2eca`・版数 1.0.0 / ビルド番号 13・runtime `ab1c3362…`）。編集画面（WebView）とファイル添付を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
-| 検査 | pytest 872件 / vitest 211件 |
+| 検査 | pytest 936件 / vitest 236件 |
 
 ### 置き場所（2026-08-16 に移した）
 
@@ -58,7 +58,12 @@ OneDrive が `node_modules` のファイルを「ファイル オンデマンド
 全ローカルコミットがリモートに在ることを確認した。
 **`.env` は GitHub に無い。** 移動で運んであるが、ここだけは他に控えが無い。
 
-**#13 には OTA が届く**（runtime `ab1c3362…`）。2026-08-16 に配ったもの：
+> ⚠️ **いま main の指紋は #13 と違う**（`6942c311…`）。
+> 課金の native 依存と Journaling Suggestions を入れたため。
+> **次のビルドを作るまで、main から OTA は配れない。**
+> 配る必要が出たら、その2つを外した状態から流すこと。
+
+**#13 に届いた OTA**（runtime `ab1c3362…`）。2026-08-16 に配ったもの：
 
 | 更新グループ | 内容 |
 |---|---|
@@ -181,33 +186,48 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 試験のあいだ「毎回」にしていたもの。切り替えは設定に残っている
 （行の名前は「起動画面」。入＝開くたび、切＝1日1回）。
 
-### 2026-08-15（Journaling は `journaling-suggestions` ブランチにある）
+### 2026-08-16（有料化の下ごしらえ・**ビルド待ち**）
 
-**⚠ main には入っていない。** ビルドが2度落ちたあと、
-main を OTA できる状態に保つために revert した。
+作者の指示は「すべて着手」。バーチャルオフィスを設立予定という条件つき。
 
-    git checkout journaling-suggestions   # 実装はここ
+- **利用規約と特商法の表記**（`TERMS.md` / `TOKUSHOHO.md` → `client/public/*.html`）。
+  **住所と電話は `【バーチャルオフィス契約後に記載】`。**
+  空欄だと書き忘れに見え、仮の住所は嘘になる。取得中と書くのが一番正確
+- **無料と有料の線**（`modules/plan.py`）。
+  「今日と今週のことは無料。積み重ねを掘るのは有料」
+- **課金**（`modules/billing.py` ＋ `client/lib/purchases.js`）。RevenueCat 経由
+- **まとめタブ**（`client/lib/platforms.js` ＋ `components/OverviewPanel.jsx`）
+- **Journaling Suggestions を戻した**（`45245f1` の revert を revert）
 
-**残っているのは Apple の操作1つだけ。**
+#### 実装を読んで見つけた3つのずれ
 
-    Provisioning profile ... doesn't include the Journaling Suggestions capability
+1. 記録AI・今日の灯り・節目に上限が無く、**回数無制限**だった
+2. `/save` は**保存のたびに** AI を呼ぶ。1日1回ではない
+3. 上限に達したときの文言が禁止ワードだった（「〜しましょう」）。
+   **画面は見張っていたが、サーバーが返す文言は誰も見ていなかった**
 
-`com.apple.developer.journal.allow` を足したので、プロファイルを
-作り直す必要がある。**申請は要らない**（Xcode の capability 相当）。
+#### 残っているのは作者の操作
+
+| # | 作業 | 誰が |
+|---|---|---|
+| 1 | **iOSビルド**（Journaling ＋ 課金。指紋が変わっている） | 作者 |
+| 2 | RevenueCat のアカウントと商品、`EXPO_PUBLIC_REVENUECAT_IOS_KEY` | 作者 |
+| 3 | App Store Connect の有料契約・銀行・税務、Small Business Program | 作者 |
+| 4 | バーチャルオフィス契約後に `TOKUSHOHO.md` を差し替え → `python scripts/build_legal.py` | 作者 |
+| 5 | `docs/sql/subscriptions.sql` を流す（**4と2が済んでから**） | 作者 |
 
 ```
-git checkout journaling-suggestions
-cd client
+cd C:\dev\apps\Lantern\client
 npx eas-cli build --platform ios --profile production
 ```
 
 **`--non-interactive` を付けないこと。** 付けると Apple に入り直さないので
-capability の同期が起きず、同じ場所で落ちる。
-Apple にログインすると、EAS が権利を見て App ID に
-Journaling Suggestions を足し、プロファイルを作り直す。
+`com.apple.developer.journal.allow` の同期が起きず、同じ場所で落ちる。
 
-通ったら main へマージする（`git merge journaling-suggestions`）。
-**マージした時点で main の指紋が変わり、OTA は新しいビルドにしか届かない。**
+> ⚠️ **`subscriptions.sql` を先に流さないこと。**
+> 表が無い間は全員が有料の扱いになる（`modules/plan.py`）。
+> **流した瞬間に有料の経路が 402 を返し始める**ので、
+> 買う手段（2）が揃う前に流すと、自分も使えなくなる。
 
 ### 2026-08-15（ビルド #13・提出済み）
 
