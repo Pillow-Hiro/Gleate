@@ -7,6 +7,11 @@ export function list() {
   return []
 }
 
+// Web には端末の中の置き場が無い。**書き出しに同梱するものも無い。**
+export function exportEntries() {
+  return []
+}
+
 export function save() {
   throw new Error('unsupported')
 }

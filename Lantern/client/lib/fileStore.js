@@ -51,6 +51,29 @@ export function list(date) {
   }
 }
 
+/**
+ * 書き出しに同梱する添付。**全部の日をまとめて返す。**
+ *
+ * `list(date)` は1日ぶんだが、ZIP には全部要る。
+ * `stored` は端末の中の名前（日付と時刻が付いていて重複しない）、
+ * `name` は利用者に見せる元の名前。
+ */
+export function exportEntries() {
+  try {
+    return dir()
+      .list()
+      .map((f) => {
+        const meta = parse(f.name)
+        if (!meta) return null
+        return { date: meta.date, name: meta.name, stored: f.name, uri: f.uri }
+      })
+      .filter(Boolean)
+  } catch (e) {
+    console.warn('[File] 書き出し用の一覧に失敗', e)
+    return []
+  }
+}
+
 /** 選ばれたファイルを端末の中へ複製する */
 export function save(date, sourceUri, originalName) {
   const target = new File(dir(), nameFor(date, originalName))

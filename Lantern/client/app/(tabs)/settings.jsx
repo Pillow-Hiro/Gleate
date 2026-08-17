@@ -278,14 +278,23 @@ export default function Settings() {
           <Text className="text-label-md text-outline">{restoreNotice}</Text>
         ) : null}
 
+        {/* **中身が変わった**（2026-08-17）。
+            JSON 1枚だったころは本文しか入っておらず、
+            端末の中にしか無い写真と添付が救えていなかった。
+
+            共有シートから「"ファイル"に保存」を選べば iCloud Drive へ置ける。
+            **自動で外へ送る仕組みは持たない**（`lib/exportLogs.js`）。 */}
         <Group title="データ">
           <Row
-            label={exporting ? 'エクスポート中...' : '記録をエクスポート'}
-            value="JSON"
+            label={exporting ? '書き出し中...' : '記録を書き出す'}
+            value="ZIP"
             onPress={exporting ? undefined : handleExport}
             isLast
           />
         </Group>
+        <Text className="text-label-md text-outline leading-relaxed">
+          本文・写真・添えたファイルをまとめます。読む用の Markdown も入ります。
+        </Text>
         {exportError ? <Text className="text-label-md text-error">{exportError}</Text> : null}
 
         {/* **3つとも外のページを開く。** アプリの中に複製を作らない。

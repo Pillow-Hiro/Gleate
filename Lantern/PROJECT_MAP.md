@@ -175,7 +175,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `editorPage.js` | 編集画面に流し込む HTML。**切り出してあるのでブラウザで開いて試せる** | `editorPage.test.js` |
 | `fileStore.js` ＋ `fileStore.web.js` | **添付を端末の中だけに置く。** サーバーに送らない | — |
 | `openLegal.js` / `openLegal.web.js` | 規約・プライバシー・特商法を開く。**アプリ内に複製しない** | — |
-| `exportLogs.js` ＋ `exportLogs.web.js` | JSONの書き出し。SDK 57 の File / Directory / Paths を使う | — |
+| `exportLogs.js` ＋ `exportLogs.web.js` | 書き出し。**ZIP に本文・写真・添付・Markdown をまとめる**（Web は写真を持たない） | — |
+| `exportMarkdown.js` | 記録を Markdown にする。**空の欄で見出しを作らない** | `exportMarkdown.test.js` |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
 | `constants.js`（`client/` 直下） | `APP_VERSION` | — |

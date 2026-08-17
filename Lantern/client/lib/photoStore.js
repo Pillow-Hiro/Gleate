@@ -60,6 +60,21 @@ export function loadAll() {
   return found
 }
 
+/**
+ * 書き出しに同梱する原寸の写真。**縮小版は入れない。**
+ *
+ * `loadAll()` は画面に出すための URI を返すが、こちらは
+ * **ZIP に入れる実体**が要るので、名前と一緒に返す。
+ */
+export function exportEntries() {
+  const out = []
+  for (const [date, entry] of latestByDate(names())) {
+    if (!entry.photo) continue
+    out.push({ date, name: entry.photo, uri: uriOf(entry.photo) })
+  }
+  return out
+}
+
 export function load(date) {
   return loadAll().get(date) || { photo_url: null, photo_thumb_url: null }
 }
