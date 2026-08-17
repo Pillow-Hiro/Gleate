@@ -177,6 +177,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `openLegal.js` / `openLegal.web.js` | 規約・プライバシー・特商法を開く。**アプリ内に複製しない** | — |
 | `exportLogs.js` ＋ `exportLogs.web.js` | 書き出し。**ZIP に本文・写真・添付・Markdown をまとめる**（Web は写真を持たない） | — |
 | `exportMarkdown.js` | 記録を Markdown にする。**空の欄で見出しを作らない** | `exportMarkdown.test.js` |
+| `keyboard.js` | キーボードの高さを聞く（`react-native` を読む） | — |
+| `keyboardMath.js` | 下に空ける高さと窓の高さの計算。**安全域を二重に数えない** | `keyboardMath.test.js` |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |
 | `constants.js`（`client/` 直下） | `APP_VERSION` | — |

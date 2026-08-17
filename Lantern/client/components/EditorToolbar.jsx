@@ -27,6 +27,12 @@ import { toggleBullet, wrapSelection } from '../lib/markdown'
 // 2026-08-15 に作者が「入力フィールドの下にある装飾ボタンはいらない」と決めた。
 // 書いているあいだキーボードの上にあれば足りる。
 
+// 列の高さ。**画面が下を空けるときに要る**（`lib/keyboard.js`）。
+//
+// 定数と実物がずれないよう、**この値を列自身にも効かせている**
+// （下の `minHeight`）。片方だけ変えても食い違わない。
+export const TOOLBAR_HEIGHT = 52
+
 const ToolbarContext = createContext({ register: () => {}, release: () => {} })
 // いま書いている欄。**別に持つ。**
 // `Modal` の中にもう1つ列を置けるようにするため（`RN` の Modal は
@@ -220,7 +226,7 @@ function ToolbarBar({ field }) {
       }}
       className="bg-surface-low border-t border-border"
     >
-      <View className="flex-row items-center px-3 py-1">
+      <View className="flex-row items-center px-3 py-1" style={{ minHeight: TOOLBAR_HEIGHT }}>
         {/* **効いている装飾は塗る。**
             押しても何も変わらないと、効いたのかどうかが分からない。
             Apple の「メモ」も同じで、選ばれているボタンだけ地が付く。

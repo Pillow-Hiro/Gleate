@@ -16,6 +16,9 @@ import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
 import RecordForm from '../../components/RecordForm'
+import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
+import { useKeyboardHeight } from '../../lib/keyboard'
+import { sheetMaxHeight } from '../../lib/keyboardMath'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
 import { EditorToolbarBar } from '../../components/EditorToolbar'
 
@@ -28,6 +31,8 @@ function thisMonth() {
 export default function Journal() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
+  // 記録の窓がキーボードに隠れないよう、出ている高さを測る
+  const keyboardHeight = useKeyboardHeight()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   // 頻出キーワードから飛んでくると `?q=` が付く。その語で絞った状態で開く
@@ -184,7 +189,17 @@ export default function Journal() {
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <AppHeader />
-      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }} keyboardShouldPersistTaps="handled">
+      {/* 一覧から記録を開いて直すときも欄が出る（`LogDetail`）。
+          **窓と同じ扱いにする**（2026-08-17） */}
+      <ScrollView
+        contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
+        contentContainerStyle={{
+          paddingBottom:
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_HEIGHT : 0),
+        }}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
+      >
         {/* ヘッダー */}
         <View>
           <Text className="font-display text-headline-md text-ink">記録</Text>
@@ -349,7 +364,17 @@ export default function Journal() {
         transparent
         onRequestClose={closeModal}
       >
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={closeModal}>
+        {/* **紙をキーボードの上へ逃がす**（2026-08-17）。
+            下に貼り付いた紙なので、避けが無いと**丸ごと隠れる。**
+            「よかったこと」「困ったこと」どころか、欄が1つも見えなかった。
+
+            `automaticallyAdjustKeyboardInsets` は中の一覧を送るだけで、
+            紙そのものは動かない。ここは外側を持ち上げる。 */}
+        <Pressable
+          className="flex-1 bg-black/50 justify-end"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + TOOLBAR_HEIGHT : 0 }}
+          onPress={closeModal}
+        >
           <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
             {/* つまみ。どこを掴めば閉じるかの目印 */}
             <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
@@ -366,8 +391,17 @@ export default function Journal() {
                 `max-h-96`（384px）だと、詳しく書く欄を開いた時点で
                 中だけが小さくスクロールし、下半分が余っていた。
                 画面の高さから割り出す。 */}
+            {/* キーボードが出ると使える縦が減る。**7割のままだと
+                紙が画面からはみ出す**（`lib/keyboardMath.js`）。 */}
             <ScrollView
-              style={{ maxHeight: Dimensions.get('window').height * 0.7 }}
+              style={{
+                maxHeight: sheetMaxHeight({
+                  windowHeight: Dimensions.get('window').height,
+                  keyboardHeight,
+                  toolbarHeight: TOOLBAR_HEIGHT,
+                }),
+              }}
+              automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             >

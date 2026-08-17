@@ -8,6 +8,9 @@ import { authFetch } from '../../lib/supabase'
 import { todayStr, calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import RecordForm from '../../components/RecordForm'
+import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
+import { useKeyboardHeight } from '../../lib/keyboard'
+import { keyboardHeadroom } from '../../lib/keyboardMath'
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 
@@ -25,6 +28,8 @@ function dateDisplayJa(dateStr) {
 export default function Home() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
+  // キーボードに隠れないよう、出ている高さを測る
+  const keyboardHeight = useKeyboardHeight()
   const params = useLocalSearchParams()
   const router = useRouter()
   const [question, setQuestion] = useState('')
@@ -80,9 +85,21 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <AppHeader />
+      {/* **キーボードのぶんだけ下を空ける**（2026-08-17）。
+          それまで避けが1つも無く、「よかったこと」「困ったこと」を開くと
+          欄がキーボードの下に入って見えなかった。
+
+          `automaticallyAdjustKeyboardInsets` は iOS が
+          キーボードのぶんを自分で空け、焦点の当たった欄まで送ってくれる。
+          **ただし装飾の列は知らない**ので、その高さだけこちらで足す
+          （`lib/keyboardMath.js`）。 */}
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
-        contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
+        contentContainerStyle={{
+          paddingBottom:
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_HEIGHT : 0),
+        }}
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
