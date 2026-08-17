@@ -6,6 +6,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
+import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
@@ -49,6 +50,36 @@ function Row({ label, value, isLast, onPress, children }) {
   )
 }
 
+// 3つから1つ選ぶ行。**switch ではなく、並べて選ばせる。**
+//
+// 外観は2026-08-17 に「入り切り」から「端末に合わせる／ライト／ダーク」の
+// 3つになった。3つを switch では表せず、押すたびに回る1行にすると
+// **次に何が来るのかが押すまで分からない。** 全部見せて、印を付ける。
+function ChoiceRow({ label, selected, isLast, onPress }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      className="active:opacity-70"
+    >
+      <View
+        className={`flex-row items-center justify-between gap-4 py-3.5 min-h-touch ${
+          isLast ? '' : 'border-b border-border'
+        }`}
+      >
+        <Text
+          className={`text-body-md ${selected ? 'font-strong text-primary' : 'text-on-surface'}`}
+        >
+          {label}
+        </Text>
+        {/* 選ばれている行は色と太さでも違う。**印だけに頼らない** */}
+        {selected ? <Text className="text-body-md text-primary">✓</Text> : null}
+      </View>
+    </Pressable>
+  )
+}
+
 function Group({ title, children }) {
   return (
     <View>
@@ -64,7 +95,7 @@ export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const router = useRouter()
-  const { isDark, toggleTheme } = useThemeContext()
+  const { mode, setMode } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -225,15 +256,12 @@ export default function Settings() {
               </View>
             </Row>
           ) : null}
-          <Row label="ダークテーマ">
-            <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ true: '#FBB03B' }} />
-          </Row>
           {/* **既定は1日1回**（`app/_layout.jsx`）。毎回見たい人だけ入にする。
 
               行の名前は「起動画面」だけにしてある（2026-08-16）。
               それまでは「起動画面を毎回出す」で、**入り切りの行に
               動詞が入って読みにくかった。** 隣の行も名詞
-              （毎日のきっかけ・知らせる時刻・ダークテーマ）で揃えている。
+              （毎日のきっかけ・知らせる時刻）で揃えている。
               **切っても消えるわけではない**ので、
               入と切が何を指すのかは下の一文で言う。 */}
           <Row label="起動画面" isLast>
@@ -251,12 +279,31 @@ export default function Settings() {
           入にすると、開くたびに出ます。切ると1日に1回です。
         </Text>
 
-        {/* **端末の設定を開く導線は置かない。** 断った人を追いかけない */}
+        {/* **端末の設定を開く導線は置かない。** 断った人を追いかけない。
+            この一文は「毎日のきっかけ」の話なので、一般の区画から離さない */}
         {notifyBlocked ? (
           <Text className="text-label-md text-outline leading-relaxed">
             端末の設定で Lantern の通知が許可されていません。
           </Text>
         ) : null}
+
+        {/* **外観。** 2026-08-17 に「端末に合わせる」を足して3つになった。
+            それまではライト固定で、端末を夜モードにしていても
+            Lantern だけ白いままだった。**記録は夜に書かれることが多い。**
+
+            一般の中に置かず区画を分けたのは、**行が3つあるため。**
+            switch の行に混ぜると、どこまでが1つの設定なのか読めなくなる。 */}
+        <Group title="外観">
+          {THEME_MODES.map((m, i) => (
+            <ChoiceRow
+              key={m}
+              label={THEME_LABELS[m]}
+              selected={mode === m}
+              isLast={i === THEME_MODES.length - 1}
+              onPress={() => setMode(m)}
+            />
+          ))}
+        </Group>
 
         {/* **プラン。** いま無料か有料かを見せ、復元の導線を置く。
             復元は Apple の審査要件（機種変更・再インストールのため）。
