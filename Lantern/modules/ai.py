@@ -3,6 +3,11 @@ import time
 import anthropic
 from modules.logs import get_current_weekly_goal, get_current_monthly_goal
 
+# 使う模型。**変えるのはここだけ。**
+# `claude-sonnet-4-6`（$3 / $15 per MTok）。1回およそ1.7円。
+# 1日に何回まで呼べるかは `modules/plan.py` が持つ。
+_MODEL = "claude-sonnet-4-6"
+
 _TIMEOUT_SECONDS = 10
 # **画面では「AI」と名乗らない**（2026-08-18）。
 # 他の場所は全部 Lantern を主語にしている（Lanternが観察したこと・
@@ -20,12 +25,22 @@ LANTERN_IDENTITY = """あなたはLanternというアプリの「静かな伴走
 - 具体的な活動名を列挙して要約しない
 - ユーザーの経験を勝手に物語化しない
 
+【あなたがすること・しないこと】
+1. 記録を並べる ……… する
+2. 差分を出す ………… する
+3. 意味づけする ……… **しない。それは書いた人だけがやる**
+
+「発見した」「気づいた」「〜ということでしょう」「つまり〜です」は
+3に入っている。**あなたは2で止まる。**
+
 【推奨】
 - 記録から読み取れる事実・パターンを観察して伝える
 - ユーザー自身の言葉をそのまま尊重する
 - 答えを求めない問いを置く
 - 必要最小限の言葉で・余白を残す
 - 丁寧体で統一する
+- 問いは「。」で終える。**「？」を使わない**
+  （答えを求めない問いだから。答えを迫る形にしない）
 
 【禁止ワード】
 「頑張っていますね」「素晴らしいです」「一歩」「前進」「成長」「充実」
@@ -42,10 +57,20 @@ LANTERN_MESSAGES = [
     "今日も、ここから始められる。",
     "あなたが書いたことが、あなたを照らす。",
     "灯りは、外から来るのではない。",
-    "今日のことを、自分の言葉で残してください。",
+    "今日のことは、自分の言葉で残せる。",
 ]
 
 
+# ── Claude への通り道。**ここが唯一の口** ──────────────────
+#
+# 2026-08-18 まで2本あった（`call_claude` と `call_claude_with_history`）。
+# 模型・待ち時間・失敗の扱いが両方に書いてあり、片方だけ直す余地があった。
+# **履歴つきの方は呼び出し元がゼロ**だったので消した。
+# 増やすときは、この1本に引数を足すこと。
+#
+# **失敗しても投げない。** `None` を返すか、待ちすぎたときだけ
+# `_TIMEOUT_MESSAGE` を返す。呼ぶ側は `if result:` で受けて、
+# その場に合った断りを返す。
 def call_claude(system_prompt, user_message, max_tokens=300):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -55,34 +80,10 @@ def call_claude(system_prompt, user_message, max_tokens=300):
     print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')}")
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-6",
+            model=_MODEL,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
-        )
-        print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
-        return message.content[0].text
-    except anthropic.APITimeoutError:
-        print(f"[AI] タイムアウト: {time.time() - start:.2f}秒経過")
-        return _TIMEOUT_MESSAGE
-    except Exception as e:
-        print(f"[AI] エラー発生: {time.time() - start:.2f}秒, {e}")
-        return None
-
-
-def call_claude_with_history(system_prompt, messages, max_tokens=300):
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        return None
-    client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
-    start = time.time()
-    print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')}")
-    try:
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
         )
         print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
         return message.content[0].text

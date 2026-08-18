@@ -433,9 +433,17 @@ class TestStack:
                 f"--timeout {m.group(3)}") in self._stack()
 
     def test_使っているモデルが一致する(self):
+        """**模型の名前は `_MODEL` に1つだけ。**
+
+        2026-08-18 に `model="claude-sonnet-4-6"` を各呼び出しに
+        直書きするのをやめ、定数にまとめた。ここもそれを読む。
+        直書きが戻ってきたときも拾えるよう、両方の形を見る。
+        """
         import re as _re
 
-        models = set(_re.findall(r'model="([^"]+)"', read("modules", "ai.py")))
+        src = read("modules", "ai.py")
+        models = set(_re.findall(r'model="([^"]+)"', src))
+        models |= set(_re.findall(r'^_MODEL\s*=\s*"([^"]+)"', src, _re.M))
         assert models, "modules/ai.py にモデル指定が無い"
         for model in models:
             assert model in self._stack(), f"STACK.md のモデル名が {model} と食い違う"
