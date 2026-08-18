@@ -49,18 +49,26 @@ def source():
 
 
 # 実際に送るだけの関数。プロンプトを組み立てないので対象外。
-TRANSPORT = {"call_claude", "call_claude_with_history"}
+#
+# `call_claude_with_history` は 2026-08-18 に消した（呼び出し元がゼロ）。
+# `lantern_prompt` は逆に**必ず人格を渡す**組み立て役なので、
+# これを通っている関数は人格を持っている（`has_identity` を参照）。
+TRANSPORT = {"call_claude", "lantern_prompt"}
 
 
 def identity_constants():
-    """`LANTERN_IDENTITY` を含むモジュール定数の名前を集める。
+    """人格を持ったモジュール定数の名前を集める。
 
-    プロンプトは関数の中で直接組む場合と、
-    `_PATTERNS_SYSTEM = LANTERN_IDENTITY + "..."` のように
-    モジュール定数にしてから渡す場合がある。
-    **後者を見落とすと、正しく書けているのに落ちる。**
+    プロンプトは関数の中で直接組む場合と、モジュール定数にしてから
+    渡す場合がある。**後者を見落とすと、正しく書けているのに落ちる。**
+
+    2026-08-18 に `lantern_prompt(...)` の形を足した。
+    どちらの形も拾う。
     """
-    return set(re.findall(r"^(_[A-Z_]+)\s*=\s*LANTERN_IDENTITY", source(), re.M))
+    src = source()
+    names = set(re.findall(r"^(_[A-Z_]+)\s*=\s*LANTERN_IDENTITY", src, re.M))
+    names |= set(re.findall(r"^(_[A-Z_]+)\s*=\s*lantern_prompt\(", src, re.M))
+    return names
 
 
 def prompt_functions():
@@ -82,8 +90,14 @@ def prompt_functions():
 
 
 def has_identity(body):
-    """憲法が渡っているか。定数経由も認める。"""
-    if "LANTERN_IDENTITY" in body:
+    """憲法が渡っているか。定数経由と組み立て役経由も認める。
+
+    **`lantern_prompt()` は人格を必ず前置きする**（`modules/ai.py`）。
+    この関数を通っていれば、憲法は渡っている。
+    2026-08-18 まで `LANTERN_IDENTITY` の直書きしか見ていなかったので、
+    組み立て役に寄せた関数を「人格なし」と誤判定した。
+    """
+    if "LANTERN_IDENTITY" in body or "lantern_prompt(" in body:
         return True
     return any(c in body for c in identity_constants())
 

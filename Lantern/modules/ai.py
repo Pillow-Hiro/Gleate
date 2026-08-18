@@ -47,6 +47,29 @@ LANTERN_IDENTITY = """あなたはLanternというアプリの「静かな伴走
 「〇〇しましょう」「〇〇してみてください」「必ず〇〇できます」「継続すること自体が力です」
 Markdownの使用（**太字**・## 見出し・--- 区切り線）"""
 
+
+# 人格の下に、その場の指示を足す。**足し方をここに1つだけ持つ。**
+#
+# 2026-08-18 まで、各関数が自分で人格に文字列を継ぎ足していた。見出しが
+# 【この応答の指針】【この観察の指針】【この一言について】
+# 【タイムライン振り返りの原則】【節目の振り返りの原則】と5通りあり、
+# 字数と文体の指定も毎回違う書き方だった。
+#
+# **形がばらけると中身もばらける。** 実際「見つけた」と「観察」が場所に
+# よって混ざり、2026-08-18 の言葉の精査でまとめて直すことになった。
+#
+# - `purpose` … その場で何をするか。**必ず【】1つに収める**
+# - `body`    … 指針・良い例・悪い例。ここだけが場ごとに違う
+# - `closing` … 字数と文体。**【返し方】に固定する**
+#
+# 人格そのものを渡さない道を作らないこと。`tests/test_prompts.py` が
+# 「人格を渡していない関数」を落とす。
+def lantern_prompt(purpose, body, closing=""):
+    parts = [LANTERN_IDENTITY, "", "【" + purpose + "】", body.strip()]
+    if closing:
+        parts += ["", "【返し方】", closing.strip()]
+    return chr(10).join(parts)
+
 LANTERN_MESSAGES = [
     "あなたの道は、あなたが照らす。",
     "今日の記録が、あなたの灯りになる。",
@@ -122,18 +145,20 @@ def get_splash_quote(quote_type="snoopy"):
     # 効いていなかった。**起動画面は利用者が最初に見る言葉**なので、
     # ここだけ憲法の外に置く理由が無い。
     if quote_type == "zen":
-        system_prompt = LANTERN_IDENTITY + """
-
-【この一言について】
-禅の言葉の質感で、自然や静けさを感じる短い一言を1文だけ書いてください。
-30文字以内。説教しない。ただ静かに置く。"""
+        system_prompt = lantern_prompt(
+            "この一言の指針",
+            """禅の言葉の質感で、自然や静けさを感じる短い一言を1文だけ置く。
+説教しない。ただ静かに置く。""",
+            "30文字以内。丁寧体。前置きも引用符も付けない。",
+        )
         fallbacks = _SPLASH_FALLBACKS_ZEN
     else:
-        system_prompt = LANTERN_IDENTITY + """
-
-【この一言について】
-温かく、本質をついた短い一言を1文だけ書いてください。
-30文字以内。才能・努力・結果を評価しない。自然に心に届く言葉。"""
+        system_prompt = lantern_prompt(
+            "この一言の指針",
+            """温かく、本質をついた短い一言を1文だけ置く。
+才能・努力・結果を評価しない。自然に心に届く言葉。""",
+            "30文字以内。丁寧体。前置きも引用符も付けない。",
+        )
         fallbacks = _SPLASH_FALLBACKS_SNOOPY
     result = call_claude(system_prompt, "今日の一言をください。", max_tokens=60)
     if result:
@@ -161,10 +186,9 @@ def get_ai_response(log_entry, past_logs, goals=None):
         if weekly:
             goals_context += f"\n今週の目標: {weekly}"
 
-    system_prompt = f"""{LANTERN_IDENTITY}
-
-【この応答の指針】
-**記録の中から一つだけ拾って、それに応える。**
+    system_prompt = lantern_prompt(
+        "この応答の指針",
+        """**記録の中から一つだけ拾って、それに応える。**
 全部の項目に触れない。順番に並べない。要約しない。
 
 拾うのは、書いた人がその日いちばん近くにいたと思われる一つ。
@@ -189,10 +213,10 @@ def get_ai_response(log_entry, past_logs, goals=None):
 「自分のアプリをスマホで触れた瞬間があったようです。その感覚は、どんなものでしたか。」
 「『熱海旅行』という言葉が、今日の記録に残っています。」
 「登録の手続きに時間がかかった日でした。あなたにとって、待つ時間はどんな時間でしょう。」
-「今日は短い記録でした。それでもここに残っています。」
-
-【返答（120文字以内・丁寧体）】
-一つを拾い、一言か二言で終える。**言い切らずに余白を残す。**"""
+「今日は短い記録でした。それでもここに残っています。」""",
+        """一つを拾い、一言か二言で終える。**言い切らずに余白を残す。**
+120文字以内。丁寧体。""",
+    )
 
     user_message = f"""今日のログです。{past_context}{goals_context}
 
@@ -290,9 +314,9 @@ def _parse_patterns_json(raw):
     return '{"patterns": []}'
 
 
-_PATTERNS_SYSTEM = LANTERN_IDENTITY + """
-
-記録から最大3つのパターンを抽出し、各パターンに短い観察と問いを添えてください。
+_PATTERNS_SYSTEM = lantern_prompt(
+    "この観察の指針",
+    """記録から最大3つのパターンを抽出し、各パターンに短い観察と問いを添えてください。
 
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
@@ -304,7 +328,8 @@ _PATTERNS_SYSTEM = LANTERN_IDENTITY + """
 - よかったこと・困ったことの傾向
 - やったことの変化・継続
 
-記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。"""
+記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。""",
+)
 
 
 def get_weekly_review(period_logs, goals, last_week_logs=None):
@@ -320,10 +345,9 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     return _parse_patterns_json(result)
 
 
-_DAILY_QUOTE_SYSTEM = LANTERN_IDENTITY + """
-
-【この応答について】
-昨日の記録を読んで、今朝そっと置く一言を書きます。
+_DAILY_QUOTE_SYSTEM = lantern_prompt(
+    "この一言の指針",
+    """昨日の記録を読んで、今朝そっと置く一言を書きます。
 
 書き方：
 - 昨日の記録の具体的な内容に触れる（一般論にしない）
@@ -333,7 +357,8 @@ _DAILY_QUOTE_SYSTEM = LANTERN_IDENTITY + """
 
 例：「難しいと感じたことも、記録に残っています。」
 例：「昨日書いた言葉が、ここにあります。」
-例：「あなたにとって、あの時間はどんな時間でしたか。」"""
+例：「あなたにとって、あの時間はどんな時間でしたか。」""",
+)
 
 
 def get_daily_quote(yesterday_log=None):
@@ -398,18 +423,17 @@ def generate_channel_insight(videos):
             line += f"（{view:,}回再生）"
         videos_text += line + "\n"
 
-    system_prompt = LANTERN_IDENTITY + """
-
-【この観察の指針】
-YouTubeチャンネルの動画一覧から、このクリエイターの創作の傾向・変化・特徴を観察者として静かに言語化する。
+    system_prompt = lantern_prompt(
+        "この観察の指針",
+        """YouTubeチャンネルの動画一覧から、このクリエイターの創作の傾向・変化・特徴を観察者として静かに言語化する。
 数字（再生回数・高評価）で評価しない。タイトルや投稿時期から読み取れる事実のみ。
 
 【良い例】
 「カバー曲から始まり、オリジナル曲へと変化しています。」
 「2023年初頭に集中して投稿されています。」
-「タイトルに実験的な言葉が多く見られます。」
-
-300文字以内。丁寧体。"""
+「タイトルに実験的な言葉が多く見られます。」""",
+        "300文字以内。丁寧体。",
+    )
 
     user_message = f"動画一覧：\n{videos_text}\nこのチャンネルの創作の傾向・変化・特徴を観察してください。"
     result = call_claude(system_prompt, user_message, max_tokens=400)
@@ -442,10 +466,9 @@ def generate_stream_insight(streams):
             line += f"（{view:,}回視聴）"
         streams_text += line + "\n"
 
-    system_prompt = LANTERN_IDENTITY + """
-
-【この観察の指針】
-配信の一覧から、この人の活動の傾向・変化・特徴を観察者として静かに言語化する。
+    system_prompt = lantern_prompt(
+        "この観察の指針",
+        """配信の一覧から、この人の活動の傾向・変化・特徴を観察者として静かに言語化する。
 視聴数・フォロワー数で配信の価値を評価しない。事実として伝えることはよい。
 配信の時間帯や長さは観察の材料にしてよい。ただし助言はしない。
 
@@ -457,9 +480,9 @@ def generate_stream_insight(streams):
 【悪い例】
 「もっと長く配信すると伸びます。」
 「この配信は反応が良かったようです。」
-「配信頻度を上げましょう。」
-
-300文字以内。丁寧体。"""
+「配信頻度を上げましょう。」""",
+        "300文字以内。丁寧体。",
+    )
 
     user_message = f"配信一覧：\n{streams_text}\nこの活動の傾向・変化・特徴を観察してください。"
     result = call_claude(system_prompt, user_message, max_tokens=400)
@@ -474,17 +497,17 @@ def generate_timeline_reflection(past_logs, current_logs, months_ago):
     """months_ago ヶ月前の同週と現在の記録を比較して観察・問いを生成する。"""
     import json as _json, re as _re
 
-    system_prompt = LANTERN_IDENTITY + f"""
-
-【タイムライン振り返りの原則】
-- {months_ago}ヶ月前の記録と現在の記録を静かに観察する
+    system_prompt = lantern_prompt(
+        "この振り返りの指針",
+        f"""- {months_ago}ヶ月前の記録と現在の記録を静かに観察する
 - 変化を評価しない・良い悪いを判断しない
 - ユーザー自身の言葉をそのまま使う
 - 過去を美化しない・現在を過大評価しない
 
 【出力形式】
 JSONのみで返す。前置き不要。Markdownなし。
-{{"observation": "観察テキスト（1〜2文）", "question": "答えを求めない問い（1文）"}}"""
+{{"observation": "観察テキスト（1〜2文）", "question": "答えを求めない問い（1文）"}}""",
+    )
 
     past_text = _fmt_logs(past_logs) if past_logs else "（記録なし）"
     current_text = _fmt_logs(current_logs) if current_logs else "（記録なし）"
@@ -528,10 +551,9 @@ JSONのみで返す。前置き不要。Markdownなし。
 def generate_video_insight(video, logs):
     has_logs = bool(logs and logs.strip())
 
-    system_prompt = LANTERN_IDENTITY + """
-
-【この観察の指針】
-投稿された1本の動画と、その前後の活動記録を照合して観察する。
+    system_prompt = lantern_prompt(
+        "この観察の指針",
+        """投稿された1本の動画と、その前後の活動記録を照合して観察する。
 再生回数・高評価数で動画の価値を評価しない。事実として伝えることはよい。
 
 【記録がある場合の良い例】
@@ -545,9 +567,9 @@ def generate_video_insight(video, logs):
 
 【記録がない場合の良い例】
 「カバー曲を投稿されていた時期の動画です。」
-「2023年初頭に投稿された動画です。」
-
-200文字以内。丁寧体。"""
+「2023年初頭に投稿された動画です。」""",
+        "200文字以内。丁寧体。",
+    )
 
     if has_logs:
         user_message = f"""動画情報：
@@ -583,10 +605,9 @@ def generate_milestone_reflection(logs, days):
     """days 日間の記録を観察して節目の振り返りを生成する。"""
     import json as _json, re as _re
 
-    system_prompt = LANTERN_IDENTITY + f"""
-
-【節目の振り返りの原則】
-- {days}日間の記録を静かに観察する
+    system_prompt = lantern_prompt(
+        "この振り返りの指針",
+        f"""- {days}日間の記録を静かに観察する
 - 継続を称えない・評価しない
 - ユーザー自身の言葉をそのまま使う
 - 事実とパターンを観察して伝える
@@ -597,7 +618,8 @@ JSONのみで返す。前置き・Markdownなし。
 {{"observation": "観察テキスト（1〜2文）", "question": "答えを求めない問い（1文）"}}
 
 【禁止】
-「{days}日間、よく続けました」などの継続への称賛・「これからも続けましょう」などの励まし"""
+「{days}日間、よく続けました」などの継続への称賛・「これからも続けましょう」などの励まし""",
+    )
 
     logs_text = _fmt_logs(logs) if logs else "（記録なし）"
     user_message = f"""{days}日間の記録：

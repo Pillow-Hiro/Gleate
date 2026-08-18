@@ -288,7 +288,7 @@ Lantern は言葉が中身なので、**言葉だけを見る仕掛けを3つ持
 | もの | 何をするか | いつ |
 |---|---|---|
 | `tests/test_ui_words.py` | 画面の JSX から禁止ワード・「AI」の名乗り・`？` を拾う | 毎回（pytest） |
-| `tests/test_prompts.py` | AI へのプロンプトを見る | 毎回（pytest） |
+| `tests/test_prompts.py` | AI へのプロンプトを見る。**人格が渡っているか**も見る | 毎回（pytest） |
 | `scripts/collect_words.py` | 画面と応答に出る日本語だけを抜き出す（コメントを落とす） | 手で |
 | `.claude/agents/lantern-words.md` | 抜き出したものを AI憲法に照らして読む点検役 | 言葉を足したとき・リリース前 |
 
