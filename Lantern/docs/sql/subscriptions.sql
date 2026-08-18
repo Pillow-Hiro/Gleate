@@ -15,7 +15,8 @@ create table if not exists public.subscriptions (
   -- active / trialing / in_grace_period の3つ。
   status text not null,
 
-  -- 買った商品（lantern.monthly / lantern.yearly）。
+  -- 買った商品（lantern_plus_monthly / lantern_plus_yearly）。
+  -- 名前の決まりは docs/REVENUECAT.md。
   -- どちらで入ったかは price を出すときに要る。
   product_id text,
 
