@@ -47,7 +47,7 @@ export default function Reset() {
 
   async function submit() {
     if (password.length < 6) {
-      setError('パスワードは6文字以上で設定してください')
+      setError('パスワードは6文字以上で設定してください。')
       return
     }
     setLoading(true)

@@ -148,8 +148,8 @@ export default function Home() {
         ) : logs.length === 0 ? (
           <View className="items-center py-16">
             <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
-            <Text className="text-body-md text-on-surface-variant">まだ記録がありません</Text>
-            <Text className="text-label-md text-outline mt-1.5">「書く」から残せます</Text>
+            <Text className="text-body-md text-on-surface-variant">まだ記録がありません。</Text>
+            <Text className="text-label-md text-outline mt-1.5">「書く」から残せます。</Text>
           </View>
         ) : (
           <View className="gap-4">

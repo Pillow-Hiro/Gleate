@@ -327,10 +327,15 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
         onPhoto={pickPhoto}
         onFile={pickFile}
+        // **`？` を使わない**（2026-08-18）。答えを求めない問いは `。` で
+        // 終える。`？` は答えを迫る形で、原則3「問いには正解を求めない。
+        // ユーザーが答えなくてもいい」に反する。差し込まれる方の問い
+        // （`modules/questions/data.py` 全50問）はもともと全部 `。` で、
+        // **ここだけが違う声で聞いていた。**
         placeholder={
           question && isToday
             ? question
-            : `${isToday ? '今日' : 'この日'}どんなことをしましたか？`
+            : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
         }
       />
       {/* **まだ開いていない欄をチップで出す。**

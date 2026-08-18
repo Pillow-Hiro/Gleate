@@ -68,9 +68,9 @@ class TestFmtLogs:
         result = _fmt_logs([{"date": "2026-07-28", "created": "曲を書いた"}])
         assert result == "\n2026-07-28: 曲を書いた"
 
-    def test_楽しかったことがあれば添える(self):
+    def test_よかったことがあれば添える(self):
         result = _fmt_logs([{"date": "2026-07-28", "created": "曲を書いた", "enjoyable": "静かな朝"}])
-        assert "（楽しかったこと: 静かな朝）" in result
+        assert "（よかったこと: 静かな朝）" in result
 
     def test_困ったことがあれば添える(self):
         result = _fmt_logs([{"date": "2026-07-28", "created": "曲", "struggled": "サビ"}])
@@ -78,7 +78,7 @@ class TestFmtLogs:
 
     def test_空の項目は添えない(self):
         result = _fmt_logs([{"date": "2026-07-28", "created": "曲", "enjoyable": "", "struggled": ""}])
-        assert "楽しかったこと" not in result
+        assert "よかったこと" not in result
         assert "困ったこと" not in result
 
     def test_createdがなくても落ちない(self):

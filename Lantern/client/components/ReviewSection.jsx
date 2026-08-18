@@ -105,7 +105,7 @@ export default function ReviewSection({ title, type, description }) {
           disabled={loading}
           className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-aux text-forest">{loading ? '生成中...' : '振り返る'}</Text>
+          <Text className="text-aux text-forest">{loading ? '読んでいます...' : '振り返る'}</Text>
         </Pressable>
       </View>
 
@@ -130,17 +130,28 @@ export default function ReviewSection({ title, type, description }) {
         </View>
       ) : null}
 
+      {/* **「気づきを届けます」と言わない**（2026-08-18）。
+          気づきは利用者のもので、Lantern が届けるのは並べ直した記録まで。
+          AI憲法の中核原則は「①並べる ②差分を出す」までを AI の仕事とし、
+          **③意味づけはユーザーだけが行う**と定めている。
+          プロンプト側は「観察」で通っていたのに、
+          ボタンの説明だけが③に踏み込んでいた。 */}
       {!loading && restored && patterns === null ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
           <Text className="text-body text-ink-faint text-center">
-            「振り返る」を押すと、Lanternが記録から気づきを届けます
+            「振り返る」を押すと、Lanternが記録を並べます。
           </Text>
         </View>
       ) : null}
 
+      {/* **未来を約束しない**（2026-08-18）。
+          「記録が増えると、パターンが見えてきます。」と書いていた。
+          禁止ワードの「きっと〇〇できます」と同じ形で、
+          **空の画面が「もっと書け」と押していた。**
+          いま無いという事実だけを言う。 */}
       {!loading && isEmpty ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
-          <Text className="text-body text-ink-faint text-center">記録が増えると、パターンが見えてきます。</Text>
+          <Text className="text-body text-ink-faint text-center">まだ並べられるほどの記録がありません。</Text>
         </View>
       ) : null}
     </View>

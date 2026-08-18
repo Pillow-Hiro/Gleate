@@ -88,7 +88,7 @@ export default function TimelineSection({ logs = [] }) {
           disabled={loading}
           className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-aux text-forest">{loading ? '観察中...' : '振り返る'}</Text>
+          <Text className="text-aux text-forest">{loading ? '読んでいます...' : '振り返る'}</Text>
         </Pressable>
       </View>
 

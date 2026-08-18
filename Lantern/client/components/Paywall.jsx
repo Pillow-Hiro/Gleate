@@ -88,7 +88,7 @@ export default function Paywall({ message, onClose, onPurchased }) {
     <View className="bg-surface-lowest rounded-lg px-5 py-6 shadow-bloom gap-5">
       <View className="gap-2">
         <Text className="font-strong text-headline-md text-on-surface">
-          積み重ねを掘る
+          記録を並べ直す
         </Text>
         <Text className="text-body-md text-on-surface-variant leading-relaxed">
           {message}

@@ -7,18 +7,18 @@
 // 該当しないものは元の文をそのまま返す。握り潰すと、
 // 未知の失敗のときに画面が無反応に見える。
 const RULES = [
-  ['Invalid login credentials', 'メールアドレスまたはパスワードが正しくありません'],
-  ['User already registered', 'このメールアドレスはすでに登録されています'],
-  ['Password should be at least', 'パスワードは6文字以上で設定してください'],
-  ['Unable to validate email address', 'メールアドレスの形を確認してください'],
-  ['Email rate limit exceeded', '短い間に送りすぎました。しばらく待ってからお試しください'],
-  ['For security purposes', '短い間に送りすぎました。しばらく待ってからお試しください'],
-  ['Email not confirmed', 'メールの確認がまだ済んでいません。届いたメールのリンクを開いてください'],
+  ['Invalid login credentials', 'メールアドレスまたはパスワードが正しくありません。'],
+  ['User already registered', 'このメールアドレスはすでに登録されています。'],
+  ['Password should be at least', 'パスワードは6文字以上で設定してください。'],
+  ['Unable to validate email address', 'メールアドレスの形を確認してください。'],
+  ['Email rate limit exceeded', '続けて送られました。少し時間をおいてください。'],
+  ['For security purposes', '続けて送られました。少し時間をおいてください。'],
+  ['Email not confirmed', 'メールの確認がまだ済んでいません。届いたメールのリンクを開いてください。'],
 ]
 
 export function authErrorMessage(err) {
   const raw = (err && err.message) || ''
-  if (!raw) return 'エラーが発生しました'
+  if (!raw) return 'うまくいきませんでした。もう一度試せます。'
   for (const [needle, message] of RULES) {
     if (raw.includes(needle)) return message
   }

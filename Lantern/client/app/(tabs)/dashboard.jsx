@@ -96,17 +96,25 @@ export default function Dashboard() {
           <Text className="font-display text-headline-md text-ink">分析</Text>
           {/* 案の "Recent writing habits." に当たる一文。
               **「振り返り」とは書かない。** それは「記録」タブの名前で、
-              ここは俯瞰する場所。 */}
+              ここは俯瞰する場所。
+
+              **「歩み」を使わない**（2026-08-18）。禁止ワードの
+              「一歩」「前進」と同じ比喩で、記録を進み具合として
+              評価する枠になる。起きた事だけを言う。 */}
           <Text className="text-body-md text-on-surface-variant mt-1">
-            これまでの歩みと、外に届いた形跡。
+            記録が残った日と、外に出したもの。
           </Text>
         </View>
 
         {/* 継続の可視化。**数字を並べるが、良し悪しを添えない。**
-            「今月は先月より少ない」と読める並べ方をしない。 */}
+            「今月は先月より少ない」と読める並べ方をしない。
+
+            **「続いている日」から言い換えた**（2026-08-18）。
+            現在進行の言い方は「まだ続いている＝切らすな」と読める。
+            起きた事実として過去形で置く。数字は同じ。 */}
         <View className="flex-row gap-4">
           <Stat label="記録した日" value={logs.length} unit="日" />
-          <Stat label="続いている日" value={calcStreak(logs)} unit="日" />
+          <Stat label="続けて記録した日" value={calcStreak(logs)} unit="日" />
         </View>
 
         {/* 外の世界に届いた形跡。

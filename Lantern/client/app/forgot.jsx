@@ -30,7 +30,7 @@ export default function Forgot() {
   async function send() {
     const address = email.trim()
     if (!address) {
-      setError('メールアドレスを入れてください')
+      setError('メールアドレスを入れてください。')
       return
     }
     setLoading(true)

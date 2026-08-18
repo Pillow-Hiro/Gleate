@@ -36,8 +36,10 @@ export async function readMaybePaywall(res) {
   return { paidRequired: isPaidRequired(res.status, body), body }
 }
 
-/** 断られたときに画面へ出す一文。**煽らない** */
-export const PAYWALL_FALLBACK = 'この分析はプランに含まれています。'
+// 断られたときに画面へ出す一文。**煽らない**が、
+// **断られたことは伝わること。** `modules/plan.py` と同じ文にしてある
+// （サーバーが本文を返せなかったときだけここが出る）。
+export const PAYWALL_FALLBACK = 'この分析は有料プランで見られます。'
 
 export function paywallMessage(body) {
   const m = body?.message

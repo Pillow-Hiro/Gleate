@@ -19,8 +19,8 @@ describe('1日ぶん', () => {
     const md = logToMarkdown(day)
     expect(md).toContain('### やったこと')
     // **空の欄で見出しを作らない。** 書けなかった日のように見える
-    expect(md).not.toContain('### 楽しかったこと')
-    expect(md).not.toContain('### つまずいたこと')
+    expect(md).not.toContain('### よかったこと')
+    expect(md).not.toContain('### 困ったこと')
     expect(md).not.toContain('### 次にやること')
   })
 
@@ -28,7 +28,7 @@ describe('1日ぶん', () => {
     const md = logToMarkdown({
       ...day, enjoyable: 'あ', struggled: 'い', next: 'う',
     })
-    for (const label of ['やったこと', '楽しかったこと', 'つまずいたこと', '次にやること']) {
+    for (const label of ['やったこと', 'よかったこと', '困ったこと', '次にやること']) {
       expect(md).toContain(`### ${label}`)
     }
   })

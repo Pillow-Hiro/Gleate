@@ -43,7 +43,7 @@ export default function AuthForm({
   function handleSubmit() {
     const trimmed = email.trim()
     if (!trimmed || !password) {
-      setBlank('メールアドレスとパスワードを入れてください')
+      setBlank('メールアドレスとパスワードを入れてください。')
       return
     }
     setBlank('')

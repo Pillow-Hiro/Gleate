@@ -55,7 +55,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。今日の灯りは持たない |
 | `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋3枚**（`HomeCard`）|
 | `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 ＋ 振り返りのタブ |
-| `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続いている日 ＋ YouTube / Twitch |
+| `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続けて記録した日 ＋ YouTube / Twitch |
 | `(tabs)/settings.jsx` | `/settings` | Settings |
 | `login.jsx` | `/login` | ログインだけ。入力欄は `AuthForm.jsx` |
 | `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
@@ -278,6 +278,23 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 **手で直さないこと。** `tests/test_docs.py` の `TestPrivacyPage` と
 `TestLegalPages` が一致を検査する。原本を直したら作り直す。
+
+---
+
+## 9. 言葉を見張るもの
+
+Lantern は言葉が中身なので、**言葉だけを見る仕掛けを3つ持っている。**
+
+| もの | 何をするか | いつ |
+|---|---|---|
+| `tests/test_ui_words.py` | 画面の JSX から禁止ワード・「AI」の名乗り・`？` を拾う | 毎回（pytest） |
+| `tests/test_prompts.py` | AI へのプロンプトを見る | 毎回（pytest） |
+| `scripts/collect_words.py` | 画面と応答に出る日本語だけを抜き出す（コメントを落とす） | 手で |
+| `.claude/agents/lantern-words.md` | 抜き出したものを AI憲法に照らして読む点検役 | 言葉を足したとき・リリース前 |
+
+**機械は字面しか見ない。** 「歩み」と「一歩」のような言い換えは
+点検役の側で捕まえる。逆に、点検役は毎回は走らないので、
+見つかった型は `test_ui_words.py` に落として固定する。
 
 ---
 

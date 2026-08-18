@@ -145,9 +145,18 @@ export default function Login() {
                 <LanternMark size={30} />
               </View>
               <Text className="font-latin text-display text-ink">Lantern</Text>
-              {/* この一文は CLAUDE.md の書き出しと食い違って見えるが、
-                  2026-08-06 に作者が残すと決めた。直さないこと。 */}
-              <Text className="text-body-md text-on-surface-variant mt-2">創作の道を照らす、AI伴走者</Text>
+              {/* **「照らす」のは Lantern ではない。**
+                  2026-08-06 に「創作の道を照らす、AI伴走者」と置き、
+                  食い違いを承知で残すと決めていた。2026-08-18 の言葉の精査で
+                  差し戻した。理由は、この一文が起動画面の
+                  「灯りは、外から来るのではない。」（`components/SplashScreen.jsx`）
+                  と**同じ写真の上で連続して読まれる**ため。
+                  並べて出る2文が逆を向いていると、どちらも効かない。
+
+                  「伴走」は AI 側の自称として残っている
+                  （`modules/ai.py` の `LANTERN_IDENTITY` が「静かな伴走者」）。
+                  「AI」と名乗るのはやめた。画面では Lantern で通す。 */}
+              <Text className="text-body-md text-on-surface-variant mt-2">創作の記録に、静かに伴走する。</Text>
             </View>
 
             <AuthForm

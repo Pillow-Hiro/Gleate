@@ -293,10 +293,14 @@ export default function TwitchPanel() {
               画面の他の場所（今日の灯り・今週の発見）も「AI」とは書いていない。
 
               **位置も上げた。** 一覧の下に置いていたので、
-              スクロールし切らないと存在に気づけなかった。 */}
+              スクロールし切らないと存在に気づけなかった。
+              **「見つけた」から「観察した」へ**（2026-08-18）。
+              発見は解釈で、AI憲法の③意味づけに踏み込む。
+              同じ機能のプロンプトは全編「観察」で通っている
+              （`modules/ai.py` の【この観察の指針】）。見出しだけが強かった。 */}
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="font-strong text-label-md text-primary">Lanternが見つけたこと</Text>
+              <Text className="font-strong text-label-md text-primary">Lanternが観察したこと</Text>
               <Pressable
                 onPress={handleInsight}
                 disabled={insightLoading || !streams?.length}

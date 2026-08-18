@@ -287,7 +287,7 @@ export default function Journal() {
                 />
                 {!loading && logs.length === 0 ? (
                   <Text className="text-[11px] text-ink-faint text-center mt-3">
-                    日付をタップすると、その日の記録を開けます
+                    日付をタップすると、その日の記録を開けます。
                   </Text>
                 ) : null}
               </View>
@@ -303,7 +303,7 @@ export default function Journal() {
                 <Text className="text-label-md text-outline text-center mt-3">
                   {selectedDate === todayStr()
                     ? '今日の記録はまだありません。「書く」から残せます。'
-                    : 'この日の記録はありません'}
+                    : 'この日の記録はありません。'}
                 </Text>
               ) : null}
             </View>
@@ -318,17 +318,17 @@ export default function Journal() {
             ) : logs.length === 0 ? (
               <View className="items-center py-16">
                 <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
-                <Text className="text-body text-ink-soft">まだ記録がありません</Text>
-                <Text className="text-aux text-ink-faint mt-1.5">「書く」から残せます</Text>
+                <Text className="text-body text-ink-soft">まだ記録がありません。</Text>
+                <Text className="text-aux text-ink-faint mt-1.5">「書く」から残せます。</Text>
               </View>
             ) : filtered.length === 0 ? (
               <View className="items-center py-12">
                 <Text className="text-body-md text-outline">
                   {q
-                    ? `「${search.trim()}」の記録は見つかりませんでした`
+                    ? `「${search.trim()}」の記録は見つかりませんでした。`
                     : filter === 'favorite'
-                      ? 'お気に入りはまだありません'
-                      : 'この年の記録はありません'}
+                      ? 'お気に入りはまだありません。'
+                      : 'この年の記録はありません。'}
                 </Text>
               </View>
             ) : (

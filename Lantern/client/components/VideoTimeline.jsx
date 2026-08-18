@@ -119,7 +119,7 @@ export default function VideoTimeline({ videos }) {
                 }`}
               >
                 <Text className={`text-[10px] ${s.visible ? 'text-accent' : 'text-ink-faint'}`}>
-                  {s.loading ? '生成中' : 'Lanternに聞く'}
+                  {s.loading ? '読んでいます...' : 'Lanternに聞く'}
                 </Text>
               </Pressable>
             </View>

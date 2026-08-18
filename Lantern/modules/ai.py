@@ -4,7 +4,11 @@ import anthropic
 from modules.logs import get_current_weekly_goal, get_current_monthly_goal
 
 _TIMEOUT_SECONDS = 10
-_TIMEOUT_MESSAGE = "AIの応答に時間がかかっています。少し待ってから再度お試しください。"
+# **画面では「AI」と名乗らない**（2026-08-18）。
+# 他の場所は全部 Lantern を主語にしている（Lanternが観察したこと・
+# Lanternに聞く）のに、ここだけ「AIの応答」と書いていた。
+# 「静かな伴走者」という設定は、名乗り方が混ざると薄くなる。
+_TIMEOUT_MESSAGE = "Lanternの応答に時間がかかっています。少し待ってから、もう一度押せます。"
 
 # ── AI憲法（全プロンプトの基盤） ────────────────────────────────
 LANTERN_IDENTITY = """あなたはLanternというアプリの「静かな伴走者」です。
@@ -175,9 +179,9 @@ def get_ai_response(log_entry, past_logs, goals=None):
 【悪い例（そのまま並べ直しただけ）】
 「App Storeへの配信準備が、今日のことです。」
 　→ 書いてあることを言い換えただけ。何も足していない。
-「ドメインや認証まわりの登録が、詰まったこととして残っています。」
+「ドメインや認証まわりの登録が、困ったこととして残っています。」
 　→ 項目名をなぞっている。記録の中身ではなく、フォームの話になっている。
-「詰まったことが残っています。それだけ向き合っていた時間だったようです。」
+「困ったことが残っています。それだけ向き合っていた時間だったようです。」
 　→ 項目名＋一般論。どの記録にも当てはまる文は、その人の記録ではない。
 
 【良い例（一つを拾って応えている）】
@@ -196,7 +200,7 @@ def get_ai_response(log_entry, past_logs, goals=None):
 
 【詳細（補足）】
 よかったこと: {_plain(log_entry, 'enjoyable', '（未記入）')}
-詰まったこと: {_plain(log_entry, 'struggled', '（未記入）')}
+困ったこと: {_plain(log_entry, 'struggled', '（未記入）')}
 次にやること: {_plain(log_entry, 'next', '（未記入）')}"""
 
     result = call_claude(system_prompt, user_message, max_tokens=200)
@@ -236,7 +240,7 @@ def _fmt_logs(logs):
             continue
         text += f"\n{log['date']}: {_plain(log, 'created')}"
         if log.get("enjoyable"):
-            text += f"（楽しかったこと: {_plain(log, 'enjoyable')}）"
+            text += f"（よかったこと: {_plain(log, 'enjoyable')}）"
         if log.get("struggled"):
             text += f"（困ったこと: {_plain(log, 'struggled')}）"
     return text
@@ -296,7 +300,7 @@ _PATTERNS_SYSTEM = LANTERN_IDENTITY + """
 
 【抽出観点】
 - 記録した時間帯の傾向
-- 楽しかったこと・詰まったことの傾向
+- よかったこと・困ったことの傾向
 - やったことの変化・継続
 
 記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。"""
@@ -347,7 +351,7 @@ def get_daily_quote(yesterday_log=None):
     fields = [
         ("やったこと", _plain(yesterday_log, 'created')),
         ("よかったこと", _plain(yesterday_log, 'enjoyable')),
-        ("詰まったこと", _plain(yesterday_log, 'struggled')),
+        ("困ったこと", _plain(yesterday_log, 'struggled')),
         ("次にやること", _plain(yesterday_log, 'next')),
     ]
     content_lines = [f"{label}: {value}" for label, value in fields if value]
@@ -410,7 +414,9 @@ YouTubeチャンネルの動画一覧から、このクリエイターの創作�
     result = call_claude(system_prompt, user_message, max_tokens=400)
     if result:
         return result.strip()
-    return "動画の軌跡を観察しています。"
+    # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
+    # 返していたが、進行中に読める。来ないものを待たせるのは嘘と同じ。
+    return "いまは観察を届けられませんでした。"
 
 
 def generate_stream_insight(streams):
@@ -458,7 +464,9 @@ def generate_stream_insight(streams):
     result = call_claude(system_prompt, user_message, max_tokens=400)
     if result:
         return result.strip()
-    return "配信の軌跡を観察しています。"
+    # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
+    # 返していたが、進行中に読める。来ないものを待たせるのは嘘と同じ。
+    return "いまは観察を届けられませんでした。"
 
 
 def generate_timeline_reflection(past_logs, current_logs, months_ago):
@@ -531,7 +539,7 @@ def generate_video_insight(video, logs):
 
 【避けること】
 記録フォームの項目名を主語にしない。
-「詰まったことが多く書かれています」は、記録ではなく入力欄の話になっている。
+「困ったことが多く書かれています」は、記録ではなく入力欄の話になっている。
 書かれた言葉そのものを引くか、起きた事実を言う。
 
 【記録がない場合の良い例】
@@ -565,7 +573,9 @@ def generate_video_insight(video, logs):
     result = call_claude(system_prompt, user_message, max_tokens=250)
     if result:
         return result.strip()
-    return "この動画の記録を観察しています。"
+    # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
+    # 返していたが、進行中に読める。来ないものを待たせるのは嘘と同じ。
+    return "いまは観察を届けられませんでした。"
 
 
 def generate_milestone_reflection(logs, days):

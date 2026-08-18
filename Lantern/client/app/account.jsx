@@ -100,7 +100,7 @@ export default function Account() {
   // ここで1枚挟んでも守れない。
   async function changePassword() {
     if (password.length < 6) {
-      setPasswordError('パスワードは6文字以上で設定してください')
+      setPasswordError('パスワードは6文字以上で設定してください。')
       return
     }
     setChanging(true)

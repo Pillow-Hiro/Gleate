@@ -121,7 +121,7 @@ export default function KeywordSection() {
           ))}
         </View>
       ) : (
-        <Text className="text-body-md text-outline">まだ抽出できる言葉がありません。</Text>
+        <Text className="text-body-md text-outline">まだ繰り返し出てくる言葉がありません。</Text>
       )}
     </View>
   )
