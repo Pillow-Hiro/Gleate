@@ -63,6 +63,7 @@ function Field({
   onFile,
   onClose,
   closeLabel,
+  autoFocus,
 }) {
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
@@ -163,8 +164,17 @@ function Field({
           </Pressable>
         ) : null}
       </View>
+      {/* **開いた欄に焦点を移す**（2026-08-18）。
+          チップを押して欄が現れても、焦点が動かないと
+          `automaticallyAdjustKeyboardInsets`（`app/(tabs)/index.jsx`）が
+          働かない。あれは**焦点の当たった欄しか送らない。**
+          3つ開くと下2つがキーボードの下に隠れていた。
+
+          押した人はそこに書くつもりで押しているので、
+          焦点を移すのは見え方の都合だけでなく、順当な動きでもある。 */}
       <TextInput
         ref={inputRef}
+        autoFocus={autoFocus}
         value={value}
         onChangeText={onChange}
         onSelectionChange={handleSelectionChange}
@@ -210,6 +220,11 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     EXTRA_FIELDS.filter(({ key }) => existingLog?.[key]).map(({ key }) => key)
   )
   const [openFields, setOpenFields] = useState(initiallyOpen)
+  // **直前にチップで開いた欄。** その欄にだけ焦点を移す。
+  //
+  // 既に開いている欄（記録を開き直したとき）には移さない。
+  // `autoFocus` は生えたときにしか効かないので、開いた瞬間の1回だけ働く。
+  const [justOpened, setJustOpened] = useState(null)
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
@@ -346,7 +361,10 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           {EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => (
             <Pressable
               key={key}
-              onPress={() => setOpenFields((prev) => new Set(prev).add(key))}
+              onPress={() => {
+                setOpenFields((prev) => new Set(prev).add(key))
+                setJustOpened(key)
+              }}
               className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 min-h-touch justify-center active:opacity-70"
             >
               <Text className="text-label-md text-primary">＋</Text>
@@ -362,6 +380,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           value={form[key]}
           onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
           label={label}
+          autoFocus={justOpened === key}
           // **畳めるようにする**（2026-08-15）。開いたら戻せなかった。
           //
           // 中身があるまま畳むと、**見えていない文が保存される。**
@@ -374,6 +393,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
               next.delete(key)
               return next
             })
+            // 覚えを捨てる。捨てないと、開き直しても生え直さない扱いになる
+            setJustOpened((prev) => (prev === key ? null : prev))
           }}
           closeLabel={form[key] ? '消して閉じる' : '閉じる'}
         />
