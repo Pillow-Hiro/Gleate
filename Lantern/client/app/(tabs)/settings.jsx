@@ -17,6 +17,7 @@ import { todayStr } from '../../lib/date'
 import { openPrivacy, openTerms, openTokushoho } from '../../lib/openLegal'
 import { isAvailable as canPurchase, restore } from '../../lib/purchases'
 import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
+import { clearSeen as replayOnboarding } from '../../lib/onboardingPref'
 import { useRouter } from 'expo-router'
 
 // 設定。**道具の手入れをする場所。**
@@ -261,12 +262,19 @@ export default function Settings() {
               （毎日のきっかけ・知らせる時刻）で揃えている。
               **切っても消えるわけではない**ので、
               入と切が何を指すのかは下の一文で言う。 */}
-          <Row label="起動画面" isLast>
+          <Row label="起動画面">
             <Switch
               value={splashAlways}
               onValueChange={(v) => { setSplashAlways(v); saveAlways(v) }}
               trackColor={{ true: '#FBB03B' }}
             />
+          </Row>
+          {/* **初回の案内をもう一度。**（2026-08-20）
+              一度きりの画面なので、確かめるにはアプリを入れ直すしかなかった。
+              押すとその場で出る（`lib/onboardingPref.js` が
+              `app/_layout.jsx` へ合図を送る）。 */}
+          <Row label="初回の案内" onPress={replayOnboarding} isLast>
+            <Text className="text-label-md text-primary">もう一度見る</Text>
           </Row>
         </Group>
 

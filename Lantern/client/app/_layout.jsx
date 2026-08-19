@@ -14,7 +14,11 @@ import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
 import Onboarding from '../components/Onboarding'
-import { hasSeen as hasSeenOnboarding, markSeen as markOnboardingSeen } from '../lib/onboardingPref'
+import {
+  hasSeen as hasSeenOnboarding,
+  markSeen as markOnboardingSeen,
+  onReset as onOnboardingReset,
+} from '../lib/onboardingPref'
 import { loadAlways } from '../lib/splashPref'
 import { markShowing, markSkipped } from '../lib/splashHandoff'
 import { configure as configurePurchases } from '../lib/purchases'
@@ -98,6 +102,9 @@ function RootNavigator() {
     })
     return () => { cancelled = true }
   }, [])
+
+  // 設定の「もう一度見る」。**その場で出す**（開き直させない）
+  useEffect(() => onOnboardingReset(() => setShowOnboarding(true)), [])
 
   function handleOnboardingDone() {
     setShowOnboarding(false)
