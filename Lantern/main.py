@@ -33,7 +33,7 @@ from functools import wraps
 
 from modules.auth import require_auth
 from modules.ratelimit import check_and_count
-from modules.plan import daily_limit, is_paid, require_paid
+from modules.plan import daily_limit, is_paid, paid_required_response, require_paid
 # 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
 # JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
 from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
@@ -469,10 +469,7 @@ def generate_review():
     # 線は「今日と今週のことは無料。積み重ねを掘るのは有料」
     # （`modules/plan.py`）。月次はひと月ぶんを横断して読むので有料側。
     if review_type != "weekly" and not is_paid(g.user_id):
-        return jsonify({
-            "error": "paid_required",
-            "message": "月次の振り返りはプランに含まれています。",
-        }), 402
+        return paid_required_response()
 
     # `@require_ai_budget` を外して、**断ったあとで数える**。
     # デコレータのままだと、月次を押して断られるたびに

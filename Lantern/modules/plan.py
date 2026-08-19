@@ -118,6 +118,30 @@ def daily_limit(user_id):
     return PAID_DAILY_AI if is_paid(user_id) else FREE_DAILY_AI
 
 
+# 断るときの一文。**ここが唯一の定義。**
+#
+# 2026-08-19 に1か所へまとめた。それまで `require_paid` と
+# `main.py` の月次の振り返りに別々に書いてあり、**片方だけ直っていた。**
+# 2026-08-18 の言葉の精査で `require_paid` の側は
+# 「プランに含まれています」→「有料プランで見られます」に直したが、
+# もう片方が古いまま残っていた。
+#
+# **煽らない。** 何がどちら側にあるかだけを言う。急かす言葉と
+# 値引きの言葉は使わない（`tests/test_plan.py::Test断り方` が見張る）。
+# ただし**断られたことは伝わること。**「含まれています」は
+# 無料の人が読むと「使える」に読め、意味がほぼ反転していた。
+PAID_REQUIRED_MESSAGE = "この分析は有料プランで見られます。"
+
+
+def paid_required_response():
+    """402 の応答。**経路の中で分ける場合もこれを使う。**
+
+    週次と月次のように**同じ経路が無料と有料を兼ねている**ときは
+    デコレータで分けられない。そのとき応答を手で組むと文面がずれる。
+    """
+    return jsonify({"error": "paid_required", "message": PAID_REQUIRED_MESSAGE}), 402
+
+
 def require_paid(f):
     """有料プランの経路に付ける。**認証の後ろに置くこと**（`g.user_id` が要る）。
 
@@ -127,18 +151,6 @@ def require_paid(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not is_paid(g.user_id):
-            return jsonify({
-                "error": "paid_required",
-                # **煽らない。** 何がどちら側にあるかだけを言う。
-                # 急かす言葉と値引きの言葉は使わない
-                # （`tests/test_plan.py::Test断り方` が見張っている）
-                #
-                # **2026-08-18 に言い換えた。** それまでは
-                # 「この分析はプランに含まれています。」だった。
-                # 煽らない配慮が効きすぎて、**断られたことが伝わらない。**
-                # 無料の人が読むと「含まれている＝使える」と読め、
-                # 意味がほぼ反転していた。丁寧と不親切は違う。
-                "message": "この分析は有料プランで見られます。",
-            }), 402
+            return paid_required_response()
         return f(*args, **kwargs)
     return decorated
