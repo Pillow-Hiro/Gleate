@@ -11,6 +11,17 @@ import RecordForm from '../../components/RecordForm'
 import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { keyboardHeadroom } from '../../lib/keyboardMath'
+
+// キーボードが出ているとき、下に余分に空ける高さ。
+//
+// **装飾の列（52px）だけでは足りなかった**（2026-08-20）。
+// `automaticallyAdjustKeyboardInsets` は焦点の当たった欄の
+// **下端**をキーボードのすぐ上に合わせる。欄が2〜3行あると、
+// 書いている行が画面のいちばん下に貼り付いて読みにくい。
+//
+// 1行ぶん（32px）＋余白を足して、書いている場所が
+// キーボードから離れるようにする。
+const KEYBOARD_GAP = TOOLBAR_HEIGHT + 96
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 
@@ -97,7 +108,7 @@ export default function Home() {
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_HEIGHT : 0),
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? KEYBOARD_GAP : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

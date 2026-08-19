@@ -3,7 +3,6 @@ import { Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
-import RichText from './RichText'
 import WebEditor from './WebEditor'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
@@ -115,38 +114,36 @@ function Field({
   // **主欄は枠を持たない。**（2026-08-14・デザイン案 `3_write`）
   // 書くところが「入力欄」ではなく「紙」に見えるようにする。
   if (bare) {
-    // **触れただけでキーボードが開かないようにする**（2026-08-14）。
+    // **読む面と書く面を1つにした**（2026-08-20）。
     //
-    // 主欄は画面の大半を占める。そこに素の `TextInput` を敷くと、
-    // スクロールのために指を置いただけで焦点が入り、キーボードが上がる。
+    // それまでは、書いていないあいだ `Text` を置き、押されたら
+    // `WebEditor` に差し替えていた（素の `TextInput` を敷くと
+    // スクロールのために指を置いただけで焦点が入るため）。
     //
-    // 書いていないあいだは読む面を置き、押されたら入力欄に差し替える。
-    // 装飾は `RichEditor` が書いている最中にも見せる。
-    if (!editing) {
-      return (
-        <Pressable
-          onPress={() => setEditing(true)}
-          accessibilityLabel={placeholder}
-          style={{ minHeight: rows * 32 + 16 }}
-          className="justify-start"
-        >
-          {value ? (
-            <RichText text={value} className="text-body-lg text-on-surface" />
-          ) : (
-            <Text className="text-body-lg text-outline">{placeholder}</Text>
-          )}
-        </Pressable>
-      )
-    }
-
+    // 作者から2つ報告があった。**押すと一瞬消えて出直す**、
+    // **押す前と後で字の大きさが違う。** どちらも同じ原因で、
+    // 別々の部品が同じ文を描いていたことによる。
+    //
+    // - ちらつき … 差し替えのたびに WebView が生え直していた
+    // - 字の大きさ … アプリの本文は Noto Sans JP（`lib/fonts.js` が
+    //   `expo-font` で読む）だが、**WebView からは見えない。**
+    //   中では `-apple-system` に落ちるので、同じ 19px でも
+    //   和文の見た目の大きさが変わる
+    //
+    // 書体を合わせる道は無い（WebView に同じ書体を渡すには
+    // 5MB の font を data URI で埋める必要がある）。
+    // **描く部品を1つにすれば、揃える必要がなくなる。**
+    //
+    // WebView は指を置いただけでは焦点が入らない（押したときだけ）。
+    // 差し替えをやめても、元の心配は起きない。
     return (
       <WebEditor
         ref={editorRef}
         value={value}
         onChange={onChange}
-        onState={(s) => setActive({ bold: s.bold, italic: s.italic, bullet: s.bullet })}
+        onFocus={() => setEditing(true)}
         onBlur={() => setEditing(false)}
-        autoFocus
+        onState={(s) => setActive({ bold: s.bold, italic: s.italic, bullet: s.bullet })}
         isDark={isDark}
         minHeight={rows * 32 + 16}
         placeholder={placeholder}

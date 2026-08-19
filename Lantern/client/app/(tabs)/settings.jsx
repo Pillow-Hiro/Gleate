@@ -102,7 +102,6 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
   const [notifySetting, setNotifySetting] = useState({ enabled: false, hour: 21, minute: 0 })
-  const [notifyBlocked, setNotifyBlocked] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
   // 既定と同じ値で始める。ここだけ true にしていると、
   // 読み込みが終わるまでの一瞬だけ入って見える
@@ -172,12 +171,10 @@ export default function Settings() {
     if (next.enabled && !notifySetting.enabled) {
       // **「入」にしようとしたときにだけ許可を求める。**
       // 起動直後に求めると、何のための通知か分からないまま拒否される
+      // **断られたら黙って戻す。** 端末の設定を開く導線は置かない
+      // （追いかけない）。2026-08-20 に補足の一文も消した。
       const ok = await notify.requestPermission()
-      if (!ok) {
-        setNotifyBlocked(true)
-        return
-      }
-      setNotifyBlocked(false)
+      if (!ok) return
     }
     setNotifySetting(next)
     await notify.saveSetting(next)
@@ -273,19 +270,6 @@ export default function Settings() {
           </Row>
         </Group>
 
-        {/* **切っても消えない。** 入と切がそれぞれ何になるのかを書く。
-            switch の行の名前だけでは「切ると出なくなる」に読めてしまう */}
-        <Text className="text-label-md text-outline leading-relaxed">
-          入にすると、開くたびに出ます。切ると1日に1回です。
-        </Text>
-
-        {/* **端末の設定を開く導線は置かない。** 断った人を追いかけない。
-            この一文は「毎日のきっかけ」の話なので、一般の区画から離さない */}
-        {notifyBlocked ? (
-          <Text className="text-label-md text-outline leading-relaxed">
-            端末の設定で Lantern の通知が許可されていません。
-          </Text>
-        ) : null}
 
         {/* **外観。** 2026-08-17 に「端末に合わせる」を足して3つになった。
             それまではライト固定で、端末を夜モードにしていても
@@ -339,9 +323,6 @@ export default function Settings() {
             isLast
           />
         </Group>
-        <Text className="text-label-md text-outline leading-relaxed">
-          本文・写真・添えたファイルをまとめます。読む用の Markdown も入ります。
-        </Text>
         {exportError ? <Text className="text-label-md text-error">{exportError}</Text> : null}
 
         {/* **3つとも外のページを開く。** アプリの中に複製を作らない。
