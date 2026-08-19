@@ -85,9 +85,17 @@ export default function Paywall({ message, onClose, onPurchased }) {
   }
 
   return (
-    <View className="bg-surface-lowest rounded-lg px-5 py-6 shadow-bloom gap-5">
-      <View className="gap-2">
-        <Text className="font-strong text-headline-md text-on-surface">
+    <View className="bg-surface-lowest rounded-lg px-5 py-5 shadow-bloom gap-4">
+      {/* **詰めた**（2026-08-20）。作者から「大きくて見にくい」。
+          Apple 3.1.2 が求める6つ（名前・期間・価格・自動更新の説明・
+          規約とポリシーへの導線・復元）は落とさず、行数だけ減らす。
+
+          - 含まれるもの4行 → 1行（中黒で並べる）
+          - 無料の範囲の一文を短く
+          - 自動更新の説明を2文に
+          - 余白を py-6/gap-5 → py-5/gap-4 */}
+      <View className="gap-1.5">
+        <Text className="font-strong text-body-lg text-on-surface">
           記録を並べ直す
         </Text>
         <Text className="text-body-md text-on-surface-variant leading-relaxed">
@@ -95,37 +103,25 @@ export default function Paywall({ message, onClose, onPurchased }) {
         </Text>
       </View>
 
-      {/* 1. 何が含まれるか。**無料側も書く。**
+      {/* 何が含まれるか。**無料側も書く。**
           何を失うのかではなく、どちらに何があるのかを見せる */}
-      <View className="gap-2">
-        <Text className="text-label-md text-outline">プランに含まれるもの</Text>
-        {[
-          '月ごとの振り返り',
-          '過去との対話',
-          '頻出キーワード',
-          'YouTube / Twitch のまとめ',
-        ].map((line) => (
-          <Text key={line} className="text-body-md text-on-surface">
-            {line}
-          </Text>
-        ))}
-        <Text className="text-label-md text-outline leading-relaxed mt-1">
-          記録・写真・アイデア・検索・書き出し、今日の灯りと今週の発見は
-          これまでどおり無料です。
+      <View className="gap-1">
+        <Text className="text-body-md text-on-surface leading-relaxed">
+          月ごとの振り返り・過去との対話・頻出キーワード・YouTube / Twitch のまとめ
+        </Text>
+        <Text className="text-label-md text-outline leading-relaxed">
+          記録・写真・検索・書き出し、今日の灯りと今週の発見は無料のままです。
         </Text>
       </View>
 
-      {/* 2〜3. 期間と価格。**ストアが返した文字列をそのまま出す** */}
-      {!isAvailable() ? (
+      {/* 期間と価格。**ストアが返した文字列をそのまま出す。**
+          自分で組み立てない（通貨記号・桁区切り・税の扱いが国ごとに違う） */}
+      {!isAvailable() || (packages !== null && packages.length === 0) ? (
         <Text className="text-body-md text-on-surface-variant">
           いまは購入の準備中です。
         </Text>
       ) : packages === null ? (
         <ActivityIndicator />
-      ) : packages.length === 0 ? (
-        <Text className="text-body-md text-on-surface-variant">
-          いまは購入の準備中です。
-        </Text>
       ) : (
         <View className="gap-2">
           {packages.map((pkg) => (
@@ -133,7 +129,7 @@ export default function Paywall({ message, onClose, onPurchased }) {
               key={pkg.id}
               onPress={() => handleBuy(pkg)}
               disabled={busy}
-              className="bg-lantern-glow rounded-full py-4 px-6 items-center active:opacity-80"
+              className="bg-lantern-glow rounded-full py-3.5 px-6 items-center active:opacity-80"
             >
               <Text className="font-strong text-body-md text-on-lantern">
                 {periodOf(pkg)}　{pkg.price}
@@ -147,26 +143,27 @@ export default function Paywall({ message, onClose, onPurchased }) {
         <Text className="text-label-md text-on-surface-variant">{notice}</Text>
       ) : null}
 
-      {/* 4. 自動更新の説明。**審査で最初に見られる一文** */}
+      {/* 自動更新の説明。**審査で最初に見られる。** 短くしても
+          「解約しない限り更新される」「どこに請求される」「どこで解約する」
+          の3つは残す */}
       <Text className="text-label-sm text-outline leading-relaxed">
-        購読は自動更新されます。期間終了の24時間前までに解約しない限り更新され、
-        更新のタイミングで App Store アカウントに請求されます。
-        解約は iOS の「設定 › Apple ID › サブスクリプション」から行えます。
+        解約しない限り自動更新され、App Store アカウントに請求されます。
+        解約は「設定 › Apple ID › サブスクリプション」から。
       </Text>
 
-      {/* 5〜6. 規約・ポリシー・復元 */}
-      <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
-        <Pressable onPress={handleRestore} disabled={busy} className="min-h-touch justify-center">
+      {/* 規約・ポリシー・復元。**Apple が求める導線** */}
+      <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
+        <Pressable onPress={handleRestore} disabled={busy} className="py-1">
           <Text className="text-label-md text-secondary">購入を復元</Text>
         </Pressable>
-        <Pressable onPress={openTerms} className="min-h-touch justify-center">
+        <Pressable onPress={openTerms} className="py-1">
           <Text className="text-label-md text-secondary">利用規約</Text>
         </Pressable>
-        <Pressable onPress={openPrivacy} className="min-h-touch justify-center">
-          <Text className="text-label-md text-secondary">プライバシーポリシー</Text>
+        <Pressable onPress={openPrivacy} className="py-1">
+          <Text className="text-label-md text-secondary">プライバシー</Text>
         </Pressable>
-        <Pressable onPress={openTokushoho} className="min-h-touch justify-center">
-          <Text className="text-label-md text-secondary">特定商取引法に基づく表記</Text>
+        <Pressable onPress={openTokushoho} className="py-1">
+          <Text className="text-label-md text-secondary">特商法</Text>
         </Pressable>
       </View>
 

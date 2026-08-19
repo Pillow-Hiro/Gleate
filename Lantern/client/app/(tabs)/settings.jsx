@@ -296,7 +296,7 @@ export default function Settings() {
             売る場所ではない。買うのは断られた画面から
             （`components/Paywall.jsx`）。 */}
         <Group title="プラン">
-          <Row label="いまのプラン" value={planLabel} isLast={!canPurchase()} />
+          <Row label="現在のプラン" value={planLabel} isLast={!canPurchase()} />
           {canPurchase() ? (
             <Row
               label={restoring ? '復元中...' : '購入を復元'}
