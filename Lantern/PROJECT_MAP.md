@@ -120,6 +120,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
+| `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
@@ -164,6 +165,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
 | `avatarStore.js` ＋ `avatarStore.web.js` | アカウントの画像。**端末の中だけ** | — |
 | `splashPref.js` | 起動画面を毎回出すか。**本来は1日1回** | — |
+| `onboardingPref.js` | 初回の案内を見たか。**一度きり**（鍵に版を持つ） | — |
+| `onboardingSlides.js` | 案内3枚の中身と進み方。**禁止ワードも検査する** | `onboardingSlides.test.js` |
 | `splashImage.js` | 起動画面の地。**アプリの中に持つ**（日替わり・`assets/splash/`） | — |
 | `splashPhoto.js` ＋ `splashPhoto.web.js` | Unsplash の写真を端末に覚えさせる。**次回から即座に出る** | — |
 | `splashQuote.js` ＋ `splashQuote.web.js` | 起動画面の一言を端末に覚えさせる。**描いたあとで差し替えない** | `splashQuote.test.js` |

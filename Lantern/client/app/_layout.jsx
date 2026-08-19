@@ -13,6 +13,8 @@ import { ThemeProvider, useThemeContext } from '../lib/theme'
 import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
+import Onboarding from '../components/Onboarding'
+import { hasSeen as hasSeenOnboarding, markSeen as markOnboardingSeen } from '../lib/onboardingPref'
 import { loadAlways } from '../lib/splashPref'
 import { markShowing, markSkipped } from '../lib/splashHandoff'
 import { configure as configurePurchases } from '../lib/purchases'
@@ -85,6 +87,22 @@ function RootNavigator() {
   // 判定が済むまで本画面を出さないことで解消する。
   // 読み込みは端末内なので、待つのは一瞬。
   const [showSplash, setShowSplash] = useState(null)
+  // 初回の案内。**null は「まだ分からない」。**
+  // false と区別しないと、履歴を読む前に一瞬出てしまう
+  const [showOnboarding, setShowOnboarding] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    hasSeenOnboarding().then((seen) => {
+      if (!cancelled) setShowOnboarding(!seen)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  function handleOnboardingDone() {
+    setShowOnboarding(false)
+    markOnboardingSeen()
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -198,6 +216,13 @@ function RootNavigator() {
         <Stack.Screen name="reset" />
         <Stack.Screen name="account" />
       </Stack>
+      {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
+          - 起動画面より下に置く（写真と一言を先に見せる）
+          - ログイン前には出さない。まだ自分のものになっていない
+            アプリの使い方を読まされても、頭に残らない */}
+      {session && showSplash === false && showOnboarding === true ? (
+        <Onboarding onDone={handleOnboardingDone} />
+      ) : null}
       {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>
   )
