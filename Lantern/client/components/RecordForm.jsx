@@ -387,7 +387,11 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           記録そのものではない。** あとは利用者が書き換える。 */}
       {CAN_SUGGEST ? (
         <SuggestionsPickerView
-          style={{ height: 44, alignSelf: 'flex-start' }}
+          // **幅を縮めないこと。** RN は SwiftUI のボタンの本来の
+          // 大きさを知らないので、alignSelf: 'flex-start' にすると
+          // 幅が 0 になって**何も見えなくなる**（2026-08-21）。
+          // 高さだけ決めて、幅は親いっぱいに伸ばす。
+          style={{ height: 44 }}
           title="今日の出来事から選ぶ"
           onSelect={(e) => {
             const line = String(e?.nativeEvent?.title || '').trim()
