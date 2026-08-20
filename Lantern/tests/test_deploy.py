@@ -194,7 +194,14 @@ class TestCorsOrigins:
         assert bad == [], f"廃止した Vite 開発サーバーの origin が残っている: {bad}"
 
     def test_本番のoriginを許可している(self):
-        assert any("lantern-inky-three.vercel.app" in o for o in cors_origins())
+        """**自前のドメイン**（2026-08-20 に切り替えた）。
+
+        それまでは `lantern-inky-three.vercel.app` を名指ししていた。
+        Vercel が自動で付けた名前で、プロジェクト名が変わると切れる。
+        API は `api.golantern.app` なので同じドメインに寄せた。
+        """
+        origins = cors_origins()
+        assert any("golantern.app" in o for o in origins), origins
 
     def test_許可元を把握できる数に保つ(self):
         # 増えすぎたら、何のために開けたのか分からなくなる

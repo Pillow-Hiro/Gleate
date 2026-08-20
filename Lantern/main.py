@@ -43,10 +43,14 @@ CORS(app, origins=[
     # **自前のドメイン**（2026-08-20）。API は api.golantern.app なので寄せた。
     'https://golantern.app',
     'https://www.golantern.app',
-    # Vercel の自動名。**まだ消さない。**
-    # 切り替えの途中で、古い URL を開いている端末やビルドが残る。
-    # 新しい方が確実に出てから外すこと。
-    'https://lantern-inky-three.vercel.app',
+    # Vercel の自動名は、下の正規表現が既に含んでいる
+    # （`lantern-inky-three.vercel.app` は `lantern-[a-z0-9-]+` に当たる）。
+    # 明示していた行は 2026-08-20 に外した。**同じものを2回書かない。**
+    #
+    # **切り替えが済んだら、下の正規表現ごと外すこと。**
+    # `lantern-` で始まる vercel.app は誰でも作れるので、
+    # 自前のドメインに移った後まで残す理由が無い。
+    #
     # **前後を留める**（2026-08-15）。
     # `re.compile(r'https://lantern-.*\.vercel\.app')` は後ろが開いており、
     # flask-cors は `re.match`（先頭一致）で見るため
