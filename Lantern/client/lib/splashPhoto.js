@@ -25,10 +25,35 @@ import { Directory, File, Paths } from 'expo-file-system'
 // 濃紺の無地ではなく、琥珀と夜でできた地が出る。
 const NAME = 'splash-photo.jpg'
 
+// 撮影者の名前を、**写真と同じ場所に、同じ時に置く。**
+//
+// Unsplash の API 利用規約は、写真を出すたびに
+// 撮影者と Unsplash への帰属表示を求めている。
+//
+// **別々に持たない。** 出しているのは「覚えている写真」で、
+// 取ってきたばかりの写真ではない（上の「その場では差し替えない」）。
+// 名前だけ先に新しくなると、**違う人の名前が出る。**
+const CREDIT_NAME = 'splash-photo.credit'
+
 export const isSupported = true
 
 function file() {
   return new File(new Directory(Paths.document), NAME)
+}
+
+function creditFile() {
+  return new File(new Directory(Paths.document), CREDIT_NAME)
+}
+
+/** 覚えている写真の撮影者。無ければ空。**同期で返す**（写真と同じ理由） */
+export function loadCachedCredit() {
+  try {
+    const f = creditFile()
+    return f.exists ? (f.textSync() || '') : ''
+  } catch (e) {
+    console.warn('[Splash] 撮影者の読み込みに失敗', e)
+    return ''
+  }
 }
 
 /** 覚えている写真。無ければ null。**同期で返す**（描く前に決めたいので） */
@@ -43,7 +68,7 @@ export function loadCached() {
 }
 
 /** 次回のために置く。**いま出ている地は変えない。** */
-export async function cacheForNextTime(url) {
+export async function cacheForNextTime(url, photographer = '') {
   if (!url) return
   try {
     // 先に仮の名前で落としてから差し替える。
@@ -56,6 +81,13 @@ export async function cacheForNextTime(url) {
     const target = file()
     if (target.exists) target.delete()
     downloaded.move(target)
+
+    // **写真を置き替えたあとに名前を書く。** 逆にすると、
+    // 落とすのに失敗したとき、古い写真に新しい名前が付く
+    const credit = creditFile()
+    if (credit.exists) credit.delete()
+    credit.create()
+    credit.write(String(photographer || ''))
   } catch (e) {
     // 覚えられなくても起動画面は出る
     console.warn('[Splash] 写真を覚えられなかった', e)

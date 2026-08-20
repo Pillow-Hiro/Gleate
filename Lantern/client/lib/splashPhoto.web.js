@@ -10,4 +10,10 @@ export function loadCached() {
   return null
 }
 
+// **Web は同梱の地しか出さない**ので、撮影者も無い。
+// 口だけ揃えておく（`components/SplashScreen.jsx` が読む）。
+export function loadCachedCredit() {
+  return ''
+}
+
 export async function cacheForNextTime() {}

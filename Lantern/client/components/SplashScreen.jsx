@@ -3,7 +3,7 @@ import { Animated, Easing, Image, Pressable, useWindowDimensions, View } from 'r
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 import Text from './Text'
 import { currentSplashBackground } from '../lib/splashBackground'
-import { cacheForNextTime as cachePhoto } from '../lib/splashPhoto'
+import { cacheForNextTime as cachePhoto, loadCachedCredit } from '../lib/splashPhoto'
 import { cacheForNextTime as cacheQuote, loadCached as loadQuote } from '../lib/splashQuote'
 import { markLeaving } from '../lib/splashHandoff'
 
@@ -114,6 +114,10 @@ export default function SplashScreen({ onClose }) {
 
   const dateIn = useReveal(100)
   const logoIn = useReveal(250)
+  // 出している写真の撮影者。**描く前に1回だけ決める。**
+  // 途中で取り直した写真の名前に変わると、出ている写真と食い違う。
+  const [credit] = useState(loadCachedCredit)
+
   const quoteIn = useReveal(500)
   const hintIn = useReveal(900)
 
@@ -224,7 +228,7 @@ export default function SplashScreen({ onClose }) {
         // 1日ずれる（前に取ったものが今日出る）が、起動画面の一言と写真は
         // その日を表すものではないので困らない
         if (data.quote) cacheQuote(data.quote)
-        if (data.photo_url) cachePhoto(data.photo_url)
+        if (data.photo_url) cachePhoto(data.photo_url, data.photographer)
       } catch (e) {
         // 取れなければ、覚えているものがそのまま出る
         console.warn('[Splash] 起動画面コンテンツの取得に失敗', e)
@@ -271,6 +275,26 @@ export default function SplashScreen({ onClose }) {
       >
         <Text className="text-aux text-white/40">タップして続ける</Text>
       </Animated.View>
+
+      {/* 撮影者の帰属表示。**Unsplash の API 利用規約が求めている。**
+          写真を出すたびに、撮影者と Unsplash を示す。
+
+          出すのは**覚えている写真の撮影者**（`lib/splashPhoto.js` が
+          写真と一緒に置いている）。取ってきたばかりの名前を出すと、
+          いま見えている写真と別人になる。
+
+          ログイン画面には置かない（作者の判断）。あちらの写真はぼけた地で、
+          同じ1枚が続いているだけなので、示すのは1回でよい。
+
+          **一言と一緒に消える**ようにはしない。写真が出ているあいだは
+          出ていること、が規約の求めているところ。 */}
+      {credit ? (
+        <View style={{ position: 'absolute', bottom: 24 }}>
+          <Text className="text-white/30" style={{ fontSize: 11 }}>
+            Photo by {credit} on Unsplash
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   )
 
