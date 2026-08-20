@@ -121,6 +121,19 @@ const INK = '#514535'
 // **同じ列に並べるのが正しい置き場所だった。**
 const CAN_SUGGEST = isSuggestionsAvailable()
 
+// **入口を閉じてある。9/1 以降に true へ戻すこと。**（2026-08-21）
+//
+// 中身を実際に取る直し（`Reflection.prompt`）は Swift 側にあり、
+// EAS の無料枠を今月分使い切ったので 9/1 までビルドできない。
+//
+// いま出回っているビルド22 の Swift は**分類の名前しか返さない。**
+// 「聴いたミュージック」「クリエイティビティの振り返り」だけが入り、
+// 書きはじめの手がかりにならない。
+//
+// 半端なものを審査に出すより閉じておく。JS の側（この列への配置）は
+// すでに直してあるので、**戻すのはこの1行だけ。**
+const SUGGESTIONS_READY = false
+
 export function EditorToolbarProvider({ children }) {
   // いま書いている欄。**1つだけ。** 欄を移ると上書きされる
   const [field, setField] = useState(null)
@@ -267,7 +280,7 @@ function ToolbarBar({ field }) {
             押すと Apple の画面が開き、端末の中の出来事が並ぶ。
             選ぶまでアプリからは何も見えない。
             受け取るのは文字だけで、写真も座標も気分も取らない。 */}
-        {CAN_SUGGEST && field.onSuggest ? (
+        {SUGGESTIONS_READY && CAN_SUGGEST && field.onSuggest ? (
           <SuggestionsPickerView
             style={{ width: 44, height: 44 }}
             title="日記の候補から選ぶ"
