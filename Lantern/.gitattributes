@@ -1,0 +1,22 @@
+# **ネイティブのファイルは LF のまま置くこと。**
+#
+# 2026-08-21 に、ビルド22 へ OTA が届かない事故が起きた。
+# Windows で checkout すると git が Swift を CRLF に変換し、
+# 中身は同じなのに**指紋（runtimeVersion）が変わる。**
+#
+#     modified directory: modules/journaling-suggestions/ios
+#     39f10b9c... (build) ≠ 5456ad5b... (local)
+#
+# 指紋が違う更新は「別のアプリ向け」と見なされ、公開しても
+# **誰にも届かない。**エラーも出ないので気づけない。
+#
+# 確かめ方:
+#     npx eas-cli fingerprint:compare --build-id <id>
+*.swift    text eol=lf
+*.podspec  text eol=lf
+*.h        text eol=lf
+*.m        text eol=lf
+*.mm       text eol=lf
+*.hpp      text eol=lf
+*.cpp      text eol=lf
+*.rb       text eol=lf
