@@ -19,7 +19,10 @@ import * as WebBrowser from 'expo-web-browser'
 // 付けた名前を使っていた。App Store Connect に出すプライバシーポリシーの
 // URL がこれになるうえ、**プロジェクト名が変わると切れる。**
 // API は既に `api.golantern.app` なので、同じドメインに寄せる。
-const BASE = 'https://golantern.app'
+// **`www` に寄せる。** apex は 308 で `www` へ転送される構成なので、
+// apex を書くと毎回1手増える。審査担当者が踏むリンクなので、
+// 転送を挟まない方を出す。
+const BASE = 'https://www.golantern.app'
 
 export const PRIVACY_URL = `${BASE}/privacy.html`
 export const TERMS_URL = `${BASE}/terms.html`

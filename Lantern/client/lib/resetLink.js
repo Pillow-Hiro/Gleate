@@ -15,7 +15,7 @@
 //
 // **Supabase の Redirect URLs にも足すこと。** 許可された URL でないと
 // メールのリンクが弾かれ、パスワードを変えられなくなる。
-const FALLBACK = 'https://golantern.app'
+const FALLBACK = 'https://www.golantern.app'
 
 export function resetRedirectTo() {
   return `${FALLBACK}/reset`
