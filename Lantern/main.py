@@ -40,6 +40,12 @@ from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
 
 app = Flask(__name__)
 CORS(app, origins=[
+    # **自前のドメイン**（2026-08-20）。API は api.golantern.app なので寄せた。
+    'https://golantern.app',
+    'https://www.golantern.app',
+    # Vercel の自動名。**まだ消さない。**
+    # 切り替えの途中で、古い URL を開いている端末やビルドが残る。
+    # 新しい方が確実に出てから外すこと。
     'https://lantern-inky-three.vercel.app',
     # **前後を留める**（2026-08-15）。
     # `re.compile(r'https://lantern-.*\.vercel\.app')` は後ろが開いており、

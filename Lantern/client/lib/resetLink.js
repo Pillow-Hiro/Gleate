@@ -11,7 +11,11 @@
 // アプリでそのパスワードでログインする。1手増えるが、確実に着く。
 //
 // Web で開いているときは自分の場所へ戻す（開発中の localhost も含む）。
-const FALLBACK = 'https://lantern-inky-three.vercel.app'
+// **自前のドメイン**（2026-08-20）。`lib/openLegal.js` と揃える。
+//
+// **Supabase の Redirect URLs にも足すこと。** 許可された URL でないと
+// メールのリンクが弾かれ、パスワードを変えられなくなる。
+const FALLBACK = 'https://golantern.app'
 
 export function resetRedirectTo() {
   return `${FALLBACK}/reset`

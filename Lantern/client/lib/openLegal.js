@@ -13,7 +13,13 @@ import * as WebBrowser from 'expo-web-browser'
 // ネイティブはアプリ内ブラウザで開く。外のブラウザに飛ばすと
 // アプリから出てしまい、戻り方が端末任せになる。
 // Web は `openLegal.web.js` が別タブで開く。
-const BASE = 'https://lantern-inky-three.vercel.app'
+// **自前のドメインに置く**（2026-08-20）。
+//
+// それまで `lantern-inky-three.vercel.app` という、Vercel が自動で
+// 付けた名前を使っていた。App Store Connect に出すプライバシーポリシーの
+// URL がこれになるうえ、**プロジェクト名が変わると切れる。**
+// API は既に `api.golantern.app` なので、同じドメインに寄せる。
+const BASE = 'https://golantern.app'
 
 export const PRIVACY_URL = `${BASE}/privacy.html`
 export const TERMS_URL = `${BASE}/terms.html`
