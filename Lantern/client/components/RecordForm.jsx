@@ -11,7 +11,17 @@ import {
 
 // Apple の「日記の候補」を出せる端末かどうか。**一度だけ聞く。**
 // 途中で変わるものではないし、描くたびに native を呼ぶ理由がない。
-const CAN_SUGGEST = isSuggestionsAvailable()
+// **入口を閉じてある。**（2026-08-21）
+//
+// 中身を実際に取る直し（Reflection.prompt）は Swift 側にあり、
+// EAS の無料枠を今月分使い切ったので 9/1 までビルドできない。
+// ビルド22 の Swift は分類の名前しか返さず、書きはじめの
+// 手がかりにならないので、半端なまま審査に出さない。
+//
+// **この枝はビルド22 へ OTA を届けるためだけのもの。**
+// 指紋を変えないよう、JS しか触っていない。
+// 続きは main（装飾の列へ移してある）。
+const CAN_SUGGEST = false && isSuggestionsAvailable()
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
