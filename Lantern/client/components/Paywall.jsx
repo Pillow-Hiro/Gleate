@@ -104,13 +104,30 @@ export default function Paywall({ message, onClose, onPurchased }) {
       </View>
 
       {/* 何が含まれるか。**無料側も書く。**
-          何を失うのかではなく、どちらに何があるのかを見せる */}
-      <View className="gap-1">
+          何を失うのかではなく、どちらに何があるのかを見せる。
+
+          **2026-08-20 に言い方を変えた。** それまでは機能を並べるだけで、
+          無料と有料の関係が伝わらなかった。Lantern の中心にあるのは
+
+              今日の灯り → 問い → 記録 → 振り返り → また記録
+
+          という輪で、**無料でもこの輪は回る**（今週まで）。
+          有料は輪を止めるのではなく、**回せる幅を長くする**。
+          そう言えば、思想とも価格とも矛盾しない。 */}
+      <View className="gap-2">
         <Text className="text-body-md text-on-surface leading-relaxed">
-          月ごとの振り返り・過去との対話・頻出キーワード・YouTube / Twitch のまとめ
+          今日と今週のことは、これまでどおり無料です。
+          記録・写真・検索・書き出し・今日の灯り・今週の発見。
+        </Text>
+        <Text className="font-strong text-body-md text-on-surface leading-relaxed">
+          有料では、同じ輪を月と年の幅で回せます。
+        </Text>
+        <Text className="text-body-md text-on-surface leading-relaxed">
+          月ごとの振り返り・過去との対話・頻出キーワード・
+          YouTube / Twitch のまとめ。
         </Text>
         <Text className="text-label-md text-outline leading-relaxed">
-          記録・写真・検索・書き出し、今日の灯りと今週の発見は無料のままです。
+          記録が積み重なるほど、掘れる深さが増えます。
         </Text>
       </View>
 

@@ -48,6 +48,9 @@ export default function Home() {
   const router = useRouter()
   const [logs, setLogs] = useState([])
   const [quote, setQuote] = useState('')
+  // 今日の問い。**同じ日は同じ問い**（サーバーが日付から選ぶ）なので、
+  // 書く画面が出すものと必ず一致する。渡す必要がない
+  const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(true)
   const [tick, setTick] = useState(0)
   // 読み込みのたびに評価し直す。開きっぱなしで日付が変わる場面までは追わない
@@ -62,9 +65,10 @@ export default function Home() {
     ;(async () => {
       setLoading(true)
       try {
-        const [logsRes, quoteRes] = await Promise.all([
+        const [logsRes, quoteRes, questionRes] = await Promise.all([
           authFetch('/api/logs'),
           authFetch('/api/daily/quote'),
+          authFetch('/api/question'),
         ])
         if (logsRes.ok) {
           const data = await logsRes.json()
@@ -73,6 +77,10 @@ export default function Home() {
         if (quoteRes.ok) {
           const q = await quoteRes.json()
           if (!cancelled) setQuote(q.quote || '')
+        }
+        if (questionRes.ok) {
+          const q = await questionRes.json()
+          if (!cancelled) setQuestion(q.question || '')
         }
       } catch (e) {
         console.warn('[Home] 記録の取得に失敗', e)
@@ -133,6 +141,39 @@ export default function Home() {
             )}
           </View>
         </View>
+
+        {/* **今日の問い。** 2026-08-20 に「書く」から持ち上げた。
+            それまでは記録欄の薄い灰色の文字（プレースホルダ）で、
+            **1文字打つと消えていた。** 読み返せず、答えている感覚も残らない。
+            50問（`modules/questions/data.py`）はこのアプリでいちばん質の高い
+            資産なのに、いちばん弱い出し方をされていた。
+
+            ここに置くと、体験の輪がホームで閉じる。
+
+                今日の灯り → 問い → 書く → 戻る
+
+            それまで4段が3つのタブに散っていて、**輪として設計されているのに
+            輪として歩ける道が無かった。**
+
+            地は琥珀にしない。CLAUDE.md の「1画面に灯り色を2箇所以上置かない」
+            を守る（この画面の琥珀は今日の灯りだけ）。 */}
+        {question ? (
+          <View>
+            <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">
+              今日の問い
+            </Text>
+            <Pressable
+              onPress={() => router.push('/')}
+              accessibilityLabel={`${question} について書く`}
+              className="bg-surface-lowest border border-outline-variant rounded-lg px-5 py-4 gap-3 active:opacity-70"
+            >
+              <Text className="text-body-md text-on-surface leading-relaxed">
+                {question}
+              </Text>
+              <Text className="text-label-md text-primary">これについて書く ›</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* **今週の発見。** 2026-08-14 に「書く」から移した。
             観察は書く前ではなく、眺める場所にある方が読まれる。
