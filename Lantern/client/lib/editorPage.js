@@ -8,7 +8,7 @@
 
 export function editorPage({ html, placeholder, color, muted, minHeight, autoFocus }) {
   return `<!DOCTYPE html>
-<html><head>
+<html lang="ja"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>

@@ -3,6 +3,10 @@ import { Animated, Keyboard, Platform, Pressable, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { toggleBullet, wrapSelection } from '../lib/markdown'
+import {
+  isSuggestionsAvailable,
+  SuggestionsPickerView,
+} from '../modules/journaling-suggestions'
 
 // キーボードに貼り付く装飾の列。**Apple の「メモ」と同じ置き場所。**
 //
@@ -106,6 +110,16 @@ function Clip({ color }) {
 }
 
 const INK = '#514535'
+
+// Apple の「日記の候補」を出せる端末かどうか。**一度だけ聞く。**
+// iPhone・iOS 17.2 以上でしか true にならない。
+//
+// **列の中に置く**（2026-08-21）。最初は入力欄の下に置いたが、
+// 作者から「チップの上では気づかない」と報告があった。
+// 書いている最中に手が届くのはキーボードの上で、
+// 写真やファイルと同じ性質のもの（書きはじめの手がかり）なので、
+// **同じ列に並べるのが正しい置き場所だった。**
+const CAN_SUGGEST = isSuggestionsAvailable()
 
 export function EditorToolbarProvider({ children }) {
   // いま書いている欄。**1つだけ。** 欄を移ると上書きされる
@@ -248,6 +262,23 @@ function ToolbarBar({ field }) {
             </Pressable>
           )
         })}
+
+        {/* Apple の「日記の候補」。**ボタンではなく Apple のビュー。**
+            押すと Apple の画面が開き、端末の中の出来事が並ぶ。
+            選ぶまでアプリからは何も見えない。
+            受け取るのは文字だけで、写真も座標も気分も取らない。 */}
+        {CAN_SUGGEST && field.onSuggest ? (
+          <SuggestionsPickerView
+            style={{ width: 44, height: 44 }}
+            title="日記の候補から選ぶ"
+            icon="sparkles"
+            tint={INK}
+            onSelect={(e) => {
+              const line = String(e?.nativeEvent?.title || '').trim()
+              if (line) field.onSuggest(line)
+            }}
+          />
+        ) : null}
 
         <View className="flex-1" />
 

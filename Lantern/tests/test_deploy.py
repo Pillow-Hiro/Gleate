@@ -17,6 +17,7 @@ Flask 自身が本番利用を警告している構成で、同時実行にも�
 """
 
 import io
+import json
 import os
 import re
 
@@ -246,3 +247,27 @@ class TestJournalingSuggestions:
         app = read(os.path.join("client", "app.json"))
         assert "./plugins/withJournalingSuggestions" in app, \
             "app.json の plugins に withJournalingSuggestions が無い"
+
+
+class Test表示の言語:
+    """**iOS のシステム UI を日本語にする。**
+
+    2026-08-21 に作者から「コピペの表示が英語」と報告があった。
+    コピー・ペーストの吹き出しや共有シートは**アプリの言語**に従う。
+    `CFBundleLocalizations` が無いと英語だけのアプリと見なされ、
+    日本語の端末でも英語で出る。
+
+    アプリの文言は全部日本語なのに、システムの部分だけ英語になる。
+    利用者から見れば同じ1つのアプリなので、そこで声が途切れる。
+    """
+
+    def test_日本語のアプリとして宣言している(self):
+        app = json.loads(read(os.path.join("client", "app.json")))
+        info = app["expo"]["ios"].get("infoPlist", {})
+        assert info.get("CFBundleDevelopmentRegion") == "ja", info
+        assert "ja" in info.get("CFBundleLocalizations", []), info
+
+    def test_WebViewの中も日本語だと伝えている(self):
+        # 中の選択メニューは WebView 側の lang を見る
+        src = read(os.path.join("client", "lib", "editorPage.js"))
+        assert '<html lang="ja">' in src, "editorPage の html に lang が無い"
