@@ -156,7 +156,7 @@ export default function Login() {
                   「伴走」は AI 側の自称として残っている
                   （`modules/ai.py` の `LANTERN_IDENTITY` が「静かな伴走者」）。
                   「AI」と名乗るのはやめた。画面では Lantern で通す。 */}
-              <Text className="text-body-md text-on-surface-variant mt-2">創作の記録に、静かに伴走する。</Text>
+              <Text className="text-body-md text-on-surface-variant mt-2">創作の日々に、静かに伴走する。</Text>
             </View>
 
             <AuthForm
