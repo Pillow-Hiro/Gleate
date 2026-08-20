@@ -58,6 +58,11 @@ const WebEditor = forwardRef(function WebEditor(
     exec(cmd) {
       webRef.current?.injectJavaScript(`window.lanternExec(${JSON.stringify(cmd)}); true;`)
     },
+    // **外から1行を差し込む。** `value` を書き換えても画面には出ない
+    // （中身は最初の1回しか渡していない）ので、命令で入れる。
+    insertText(text) {
+      webRef.current?.injectJavaScript(`window.lanternInsert(${JSON.stringify(text)}); true;`)
+    },
   }))
 
   function handleMessage(e) {

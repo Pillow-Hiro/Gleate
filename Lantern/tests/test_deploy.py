@@ -212,3 +212,37 @@ class TestCorsOrigins:
         src = read("main.py")
         assert 'origins="*"' not in src and "origins='*'" not in src, \
             "CORS を全許可にしている"
+
+
+class TestJournalingSuggestions:
+    """**Apple のフレームワークと同じ名前を Pod に付けないこと。**
+
+    2026-08-15〜17 のビルド #15〜#17 が3度ここで落ちた。
+    Pod 名が `JournalingSuggestions` で、`DEFINES_MODULE = YES` と
+    合わさって同名の Swift モジュールを作り、Apple の framework を
+    覆い隠していた。`canImport` は真になるのに型だけ無い、という
+    分かりにくい壊れ方をする（`cannot find 'JournalingSuggestionsPicker'`）。
+
+    ビルドが落ちるまで気づけないので、ここで見張る。
+    """
+
+    PODSPEC = "client/modules/journaling-suggestions/ios/LanternJournalingSuggestions.podspec"
+
+    def test_pod名がAppleのframeworkと衝突していない(self):
+        src = read(self.PODSPEC)
+        assert "s.name           = 'JournalingSuggestions'" not in src
+        assert "LanternJournalingSuggestions" in src, src
+
+    def test_frameworkをweakで繋いでいる(self):
+        # アプリの下限は iOS 15.1、framework は 17.2 から。
+        # 強リンクにすると 15〜17.1 の端末が**起動した瞬間に落ちる**
+        src = read(self.PODSPEC)
+        assert "s.weak_frameworks = 'JournalingSuggestions'" in src, src
+        assert "s.frameworks" not in src, "強リンクになっている"
+
+    def test_権利のプラグインを登録している(self):
+        # 登録し忘れると entitlement が付かず、
+        # ピッカーは出るのに何も選べない状態になる
+        app = read(os.path.join("client", "app.json"))
+        assert "./plugins/withJournalingSuggestions" in app, \
+            "app.json の plugins に withJournalingSuggestions が無い"

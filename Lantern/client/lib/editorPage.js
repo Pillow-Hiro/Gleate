@@ -88,6 +88,30 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sendState();
   };
 
+  // 書きはじめの1行を差し込む（Journaling Suggestions）。
+  // **末尾に足す。書いてあるものを消さない。**
+  //
+  // insertText を使うのは、中身を組み直さないため。
+  // ed.innerHTML に代入すると打っている途中のカーソルが飛ぶ
+  // （WebEditor が中身を1回しか渡さないのと同じ理由）。
+  //
+  // **この中でバッククォートを使わないこと。** ここは外側の
+  // テンプレートリテラルの中で、註釈の中でも文字列が閉じてしまう。
+  window.lanternInsert = function (text) {
+    ed.focus();
+    var sel = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(ed);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    if (ed.textContent.trim()) document.execCommand('insertParagraph');
+    document.execCommand('insertText', false, text);
+    sendHtml();
+    sendHeight();
+    sendState();
+  };
+
   setTimeout(function () { sendHeight(); sendState(); }, 0);
   if (AUTOFOCUS) setTimeout(function () { ed.focus(); }, 60);
   document.addEventListener('selectionchange', function () { sendHeight(); sendState(); });

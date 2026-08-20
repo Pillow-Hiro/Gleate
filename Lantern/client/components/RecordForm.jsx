@@ -4,6 +4,14 @@ import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import WebEditor from './WebEditor'
+import {
+  isSuggestionsAvailable,
+  SuggestionsPickerView,
+} from '../modules/journaling-suggestions'
+
+// Apple の「日記の候補」を出せる端末かどうか。**一度だけ聞く。**
+// 途中で変わるものではないし、描くたびに native を呼ぶ理由がない。
+const CAN_SUGGEST = isSuggestionsAvailable()
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
@@ -58,6 +66,7 @@ function Field({
   placeholder = '（任意）',
   rich,
   bare,
+  bindInsert,
   onPhoto,
   onFile,
   onClose,
@@ -105,6 +114,17 @@ function Field({
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rich, editing, owner, active])
+
+  // **入力欄の外から1行を差し込む口。**
+  // 中身は WebView が持っているので、`value` を書き換えても画面には
+  // 出ない。呼ぶ側が ref を渡し、ここで中身を繋ぐ。
+  useEffect(() => {
+    if (!bindInsert) return
+    bindInsert.current = (text) => editorRef.current?.insertText(text)
+    return () => {
+      bindInsert.current = null
+    }
+  }, [bindInsert])
 
   function handleSelectionChange(e) {
     setSelection(e.nativeEvent.selection)
@@ -239,6 +259,9 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
 
   // 写真を選ぶ手続きは `PhotoPicker` が持っている。
   // キーボードの上のボタンからも同じ手続きを呼べるように、口を預かる
+  // 「日記の候補」で選ばれた1行を主欄へ差し込むための口。
+  // 中身は WebView が持っているので、`setForm` では画面に出ない。
+  const insertRef = useRef(null)
   const pickRef = useRef(null)
   function pickPhoto() {
     pickRef.current?.()
@@ -336,6 +359,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         rows={7}
         rich
         bare
+        bindInsert={insertRef}
         // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
         onPhoto={pickPhoto}
         onFile={pickFile}
@@ -350,6 +374,27 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
             : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
         }
       />
+      {/* Apple の「日記の候補」。**iPhone・iOS 17.2 以上でしか出ない。**
+          出せない端末では入口ごと描かない（`isSuggestionsAvailable`）。
+          できないことをボタンにして置くと、押した人が自分を疑う。
+
+          押すと Apple の画面が開き、端末の中の出来事（写真・場所・
+          聴いた曲など）が並ぶ。**選ぶまでアプリからは何も見えない。**
+          受け取るのも見出しの1行だけで、写真も座標も気分も取らない
+          （理由は `modules/journaling-suggestions/ios/` の Swift）。
+
+          置くのは本文の末尾。**書きはじめの手がかりであって、
+          記録そのものではない。** あとは利用者が書き換える。 */}
+      {CAN_SUGGEST ? (
+        <SuggestionsPickerView
+          style={{ height: 44, alignSelf: 'flex-start' }}
+          title="今日の出来事から選ぶ"
+          onSelect={(e) => {
+            const line = String(e?.nativeEvent?.title || '').trim()
+            if (line) insertRef.current?.(line)
+          }}
+        />
+      ) : null}
       {/* **まだ開いていない欄をチップで出す。**
           押した欄だけが現れる。既定の姿は「やったこと」1段のまま。
           全部開いたらチップの列は消える。 */}
