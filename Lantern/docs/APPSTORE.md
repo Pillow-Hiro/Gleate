@@ -92,9 +92,14 @@ Lantern Plus（月額1,000円／年額10,000円）でご利用いただけます
 
 | 欄 | 値 |
 |---|---|
-| プライバシーポリシーURL | `https://<Vercelのホスト>/privacy.html` |
-| サポートURL | 同上でも可。問い合わせ先が読めればよい |
-| 利用規約 | `https://<Vercelのホスト>/terms.html`（App内から開ける） |
+| プライバシーポリシーURL | `https://www.golantern.app/privacy.html` |
+| サポートURL | `https://www.golantern.app/` |
+| 利用規約（EULA） | `https://www.golantern.app/terms.html` |
+| 特定商取引法に基づく表記 | `https://www.golantern.app/tokushoho.html` |
+
+**アプリ内からも開ける**（`client/lib/openLegal.js` が唯一の置き場所）。
+掲載欄とアプリ内が別々の場所を指さないよう、ここを直したら
+`openLegal.js` と突き合わせること。
 
 `scripts/build_legal.py` の生成物。**原本は `PRIVACY.md` / `TERMS.md`。**
 
