@@ -132,7 +132,12 @@ export default function Settings() {
 
   // 取れるまでは空。**「無料」と出してから「有料」に変わると
   // 一瞬だけ嘘をついたことになる**
-  const planLabel = paid === null ? '' : paid ? '購読中' : '無料'
+  //
+  // **売り物の名前で出す**（2026-08-23）。それまで「購読中」だった。
+  // 状態の説明であって、何に入っているかが分からない。
+  // ペイウォールにも App Store にも「Lantern Plus」と出るので、
+  // ここだけ別の呼び方にすると、同じものが2つに見える。
+  const planLabel = paid === null ? '' : paid ? 'Lantern Plus' : '無料'
 
   async function handleRestore() {
     setRestoring(true)

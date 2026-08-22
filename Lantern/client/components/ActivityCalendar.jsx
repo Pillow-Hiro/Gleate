@@ -90,8 +90,15 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
         >
           <Text className="text-ink-faint text-aux">›</Text>
         </Pressable>
-        <Pressable onPress={goToday} className="border border-border rounded-full px-2.5 py-1">
-          <Text className="text-label-sm text-on-surface-variant">今月</Text>
+        {/* **「今日」と書く**（2026-08-23）。押すと `goToday` が走り、
+            今月を出したうえで**今日を選ぶ。**「今月」だと、
+            月が変わるだけに見えて、選んだ日が動くことが伝わらない */}
+        <Pressable
+          onPress={goToday}
+          accessibilityLabel="今日に戻る"
+          className="border border-border rounded-full px-2.5 py-1"
+        >
+          <Text className="text-label-sm text-on-surface-variant">今日</Text>
         </Pressable>
       </View>
 
