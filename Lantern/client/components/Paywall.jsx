@@ -107,29 +107,30 @@ export default function Paywall({ message, onClose, onPurchased }) {
       {/* 何が含まれるか。**無料側も書く。**
           何を失うのかではなく、どちらに何があるのかを見せる。
 
-          **2026-08-20 に言い方を変えた。** それまでは機能を並べるだけで、
-          無料と有料の関係が伝わらなかった。Lantern の中心にあるのは
+          **2026-08-23 に短くした。** それまでは
+          「有料では、同じ輪を月と年の幅で回せます」のように、
+          Lantern の考え方から説き起こしていた。作者から
+          「わかりにくい。もっと単純な文でいい」と指摘があった。
 
-              今日の灯り → 問い → 記録 → 振り返り → また記録
+          断られた人がこの画面で知りたいのは1つだけで、
+          **何が無料で何が有料か。**思想は読みたいときに読むもので、
+          断られた瞬間に読ませるものではない。
 
-          という輪で、**無料でもこの輪は回る**（今週まで）。
-          有料は輪を止めるのではなく、**回せる幅を長くする**。
-          そう言えば、思想とも価格とも矛盾しない。 */}
-      <View className="gap-2">
-        <Text className="text-body-md text-on-surface leading-relaxed">
-          今日と今週のことは、これまでどおり無料です。
-          記録・写真・検索・書き出し・今日の灯り・今週の発見。
-        </Text>
-        <Text className="font-strong text-body-md text-on-surface leading-relaxed">
-          有料では、同じ輪を月と年の幅で回せます。
-        </Text>
-        <Text className="text-body-md text-on-surface leading-relaxed">
-          月ごとの振り返り・過去との対話・頻出キーワード・
-          YouTube / Twitch のまとめ。
-        </Text>
-        <Text className="text-label-md text-outline leading-relaxed">
-          記録が積み重なるほど、掘れる深さが増えます。
-        </Text>
+          並べるだけにして、見出しを付けた。文を減らすほど、
+          どちらに何があるかが目で追える。 */}
+      <View className="gap-3">
+        <View className="gap-1">
+          <Text className="font-strong text-label-md text-on-surface">無料で使えるもの</Text>
+          <Text className="text-body-md text-on-surface-variant leading-relaxed">
+            記録・写真・検索・書き出し・今日の灯り・今週の発見
+          </Text>
+        </View>
+        <View className="gap-1">
+          <Text className="font-strong text-label-md text-on-surface">有料で開くもの</Text>
+          <Text className="text-body-md text-on-surface-variant leading-relaxed">
+            月ごとの振り返り・過去との対話・頻出キーワード・YouTube / Twitch
+          </Text>
+        </View>
       </View>
 
       {/* 期間と価格。**ストアが返した文字列をそのまま出す。**
