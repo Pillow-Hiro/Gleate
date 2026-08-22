@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -8,6 +8,7 @@ import { authFetch } from '../../lib/supabase'
 import { todayStr, calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import RecordForm from '../../components/RecordForm'
+import WriteTabs from '../../components/WriteTabs'
 import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { keyboardHeadroom } from '../../lib/keyboardMath'
@@ -133,48 +134,8 @@ export default function Home() {
         {/* 記録とアイデアの切り替え。
             今日の灯りは 2026-08-12 に「ホーム」へ移した。ここには無い。
             過去日の編集中は出さない（アイデアは日付を持たないため）。
-
-            **2026-08-14 に下線タブから左右2つの区画に変えた。**
-            実機で「どっちを書いているか迷う」と指摘された。
-            原因は2つあった。
-
-            1. 「記録」の下線タブが**「記録」タブの中のタブと同じ形**をしていた
-            2. **どちらが何なのかがどこにも書いていない**
-
-            形を変え、選んでいる側に説明を1行付けた。
-            説明は選択で入れ替わるので、いま何を書いているかが
-            画面の言葉として残る。 */}
-        {!isEditingPast ? (
-          <View className="gap-2.5">
-            <View className="flex-row bg-surface-low rounded-full p-1">
-              {[
-                { id: 'record', label: '記録' },
-                { id: 'ideas', label: 'アイデア' },
-              ].map(({ id, label }) => (
-                <Pressable
-                  key={id}
-                  onPress={() => setWriteTab(id)}
-                  className={`flex-1 rounded-full py-2.5 min-h-touch justify-center items-center ${
-                    writeTab === id ? 'bg-lantern-glow' : ''
-                  }`}
-                >
-                  <Text
-                    className={`text-body-md ${
-                      writeTab === id ? 'font-strong text-on-lantern' : 'text-on-surface-variant'
-                    }`}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text className="text-label-md text-outline leading-relaxed">
-              {writeTab === 'record'
-                ? '今日あったことを残します。1日にひとつ、あとから書き直せます。'
-                : '思いついたことを1行で置きます。日付を持たず、いつでも使えます。'}
-            </Text>
-          </View>
-        ) : null}
+            形と動きの由来は `components/WriteTabs.jsx` に書いてある。 */}
+        {!isEditingPast ? <WriteTabs value={writeTab} onChange={setWriteTab} /> : null}
 
         {/* 記録フォーム */}
         <View style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}>
