@@ -29,12 +29,16 @@ AI の経路は認証を通るが、**通ったあとの回数を見ていなか
 
 from modules.timeutil import today_str
 
-# 1日あたりの上限。
+# **上限はここに持たない。** `modules/plan.py` が唯一の置き場所
+# （無料 10 回・有料 30 回）。
 #
-# 1人で使う道具として多すぎない範囲にする。
-# 今日の灯り・週次・月次・過去との対話・キーワード・
-# YouTube / Twitch の観察を全部触っても、ふつうは 20 回に届かない。
-DAILY_LIMIT = 60
+# 2026-08-23 まで `DAILY_LIMIT = 60` を既定値として持っていた。
+# 呼ぶ側（`main.py`）は必ず `plan.daily_limit()` を渡すので
+# **一度も使われていなかった**が、数字だけが古いまま残り、
+# `HANDOFF.md` にも「1日60回」と書き写されていた。
+#
+# 既定値を消して、**必ず渡させる。** 2か所に数字があると、
+# 片方だけ変えたときに気づけない。
 
 
 def _db():
@@ -42,7 +46,7 @@ def _db():
     return supabase
 
 
-def check_and_count(user_id, limit=DAILY_LIMIT, date=None):
+def check_and_count(user_id, limit, date=None):
     """今日ぶんを1つ数える。上限を超えていれば False。
 
     **表が無ければ True**（素通し）。数えられないことを理由に止めない。

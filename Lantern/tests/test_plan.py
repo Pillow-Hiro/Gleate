@@ -141,3 +141,34 @@ class Test断り方:
         source = inspect.getsource(plan)
         for word in ("今すぐ", "お得", "限定", "見逃", "しましょう", "アップグレード"):
             assert word not in source, f"断り方に煽りが入っている: {word}"
+
+
+class Test上限の置き場所:
+    """**1日の上限は `plan.py` にしか無い。**
+
+    2026-08-23 まで `ratelimit.py` が `DAILY_LIMIT = 60` を既定値として
+    持っていた。呼ぶ側は必ず `plan.daily_limit()` を渡すので一度も
+    使われていなかったが、数字だけが古いまま残り、`HANDOFF.md` にも
+    「1日60回」と書き写されていた。**2か所に数字があると、
+    片方だけ変えたときに気づけない。**
+    """
+
+    def test_ratelimit_は上限の既定値を持たない(self):
+        import inspect
+        from modules.ratelimit import check_and_count
+        limit = inspect.signature(check_and_count).parameters["limit"]
+        assert limit.default is inspect.Parameter.empty, (
+            "ratelimit が上限の既定値を持っている。plan.py から渡すこと"
+        )
+
+    def test_ratelimit_に数字を書かない(self):
+        import io
+        import os
+        src = io.open(
+            os.path.join("modules", "ratelimit.py"), encoding="utf-8"
+        ).read()
+        # コメントを除いた本体に上限らしき定数が無いこと
+        body = "\n".join(
+            l for l in src.splitlines() if not l.lstrip().startswith("#")
+        )
+        assert "DAILY_LIMIT" not in body, "上限の定数が戻っている"

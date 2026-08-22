@@ -703,16 +703,17 @@ Web 側は 2026-08-22 に `golantern.app` へ寄せた。**完了。**
 
 | 内容 | 状態 |
 |---|---|
-| AI を呼ぶ経路の回数制限 | **入れた**（`modules/ratelimit.py`・1日60回）。**`docs/sql/ai_usage.sql` を流すまでは素通しする。** 流すと効き始める |
+| AI を呼ぶ経路の回数制限 | **入れた**（`modules/ratelimit.py`）。上限は `modules/plan.py` が持つ（**無料 10 回・有料 30 回**）。**`docs/sql/ai_usage.sql` を流すまでは素通しする。** 流すと効き始める |
 | Supabase の RLS | **SQL を用意した**（`docs/sql/rls.sql`）。流すだけ。service_role は RLS を無視するので**サーバーの動きは変わらない**。流すと、絞り漏れがあっても anon 鍵からは読めなくなる |
 | プライバシーポリシーのURL | **公開済み・確認済み**（2026-08-23 に `golantern.app` で再確認）。`https://www.golantern.app/privacy.html`。ログイン不要で開ける。**URL の唯一の置き場所は `client/lib/openLegal.js`** |
-| 記録テキストの暗号化 | **未着手。判断はストア公開の前。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md`。現状は暗号化せず、`PRIVACY.md` に「提供者が閲覧できる状態」と明記する形を選んでいる |
+| 記録テキストの暗号化 | **2026-08-23 に「やらない」と決めた。** 有料機能（今日の灯り・振り返り・過去との対話・キーワード）はサーバーが本文を読んで Anthropic に渡すことで成立しており、端末側の鍵で暗号化すると**全部消える**。加えてパスワードを忘れると過去が戻らず、記録を残すという目的と衝突する。`PRIVACY.md` 4-1 に「提供者が管理者として閲覧できる状態にあります」と明記して運用する。**次にやるなら全面暗号化ではなく「この記録は AI に渡さない」という記録ごとの選択。** 設計は `docs/superpowers/specs/2026-08-06-record-encryption-design.md` |
 | `goals` の死んだコード | `load_goals()` が実在しない表を毎回叩き、失敗を握り潰している。目標設定機能は REQUIREMENTS.md の「やらないこと」。`modules/ai.py` の引数を変える必要があるため別作業にした |
 | ローカルの node_modules | OneDrive 配下にあるため、同期でファイルが欠ける。`expo export` が `EINVAL readlink` で落ちるほか、**2026-08-15 には自動リンクから `expo-keep-awake` が抜け、ビルドが「指紋が合わない」で止まった**。`rm -rf node_modules && npm ci` で直る。**ビルドの前に一度通す方が安い** |
 | Expo の追随 | **2026-08-13 に解消。** パッチ版8件を上げ、`expo-doctor` 20/20。ビルド #8 を作る機会に合わせた（版を上げると指紋が変わるため） |
 | npm の脆弱性11件 | すべて `uuid` の境界チェック漏れで、`@expo/config` 系のビルド時ツールにしか無い。配布物には乗らない。解消には Expo 側の breaking change が要る |
 | AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |
 | ローカルの Python | 3.13.3。本番は 3.14。テストは 3.13 で通している。揃えるなら手元を 3.14 に上げる |
+| Journaling Suggestions | **入口を閉じている。**（`client/components/EditorToolbar.jsx` の `SUGGESTIONS_READY`）。Swift 側で `Reflection.prompt` を取る直しは main に入っているが、EAS の無料ビルド枠を 2026-08 に使い切ったため反映できていない。**9月1日以降にビルドし直し、1行を `true` に戻す。**掲載文にも1行足すこと（`docs/APPSTORE.md` 第2節の注記） |
 | North Star Metric | 器はできたが母数が足りない |
 
 ### 記録テキストの暗号化について
