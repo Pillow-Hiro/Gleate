@@ -64,6 +64,8 @@ export async function loadOfferings() {
       title: pkg.product?.title || '',
       // 期間。Apple の審査は「何の期間でいくらか」を画面に求める
       period: pkg.packageType || '',
+      // 無料お試し。**あるかどうかはストアが決める**（`lib/trialText.js`）
+      intro: pkg.product?.introPrice || null,
       raw: pkg,
     }))
   } catch (e) {

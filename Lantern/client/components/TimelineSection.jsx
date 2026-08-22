@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Text from './Text'
+import UnderlineTabs from './UnderlineTabs'
 import { authFetch } from '../lib/supabase'
 import { paywallMessage, readMaybePaywall } from '../lib/plan'
 import Paywall from './Paywall'
@@ -93,17 +94,14 @@ export default function TimelineSection({ logs = [] }) {
       </View>
 
       {/* 期間タブ */}
-      <View className="flex-row gap-1 border-b border-border">
-        {PERIODS.map(({ label, months: m }) => (
-          <Pressable
-            key={m}
-            onPress={() => setMonths(m)}
-            className={`px-3 py-1.5 border-b-2 ${months === m ? 'border-accent' : 'border-transparent'}`}
-          >
-            <Text className={`text-aux ${months === m ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <UnderlineTabs
+        tabs={PERIODS.map(({ label, months: m }) => ({ id: m, label }))}
+        value={months}
+        onChange={setMonths}
+        itemClassName="px-3 py-1.5"
+        textClassName="text-aux"
+        gapClassName="gap-1"
+      />
 
       {/* 常時表示：その頃の記録と今日の記録を並べる */}
       <View className="gap-3">

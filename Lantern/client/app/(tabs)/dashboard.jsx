@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
+import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
@@ -124,21 +125,7 @@ export default function Dashboard() {
 
         {/* 外の世界に届いた形跡。
             **フォロワー数は最も外部評価に近い指標なので上に置かない。** */}
-        <View className="flex-row gap-4 border-b border-border">
-          {TABS.map(({ id, label }) => (
-            <Pressable
-              key={id}
-              onPress={() => selectTab(id)}
-              className={`px-1 pb-2.5 border-b-2 ${
-                activeTab === id ? 'border-accent' : 'border-transparent'
-              }`}
-            >
-              <Text className={`text-body ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <UnderlineTabs tabs={TABS} value={activeTab} onChange={selectTab} />
 
         {/* display:'none' で隠す。unmount しないので状態と取得結果が残る */}
         {opened.overview ? (

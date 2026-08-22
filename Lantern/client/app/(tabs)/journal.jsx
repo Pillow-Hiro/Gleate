@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
+import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
@@ -218,20 +219,14 @@ export default function Journal() {
             **作者の判断で戻した。** 記録と振り返りは同じ材料を見るもので、
             並べて置く方が行き来しやすい。
             アイデアは 2026-08-08 に「書く」へ移した。 */}
-        <View className="flex-row gap-4 border-b border-border">
-          {[
+        <UnderlineTabs
+          tabs={[
             { id: 'record', label: '記録' },
             { id: 'review', label: '振り返り' },
-          ].map(({ id, label }) => (
-            <Pressable
-              key={id}
-              onPress={() => setActiveTab(id)}
-              className={`px-1 pb-2.5 border-b-2 ${activeTab === id ? 'border-accent' : 'border-transparent'}`}
-            >
-              <Text className={`text-body ${activeTab === id ? 'text-accent' : 'text-ink-faint'}`}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
 
         {activeTab === 'record' ? (
         <View className="gap-8">

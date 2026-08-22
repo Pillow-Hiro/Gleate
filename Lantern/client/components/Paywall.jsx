@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, View } from 'react-native'
 import Text from './Text'
 import { isAvailable, loadOfferings, purchase, restore } from '../lib/purchases'
+import { trialLabel } from '../lib/trialText'
 import { openPrivacy, openTerms, openTokushoho } from '../lib/openLegal'
 
 // 断られたときに出す面。
@@ -151,6 +152,12 @@ export default function Paywall({ message, onClose, onPurchased }) {
               <Text className="font-strong text-body-md text-on-lantern">
                 {periodOf(pkg)}　{pkg.price}
               </Text>
+              {/* **無料お試しは値段と一緒に出す。**
+                  値段だけ見せて試用期間を隠すと、買う前に条件が分からない
+                  （Apple の審査 3.1.2）。長さはストアが返した値から組む */}
+              {trialLabel(pkg.intro) ? (
+                <Text className="text-label-sm text-on-lantern">{trialLabel(pkg.intro)}</Text>
+              ) : null}
             </Pressable>
           ))}
         </View>
