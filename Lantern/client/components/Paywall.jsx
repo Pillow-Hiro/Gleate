@@ -128,7 +128,8 @@ export default function Paywall({ message, onClose, onPurchased }) {
         <View className="gap-1">
           <Text className="font-strong text-label-md text-on-surface">有料で開くもの</Text>
           <Text className="text-body-md text-on-surface-variant leading-relaxed">
-            月ごとの振り返り・過去との対話・頻出キーワード・YouTube / Twitch
+            月ごとの振り返り・過去との対話・頻出キーワード・
+            YouTube と Twitch の読み解き
           </Text>
         </View>
       </View>
