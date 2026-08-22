@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, Switch, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
+import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { exportLogs } from '../../lib/exportLogs'
@@ -111,6 +112,11 @@ export default function Settings() {
   // プラン。**取れるまでは何も言わない**（「無料」と出してから
   // 「有料」に変わると、一瞬だけ嘘をついたことになる）
   const [paid, setPaid] = useState(null)
+  // **戻ってくるたびに聞き直す。**
+  // 買った直後・解約した直後に設定を開いても、載せたときの1回しか
+  // 聞いていないと古いまま出る（2026-08-23）。
+  const [planTick, setPlanTick] = useState(0)
+  useRefreshOnFocus(useCallback(() => setPlanTick((t) => t + 1), []))
   const [restoring, setRestoring] = useState(false)
   const [restoreNotice, setRestoreNotice] = useState('')
 
@@ -128,7 +134,7 @@ export default function Settings() {
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [planTick])
 
   // 取れるまでは空。**「無料」と出してから「有料」に変わると
   // 一瞬だけ嘘をついたことになる**
