@@ -197,7 +197,7 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
   「今日と今週のことは無料。積み重ねを掘るのは有料」
 - **課金**（`modules/billing.py` ＋ `client/lib/purchases.js`）。RevenueCat 経由
 - **まとめタブ**（`client/lib/platforms.js` ＋ `components/OverviewPanel.jsx`）
-- **Journaling Suggestions は外した**（下記）
+- **Journaling Suggestions は入っている。入口だけ閉じてある**（下記）
 
 #### 実装を読んで見つけた3つのずれ
 
@@ -206,38 +206,74 @@ LF のまま戻し、`fingerprint:compare` で確かめること。
 3. 上限に達したときの文言が禁止ワードだった（「〜しましょう」）。
    **画面は見張っていたが、サーバーが返す文言は誰も見ていなかった**
 
-#### Journaling Suggestions は3回落ちて外した（2026-08-17）
+#### Journaling Suggestions が3回落ちた原因（2026-08-23 に解決）
 
 | ビルド | commit | 落ち方 |
 |---|---|---|
 | #15 | `733183d` | プロビジョニングに capability が無い |
 | #16 | `9a0295f` | `cannot find 'JournalingSuggestionsPicker' in scope` |
 | #17 | `a005a10` | **同じ**（弱リンク＋シミュレータ除外を足しても変わらず） |
+| **#22** | — | **通った** |
 
-**プロビジョニングの問題は解けている**（#16 以降は署名を通過して
-コンパイルまで進んでいる）。残っているのは Swift の型解決だけ。
+**原因は名前の衝突だった。**
 
-分かっていること。
+この expo モジュールの Pod が `JournalingSuggestions` という名前で、
+`DEFINES_MODULE = YES` と合わさって**同名の Swift モジュール**を
+作っていた。そのため
 
-- `#if canImport(JournalingSuggestions)` は**真になる**。
-  `import` も通る。しかし `JournalingSuggestionsPicker` が見つからない。
-  **module は見えているのに型が見えていない**
-- podspec に `s.weak_frameworks = 'JournalingSuggestions'` を足しても変わらない
-- `!targetEnvironment(simulator)` を足しても変わらない
-  （production は端末向けなので、そもそも効く場面ではなかった）
-- API の使い方自体は Apple のドキュメントと一致している
-  （`onCompletion` は非 async、`suggestion.title` で見出しが取れる）
+    #if canImport(JournalingSuggestions)   → 真（自分自身が見つかる）
+    import JournalingSuggestions           → 自分自身を読む
+    JournalingSuggestionsPicker            → cannot find in scope
 
-**次に試すなら、まず実際の Xcode ログを読むこと。**
-EAS のビルド画面の "Xcode Logs" に、コンパイル時の
-`-sdk` と `-target`、および `import` 直前の警告が出ている。
-`module 'JournalingSuggestions' is unavailable` のような行があれば、
-そこで原因が確定する。**推測で podspec をいじる段階は終わっている。**
+となり、**Apple のフレームワークを一度も見ていなかった。**
+Pod を `LanternJournalingSuggestions` に改名して解決
+（`client/modules/journaling-suggestions/ios/LanternJournalingSuggestions.podspec`
+の冒頭に、戻さないための注意書きがある）。
 
-実装は `git revert` で外しただけなので、履歴には残っている。
+**`canImport` が真なのに型が無い、という矛盾を見たら名前の衝突を疑う。**
 
-    git show 523e7fd   # 実装
-    git show a005a10   # 弱リンクとシミュレータ除外
+#### どうやって突き止めたか
+
+推測をやめて**実際の Xcode ログを読んだ。**
+`eas build:list --json` の `xcodeBuildLogsUrl` から取れる。
+
+**ログは brotli で圧縮されている。** gzip でも zlib でも解けない。
+
+    curl --compressed <xcodeBuildLogsUrl> -o log.txt
+
+証拠になった行。
+
+- `error: cannot find 'JournalingSuggestionsPicker' in scope`（106行目）
+- `Implicit dependency on target 'JournalingSuggestions' in project 'Pods'`
+- `-lJournalingSuggestions`（**静的ライブラリの印。**
+  Apple のフレームワークなら `-framework` になる）
+
+3つ目が決め手。Apple のものを読んでいれば、この形にはならない。
+
+#### API について、当時の記述が間違っていた
+
+Apple のドキュメント JSON（`developer.apple.com/tutorials/data/...`）
+から実際に引いて確かめた。
+
+| 当時の記述 | 正しくは |
+|---|---|
+| `onCompletion` は非 async | **async**（`(JournalingSuggestion) async -> Void`） |
+| `suggestion.title` で見出しが取れる | title は**分類の名前**。中身は `content(forType:)` |
+
+`title` だけを取っていたので、実機では「聴いたミュージック」
+「クリエイティビティの振り返り」のような**分類名しか入らなかった。**
+いまは `Reflection.prompt`（Apple が出す振り返りの問い）を第一に、
+曲・番組・その他のメディア・場所の名前まで見る。
+**写真・動画・運動・気分・連絡先・座標には触れない。**
+
+#### いまの状態
+
+**入口を閉じている**（`client/components/EditorToolbar.jsx` の
+`SUGGESTIONS_READY = false`）。中身を取る直しはビルド22 に入って
+いないため（EAS の無料ビルド枠を 2026-08 に使い切った）。
+
+**9月1日以降にビルドし直し、1行を `true` に戻す。**
+掲載文にも1行足すこと（`docs/APPSTORE.md` 第2節の注記）。
 
 #### 残っているのは作者の操作
 
