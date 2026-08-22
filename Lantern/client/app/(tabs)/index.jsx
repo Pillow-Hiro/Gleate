@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
@@ -22,7 +23,15 @@ import { keyboardHeadroom } from '../../lib/keyboardMath'
 //
 // 1行ぶん（32px）＋余白を足して、書いている場所が
 // キーボードから離れるようにする。
-const KEYBOARD_GAP = TOOLBAR_HEIGHT + 96
+//
+// **2026-08-23 に 96 から 200 へ上げた。3度目の報告。**
+// 96 でも、チップから欄を開いたときに下の欄が隠れていた。
+// 開いた欄は複数行に育つので、1行ぶんでは足りない。
+//
+// これは `ScrollView` の下余白なので、**空けすぎても画面は壊れない。**
+// 余るぶんはただの余白で、足りないと書いている字が見えない。
+// **足りないほうが悪い**ので、多めに取る。
+const KEYBOARD_GAP = TOOLBAR_HEIGHT + 200
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 
@@ -96,6 +105,7 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScreenFade>
       <AppHeader />
       {/* **キーボードのぶんだけ下を空ける**（2026-08-17）。
           それまで避けが1つも無く、「よかったこと」「困ったこと」を開くと
@@ -167,6 +177,7 @@ export default function Home() {
         </View>
 
       </ScrollView>
+      </ScreenFade>
     </SafeAreaView>
   )
 }

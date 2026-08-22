@@ -4,6 +4,7 @@ import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import WebEditor from './WebEditor'
+import { Appear, PressBounce } from './Motion'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
@@ -193,6 +194,27 @@ function Field({
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
+// 欄を開くチップ。**押している間だけ沈む。**
+// 色が薄くなるだけだと、押した手応えが無い（`components/Motion.jsx`）。
+function Chip({ label, onPress }) {
+  const [pressed, setPressed] = useState(false)
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      accessibilityLabel={`${label}を追加`}
+    >
+      <PressBounce pressed={pressed}>
+        <View className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 min-h-touch justify-center">
+          <Text className="text-label-md text-primary">＋</Text>
+          <Text className="text-label-md text-on-surface-variant">{label}</Text>
+        </View>
+      </PressBounce>
+    </Pressable>
+  )
+}
+
 export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
   const isToday = targetDate === todayStr()
   const [y, m, d] = targetDate.split('-')
@@ -360,24 +382,21 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       {EXTRA_FIELDS.some(({ key }) => !openFields.has(key)) ? (
         <View className="flex-row flex-wrap gap-2">
           {EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => (
-            <Pressable
+            <Chip
               key={key}
+              label={chip}
               onPress={() => {
                 setOpenFields((prev) => new Set(prev).add(key))
                 setJustOpened(key)
               }}
-              className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 min-h-touch justify-center active:opacity-70"
-            >
-              <Text className="text-label-md text-primary">＋</Text>
-              <Text className="text-label-md text-on-surface-variant">{chip}</Text>
-            </Pressable>
+            />
           ))}
         </View>
       ) : null}
 
       {EXTRA_FIELDS.filter(({ key }) => openFields.has(key)).map(({ key, label }) => (
-        <Field
-          key={key}
+        <Appear key={key}>
+          <Field
           value={form[key]}
           onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
           label={label}
@@ -399,6 +418,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           }}
           closeLabel={form[key] ? '消して閉じる' : '閉じる'}
         />
+        </Appear>
       ))}
 
       {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ） */}

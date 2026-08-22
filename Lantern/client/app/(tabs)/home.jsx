@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScreenFade } from '../../components/Motion'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
+import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
 import { greetingFor } from '../../lib/greeting'
@@ -59,11 +61,17 @@ export default function Home() {
   const shown = dailySample(logs, RECENT_LIMIT, todayStr())
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
+  useRefreshOnFocus(refresh)
+
+  // 読み込み中の表示は**最初の1回だけ。**
+  // 戻ってくるたびに全面が読み込み中に戻ると、画面が瞬いて
+  // 「開き直された」ように見える。取り直しは静かに済ませる。
+  const firstLoad = useRef(true)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      setLoading(true)
+      if (firstLoad.current) setLoading(true)
       try {
         const [logsRes, quoteRes, questionRes] = await Promise.all([
           authFetch('/api/logs'),
@@ -85,6 +93,7 @@ export default function Home() {
       } catch (e) {
         console.warn('[Home] 記録の取得に失敗', e)
       } finally {
+        firstLoad.current = false
         if (!cancelled) setLoading(false)
       }
     })()
@@ -113,6 +122,7 @@ export default function Home() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScreenFade>
       <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
@@ -215,6 +225,7 @@ export default function Home() {
           </Pressable>
         ) : null}
       </ScrollView>
+      </ScreenFade>
     </SafeAreaView>
   )
 }

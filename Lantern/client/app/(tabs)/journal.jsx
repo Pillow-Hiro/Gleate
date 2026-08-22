@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dimensions, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
+import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
 import { todayStr } from '../../lib/date'
@@ -48,6 +50,7 @@ export default function Journal() {
   const [month, setMonth] = useState(thisMonth())
 
   const [tick, setTick] = useState(0)
+  useRefreshOnFocus(useCallback(() => setTick((t) => t + 1), []))
 
   useEffect(() => {
     let cancelled = false
@@ -188,6 +191,7 @@ export default function Journal() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScreenFade>
       <AppHeader />
       {/* 一覧から記録を開いて直すときも欄が出る（`LogDetail`）。
           **窓と同じ扱いにする**（2026-08-17） */}
@@ -425,6 +429,7 @@ export default function Journal() {
           <EditorToolbarBar />
         </Pressable>
       </Modal>
+      </ScreenFade>
     </SafeAreaView>
   )
 }

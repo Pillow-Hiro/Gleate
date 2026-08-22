@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
+import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import OverviewPanel from '../../components/OverviewPanel'
@@ -55,6 +57,8 @@ export default function Dashboard() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
+  const [tick, setTick] = useState(0)
+  useRefreshOnFocus(useCallback(() => setTick((t) => t + 1), []))
   const [activeTab, setActiveTab] = useState('overview')
   // **一度開いたパネルは残す。**
   //
@@ -85,11 +89,12 @@ export default function Dashboard() {
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [tick])
 
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScreenFade>
       <AppHeader />
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
@@ -152,6 +157,7 @@ export default function Dashboard() {
           </View>
         ) : null}
       </ScrollView>
+      </ScreenFade>
     </SafeAreaView>
   )
 }

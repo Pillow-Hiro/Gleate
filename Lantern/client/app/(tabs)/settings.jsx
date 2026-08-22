@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal, Pressable, ScrollView, Switch, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { exportLogs } from '../../lib/exportLogs'
@@ -208,6 +209,7 @@ export default function Settings() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScreenFade>
       <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
@@ -381,6 +383,7 @@ export default function Settings() {
           </Pressable>
         </Pressable>
       </Modal>
+      </ScreenFade>
     </SafeAreaView>
   )
 }

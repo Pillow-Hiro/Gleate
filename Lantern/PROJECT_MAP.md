@@ -107,6 +107,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
 | `EditorToolbar.jsx` | _layout / RecordForm | **キーボードに貼り付く装飾の列**（太字・斜体・箇条書き・写真）。`InputAccessoryView` は使わない |
 | `WriteTabs.jsx` | 書く | **記録とアイデアの切り替え**。帯が滑り、動く間だけ伸び縮みする（squash and stretch） |
+| `Motion.jsx` | 各所 | **動きの小物**（生える・押して沈む・画面の明滅）。重さを1か所で決める |
 | `LogSnapshot.jsx` | TimelineSection | 過去1件を並べるカード。**`flex-1` を付けない**（中身がはみ出す） |
 | `MilestoneBanner.jsx` | Home | 30/90/180日。localStorage で既読管理 |
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
@@ -183,6 +184,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `exportLogs.js` ＋ `exportLogs.web.js` | 書き出し。**ZIP に本文・写真・添付・Markdown をまとめる**（Web は写真を持たない） | — |
 | `exportMarkdown.js` | 記録を Markdown にする。**空の欄で見出しを作らない** | `exportMarkdown.test.js` |
 | `keyboard.js` | キーボードの高さを聞く（`react-native` を読む） | — |
+| `refreshOnFocus.js` | ホーム / 記録 / 分析 | **戻ってきたら取り直す**。タブは裏で生きたままなので、載せたときの取得は二度と走らない |
 | `keyboardMath.js` | 下に空ける高さと窓の高さの計算。**安全域を二重に数えない** | `keyboardMath.test.js` |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |
 | `twitchConnect.js` ＋ `twitchConnect.web.js` | 同上 | — |

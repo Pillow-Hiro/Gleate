@@ -3,6 +3,7 @@ import { Animated, Keyboard, Platform, Pressable, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { toggleBullet, wrapSelection } from '../lib/markdown'
+import { useThemeContext } from '../lib/theme'
 import {
   isSuggestionsAvailable,
   SuggestionsPickerView,
@@ -109,7 +110,17 @@ function Clip({ color }) {
   )
 }
 
-const INK = '#514535'
+// 装飾の記号の色。**明暗で持ち替える。**
+//
+// 2026-08-23 まで `#514535` 固定だった。暗い地に暗い記号が乗り、
+// **夜は装飾ボタンがほとんど見えなかった。**
+// 値は `global.css` の `--color-on-surface-variant` と同じもの
+// （明 81 69 53 / 暗 205 196 184）。SVG に渡すので文字列で持つ。
+//
+// 選ばれているボタンだけは琥珀の地になり、記号は `#1D1D1F` のまま。
+// 暗いほうの琥珀（`#FFB953`）も明るい色なので、どちらでも読める。
+const INK_LIGHT = '#514535'
+const INK_DARK = '#CDC4B8'
 
 // Apple の「日記の候補」を出せる端末かどうか。**一度だけ聞く。**
 // iPhone・iOS 17.2 以上でしか true にならない。
@@ -170,6 +181,8 @@ export function EditorToolbarBar() {
 }
 
 function ToolbarBar({ field }) {
+  const { isDark } = useThemeContext()
+  const INK = isDark ? INK_DARK : INK_LIGHT
   const [height, setHeight] = useState(0)
   const slide = useRef(new Animated.Value(0)).current
 
