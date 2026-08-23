@@ -730,8 +730,27 @@ Vercel は再デプロイ、ローカルは `--clear` が要る。
 `rm -rf node_modules/.cache .expo && npx expo export --clear` で解消する。
 **バンドルを検査して確かめること。**
 
-**`.onrender.com` は消さないこと。** 既存の TestFlight ビルドが使っている。
-Render は独自ドメインを足しても既定で残す。
+**`.onrender.com` はそもそも消せない。** Render は独自ドメインを
+足しても既定の名前を残す仕様で、こちらから外す手段が無い。
+
+**「TestFlight のビルドが使っているから残す」という理由は、
+2026-08-23 に成り立たなくなった。** ビルド22 の
+`EXPO_PUBLIC_API_URL` は `https://api.golantern.app`。
+
+いま onrender を指している可能性があるのは、**外部サービスに
+登録した戻り先**のほう。
+
+| 場所 | 見るもの |
+|---|---|
+| Render の環境変数 | `YOUTUBE_REDIRECT_URI` |
+| Google Cloud Console | 承認済みのリダイレクト URI |
+| RevenueCat | Webhook の送信先 |
+
+**片方だけ変えると YouTube 連携が壊れる。**しかも連携を試すまで
+気づけない壊れ方をする。**Render 側と Google 側は同時に変えること。**
+
+急ぐ理由は無い。v1.1 で Google の確認申請を出すときに、
+まとめて `api.golantern.app` へ揃えるのが順番として安い。
 
 Web 側は 2026-08-22 に `golantern.app` へ寄せた。**完了。**
 
