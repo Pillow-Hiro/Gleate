@@ -740,11 +740,14 @@ Vercel は再デプロイ、ローカルは `--clear` が要る。
 いま onrender を指している可能性があるのは、**外部サービスに
 登録した戻り先**のほう。
 
-| 場所 | 見るもの |
-|---|---|
-| Render の環境変数 | `YOUTUBE_REDIRECT_URI` |
-| Google Cloud Console | 承認済みのリダイレクト URI |
-| RevenueCat | Webhook の送信先 |
+| 場所 | 見るもの | 2026-08-23 の状態 |
+|---|---|---|
+| Render の環境変数 | `YOUTUBE_REDIRECT_URI` | **`https://api.golantern.app/api/youtube/callback`。移行済み** |
+| Google Cloud Console | 承認済みのリダイレクト URI | **3つ登録。`localhost:5000` / 旧 onrender / `api.golantern.app`。移行済み** |
+| RevenueCat | Webhook の送信先 | 末尾 `/api/billing/revenuecat`。**前半がどちらでも同じサーバーなので動く** |
+
+**3か所とも揃っている。** 旧 onrender の登録は保険として残す。
+消しても得るものが無く、消し忘れの経路があったときだけ壊れる。
 
 **片方だけ変えると YouTube 連携が壊れる。**しかも連携を試すまで
 気づけない壊れ方をする。**Render 側と Google 側は同時に変えること。**
