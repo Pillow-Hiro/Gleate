@@ -25,3 +25,7 @@ AuthKey_*
 *.p12
 *.cer
 *.mobileprovision
+
+# App Store のスクリーンショット。**28MB ある。**
+# 作り直せるものは置かない（scripts/build_store_frames.py）。
+screenshots/
