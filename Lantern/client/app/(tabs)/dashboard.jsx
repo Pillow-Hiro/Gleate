@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
-import { authFetch } from '../../lib/supabase'
+import { loadLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
@@ -81,9 +81,8 @@ export default function Dashboard() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await authFetch('/api/logs')
-        if (!res.ok) return
-        const data = await res.json()
+        // **控えを先に出し、新しいものが来たら差し替える**（`lib/logsCache.js`）
+        const data = await loadLogs((fresh) => { if (!cancelled) setLogs(fresh) })
         if (!cancelled) setLogs(data)
       } catch (e) {
         console.warn('[分析] 記録の取得に失敗', e)

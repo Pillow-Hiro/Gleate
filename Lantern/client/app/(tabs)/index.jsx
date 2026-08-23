@@ -6,6 +6,7 @@ import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
+import { loadLogs } from '../../lib/logsCache'
 import { todayStr, calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import RecordForm from '../../components/RecordForm'
@@ -77,14 +78,12 @@ export default function Home() {
     ;(async () => {
       setLoading(true)
       try {
-        const [logsRes, questionRes] = await Promise.all([
-          authFetch('/api/logs'),
+        // **記録は控えから先に出す**（`lib/logsCache.js`）
+        const [logsData, questionRes] = await Promise.all([
+          loadLogs((fresh) => { if (!cancelled) setLogs(fresh) }),
           authFetch('/api/question'),
         ])
-        if (logsRes.ok) {
-          const logsData = await logsRes.json()
-          if (!cancelled) setLogs(logsData)
-        }
+        if (!cancelled) setLogs(logsData)
         if (questionRes.ok) {
           const questionData = await questionRes.json()
           if (!cancelled) setQuestion(questionData.question || '')

@@ -6,6 +6,7 @@ import { ScreenFade } from '../../components/Motion'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
+import { forgetLogs, loadLogs } from '../../lib/logsCache'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
@@ -162,8 +163,8 @@ export default function Settings() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await authFetch('/api/logs')
-        const data = await res.json()
+        // **控えを先に出す**（`lib/logsCache.js`）
+        const data = await loadLogs((fresh) => { if (!cancelled) setLogs(fresh) })
         if (!cancelled) setLogs(data)
       } catch (e) {
         // 取得失敗時はエクスポートできる記録が0件のままになる
@@ -196,6 +197,9 @@ export default function Settings() {
 
   async function handleSignOut() {
     setSigningOut(true)
+    // **控えを消してからログアウトする。**
+    // 残すと、同じ端末を別の人が使ったとき前の人の記録が一瞬見える
+    await forgetLogs()
     await supabase.auth.signOut()
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
   }

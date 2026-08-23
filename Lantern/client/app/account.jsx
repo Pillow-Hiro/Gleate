@@ -7,6 +7,7 @@ import Text from '../components/Text'
 import AccountMark from '../components/AccountMark'
 import AuthField from '../components/AuthField'
 import { supabase, authFetch } from '../lib/supabase'
+import { forgetLogs } from '../lib/logsCache'
 import { authErrorMessage } from '../lib/authError'
 import * as avatar from '../lib/avatarStore'
 import { compressPhoto } from '../lib/image'
@@ -126,6 +127,8 @@ export default function Account() {
     try {
       const res = await authFetch('/api/account', { method: 'DELETE' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // **控えも消す。**退会したのに記録が端末に残るのはおかしい
+      await forgetLogs()
       await supabase.auth.signOut()
     } catch (e) {
       console.warn('[Account] 削除に失敗', e)

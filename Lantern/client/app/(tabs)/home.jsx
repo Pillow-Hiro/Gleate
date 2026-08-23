@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { loadLogs } from '../../lib/logsCache'
 import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
 import { greetingFor } from '../../lib/greeting'
@@ -73,15 +74,14 @@ export default function Home() {
     ;(async () => {
       if (firstLoad.current) setLoading(true)
       try {
-        const [logsRes, quoteRes, questionRes] = await Promise.all([
-          authFetch('/api/logs'),
+        // **記録は控えから先に出す**（`lib/logsCache.js`）。
+        // 灯りと問いは日替わりでサーバーが持っているので、そのまま聞く
+        const [logsData, quoteRes, questionRes] = await Promise.all([
+          loadLogs((fresh) => { if (!cancelled) setLogs(fresh) }),
           authFetch('/api/daily/quote'),
           authFetch('/api/question'),
         ])
-        if (logsRes.ok) {
-          const data = await logsRes.json()
-          if (!cancelled) setLogs(data)
-        }
+        if (!cancelled) setLogs(logsData)
         if (quoteRes.ok) {
           const q = await quoteRes.json()
           if (!cancelled) setQuote(q.quote || '')

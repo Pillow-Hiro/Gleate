@@ -7,6 +7,7 @@ import { ScreenFade } from '../../components/Motion'
 import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
+import { loadLogs, replaceLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
@@ -57,10 +58,13 @@ export default function Journal() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await authFetch('/api/logs')
-        const data = await res.json()
         // 写真は端末にしか無いので、サーバーの記録に合流させる。
         // 写真しかない日もここで1件として現れる（lib/photoStore.js）
+        //
+        // **控えを先に出し、新しいものが来たら差し替える**（`lib/logsCache.js`）
+        const data = await loadLogs((fresh) => {
+          if (!cancelled) setLogs(attachPhotos(fresh))
+        })
         if (!cancelled) setLogs(attachPhotos(data))
       } catch (e) {
         // 取得失敗時は空一覧のままにする
@@ -105,7 +109,12 @@ export default function Journal() {
   }, [filter, search])
 
   function handleDelete(date) {
-    setLogs((prev) => prev.filter((l) => l.date !== date))
+    setLogs((prev) => {
+      const next = prev.filter((l) => l.date !== date)
+      // **控えも合わせる。**合わせないと、次に開いたとき消したものが戻る
+      replaceLogs(next)
+      return next
+    })
     if (selectedDate === date) setSelectedDate(null)
   }
 
