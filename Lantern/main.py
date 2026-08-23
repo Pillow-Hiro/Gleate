@@ -155,6 +155,24 @@ def save():
         print(traceback.format_exc())
         return jsonify({"error": f"保存に失敗しました: {e}"}), 500
 
+    # **灯りを待たせない**（2026-08-23）。
+    #
+    # 作者から「Lanternの回答もすぐレスポンスを返してほしい」と報告。
+    # 調べると、記録はもう保存されているのに、**AI の応答を待ってから
+    # 返していた。**一番よく使う操作が、毎回 AI を待っていた。
+    #
+    # `defer_ai` を送ってきた画面には、保存できた時点で返す。
+    # 灯りは画面が別に `/api/light` を叩いて受け取る。
+    #
+    # **古い画面のために既定は今までどおり。** 送ってこなければ待つ
+    # （出回っているビルドが壊れない）。
+    if data.get("defer_ai"):
+        return jsonify({
+            "status": "ok",
+            "ai_response": entry["ai_response"],
+            "deferred": True,
+        })
+
     # **枠が尽きても記録は残す**（2026-08-16）。
     #
     # 保存はもう終わっている。ここで 429 を返すと、画面には
@@ -181,6 +199,45 @@ def save():
         print(f"[/save] DB error (ai_response update): {type(e).__name__}: {e}")
 
     return jsonify({"status": "ok", "ai_response": ai_response})
+
+
+@app.route("/api/light", methods=["POST"])
+@require_auth
+def make_light():
+    """保存済みの記録に灯りをともす。**`/save` から切り離した経路。**
+
+    記録を残すことと、灯りが付くことは別の出来事にした。
+    書いた人を待たせる理由が無い（`/save` の `defer_ai` を参照）。
+
+    **記録が無ければ何もしない。** 先に `/save` が通っている前提。
+    """
+    data = request.get_json(silent=True) or {}
+    date = data.get("date") or today_str()
+
+    logs = load_logs(g.user_id)
+    entry = next((l for l in logs if l.get("date") == date), None)
+    if not entry:
+        return jsonify({"error": "not_found"}), 404
+
+    # **枠が尽きても記録は残っている。**灯りが付かないだけ
+    if not spend_ai_budget(g.user_id):
+        return jsonify({"ai_response": entry.get("ai_response", "")})
+
+    try:
+        ai_response = get_ai_response(
+            entry, [l for l in logs if l.get("date") != date], load_goals()
+        )
+    except Exception as e:
+        print(f"[/api/light] AI error: {type(e).__name__}: {e}")
+        return jsonify({"ai_response": entry.get("ai_response", "")})
+
+    entry["ai_response"] = ai_response
+    try:
+        save_logs([entry], g.user_id)
+    except Exception as e:
+        print(f"[/api/light] DB error: {type(e).__name__}: {e}")
+
+    return jsonify({"ai_response": ai_response})
 
 
 # --- 診断用エンドポイント ---

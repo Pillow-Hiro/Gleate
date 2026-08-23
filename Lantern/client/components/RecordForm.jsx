@@ -250,6 +250,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   const [justOpened, setJustOpened] = useState(null)
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
+  // 灯りを作っている最中。**保存はもう終わっている**
+  const [lighting, setLighting] = useState(false)
   const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
   const [saveError, setSaveError] = useState('')
   const [photoUrl, setPhotoUrl] = useState(
@@ -313,14 +315,31 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     setSaveError('')
     const slowTimer = setTimeout(() => setSlow(true), SLOW_SAVE_MS)
     try {
+      // **灯りを待たない**（2026-08-23）。
+      // `defer_ai` を送ると、保存できた時点でサーバーが返す。
+      // 押した人を AI の生成時間だけ立ち止まらせる理由が無い。
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ ...form, date: targetDate }),
+        body: JSON.stringify({ ...form, date: targetDate, defer_ai: true }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
       if (onSaved) onSaved()
+
+      // 灯りは**あとから届く。**ボタンはもう戻っている。
+      // 失敗しても何も出さない（記録は残っている）
+      if (data.deferred) {
+        setLighting(true)
+        authFetch('/api/light', {
+          method: 'POST',
+          body: JSON.stringify({ date: targetDate }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((j) => { if (j && j.ai_response) setAiResponse(j.ai_response) })
+          .catch((e) => console.warn('[記録] 灯りを受け取れなかった', e))
+          .finally(() => setLighting(false))
+      }
     } catch (e) {
       // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
       console.warn('[Home] 記録の保存に失敗', e)
@@ -457,6 +476,12 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       {aiResponse ? (
         <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
           <Text className="text-body-md leading-relaxed text-ai-ink">{aiResponse}</Text>
+        </View>
+      ) : lighting ? (
+        // **記録はもう残っている。**待っているのは灯りだけなので、
+        // 「保存中」とは書かない。書いた人を不安にさせない
+        <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
+          <Text className="text-label-md text-on-surface-variant">灯りをともしています。</Text>
         </View>
       ) : null}
     </View>

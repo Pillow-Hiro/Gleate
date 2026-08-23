@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。36ルール / 34パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。37ルール / 35パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -70,7 +70,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 |---|---|
 | `MilestoneBanner` | `GET /api/milestone`・`GET /api/milestone/reflection` |
 | （今日の灯り・画面直書き） | `GET /api/daily/quote` |
-| `RecordForm` | `POST /save`・`GET /api/question`（問いはプレースホルダに出る） |
+| `RecordForm` | `POST /save`（`defer_ai`）・`POST /api/light`・`GET /api/question`（問いはプレースホルダに出る） |
 | `IdeasPanel` | `/api/ideas` 4種。**2026-08-08 に Journal から移した** |
 | `WeeklyDiscovery` | なし（AIを使わない。ローカルで組み立てる） |
 
@@ -234,14 +234,14 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・36ルール / 34パス）
+## 6. API（`main.py`・37ルール / 35パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
 
 | 系統 | パス |
 |---|---|
-| 記録 | `POST /save`・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT /api/logs/<date>/favorite` |
+| 記録 | `POST /save`・**`POST /api/light`**（灯りだけ。`/save` から切り離した）・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT /api/logs/<date>/favorite` |
 | 問い | `GET /api/question` |
 | アイデア | `GET|POST /api/ideas`・`PATCH|DELETE /api/ideas/<int:idea_id>` |
 | 灯り | `GET /api/daily/quote`・`GET /api/splash/content` |
