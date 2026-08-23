@@ -119,8 +119,8 @@ index.js が9ウェイト全部を require し、Metro は木揺すりで落と�
 規模: モジュール 14 / API 36ルール・34パス。
 
 **I/O 待ちが仕事のほぼ全て**（Supabase・Anthropic）なので、
-プロセスを増やさずスレッドで捌く。Render の無料枠は 512MB のため
-ワーカーを増やすとメモリが厳しい。1プロセスなら
+プロセスを増やさずスレッドで捌く。**Render Starter は 512MB** なので
+ワーカーを増やすとメモリが厳しい（無料枠から上げてもここは同じ）。1プロセスなら
 Unsplash のプロセス内キャッシュも1つで済む。
 
 `--timeout 60` は AI の待ち時間（10秒）より長い。
@@ -136,7 +136,7 @@ Unsplash のプロセス内キャッシュも1つで済む。
 | ドメイン | `golantern.app`（お名前.com）。API は `api.golantern.app` | — | 年額はレジストラによる |
 | Web | Vercel | Hobby | $0 |
 | DB・認証 | Supabase | Free | $0 |
-| ビルド | EAS（Expo） | Free | $0 |
+| ビルド | EAS（Expo） | Free | $0（**iOS は月あたりの本数に上限がある。** 2026-08 に使い切り、9/1 まで作れなくなった） |
 | ストア | Apple Developer Program | — | 年 $99 |
 | AI | Anthropic API | 従量 | 記録の保存時とボタン押下時のみ |
 

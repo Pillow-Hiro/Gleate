@@ -794,6 +794,7 @@ Web 側は 2026-08-22 に `golantern.app` へ寄せた。**完了。**
 | AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |
 | ローカルの Python | 3.13.3。本番は 3.14。テストは 3.13 で通している。揃えるなら手元を 3.14 に上げる |
 | Journaling Suggestions | **入口を閉じている。**（`client/components/EditorToolbar.jsx` の `SUGGESTIONS_READY`）。Swift 側で `Reflection.prompt` を取る直しは main に入っているが、EAS の無料ビルド枠を 2026-08 に使い切ったため反映できていない。**9月1日以降にビルドし直し、1行を `true` に戻す。**掲載文にも1行足すこと（`docs/APPSTORE.md` 第2節の注記） |
+| `/api/logs` が全件を返す | `load_logs()` に上限が無い。記録23件のいまは軽いが、**数年ぶん溜まると起動のたびに全部を運ぶ。**`lib/logsCache.js` が控えを持つようになったので体感は隠れるが、通信量は増え続ける。**期間で切るか、更新分だけ取る形へ**。急がないが、忘れると気づけない種類の遅さになる |
 | North Star Metric | 器はできたが母数が足りない |
 
 ### 記録テキストの暗号化について
