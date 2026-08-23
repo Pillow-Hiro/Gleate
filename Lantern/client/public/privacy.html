@@ -54,6 +54,7 @@ th { background: #f2eee4; font-weight: 600; }
 <tr><td>アイデアとして書いた文章</td><td>同上</td><td>同上</td></tr>
 <tr><td>記録した日付</td><td>一覧とカレンダーのため</td><td>記録に伴い自動</td></tr>
 <tr><td>YouTube / Twitch のアクセストークンと公開情報</td><td>連携を選んだ場合のみ</td><td>任意</td></tr>
+<tr><td>購入と購読の状態</td><td>有料プランの管理のため</td><td>購入した場合のみ</td></tr>
 </tbody></table></div>
 <p><strong>取得しないもの</strong></p>
 <ul><li>位置情報</li><li>連絡先</li><li>端末の識別子を用いた広告目的の情報</li><li>利用状況の分析データ（どの画面を開いたか等の記録は行いません）</li></ul>
@@ -82,6 +83,11 @@ th { background: #f2eee4; font-weight: 600; }
 <p><strong>写真をAIに送ることはありません。</strong></p>
 <p>Anthropic の取り扱いについては <a href="https://www.anthropic.com/legal/privacy" rel="noreferrer">Anthropic のプライバシーポリシー</a>をご確認ください。</p>
 <hr>
+<h2>4-3. 購入と購読の状態（RevenueCat）</h2>
+<p>有料プランに加入された場合、<strong>購入と購読の状態</strong>が RevenueCat, Inc. のサーバーに送られ、そこで管理されます。 本アプリはこの仕組みを使って、有料機能を開くかどうかを判定します。</p>
+<p>送られるのは購入と購読に関する情報だけです。 <strong>記録した文章は送られません。</strong></p>
+<p>支払いそのものは Apple が処理します。<strong>クレジットカード番号などの 決済情報を、提供者も RevenueCat も受け取りません。</strong></p>
+<hr>
 <h2>5. 外部サービス</h2>
 <p>本アプリは以下を利用します。</p>
 <div class="table-wrap"><table><thead><tr><th>サービス</th><th>用途</th><th>渡るもの</th></tr></thead><tbody>
@@ -89,6 +95,7 @@ th { background: #f2eee4; font-weight: 600; }
 <tr><td>Anthropic</td><td>AIの応答</td><td>記録した文章（上記4-2の場合）</td></tr>
 <tr><td>Render</td><td>サーバーの実行</td><td>通信のログ（記録の中身は含みません）</td></tr>
 <tr><td>Vercel</td><td>Web版の配信</td><td>アクセスの技術的情報</td></tr>
+<tr><td>RevenueCat</td><td>購読の管理</td><td>購入と購読の状態、匿名の利用者ID</td></tr>
 <tr><td>Unsplash</td><td>起動画面の背景写真</td><td>利用者の情報は渡しません。撮影者名を起動画面に表示します</td></tr>
 <tr><td>Google / YouTube</td><td>連携を選んだ場合のみ</td><td>認可の情報</td></tr>
 <tr><td>Twitch</td><td>同上</td><td>同上</td></tr>
@@ -102,6 +109,7 @@ th { background: #f2eee4; font-weight: 600; }
 <tr><td>Anthropic</td><td>米国</td><td><a href="https://www.anthropic.com/legal/privacy" rel="noreferrer">プライバシーポリシー</a></td></tr>
 <tr><td>Render</td><td>米国</td><td><a href="https://render.com/privacy" rel="noreferrer">プライバシーポリシー</a></td></tr>
 <tr><td>Vercel</td><td>米国</td><td><a href="https://vercel.com/legal/privacy-policy" rel="noreferrer">プライバシーポリシー</a></td></tr>
+<tr><td>RevenueCat</td><td>米国</td><td><a href="https://www.revenuecat.com/privacy" rel="noreferrer">プライバシーポリシー</a></td></tr>
 </tbody></table></div>
 <h3>5-2. Google / YouTube の連携について</h3>
 <p>YouTube との連携を選んだ場合、本アプリは <strong>YouTube API Services</strong> を利用します。 利用にあたっては <a href="https://www.youtube.com/t/terms" rel="noreferrer">YouTube 利用規約</a> および <a href="https://policies.google.com/privacy" rel="noreferrer">Google プライバシーポリシー</a> が適用されます。</p>
