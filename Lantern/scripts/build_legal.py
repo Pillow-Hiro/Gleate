@@ -54,6 +54,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ログインしていなくても開ける（下の「なぜ public/ に置くのか」を参照）。
 # 審査担当者も、まだ登録していない人も読める。
 DOCS = [
+    # **ログインせずに読めるアプリの紹介。**（2026-08-23）
+    # Google の OAuth ブランディング検証が「ホームページにログイン画面が
+    # 出る」「アプリの目的が説明されていない」で落ちた。`/` は Expo Web の
+    # ログイン画面なので、説明を置く場所が無かった。
+    # App Store のサポートURL もここを指す。
+    ("ABOUT.md", "about.html", "Lantern について"),
     ("PRIVACY.md", "privacy.html", "プライバシーポリシー"),
     ("TERMS.md", "terms.html", "利用規約"),
     ("TOKUSHOHO.md", "tokushoho.html", "特定商取引法に基づく表記"),

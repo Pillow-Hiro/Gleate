@@ -519,3 +519,48 @@ class TestDocRoles:
     def test_冒頭に役割が書いてある(self, name):
         head = read(name)[:400]
         assert "役割" in head, f"{name} の冒頭に役割の記載が無い"
+
+
+class TestAboutPage:
+    """ABOUT.md と、そこから作る about.html がずれていないか。
+
+    **ログインせずに読めるアプリの紹介。**（2026-08-23）
+
+    `/` は Expo Web のログイン画面なので、アプリの説明を置く場所が
+    無かった。Google の OAuth ブランディング検証が
+    「ホームページにログイン画面が出る」「アプリの目的が説明されて
+    いない」で落ちて分かった。App Store のサポートURL も同じ問題で、
+    審査担当者が押すとログイン画面に当たっていた。
+    """
+
+    def _built(self):
+        return _legal_module().render(read("ABOUT.md"), "Lantern について")
+
+    def test_生成物が最新である(self):
+        current = read("client", "public", "about.html")
+        assert current == self._built(), (
+            "ABOUT.md を直して about.html を作り直していない。"
+            "python scripts/build_legal.py を実行すること"
+        )
+
+    def test_アプリ名が本文に出ている(self):
+        # OAuth 同意画面のアプリ名と一致していないと検証に落ちる
+        page = read("client", "public", "about.html")
+        assert "Lantern" in page
+
+    def test_何をするアプリかが書いてある(self):
+        # 「目的が説明されていない」で落ちた指摘への備え
+        body = read("ABOUT.md")
+        assert "記録アプリです" in body
+
+    def test_連携で何を読むかを書いてある(self):
+        # 機密スコープ（youtube.readonly）を使う以上、
+        # **何を読み、何をしないか**を公開の場に書く義務がある
+        body = read("ABOUT.md")
+        assert "投稿・編集・削除は行いません" in body
+        assert "Limited Use" in body
+
+    def test_ログインを求めない場所にある(self):
+        # client/public/ は expo export が出力の直下へ複製する。
+        # アプリ内のルートにすると認証ガードに捕まる
+        assert os.path.exists(os.path.join(ROOT, "client", "public", "about.html"))
