@@ -57,14 +57,28 @@ export default function AuthForm({
     // Enter での送信もブラウザの既定動作なので <form> が要る。
     <FormShell className="gap-5" onSubmit={handleSubmit}>
       <View className="bg-surface-lowest rounded-lg px-4 shadow-bloom">
+        {/* `textContentType` は `emailAddress`。**`username` ではない。**
+            2026-08-24 まで `username` を渡していた。実機で2つ出ていた。
+
+            1. 候補バーの見出しが「**ユーザ名**候補」になる。
+               欄のラベルは「メールアドレス」なので、言っていることが食い違う
+            2. **かなキーボードが出る。** `username` は文字種を決めないので、
+               iOS は前に使った日本語配列をそのまま出す。
+               `keyboardType` を指定していても、こちらに引きずられる
+
+            このアプリに**ユーザ名という概念は無い。** Supabase の認証は
+            メールアドレスだけで、この欄が他のものを受け取ることはない。
+            `emailAddress` は `password` / `newPassword` と対になるので、
+            パスワードマネージャの組み合わせも崩れない。 */}
         <AuthField
           icon="mail"
           label="メールアドレス"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
+          autoCorrect={false}
           autoComplete="email"
-          textContentType="username"
+          textContentType="emailAddress"
           keyboardType="email-address"
           returnKeyType="next"
           onSubmitEditing={handleSubmit}

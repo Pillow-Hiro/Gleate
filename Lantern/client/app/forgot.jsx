@@ -105,8 +105,10 @@ export default function Forgot() {
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
+                autoCorrect={false}
                 autoComplete="email"
-                textContentType="username"
+                // `username` ではない（理由は `components/AuthForm.jsx`）
+                textContentType="emailAddress"
                 keyboardType="email-address"
                 returnKeyType="go"
                 onSubmitEditing={send}
