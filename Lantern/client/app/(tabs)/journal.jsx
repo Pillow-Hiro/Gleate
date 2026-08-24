@@ -119,7 +119,13 @@ export default function Journal() {
   }
 
   function handleUpdate(updatedLog) {
-    setLogs((prev) => prev.map((l) => (l.date === updatedLog.date ? updatedLog : l)))
+    setLogs((prev) => {
+      const next = prev.map((l) => (l.date === updatedLog.date ? updatedLog : l))
+      // 削除と同じ理由で控えも合わせる。**2026-08-24 まで抜けていた。**
+      // 消したときだけ合わせていたので、直した中身は次に開くと元に戻って見えた
+      replaceLogs(next)
+      return next
+    })
   }
 
   // お気に入りの付け外し。
@@ -128,7 +134,11 @@ export default function Journal() {
   // 数百ミリ秒ができる。失敗したら元に戻す。
   async function handleToggleFavorite(log) {
     const next = !log.favorite
-    setLogs((prev) => prev.map((l) => (l.date === log.date ? { ...l, favorite: next } : l)))
+    setLogs((prev) => {
+      const list = prev.map((l) => (l.date === log.date ? { ...l, favorite: next } : l))
+      replaceLogs(list)
+      return list
+    })
     try {
       const res = await authFetch(`/api/logs/${log.date}/favorite`, {
         method: 'PUT',
@@ -137,7 +147,11 @@ export default function Journal() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
     } catch (e) {
       console.warn('[記録] お気に入りの変更に失敗', e)
-      setLogs((prev) => prev.map((l) => (l.date === log.date ? { ...l, favorite: !next } : l)))
+      setLogs((prev) => {
+        const list = prev.map((l) => (l.date === log.date ? { ...l, favorite: !next } : l))
+        replaceLogs(list)
+        return list
+      })
     }
   }
 

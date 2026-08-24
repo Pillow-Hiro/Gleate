@@ -9,6 +9,7 @@ import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
+import { invalidateLogs } from '../lib/logsCache'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
@@ -325,6 +326,11 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.ai_response) setAiResponse(data.ai_response)
+
+      // **控えが古くなった。**これを言わないと、記録タブへ移っても
+      // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
+      // `onSaved` より先に呼ぶ。あちらは取り直しの結果を受け取る側
+      invalidateLogs()
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。
@@ -336,7 +342,14 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
           body: JSON.stringify({ date: targetDate }),
         })
           .then((r) => (r.ok ? r.json() : null))
-          .then((j) => { if (j && j.ai_response) setAiResponse(j.ai_response) })
+          .then((j) => {
+            if (j && j.ai_response) {
+              setAiResponse(j.ai_response)
+              // 灯りは記録の一部として保存されている。
+              // **もう一度古くする。**さもないと一覧の記録に灯りが載らない
+              invalidateLogs()
+            }
+          })
           .catch((e) => console.warn('[記録] 灯りを受け取れなかった', e))
           .finally(() => setLighting(false))
       }
