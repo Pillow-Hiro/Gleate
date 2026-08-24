@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Animated, Easing, Image, Pressable, ScrollView, View } from 'react-native'
+import { Animated, Easing, Image, Pressable, View } from 'react-native'
+import AuthScreen from '../components/AuthScreen'
 import { BlurView } from 'expo-blur'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
@@ -116,11 +117,7 @@ export default function Login() {
       />
       <View pointerEvents="none" className="absolute inset-0 bg-black/25" />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="flex-grow justify-center px-5 py-10"
-        keyboardShouldPersistTaps="handled"
-      >
+      <AuthScreen className="flex-1">
         {/* className は Animated.View に効かない（NativeWind が包むのは素の View）。
             動きは外、見た目は中の View に置く */}
         <Animated.View
@@ -202,7 +199,7 @@ export default function Login() {
             </View>
           </View>
         </Animated.View>
-      </ScrollView>
+      </AuthScreen>
     </View>
   )
 }

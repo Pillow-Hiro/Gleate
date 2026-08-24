@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
+import AuthScreen from '../components/AuthScreen'
 import AuthForm from '../components/AuthForm'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage, isAlreadyRegistered } from '../lib/authError'
+import { signupRedirectTo } from '../lib/authLink'
 
 // 新規登録。ログインとは別の画面にしている（理由は `login.jsx`）。
 //
@@ -29,6 +31,11 @@ import { authErrorMessage, isAlreadyRegistered } from '../lib/authError'
 // **確認メール自体は消していない。** Supabase の設定で切れるが、
 // 切ると誰のものか分からないメールアドレスで記録が溜まる。
 // 記録アプリで持ち主が確かめられないのは避ける。
+//
+// **戻り先は必ず渡すこと**（`lib/authLink.js`）。渡さないと Supabase の
+// Site URL に落ちる。2026-08-24 まで渡しておらず、確認メールのリンクが
+// localhost を指していた。**送ったあと初めて開く場所なので、
+// 自分で試すときは開いてしまい、気づけない。**
 function Step({ n, children, isLast }) {
   return (
     <View className="flex-row gap-3 items-start">
@@ -57,7 +64,11 @@ export default function Signup() {
     setRegistered(false)
     setTaken(false)
     try {
-      const { data, error: err } = await supabase.auth.signUp({ email, password })
+      const { data, error: err } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: signupRedirectTo() },
+      })
       if (err) throw err
       setSentTo(email)
       // 確認メールを切っている場合はその場でセッションが返る。
@@ -86,7 +97,14 @@ export default function Signup() {
   async function handleResend() {
     setResent('')
     try {
-      const { error: err } = await supabase.auth.resend({ type: 'signup', email: sentTo })
+      // 再送にも戻り先が要る。**送り直したぶんだけ設定が引き継がれる、
+      // ということはない。** 最初の1通だけ直すと、届かなかった人—
+      // つまり再送を押す人—だけが古い戻り先を踏む。
+      const { error: err } = await supabase.auth.resend({
+        type: 'signup',
+        email: sentTo,
+        options: { emailRedirectTo: signupRedirectTo() },
+      })
       if (err) throw err
       setResent('もう一度送りました。')
     } catch (err) {
@@ -95,11 +113,7 @@ export default function Signup() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-cream"
-      contentContainerClassName="flex-grow justify-center px-5 py-10"
-      keyboardShouldPersistTaps="handled"
-    >
+    <AuthScreen>
       <View className="w-full max-w-sm self-center">
         {/* 来た道を見せる。ここが「ログインとは別の場所」だと分かる */}
         <Pressable
@@ -177,6 +191,6 @@ export default function Signup() {
           </>
         )}
       </View>
-    </ScrollView>
+    </AuthScreen>
   )
 }

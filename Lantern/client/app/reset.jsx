@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
 import FormShell from '../components/FormShell'
@@ -16,7 +17,7 @@ import { authErrorMessage } from '../lib/authError'
 // **リンクを踏まずにここへ来ることもある**（URLを直接開いた・期限切れ）。
 // そのときは何も変えられないので、やり直す入口だけ出す。
 //
-// 戻り先は Web に固定している（`lib/resetLink.js`）。
+// 戻り先は Web に固定している（`lib/authLink.js`）。
 // この画面は主に Web で開かれるが、ネイティブでも同じ実装で動く。
 export default function Reset() {
   const router = useRouter()
@@ -64,11 +65,7 @@ export default function Reset() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-cream"
-      contentContainerClassName="flex-grow justify-center px-5 py-10"
-      keyboardShouldPersistTaps="handled"
-    >
+    <AuthScreen>
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
           <Text className="font-latin text-display text-ink">Lantern</Text>
@@ -137,6 +134,6 @@ export default function Reset() {
           </FormShell>
         )}
       </View>
-    </ScrollView>
+    </AuthScreen>
   )
 }

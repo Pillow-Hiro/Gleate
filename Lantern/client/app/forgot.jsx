@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
 import FormShell from '../components/FormShell'
 import AuthField from '../components/AuthField'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage } from '../lib/authError'
-import { resetRedirectTo } from '../lib/resetLink'
+import { resetRedirectTo } from '../lib/authLink'
 
 // パスワードを忘れたとき。
 //
@@ -67,11 +68,7 @@ export default function Forgot() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-cream"
-      contentContainerClassName="flex-grow justify-center px-5 py-10"
-      keyboardShouldPersistTaps="handled"
-    >
+    <AuthScreen>
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
           <Text className="font-latin text-display text-ink">Lantern</Text>
@@ -135,6 +132,6 @@ export default function Forgot() {
           </FormShell>
         )}
       </View>
-    </ScrollView>
+    </AuthScreen>
   )
 }

@@ -97,6 +97,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | ファイル | 使う側 | 役割 |
 |---|---|---|
 | `ActivityCalendar.jsx` | Journal | 創作カレンダー。記録あり(amber)／なし の2状態のみ。**「今月」は月を戻すだけ** |
+| `AuthScreen.jsx` | login / signup / forgot / reset | 認証4画面の外枠。**キーボードぶんの下余白はここだけで持つ**。`justify-center` のままだとスクロールの余地が 0 で、隠れた欄を引き出せない |
 | `AuthForm.jsx` | login / signup | カードに載せた2欄。空欄のまま送らせない。欄そのものは `AuthField` |
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
@@ -149,7 +150,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 |---|---|---|
 | `date.js` | `localDateStr` / `todayStr` / `calcStreak`。`toISOString()` はUTCへ寄るため使わない | `date.test.js` |
 | `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
-| `resetLink.js` | パスワード再設定メールの戻り先。**Web に固定する** | — |
+| `authLink.js` | 認証メール（登録の確認・再設定）の戻り先。**Web に固定する**。渡さないと Supabase の Site URL に落ちる | — |
 | `greeting.js` | 時間帯の挨拶。**材料は時計だけ** | `greeting.test.js` |
 | `notifyText.js` | 通知の文面と時刻の組み立て。**日数も件数も持たない** | `notifyText.test.js` |
 | `notify.js` / `notify.web.js` | 通知の予約（端末の中だけ）。Web は「使えない」を返す | — |
