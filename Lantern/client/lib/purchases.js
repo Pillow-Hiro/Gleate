@@ -88,14 +88,40 @@ export async function purchase(pkg) {
   }
 }
 
-/** 買い直しの復元。**Apple の審査要件**（機種変更・再インストール時の導線） */
+/** 権利を持っているか。**識別子を書かない。**
+ *
+ * entitlement の名前を定数で持つと、RevenueCat の管理画面で
+ * 付け替えたときに黙って false になる。**1つでも有効なら有効**でよい。
+ * このアプリが売っているものは1種類（Lantern Plus）しかない。
+ */
+function hasActiveEntitlement(info) {
+  const active = info?.entitlements?.active
+  if (active && Object.keys(active).length > 0) return true
+  return Array.isArray(info?.activeSubscriptions) && info.activeSubscriptions.length > 0
+}
+
+/**
+ * 買い直しの復元。**Apple の審査要件**（機種変更・再インストール時の導線）
+ *
+ * 戻り値は `{ ok, active, error }`。**`ok` と `active` は別物。**
+ *
+ * 2026-08-24 まで `ok` しか返しておらず、`restorePurchases()` が
+ * 例外を投げなければ成功として扱っていた。**復元するものが無いときも
+ * 例外は飛ばない**（CustomerInfo が返るだけ）ので、無料の人が押すと
+ * 「購入を復元しました。」と出て、プランが「Lantern Plus」に変わった。
+ * サーバーは無料のままなので、有料機能を開けば 402 が返る——
+ * **表示だけが嘘をついていた。**
+ *
+ * `ok` は「処理が通ったか」、`active` は「権利があるか」。
+ * 画面はかならず `active` を見ること。
+ */
 export async function restore() {
-  if (!isAvailable()) return { ok: false, error: 'unavailable' }
+  if (!isAvailable()) return { ok: false, active: false, error: 'unavailable' }
   try {
-    await Purchases.restorePurchases()
-    return { ok: true, error: null }
+    const info = await Purchases.restorePurchases()
+    return { ok: true, active: hasActiveEntitlement(info), error: null }
   } catch (e) {
     console.warn('[購入] 復元に失敗', e)
-    return { ok: false, error: e?.message || 'failed' }
+    return { ok: false, active: false, error: e?.message || 'failed' }
   }
 }

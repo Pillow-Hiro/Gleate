@@ -44,7 +44,10 @@ function periodOf(pkg) {
   return PERIOD_LABEL[pkg.period] || pkg.period || ''
 }
 
-export default function Paywall({ message, onClose, onPurchased }) {
+// `title` は設定から開くときのためにある。既定は断られた場面の見出し。
+// 設定には断られて来るのではなく**自分から見に来る**ので、
+// 「記録を並べ直す」（＝その機能の名前）だと話が繋がらない。
+export default function Paywall({ title = '記録を並べ直す', message, onClose, onPurchased }) {
   const [packages, setPackages] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -77,7 +80,9 @@ export default function Paywall({ message, onClose, onPurchased }) {
     setNotice('')
     const r = await restore()
     setBusy(false)
-    if (r.ok) {
+    // **`ok` ではなく `active` を見る**（`lib/purchases.js` の `restore`）。
+    // 復元するものが無くても処理そのものは通る
+    if (r.ok && r.active) {
       onPurchased?.()
       setNotice('購入を復元しました。')
       return
@@ -97,7 +102,7 @@ export default function Paywall({ message, onClose, onPurchased }) {
           - 余白を py-6/gap-5 → py-5/gap-4 */}
       <View className="gap-1.5">
         <Text className="font-strong text-body-lg text-on-surface">
-          記録を並べ直す
+          {title}
         </Text>
         <Text className="text-body-md text-on-surface-variant leading-relaxed">
           {message}

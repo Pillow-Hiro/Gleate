@@ -19,6 +19,7 @@ import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy, openTerms, openTokushoho } from '../../lib/openLegal'
 import { isAvailable as canPurchase, restore } from '../../lib/purchases'
+import Paywall from '../../components/Paywall'
 import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
 import { clearSeen as replayOnboarding } from '../../lib/onboardingPref'
 import { useRouter } from 'expo-router'
@@ -120,6 +121,7 @@ export default function Settings() {
   useRefreshOnFocus(useCallback(() => setPlanTick((t) => t + 1), []))
   const [restoring, setRestoring] = useState(false)
   const [restoreNotice, setRestoreNotice] = useState('')
+  const [showPlans, setShowPlans] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -151,9 +153,21 @@ export default function Settings() {
     setRestoreNotice('')
     const r = await restore()
     setRestoring(false)
-    if (r.ok) {
-      setRestoreNotice('購入を復元しました。')
+
+    // **`ok` ではなく `active` を見る**（`lib/purchases.js` の `restore`）。
+    //
+    // 2026-08-24 まで `ok` だけを見ていた。復元するものが無くても
+    // 処理は通るので、**無料の人が押すと「Lantern Plus」に変わっていた。**
+    // サーバーは無料のままなので、有料機能を開けば断られる。
+    // 表示だけが嘘をついている状態で、これが一番たちが悪い——
+    // 「買ったはずなのに使えない」に見える。
+    if (r.ok && r.active) {
+      // 端末には権利がある。ただし**最後に決めるのはサーバー**なので、
+      // 表示を先に合わせたうえで `/api/plan` に確かめ直させる
+      // （webhook が届くまで少し遅れることがある）
       setPaid(true)
+      setPlanTick((t) => t + 1)
+      setRestoreNotice('購入を復元しました。')
       return
     }
     setRestoreNotice('復元できる購入は見つかりませんでした。')
@@ -314,14 +328,36 @@ export default function Settings() {
           ))}
         </Group>
 
-        {/* **プラン。** いま無料か有料かを見せ、復元の導線を置く。
+        {/* **プラン。** いま無料か有料かを見せ、購入と復元の導線を置く。
             復元は Apple の審査要件（機種変更・再インストールのため）。
 
-            ここに購入ボタンは置かない。**設定は道具の手入れをする場所**で、
-            売る場所ではない。買うのは断られた画面から
-            （`components/Paywall.jsx`）。 */}
+            **2026-08-24 に「プランを見る」を足した。** それまでは
+            「ここに購入ボタンは置かない。設定は道具の手入れをする場所で、
+            売る場所ではない」としており、買うのは断られた画面からだけだった。
+
+            考え方としては筋が通っていたが、**探す人の動線と合っていなかった。**
+            Apple の審査（iPad Air M3）が購入の場所を見つけられず、
+            Guideline 2.1(b) で差し戻された。審査担当はまず設定を見る。
+            **買おうと思った人も同じ**で、断られるまで待たされる作りだと、
+            自分から買いたいときに行き先が無い。
+
+            断られてから開くのと、自分から見に来るのとで見出しを変える
+            （`title`）。ここへは断られて来るわけではない。 */}
         <Group title="プラン">
-          <Row label="現在のプラン" value={planLabel} isLast={!canPurchase()} />
+          <Row
+            label="現在のプラン"
+            value={planLabel}
+            isLast={!canPurchase() || (paid !== false && !showPlans)}
+          />
+          {/* **有料の人には出さない。** すでに持っているものを
+              もう一度売る画面を、自分の設定の中に置く理由がない */}
+          {canPurchase() && paid === false ? (
+            <Row
+              label="プランを見る"
+              value={showPlans ? '' : '↓'}
+              onPress={() => setShowPlans((v) => !v)}
+            />
+          ) : null}
           {canPurchase() ? (
             <Row
               label={restoring ? '復元中...' : '購入を復元'}
@@ -330,6 +366,18 @@ export default function Settings() {
             />
           ) : null}
         </Group>
+        {showPlans ? (
+          <Paywall
+            title="Lantern Plus"
+            message="有料プランで開くものです。"
+            onClose={() => setShowPlans(false)}
+            onPurchased={() => {
+              setShowPlans(false)
+              setPaid(true)
+              setPlanTick((t) => t + 1)
+            }}
+          />
+        ) : null}
         {restoreNotice ? (
           <Text className="text-label-md text-outline">{restoreNotice}</Text>
         ) : null}
