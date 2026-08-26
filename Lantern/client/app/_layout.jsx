@@ -222,6 +222,7 @@ function RootNavigator() {
         <Stack.Screen name="forgot" />
         <Stack.Screen name="reset" />
         <Stack.Screen name="account" />
+        <Stack.Screen name="plan" />
       </Stack>
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）

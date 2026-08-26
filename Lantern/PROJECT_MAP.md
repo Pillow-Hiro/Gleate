@@ -62,6 +62,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `forgot.jsx` | `/forgot` | パスワード再設定メールを送る。**宛先を出す・再送を置く** |
 | `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
 | `account.jsx` | `/account` | アカウント。設定から1枚めくる。**削除はここにある** |
+| `plan.jsx` | `/plan` | プラン。設定の「現在のプラン」から1枚めくる。**購入と復元はここにある** |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの

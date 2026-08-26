@@ -18,8 +18,6 @@ import AccountMark from '../../components/AccountMark'
 import { timeLabel } from '../../lib/notifyText'
 import { todayStr } from '../../lib/date'
 import { openPrivacy, openTerms, openTokushoho } from '../../lib/openLegal'
-import { isAvailable as canPurchase, restore } from '../../lib/purchases'
-import Paywall from '../../components/Paywall'
 import { DEFAULT_ALWAYS, loadAlways, saveAlways } from '../../lib/splashPref'
 import { clearSeen as replayOnboarding } from '../../lib/onboardingPref'
 import { useRouter } from 'expo-router'
@@ -119,9 +117,6 @@ export default function Settings() {
   // 聞いていないと古いまま出る（2026-08-23）。
   const [planTick, setPlanTick] = useState(0)
   useRefreshOnFocus(useCallback(() => setPlanTick((t) => t + 1), []))
-  const [restoring, setRestoring] = useState(false)
-  const [restoreNotice, setRestoreNotice] = useState('')
-  const [showPlans, setShowPlans] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -148,30 +143,6 @@ export default function Settings() {
   // ここだけ別の呼び方にすると、同じものが2つに見える。
   const planLabel = paid === null ? '' : paid ? 'Lantern Plus' : '無料'
 
-  async function handleRestore() {
-    setRestoring(true)
-    setRestoreNotice('')
-    const r = await restore()
-    setRestoring(false)
-
-    // **`ok` ではなく `active` を見る**（`lib/purchases.js` の `restore`）。
-    //
-    // 2026-08-24 まで `ok` だけを見ていた。復元するものが無くても
-    // 処理は通るので、**無料の人が押すと「Lantern Plus」に変わっていた。**
-    // サーバーは無料のままなので、有料機能を開けば断られる。
-    // 表示だけが嘘をついている状態で、これが一番たちが悪い——
-    // 「買ったはずなのに使えない」に見える。
-    if (r.ok && r.active) {
-      // 端末には権利がある。ただし**最後に決めるのはサーバー**なので、
-      // 表示を先に合わせたうえで `/api/plan` に確かめ直させる
-      // （webhook が届くまで少し遅れることがある）
-      setPaid(true)
-      setPlanTick((t) => t + 1)
-      setRestoreNotice('購入を復元しました。')
-      return
-    }
-    setRestoreNotice('復元できる購入は見つかりませんでした。')
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -328,59 +299,29 @@ export default function Settings() {
           ))}
         </Group>
 
-        {/* **プラン。** いま無料か有料かを見せ、購入と復元の導線を置く。
-            復元は Apple の審査要件（機種変更・再インストールのため）。
+        {/* **プラン。** 行は1つだけ。押すと `app/plan.jsx` へ。
+            購入も復元もあちらに置く（Apple は復元の導線を求めている）。
 
-            **2026-08-24 に「プランを見る」を足した。** それまでは
-            「ここに購入ボタンは置かない。設定は道具の手入れをする場所で、
-            売る場所ではない」としており、買うのは断られた画面からだけだった。
+            **2026-08-24。** それまでは「ここに購入ボタンは置かない。
+            設定は道具の手入れをする場所で、売る場所ではない」としており、
+            買うのは断られた画面からだけだった。考え方は筋が通っていたが、
+            **探す人の動線と合っていなかった。**Apple の審査
+            （iPad Air M3）が購入の場所を見つけられず、
+            Guideline 2.1(b) で差し戻された。買おうと思った人も同じで、
+            断られるまで待たないと行き先が無い。
 
-            考え方としては筋が通っていたが、**探す人の動線と合っていなかった。**
-            Apple の審査（iPad Air M3）が購入の場所を見つけられず、
-            Guideline 2.1(b) で差し戻された。審査担当はまず設定を見る。
-            **買おうと思った人も同じ**で、断られるまで待たされる作りだと、
-            自分から買いたいときに行き先が無い。
-
-            断られてから開くのと、自分から見に来るのとで見出しを変える
-            （`title`）。ここへは断られて来るわけではない。 */}
+            はじめは「プランを見る」という行を足したが、**プランの行が
+            2つに割れた。**「現在のプラン」と並ぶと、どちらを押すのかを
+            読んで決めることになる。**状態を見せる行そのものを入口にした。**
+            いま何であるかを知りたくて押した人が、そのまま変えられる場所へ着く。 */}
         <Group title="プラン">
           <Row
             label="現在のプラン"
             value={planLabel}
-            isLast={!canPurchase() || (paid !== false && !showPlans)}
+            onPress={() => router.push('/plan')}
+            isLast
           />
-          {/* **有料の人には出さない。** すでに持っているものを
-              もう一度売る画面を、自分の設定の中に置く理由がない */}
-          {canPurchase() && paid === false ? (
-            <Row
-              label="プランを見る"
-              value={showPlans ? '' : '↓'}
-              onPress={() => setShowPlans((v) => !v)}
-            />
-          ) : null}
-          {canPurchase() ? (
-            <Row
-              label={restoring ? '復元中...' : '購入を復元'}
-              onPress={restoring ? undefined : handleRestore}
-              isLast
-            />
-          ) : null}
         </Group>
-        {showPlans ? (
-          <Paywall
-            title="Lantern Plus"
-            message="有料プランで開くものです。"
-            onClose={() => setShowPlans(false)}
-            onPurchased={() => {
-              setShowPlans(false)
-              setPaid(true)
-              setPlanTick((t) => t + 1)
-            }}
-          />
-        ) : null}
-        {restoreNotice ? (
-          <Text className="text-label-md text-outline">{restoreNotice}</Text>
-        ) : null}
 
         {/* **中身が変わった**（2026-08-17）。
             JSON 1枚だったころは本文しか入っておらず、
