@@ -28,13 +28,50 @@
 -- ## 流す順番
 --
 -- いつ流してもよい。サーバーの動きが変わらないため。
+-- **何度流してもよい。**すでに有効な表は、そのまま有効なだけ。
+--
+-- ## 表の一覧をここで持たない
+--
+-- 2026-08-24 に書き直した。それまで6表を直接並べていたが、
+-- **その後に増えた `subscriptions` と `ai_usage` が抜けていた。**
+-- 課金状態と利用回数が、方針の外に置かれたままになっていた。
+--
+-- 手で並べる限り、表が増えるたびに同じ抜けが起きる。
+-- **サーバーが実際に触っている表**を書き出し、
+-- 存在するものにだけ掛ける形にした。
+--
+--   grep -rho 'table("[a-z_]*")' modules/ main.py | sort -u
+--
+-- `goals` は**実在しない表**（`load_goals()` が毎回失敗を握り潰している。
+-- 目標設定機能は REQUIREMENTS.md の「やらないこと」）。
+-- 一覧には残す。作られた日に自動で掛かる方が、また忘れるより良い。
+-- 存在しない表は黙って飛ばす——**1つ無いだけで全体が止まると、
+-- 流すのが怖くなって、いつまでも流されない。**
 
-alter table public.logs           enable row level security;
-alter table public.ideas          enable row level security;
-alter table public.daily_quotes   enable row level security;
-alter table public.youtube_tokens enable row level security;
-alter table public.twitch_tokens  enable row level security;
-alter table public.twitch_streams enable row level security;
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'logs',
+    'ideas',
+    'daily_quotes',
+    'goals',
+    'subscriptions',
+    'ai_usage',
+    'youtube_tokens',
+    'twitch_tokens',
+    'twitch_streams'
+  ]
+  loop
+    if to_regclass('public.' || t) is null then
+      raise notice '飛ばした（表が無い）: %', t;
+      continue;
+    end if;
+    execute format('alter table public.%I enable row level security', t);
+    raise notice '有効にした: %', t;
+  end loop;
+end $$;
 
 -- 確認。`rowsecurity` が全部 true になっていればよい。
 --
