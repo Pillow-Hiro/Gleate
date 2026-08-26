@@ -3,21 +3,26 @@ import { ActivityIndicator, Pressable, View } from 'react-native'
 import Text from './Text'
 import { isAvailable, loadOfferings, purchase, restore } from '../lib/purchases'
 import { trialLabel } from '../lib/trialText'
-import { openPrivacy, openTerms, openTokushoho } from '../lib/openLegal'
 
 // 断られたときに出す面。
 //
 // ## Apple が画面に求めるもの
 //
-// 審査ガイドライン 3.1.2 は、自動更新の購読について**購入する画面に**
-// 次を出すことを求めている。抜けると差し戻される。
+// 審査ガイドライン 3.1.2(c) が**購入する前に**求めているのは、
+// 何がいくらで手に入るかをはっきり示すこと。
 //
 // 1. 何が含まれるか
 // 2. 期間（1か月／1年）
 // 3. 価格（**ストアが返した文字列をそのまま**。自分で組み立てない）
 // 4. 自動更新であること・解約しなければ更新されること
-// 5. 利用規約とプライバシーポリシーへの導線
-// 6. 購入を復元する導線
+// 5. 購入を復元する導線
+//
+// **規約とプライバシーへのリンクは、この画面では求められていない。**
+// 2026-08-24 まで「5. 利用規約とプライバシーポリシーへの導線／
+// 抜けると差し戻される」と書いてあったが、原文を当たると 3.1.2 に
+// その定めは無い。求めているのは 5.1.1(i) の方で、
+// **アプリ内のどこかで容易に開けること**。設定の「Lanternについて」に
+// 3つとも置いてある（`lib/openLegal.js`）。
 //
 // ## 煽らない
 //
@@ -182,19 +187,14 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
         解約は「設定 › Apple ID › サブスクリプション」から。
       </Text>
 
-      {/* 規約・ポリシー・復元。**Apple が求める導線** */}
+      {/* 復元。**これは残す。**機種変更・再インストールで買い直させない。
+
+          規約・プライバシー・特商法へのリンクは 2026-08-24 に外した。
+          **どれも設定の「Lanternについて」にある。**
+          同じ行き先を2か所に置くと、片方だけ直す日が来る。 */}
       <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
         <Pressable onPress={handleRestore} disabled={busy} className="py-1">
           <Text className="text-label-md text-secondary">購入を復元</Text>
-        </Pressable>
-        <Pressable onPress={openTerms} className="py-1">
-          <Text className="text-label-md text-secondary">利用規約</Text>
-        </Pressable>
-        <Pressable onPress={openPrivacy} className="py-1">
-          <Text className="text-label-md text-secondary">プライバシー</Text>
-        </Pressable>
-        <Pressable onPress={openTokushoho} className="py-1">
-          <Text className="text-label-md text-secondary">特商法</Text>
         </Pressable>
       </View>
 
