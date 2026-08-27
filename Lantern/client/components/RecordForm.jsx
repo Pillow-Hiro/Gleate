@@ -10,6 +10,7 @@ import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
 import { invalidateLogs } from '../lib/logsCache'
+import { getLight, isLighting, forgetLight, requestLight, subscribeLight } from '../lib/lightBuffer'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
@@ -251,9 +252,24 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   const [justOpened, setJustOpened] = useState(null)
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
-  // 灯りを作っている最中。**保存はもう終わっている**
-  const [lighting, setLighting] = useState(false)
-  const [aiResponse, setAiResponse] = useState(existingLog?.ai_response || '')
+  // 灯りは**画面の外に置いてある**（`lib/lightBuffer.js`）。
+  // このフォームは保存のたびに作り直されるので、ここで持つと消える。
+  // 生えた時点で受け皿を見て、以後は変化を受け取る。
+  const [lighting, setLighting] = useState(() => isLighting(targetDate))
+  const [aiResponse, setAiResponse] = useState(
+    () => getLight(targetDate) || existingLog?.ai_response || '',
+  )
+
+  useEffect(
+    () =>
+      subscribeLight(() => {
+        // **受け皿が空でも消さない。** 保存済みの灯りを持っている場合がある
+        const next = getLight(targetDate)
+        if (next) setAiResponse(next)
+        setLighting(isLighting(targetDate))
+      }),
+    [targetDate],
+  )
   const [saveError, setSaveError] = useState('')
   const [photoUrl, setPhotoUrl] = useState(
     existingLog?.photo_url || loadPhoto(targetDate).photo_url,
@@ -312,6 +328,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   async function handleSave() {
     setLoading(true)
     setSlow(false)
+    // 書き直したので、前の灯りは捨てる。**受け皿からも消す**
+    forgetLight(targetDate)
     setAiResponse('')
     setSaveError('')
     const slowTimer = setTimeout(() => setSlow(true), SLOW_SAVE_MS)
@@ -334,25 +352,12 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。
-      // 失敗しても何も出さない（記録は残っている）
-      if (data.deferred) {
-        setLighting(true)
-        authFetch('/api/light', {
-          method: 'POST',
-          body: JSON.stringify({ date: targetDate }),
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((j) => {
-            if (j && j.ai_response) {
-              setAiResponse(j.ai_response)
-              // 灯りは記録の一部として保存されている。
-              // **もう一度古くする。**さもないと一覧の記録に灯りが載らない
-              invalidateLogs()
-            }
-          })
-          .catch((e) => console.warn('[記録] 灯りを受け取れなかった', e))
-          .finally(() => setLighting(false))
-      }
+      //
+      // **待ちはこの画面が持たない**（`lib/lightBuffer.js`）。
+      // 保存すると親が記録を取り直し、その拍子にこのフォームは
+      // `key` が変わって作り直される。ここで待っていると、
+      // 返ってきた頃には受け取る画面が居ない。
+      if (data.deferred) requestLight(targetDate)
     } catch (e) {
       // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
       console.warn('[Home] 記録の保存に失敗', e)

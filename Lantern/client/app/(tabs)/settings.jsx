@@ -7,6 +7,7 @@ import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { forgetLogs, loadLogs } from '../../lib/logsCache'
+import { forgetAllLights } from '../../lib/lightBuffer'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
@@ -185,6 +186,7 @@ export default function Settings() {
     // **控えを消してからログアウトする。**
     // 残すと、同じ端末を別の人が使ったとき前の人の記録が一瞬見える
     await forgetLogs()
+    forgetAllLights()
     await supabase.auth.signOut()
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
   }

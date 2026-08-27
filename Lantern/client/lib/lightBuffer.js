@@ -1,0 +1,102 @@
+import { authFetch } from './supabase'
+import { invalidateLogs } from './logsCache'
+
+// 灯りの受け皿。**画面より長生きする。**
+//
+// ## なぜ要るのか（2026-08-27）
+//
+// 作者から「Lanternの回答がすぐに消える」と報告があった。
+//
+// 記録を保存すると、親が記録を取り直す。取り直すと `RecordForm` の
+// `key` が変わる——**その日の記録がまだ無い状態から、有る状態へ移る**ため
+// （`key={existingLog ? existingLog.date : 'new-' + targetDate}`）。
+// key が変わればフォームは作り直され、`aiResponse` は初期値に戻る。
+//
+// **その日の1件目でだけ起きる。** 2回目以降は key が変わらないので
+// 消えない。だから「ときどき消える」ように見えていた。
+//
+// さらに悪いことに、`/api/light` の待ちは**作り直される前の画面**が
+// 持っていた。返ってきた頃には、その画面はもう居ない。
+// 灯りは受け取られず、どこにも残らなかった。
+//
+// ## どうするか
+//
+// **待ちも結果も画面の外に置く。** ここは React の外なので、
+// フォームが何度作り直されても消えない。
+// 作り直された側は、生えた時点でここを見る。
+//
+// 記録の一覧への反映（`invalidateLogs`）もここから呼ぶ。
+// 呼ぶ主体が画面だと、その画面が居なくなった時点で呼ばれなくなる。
+
+const lights = new Map()
+const waiting = new Set()
+const listeners = new Set()
+
+function notify() {
+  for (const fn of listeners) {
+    try {
+      fn()
+    } catch (e) {
+      console.warn('[灯り] 通知に失敗', e)
+    }
+  }
+}
+
+/** その日の灯り。無ければ空文字 */
+export function getLight(date) {
+  return lights.get(date) || ''
+}
+
+/** いま作っている最中か */
+export function isLighting(date) {
+  return waiting.has(date)
+}
+
+/** 変化を受け取る。**戻り値を呼ぶと外れる** */
+export function subscribeLight(fn) {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+
+/** 書き直したときなど、前の灯りを捨てる */
+export function forgetLight(date) {
+  if (lights.delete(date)) notify()
+}
+
+/**
+ * **ログアウトと退会で必ず呼ぶ。** 灯りは記録から作った文章で、
+ * 前の人のものを次の人に見せない（`logsCache.js` の `forgetLogs` と対）。
+ */
+export function forgetAllLights() {
+  lights.clear()
+  waiting.clear()
+  notify()
+}
+
+/**
+ * 灯りをともす。**待たない。**
+ *
+ * 同じ日を重ねて頼まない。保存を続けて押しても通信は1本。
+ */
+export function requestLight(date) {
+  if (waiting.has(date)) return
+  waiting.add(date)
+  notify()
+
+  authFetch('/api/light', { method: 'POST', body: JSON.stringify({ date }) })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j || !j.ai_response) return
+      lights.set(date, j.ai_response)
+      // 灯りは記録の一部として保存されている。一覧にも載せる
+      invalidateLogs()
+    })
+    .catch((e) => {
+      // 失敗しても何も出さない。**記録は残っている**
+      console.warn('[記録] 灯りを受け取れなかった', e)
+    })
+    .finally(() => {
+      waiting.delete(date)
+      notify()
+    })
+}

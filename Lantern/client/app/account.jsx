@@ -8,6 +8,7 @@ import AccountMark from '../components/AccountMark'
 import AuthField from '../components/AuthField'
 import { supabase, authFetch } from '../lib/supabase'
 import { forgetLogs } from '../lib/logsCache'
+import { forgetAllLights } from '../lib/lightBuffer'
 import { authErrorMessage } from '../lib/authError'
 import * as avatar from '../lib/avatarStore'
 import { compressPhoto } from '../lib/image'
@@ -129,6 +130,7 @@ export default function Account() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       // **控えも消す。**退会したのに記録が端末に残るのはおかしい
       await forgetLogs()
+      forgetAllLights()
       await supabase.auth.signOut()
     } catch (e) {
       console.warn('[Account] 削除に失敗', e)

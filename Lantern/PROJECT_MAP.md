@@ -189,6 +189,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `keyboard.js` | キーボードの高さを聞く（`react-native` を読む） | — |
 | `refreshOnFocus.js` | ホーム / 記録 / 分析 | **戻ってきたら取り直す**。タブは裏で生きたままなので、載せたときの取得は二度と走らない |
 | `logsCache.js` | ホーム / 書く / 記録 / 分析 / 設定 | **記録の取り方を1か所に。**控えを先に出し、裏で取り直す。5画面が別々に全記録を取っていたのをまとめた |
+| `lightBuffer.js` | 書く | **灯りの受け皿。画面より長生きする。**保存でフォームが作り直されるため、待ちも結果も React の外に置く |
 | `trialText.js` | Paywall | **無料お試しの一文**。ストアの `introPrice` から組む。値引きは「無料」と言わない |
 | `keyboardMath.js` | 下に空ける高さと窓の高さの計算。**安全域を二重に数えない** | `keyboardMath.test.js` |
 | `youtubeConnect.js` ＋ `youtubeConnect.web.js` | OAuth の開始 | — |

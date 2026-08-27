@@ -232,6 +232,16 @@ def make_light():
         return jsonify({"ai_response": entry.get("ai_response", "")})
 
     entry["ai_response"] = ai_response
+    # **時刻を打ち直す**（2026-08-27）。
+    #
+    # `entry` は `load_logs` から来ているので `saved_at` を持っている。
+    # `_to_db` はそれをそのまま `updated_at` に書き戻すため、
+    # **灯りを保存しても更新時刻が動かなかった。**
+    #
+    # 控えは `updated_at` の差分で記録を取る（`client/lib/logsCache.js`）。
+    # 動かない行は差分に現れない。**灯りが記録の一覧に載らなかった。**
+    # 保存そのものは通っているので、開き直すまで気づけない。
+    entry["saved_at"] = now_utc_iso()
     try:
         save_logs([entry], g.user_id)
     except Exception as e:
