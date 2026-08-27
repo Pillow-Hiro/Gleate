@@ -322,12 +322,48 @@ def revenuecat_webhook():
     return jsonify({"status": "ok", "detail": detail})
 
 
+# 1回で返す上限。**要求された数がこれを超えたら断る。**
+#
+# 黙って切り詰めると、受け取った側は全部届いたと思う。
+# 足りないことに気づく場所が無くなる。
+MAX_LOGS_LIMIT = 500
+
+
 @app.route("/api/logs", methods=["GET"])
 @require_auth
 def get_logs_api():
-    # 写真はサーバーに無い（2026-08-06〜）。端末の中だけに置いている。
-    # クライアントが lib/photoStore.js でここに合流させる。
-    return jsonify(load_logs(g.user_id))
+    """記録の一覧。
+
+    写真はサーバーに無い（2026-08-06〜）。端末の中だけに置いている。
+    クライアントが `lib/photoStore.js` でここに合流させる。
+
+    ## 区切り（2026-08-27）
+
+    **引数が無ければ全件。** 出回っているビルドはこの形で呼ぶ。
+
+    - `?since=<ISO8601>` … その時刻より後に更新された記録だけ
+    - `?limit=<1..500>`  … 新しい方から N 件
+
+    `since` は控えを持つクライアントのためにある
+    （`client/lib/logsCache.js`）。手元の最終更新時刻を送り、
+    **変わったものだけ受け取る。** 記録が積み上がっても、
+    毎回の通信は「前回から書いた分」で頭打ちになる。
+
+    **消された記録は差分に現れない。** 控える側が、ときどき
+    全件を取り直すこと。
+    """
+    since = request.args.get("since") or None
+
+    limit = request.args.get("limit")
+    if limit is not None:
+        try:
+            limit = int(limit)
+        except ValueError:
+            return jsonify({"error": "invalid_limit"}), 400
+        if limit < 1 or limit > MAX_LOGS_LIMIT:
+            return jsonify({"error": "invalid_limit", "max": MAX_LOGS_LIMIT}), 400
+
+    return jsonify(load_logs(g.user_id, since=since, limit=limit))
 
 
 @app.route("/api/account", methods=["DELETE"])

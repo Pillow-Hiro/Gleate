@@ -24,6 +24,21 @@ import { authFetch } from './supabase'
 //    通信は1本
 // 4. **15秒は取り直さない。** タブを行き来するだけで
 //    毎回叩くのを止める
+// 5. **2回目からは差分だけ。**（2026-08-27）手元の最終更新時刻を
+//    `?since=` で送り、変わったものだけ受け取る
+//
+// ## 差分にした理由
+//
+// 3 と 4 で「取りに行く回数」は減ったが、**1回あたりの量は
+// 記録の数だけ増え続ける。**39件のいまは軽い。数年ぶんが溜まると、
+// 起動のたびに全部を運ぶことになる。
+//
+// 体感は控えが隠すので、**遅くなっても気づけない種類の遅さ**になる。
+// 気づいたときには、直すのに移行が要る大きさになっている。
+//
+// **穴が1つある。消された記録は差分に現れない。**
+// 同じ端末での削除は `replaceLogs` が控えを合わせる。
+// 別の端末で消した場合は、`FULL_MS`（1日）ごとの全件取得で揃う。
 //
 // 画面の作りは変えていない。`authFetch('/api/logs')` を
 // `loadLogs()` に置き換えただけ。**審査中なので手術範囲を狭くした。**
@@ -35,20 +50,36 @@ import { authFetch } from './supabase'
 // `tests/test_react_patterns.py` 相当の検査は無いので、
 // 経路を増やしたら手で確かめる。
 
-const KEY = 'lantern.logs_v1'
+// **v2 になった**（2026-08-27）。中身が配列から
+// `{ list, fullAt }` に変わったため、鍵ごと変えている。
+// 古い鍵を読もうとして形が違えば、全件から取り直せばよいだけ。
+const KEY = 'lantern.logs_v2'
 
 // この時間内なら取り直さない。タブの行き来で毎回叩かないため
 const FRESH_MS = 15000
 
+// **これだけ経ったら全件を取り直す。**
+//
+// 差分同期には穴が1つある。**消された記録は差分に現れない。**
+// 別の端末で消しても、こちらの控えには残り続ける。
+// 同じ端末での削除は `replaceLogs` が控えを合わせるので出ない。
+//
+// 消えないより、1日ずれる方がまし。時計を戻してでも
+// 完全な一致を取りにいくと、通信を減らした意味が無くなる。
+const FULL_MS = 24 * 60 * 60 * 1000
+
 let memo = null
 let memoAt = 0
+let fullAt = 0
 let inflight = null
 
 async function fromDisk() {
   try {
     const raw = await AsyncStorage.getItem(KEY)
     const saved = raw ? JSON.parse(raw) : null
-    return Array.isArray(saved) ? saved : null
+    if (!saved || !Array.isArray(saved.list)) return null
+    fullAt = saved.fullAt || 0
+    return saved.list
   } catch (e) {
     // 壊れた控えは無かったことにする。**画面は出す**
     console.warn('[記録] 控えを読めなかった', e)
@@ -57,24 +88,52 @@ async function fromDisk() {
 }
 
 function persist(list) {
-  AsyncStorage.setItem(KEY, JSON.stringify(list)).catch((e) => {
+  AsyncStorage.setItem(KEY, JSON.stringify({ list, fullAt })).catch((e) => {
     console.warn('[記録] 控えを書けなかった', e)
   })
+}
+
+/** 手元の最終更新時刻。差分を求めるときに送る */
+function latestSavedAt(list) {
+  let latest = ''
+  for (const l of list) {
+    const t = l && l.saved_at
+    if (t && t > latest) latest = t
+  }
+  return latest
+}
+
+/**
+ * 差分を控えに畳み込む。**日付が同じものは新しい方で置き換える。**
+ *
+ * 記録は1日1件なので、日付が同一性そのもの。
+ * `id` で突き合わせると、同じ日を書き直したときに2件に見える。
+ */
+function merge(base, changed) {
+  if (!changed.length) return base
+  const byDate = new Map(base.map((l) => [l.date, l]))
+  for (const l of changed) byDate.set(l.date, l)
+  return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
 }
 
 function fromServer() {
   // **重ねて呼ばれても1本。** 5画面が同時に開いても通信は1回
   if (inflight) return inflight
   inflight = (async () => {
+    // 控えが無い・古すぎるなら全件。それ以外は前回より後のものだけ
+    const stale = Date.now() - fullAt > FULL_MS
+    const since = memo && memo.length && !stale ? latestSavedAt(memo) : ''
     try {
-      const res = await authFetch('/api/logs')
+      const res = await authFetch(`/api/logs${since ? `?since=${encodeURIComponent(since)}` : ''}`)
       if (!res.ok) return null
       const data = await res.json()
       if (!Array.isArray(data)) return null
-      memo = data
+
+      memo = since ? merge(memo, data) : data
       memoAt = Date.now()
-      persist(data)
-      return data
+      if (!since) fullAt = memoAt
+      persist(memo)
+      return memo
     } catch (e) {
       // 取れなくても控えで画面は出る。**空にしない**
       console.warn('[記録] 取得に失敗', e)
@@ -131,7 +190,12 @@ export function invalidateLogs() {
   fromServer()
 }
 
-/** 画面の側で1件消したときなど、手元のものを差し替える */
+/**
+ * 画面の側で1件消したときなど、手元のものを差し替える。
+ *
+ * **削除はここでしか控えに伝わらない。** 差分同期には
+ * 消えた行が現れないため（`FULL_MS` を参照）。
+ */
 export function replaceLogs(next) {
   if (!Array.isArray(next)) return
   memo = next
@@ -143,6 +207,9 @@ export function replaceLogs(next) {
 export async function forgetLogs() {
   memo = null
   memoAt = 0
+  // **これも戻すこと。** 残すと、次の人の1回目が差分取得になり、
+  // 手元が空なのに「前回以降だけ」を頼んでしまう
+  fullAt = 0
   inflight = null
   try {
     await AsyncStorage.removeItem(KEY)

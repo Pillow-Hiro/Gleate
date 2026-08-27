@@ -77,19 +77,36 @@ def _upsert_one(row):
 
 # ── ログ ─────────────────────────────────────────────────────────
 
-def load_logs(user_id):
+def load_logs(user_id, since=None, limit=None):
     """記録を読む。**`user_id` は必ず渡す。**
 
     既定値を持たせていた頃は、渡し忘れると `.eq("user_id", ...)` が
     付かず、**全員の記録が返っていた。** 呼び出し側は全部渡していたが、
     「渡さなくても動く」形を残しておく理由が無い。
-    
 
     **`favorite` 列が無くても記録を返す。**
     列を足す SQL は人の手で流す。サーバーの配備が先に済むと、
     `select` が落ちて**記録が1件も出ない画面**になる。
     順番に依存させないため、列が無ければ外して読み直す。
     列を足したあとは1回目で通るので、この道は使われなくなる。
+
+    ## 区切り（2026-08-27）
+
+    **既定は全件のまま。** 出回っているビルドに `since` を送らせる術は無い。
+    引数を足しても、渡さない呼び出しの意味は変えない。
+
+    | 引数 | 何をするか |
+    |---|---|
+    | `since` | `updated_at` がその時刻より**後**の行だけ返す |
+    | `limit` | **新しい方から** N 件。古い方を切る |
+
+    `limit` が古い方を切るのは、逆にすると「今日の記録が無い」画面に
+    なるため。**記録アプリで今日が見えないのは、全部見えないのと同じ。**
+
+    返す順番は引数によらず**日付の昇順**。呼ぶ側が並べ直さずに済む。
+
+    戻り値だけでは「消された行」が分からない。**削除は差分に現れない。**
+    控えを持つ側が、ときどき全件を取り直すこと（`client/lib/logsCache.js`）。
     """
     if not user_id:
         raise ValueError("load_logs には user_id が要る")
@@ -98,8 +115,15 @@ def load_logs(user_id):
     for select in (_DB_SELECT, _DB_SELECT_BASE):
         try:
             q = supabase.table("logs").select(select).eq("user_id", user_id)
-            result = q.order("date").execute()
-            return [_from_db(r) for r in (result.data or [])]
+            if since:
+                q = q.gt("updated_at", since)
+            if limit:
+                # **新しい順に取ってから反転する。**
+                # 昇順のまま limit を付けると、古い方が残って今日が落ちる
+                rows = list(reversed(q.order("date", desc=True).limit(limit).execute().data or []))
+            else:
+                rows = q.order("date").execute().data or []
+            return [_from_db(r) for r in rows]
         except Exception as e:
             # 中身は出さない。型と、どちらの select で落ちたかだけ残す
             print(f"[Supabase] load_logs error ({type(e).__name__}), favorite={select is _DB_SELECT}")
