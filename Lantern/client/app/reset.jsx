@@ -94,6 +94,12 @@ export default function Reset() {
             <Text className="text-label-md text-outline leading-relaxed">
               メールのリンクから開き直してください。
             </Text>
+            {/* **行き先を1つは出す。**（2026-08-28）
+                「変えられません」だけだと、どこへ行けばよいか分からない。
+                ログイン中なら、メールを待たずにその場で変えられる */}
+            <Text className="text-label-md text-outline leading-relaxed">
+              ログイン中の場合は、設定 ＞ アカウント からも変えられます。
+            </Text>
             <Pressable
               onPress={() => router.replace('/forgot')}
               className="border border-sage/40 rounded-full px-3.5 min-h-touch justify-center items-center"

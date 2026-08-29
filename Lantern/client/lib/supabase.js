@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto'
+import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
 
@@ -10,8 +11,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    // ネイティブにはURLのセッションフラグメントが存在しないため無効化する
-    detectSessionInUrl: false,
+    // **Web でだけ URL を読む**（2026-08-28）。
+    //
+    // ネイティブには URL のセッションフラグメントが無いので、
+    // 元は一律 false にしていた。だが**パスワード再設定のリンクは
+    // Web で開かれる**（戻り先を Web に固定している。`lib/authLink.js`）。
+    //
+    // 読まないと、Supabase が URL に載せてきたセッションが作られない。
+    // `app/reset.jsx` は「セッションが来たか」で可否を決めているので、
+    // **永久に「パスワードを変えられません」になっていた。**
+    // 作者から「リンクを押しても変えられない」と報告があったのがこれ。
+    //
+    // 確認メールのリンク（`/login` へ戻る）もここで拾えるようになり、
+    // 開いた時点でそのまま入れる。
+    //
+    // 流儀は `implicit`（`@supabase/auth-js` の既定）。**PKCE ではない。**
+    // PKCE だと検証子を持っているのは再設定を頼んだ側だけで、
+    // アプリで頼んでブラウザで開く経路が成立しない。
+    // ここを `pkce` に変えるなら、その経路が壊れることを先に確かめること。
+    detectSessionInUrl: Platform.OS === 'web',
   },
 })
 
