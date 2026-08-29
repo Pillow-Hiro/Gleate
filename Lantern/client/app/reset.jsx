@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
+import * as Linking from 'expo-linking'
 import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
@@ -7,6 +8,7 @@ import FormShell from '../components/FormShell'
 import AuthField from '../components/AuthField'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage } from '../lib/authError'
+import { readRecovery, readRecoveryError } from '../lib/recoveryLink'
 
 // 新しいパスワードを決める画面。
 //
@@ -46,6 +48,55 @@ export default function Reset() {
     }
   }, [])
 
+  // **ネイティブは URL を自分で読む**（2026-08-28）。
+  //
+  // Web は `detectSessionInUrl` が拾うが、ネイティブでは効かない
+  // （`window.location` が無い）。アプリへ戻す作りにしたので、
+  // `lantern://reset#access_token=...` を自分で解いて渡す。
+  //
+  // 起動していない状態で開かれる場合と、裏で生きていた場合の両方がある。
+  // 前者は `getInitialURL`、後者は `addEventListener`。**片方だけでは落ちる。**
+  useEffect(() => {
+    if (Platform.OS === 'web') return undefined
+    let cancelled = false
+
+    async function accept(url) {
+      if (cancelled || !url) return
+
+      const failed = readRecoveryError(url)
+      if (failed) {
+        // 期限切れなど。**理由は出さない**（英語で来るため）。
+        // やり直す入口だけ見せる
+        console.warn('[再設定] リンクが使えなかった', failed)
+        setReady(false)
+        return
+      }
+
+      const found = readRecovery(url)
+      if (!found) return
+
+      const { error: err } = await supabase.auth.setSession({
+        access_token: found.access_token,
+        refresh_token: found.refresh_token,
+      })
+      if (cancelled) return
+      if (err) {
+        console.warn('[再設定] セッションを作れなかった', err)
+        setReady(false)
+        return
+      }
+      setReady(true)
+    }
+
+    Linking.getInitialURL().then(accept)
+    const sub = Linking.addEventListener('url', ({ url }) => accept(url))
+
+    return () => {
+      cancelled = true
+      sub.remove()
+    }
+  }, [])
+
   async function submit() {
     if (password.length < 6) {
       setError('パスワードは6文字以上で設定してください。')
@@ -77,11 +128,15 @@ export default function Reset() {
             <Text className="text-body-md text-ink leading-relaxed">
               新しいパスワードを設定しました。
             </Text>
+            {/* **「ログインへ」ではない**（2026-08-28）。
+                ここへ来られた時点で復帰用のセッションが出来ており、
+                入り直す必要が無い。ログイン画面へ送っても、
+                認証ガードがすぐ本画面へ振り替えるだけだった */}
             <Pressable
-              onPress={() => router.replace('/login')}
+              onPress={() => router.replace('/')}
               className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80"
             >
-              <Text className="font-strong text-body text-on-lantern">ログインへ</Text>
+              <Text className="font-strong text-body text-on-lantern">Lanternへ</Text>
             </Pressable>
           </View>
         ) : ready === false ? (

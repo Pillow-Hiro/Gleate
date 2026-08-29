@@ -157,6 +157,16 @@ function RootNavigator() {
   const router = useRouter()
   const { isDark } = useThemeContext()
 
+  // **再設定の最中は、上に何も被せない**（2026-08-28・作者の指示）。
+  //
+  // メールのリンクからアプリが開くようになった（`lib/authLink.js`）。
+  // 着いた先はパスワードを変えるための画面で、**用事が決まっている。**
+  // 起動画面の写真も、初回の案内も、そこでは邪魔にしかならない。
+  //
+  // 覚えている「既読」には触らない。案内を消すのではなく、
+  // **この一度だけ出さない。** 次にふつうに開いたときには出る。
+  const isRecovering = segments[0] === 'reset'
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -233,11 +243,12 @@ function RootNavigator() {
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）
           - ログイン前には出さない。まだ自分のものになっていない
-            アプリの使い方を読まされても、頭に残らない */}
-      {session && showSplash === false && showOnboarding === true ? (
+            アプリの使い方を読まされても、頭に残らない
+          - **パスワードの再設定で開かれたときは出さない**（下記） */}
+      {session && showSplash === false && showOnboarding === true && !isRecovering ? (
         <Onboarding onDone={handleOnboardingDone} />
       ) : null}
-      {showSplash === true ? <SplashScreen onClose={handleSplashClose} /> : null}
+      {showSplash === true && !isRecovering ? <SplashScreen onClose={handleSplashClose} /> : null}
     </>
   )
 }

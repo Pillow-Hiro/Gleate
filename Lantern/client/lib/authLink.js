@@ -1,3 +1,5 @@
+import { Platform } from 'react-native'
+
 // 認証メールの戻り先。**登録の確認**と**パスワード再設定**の2つ。
 //
 // **Web に戻す。ネイティブへは戻さない。**
@@ -28,6 +30,26 @@ export function signupRedirectTo() {
   return `${FALLBACK}/login`
 }
 
+// **アプリへ戻す**（2026-08-28・作者の判断）。
+//
+// それまで Web に固定していた。理由は上に書いてある通り
+// 「開かなかったときに何も起きないように見える」こと。
+// だが実際に使うと、**アプリで頼んだのにブラウザで終わる**方が違和感が強い。
+// パスワードを変えたあと、もう一度アプリを開いて入り直すことになる。
+//
+// `lantern://` は build 22 に既に登録されている（`app.json` の `scheme`。
+// YouTube と Twitch の連携が同じものを使っている）。**ビルドし直さずに届く。**
+//
+// **頼んだ端末に戻る。** この関数はリンクを送る側で動くので、
+// アプリで頼めばアプリへ、Web で頼めば Web へ戻る。
+// 別の端末でメールを開いた場合だけ、アプリが無くて開けないことがある。
+//
+// **Supabase の Redirect URLs に `lantern://reset` を足すこと。**
+// 許可されていない戻り先は弾かれる。
+//
+// より確実なのは Universal Links（`https://` のまま、アプリが入っていれば
+// アプリが開き、無ければ Web が開く）。ただし `associatedDomains` の
+// 権利指定が要るので**ビルドし直しが必要**。9月のビルドで入れる。
 export function resetRedirectTo() {
-  return `${FALLBACK}/reset`
+  return Platform.OS === 'web' ? `${FALLBACK}/reset` : 'lantern://reset'
 }
