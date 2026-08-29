@@ -14,6 +14,7 @@ import { useAppFonts } from '../lib/fonts'
 import * as NativeSplash from 'expo-splash-screen'
 import SplashScreen from '../components/SplashScreen'
 import Onboarding from '../components/Onboarding'
+import BootScreen from '../components/BootScreen'
 import {
   hasSeen as hasSeenOnboarding,
   markSeen as markOnboardingSeen,
@@ -208,8 +209,13 @@ function RootNavigator() {
   //
   // ここは OS の起動画面の裏になる。**読み込み中の丸を出さない。**
   // 出しても見えないうえ、消し忘れたときに「3枚目」として現れる。
+  //
+  // 2026-08-28 まで無地の `View` だった。ふつうは見えないが、
+  // 判定が伸びると OS の起動画面が固まったまま出続ける。
+  // `BootScreen` は**その画面と見分けがつかない**ものを描き、
+  // 待ちが伸びたときだけ灯りがゆっくり息をする。
   if (loading || showSplash === null) {
-    return <View className="flex-1 bg-cream" />
+    return <BootScreen />
   }
 
   return (

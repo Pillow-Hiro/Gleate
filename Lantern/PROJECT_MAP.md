@@ -126,6 +126,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
+| `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
