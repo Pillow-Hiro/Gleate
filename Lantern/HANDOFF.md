@@ -794,8 +794,8 @@ Web 側は 2026-08-22 に `golantern.app` へ寄せた。**完了。**
 | AIモデル | `claude-sonnet-4-6`。Claude 5 系が出ており1世代前。上げると**文体が変わる**ため、AI憲法に照らして出力を読んでから決める |
 | ローカルの Python | 3.13.3。本番は 3.14。テストは 3.13 で通している。揃えるなら手元を 3.14 に上げる |
 | Journaling Suggestions | **入口を閉じている。**（`client/components/EditorToolbar.jsx` の `SUGGESTIONS_READY`）。Swift 側で `Reflection.prompt` を取る直しは main に入っているが、EAS の無料ビルド枠を 2026-08 に使い切ったため反映できていない。**9月1日以降にビルドし直し、1行を `true` に戻す。**掲載文にも1行足すこと（`docs/APPSTORE.md` 第2節の注記） |
-| `/api/logs` が全件を返す | `load_logs()` に上限が無い。記録23件のいまは軽いが、**数年ぶん溜まると起動のたびに全部を運ぶ。**`lib/logsCache.js` が控えを持つようになったので体感は隠れるが、通信量は増え続ける。**期間で切るか、更新分だけ取る形へ**。急がないが、忘れると気づけない種類の遅さになる |
-| ペイウォールの法務リンク削除 | **main に入っているが、まだ配っていない**（`8e3d6da`）。規約・プライバシー・特商法を購入画面から外した（3つとも設定の「Lanternについて」にある）。**審査が明けてから OTA を出す。**いま配ると、提出済みの Notes 8番に書いた "links to the Terms of Use and the Privacy Policy" と画面が食い違う。作者の判断（2026-08-24）|
+| ~~`/api/logs` が全件を返す~~ | **済**（2026-08-27）。`load_logs(user_id, since, limit)` を足し、控えは2回目から差分だけ取る（`lib/logsCache.js`）。既定は全件のままで、出回っているビルドの動きは変えていない。**削除は差分に現れない**ので、控える側が1日ごとに全件を取り直す |
+| 製品ページの言語が「英語」 | **ビルドし直さないと直らない。**`app.json` に `CFBundleDevelopmentRegion: ja` と `CFBundleLocalizations: ["ja"]` は入っているが、足したのが `f155023`（2026-08-21）で、**build 22（`68cf889`）の8分後だった。**バンドルの `Info.plist` に焼き込まれる宣言なので、OTA では変わらない。App Store Connect のメタデータ言語とも別物で、そちらを直しても製品ページは変わらない。**9月のビルドに乗せる。** |
 | North Star Metric | 器はできたが母数が足りない |
 
 ### 記録テキストの暗号化について
