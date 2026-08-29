@@ -110,6 +110,7 @@ RevenueCat, Inc. のサーバーに送られ、そこで管理されます。
 | サービス | 用途 | 渡るもの |
 |---|---|---|
 | Supabase | 認証・データベース | メールアドレス・記録・アイデア |
+| Resend | 認証メールの送信 | メールアドレス（**記録の中身は渡しません**） |
 | Anthropic | AIの応答 | 記録した文章（上記4-2の場合） |
 | Render | サーバーの実行 | 通信のログ（記録の中身は含みません） |
 | Vercel | Web版の配信 | アクセスの技術的情報 |
@@ -133,6 +134,7 @@ RevenueCat, Inc. のサーバーに送られ、そこで管理されます。
 | サービス | 主な所在 | 取り扱い |
 |---|---|---|
 | Supabase | 米国 | [プライバシーポリシー](https://supabase.com/privacy) |
+| Resend | 米国 | [プライバシーポリシー](https://resend.com/legal/privacy-policy) |
 | Anthropic | 米国 | [プライバシーポリシー](https://www.anthropic.com/legal/privacy) |
 | Render | 米国 | [プライバシーポリシー](https://render.com/privacy) |
 | Vercel | 米国 | [プライバシーポリシー](https://vercel.com/legal/privacy-policy) |
