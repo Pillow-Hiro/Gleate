@@ -1,7 +1,7 @@
 import '../global.css'
 
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
 import Text from '../components/Text'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -23,6 +23,7 @@ import {
 import { loadAlways } from '../lib/splashPref'
 import { markShowing, markSkipped } from '../lib/splashHandoff'
 import { configure as configurePurchases } from '../lib/purchases'
+import { watchRecoveryLinks } from '../lib/recoverySession'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
@@ -166,6 +167,18 @@ function RootNavigator() {
   // 覚えている「既読」には触らない。案内を消すのではなく、
   // **この一度だけ出さない。** 次にふつうに開いたときには出る。
   const isRecovering = segments[0] === 'reset'
+
+  // **再設定リンクは根で受ける**（2026-08-28）。
+  //
+  // 画面の中で受けていたが、アプリが裏で起きていたときに取りこぼした。
+  // 通知は画面が出来る前に飛ぶので、生えてから listener を付けても遅い
+  // （`lib/recoverySession.js` に経緯）。
+  //
+  // Web は `detectSessionInUrl` が拾うので、ここでは何もしない。
+  useEffect(() => {
+    if (Platform.OS === 'web') return undefined
+    return watchRecoveryLinks()
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

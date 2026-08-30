@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Platform, Pressable, View } from 'react-native'
-import * as Linking from 'expo-linking'
+import { Pressable, View } from 'react-native'
 import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
 import Text from '../components/Text'
@@ -8,7 +7,6 @@ import FormShell from '../components/FormShell'
 import AuthField from '../components/AuthField'
 import { supabase } from '../lib/supabase'
 import { authErrorMessage } from '../lib/authError'
-import { readRecovery, readRecoveryError } from '../lib/recoveryLink'
 
 // 新しいパスワードを決める画面。
 //
@@ -48,54 +46,14 @@ export default function Reset() {
     }
   }, [])
 
-  // **ネイティブは URL を自分で読む**（2026-08-28）。
+  // **URL はここで読まない**（2026-08-28）。
   //
-  // Web は `detectSessionInUrl` が拾うが、ネイティブでは効かない
-  // （`window.location` が無い）。アプリへ戻す作りにしたので、
-  // `lantern://reset#access_token=...` を自分で解いて渡す。
+  // 一度この画面で読んでいたが、**取りこぼす窓があった。**
+  // アプリが裏で起きていた場合、リンクの通知は画面が出来る前に飛ぶ。
+  // 生えてから listener を付けても、もう終わっている。
   //
-  // 起動していない状態で開かれる場合と、裏で生きていた場合の両方がある。
-  // 前者は `getInitialURL`、後者は `addEventListener`。**片方だけでは落ちる。**
-  useEffect(() => {
-    if (Platform.OS === 'web') return undefined
-    let cancelled = false
-
-    async function accept(url) {
-      if (cancelled || !url) return
-
-      const failed = readRecoveryError(url)
-      if (failed) {
-        // 期限切れなど。**理由は出さない**（英語で来るため）。
-        // やり直す入口だけ見せる
-        console.warn('[再設定] リンクが使えなかった', failed)
-        setReady(false)
-        return
-      }
-
-      const found = readRecovery(url)
-      if (!found) return
-
-      const { error: err } = await supabase.auth.setSession({
-        access_token: found.access_token,
-        refresh_token: found.refresh_token,
-      })
-      if (cancelled) return
-      if (err) {
-        console.warn('[再設定] セッションを作れなかった', err)
-        setReady(false)
-        return
-      }
-      setReady(true)
-    }
-
-    Linking.getInitialURL().then(accept)
-    const sub = Linking.addEventListener('url', ({ url }) => accept(url))
-
-    return () => {
-      cancelled = true
-      sub.remove()
-    }
-  }, [])
+  // 受け取りは `lib/recoverySession.js` が根で行う。
+  // ここは上の `onAuthStateChange` で、セッションが出来たことに気づく。
 
   async function submit() {
     if (password.length < 6) {

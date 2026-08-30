@@ -154,6 +154,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
 | `authLink.js` | 認証メール（登録の確認・再設定）の戻り先。**渡さないと Supabase の Site URL に落ちる**。再設定はアプリへ（`lantern://reset`）、確認は Web へ | — |
 | `recoveryLink.js` | 再設定リンクの `#` から復帰用のトークンを読む。**ネイティブは自分で読む**（`detectSessionInUrl` が効かない） | `recoveryLink.test.js` |
+| `recoverySession.js` | 上を使って `setSession` する。**根で受ける**（`_layout`）。画面で受けると、裏で起きていたときに取りこぼす | — |
 | `greeting.js` | 時間帯の挨拶。**材料は時計だけ** | `greeting.test.js` |
 | `notifyText.js` | 通知の文面と時刻の組み立て。**日数も件数も持たない** | `notifyText.test.js` |
 | `notify.js` / `notify.web.js` | 通知の予約（端末の中だけ）。Web は「使えない」を返す | — |
