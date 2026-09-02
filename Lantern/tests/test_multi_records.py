@@ -137,3 +137,79 @@ class Test他人の行を触らない:
         src = inspect.getsource(logs_mod._upsert_one)
         head = src.split('if row_id:', 1)[1].split('return', 1)[0]
         assert '.eq("user_id", user_id)' in head, "id での更新に user_id の絞りが無い"
+
+
+class Test1日の上限:
+    """**無制限にはしない**（`main.MAX_RECORDS_PER_DAY`）。
+
+    数を絞らないと、記録アプリではなく作業ログに寄っていく。
+    """
+
+    def _day(self, n):
+        return [
+            {"id": f"r{i}", "date": "2026-09-02", "created": f"{i}件目", "ai_response": ""}
+            for i in range(n)
+        ]
+
+    def _post(self, payload):
+        with main.app.test_request_context("/save", method="POST", json=payload):
+            g.user_id = "u1"
+            return main.save.__wrapped__()
+
+    def test_上限まではつくれる(self, written, monkeypatch):
+        monkeypatch.setattr(main, "load_logs",
+                            lambda uid: self._day(main.MAX_RECORDS_PER_DAY - 1))
+        out = self._post({"date": "2026-09-02", "created": "もう一件", "new": True, "defer_ai": True})
+        assert not isinstance(out, tuple), "上限内なのに断られた"
+
+    def test_上限を超えたら断る(self, written, monkeypatch):
+        monkeypatch.setattr(main, "load_logs",
+                            lambda uid: self._day(main.MAX_RECORDS_PER_DAY))
+        body, status = self._post({"date": "2026-09-02", "created": "4件目", "new": True, "defer_ai": True})
+        assert status == 409
+        assert body.json["error"] == "too_many"
+        assert not written, "断ったのに書いている"
+
+    def test_書き換えは数に入らない(self, written, monkeypatch):
+        # 上限に達していても、**既にある記録は直せる**
+        logs = self._day(main.MAX_RECORDS_PER_DAY)
+        monkeypatch.setattr(main, "load_logs", lambda uid: logs)
+        out = self._post({"id": "r0", "date": "2026-09-02", "created": "直した", "defer_ai": True})
+        assert not isinstance(out, tuple), "書き換えを断っている"
+        assert written[0]["id"] == "r0"
+
+    def test_別の日は数えない(self, written, monkeypatch):
+        logs = self._day(main.MAX_RECORDS_PER_DAY)
+        monkeypatch.setattr(main, "load_logs", lambda uid: logs)
+        out = self._post({"date": "2026-09-03", "created": "翌日", "new": True, "defer_ai": True})
+        assert not isinstance(out, tuple), "別の日まで止めている"
+
+
+class Test新規かどうかの見分け:
+    def test_newを送らなければ日付で上書きする(self, written, monkeypatch):
+        """**古いビルドを落とさない。** id も new も知らずに送ってくる。"""
+        logs = [{"id": "r0", "date": "2026-09-02", "created": "朝", "ai_response": ""}]
+        monkeypatch.setattr(main, "load_logs", lambda uid: logs)
+
+        with main.app.test_request_context(
+            "/save", method="POST",
+            json={"date": "2026-09-02", "created": "書き直した", "defer_ai": True},
+        ):
+            g.user_id = "u1"
+            main.save.__wrapped__()
+
+        assert written[0].get("id") == "r0", "2件目を作ってしまっている"
+
+    def test_newを送れば2件目になる(self, written, monkeypatch):
+        logs = [{"id": "r0", "date": "2026-09-02", "created": "朝", "ai_response": ""}]
+        monkeypatch.setattr(main, "load_logs", lambda uid: logs)
+
+        with main.app.test_request_context(
+            "/save", method="POST",
+            json={"date": "2026-09-02", "created": "夜", "new": True, "defer_ai": True},
+        ):
+            g.user_id = "u1"
+            main.save.__wrapped__()
+
+        # id を載せない＝挿入。**朝の記録を巻き込まない**
+        assert "id" not in written[0]

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -103,7 +103,22 @@ export default function Home() {
     return () => { cancelled = true }
   }, [refreshTick])
 
-  const existingLog = logs.find((l) => l.date === targetDate) || null
+  // **その日の記録は複数ありうる**（2026-09-02）。保存した順に並べる
+  const dayLogs = logs
+    .filter((l) => l.date === targetDate)
+    .sort((a, b) => ((a.saved_at || '') < (b.saved_at || '') ? -1 : 1))
+
+  // どれを書いているか。`null` は「いちばん新しいもの」、
+  // `'new'` は**まだ無い記録**（＋ もう一件で切り替わる）
+  const [editingId, setEditingId] = useState(null)
+  const existingLog =
+    editingId === 'new'
+      ? null
+      : editingId
+        ? dayLogs.find((l) => l.id === editingId) || null
+        : dayLogs[dayLogs.length - 1] || null
+
+  const canAddMore = dayLogs.length > 0 && dayLogs.length < 3
   const streak = calcStreak(logs)
 
   return (
@@ -162,12 +177,52 @@ export default function Home() {
               </Text>
             </View>
           ) : null}
+          {/* その日に複数あるとき、どれを書いているかを選ぶ。
+              **件数ではなく時刻で示す。**「2件目」だと数を数える道具になる。
+              時刻なら「朝に書いたもの」と本人の記憶で結びつく */}
+          {dayLogs.length > 1 || editingId === 'new' || canAddMore ? (
+            <View className="flex-row flex-wrap gap-2 mb-3">
+              {dayLogs.map((l) => {
+                const t = l.saved_at ? new Date(l.saved_at) : null
+                const label = t
+                  ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+                  : '記録'
+                const on = existingLog && existingLog.id === l.id
+                return (
+                  <Pressable
+                    key={l.id || l.date}
+                    onPress={() => setEditingId(l.id)}
+                    className={`border rounded-full px-3 min-h-touch justify-center ${
+                      on ? 'border-lantern-glow bg-lantern-glow/10' : 'border-outline-variant'
+                    }`}
+                  >
+                    <Text className={`text-label-md ${on ? 'text-primary' : 'text-on-surface-variant'}`}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+              {canAddMore || editingId === 'new' ? (
+                <Pressable
+                  onPress={() => setEditingId('new')}
+                  className={`border rounded-full px-3 min-h-touch justify-center ${
+                    editingId === 'new' ? 'border-lantern-glow bg-lantern-glow/10' : 'border-outline-variant'
+                  }`}
+                >
+                  <Text className="text-label-md text-primary">＋ もう一件</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <RecordForm
-            key={existingLog ? existingLog.id || existingLog.date : `new-${targetDate}`}
+            key={editingId === 'new' ? `new-${targetDate}` : existingLog ? existingLog.id : `new-${targetDate}`}
             existingLog={existingLog}
             targetDate={targetDate}
             question={question}
             onSaved={() => {
+              // **書いたものを開いた状態に戻す。** `'new'` のままだと、
+              // 保存した直後にまた空の欄が出て、消えたように見える
+              setEditingId(null)
               refreshData()
               if (isEditingPast) router.replace('/')
             }}

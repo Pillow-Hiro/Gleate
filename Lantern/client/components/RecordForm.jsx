@@ -398,8 +398,24 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
         method: 'POST',
         // **id を送る**（2026-09-02）。同じ日に複数件あるので、
         // 日付だけでは書き先が決まらない。新規なら空で送らない
-        body: JSON.stringify({ ...form, id: recordId || undefined, date: targetDate, defer_ai: true }),
+        // **新しく作るときは明示する**（2026-09-02）。
+        // 送らないと、サーバーは日付で既存を見つけて上書きしてしまう
+        body: JSON.stringify({
+          ...form,
+          id: recordId || undefined,
+          new: recordId ? undefined : true,
+          date: targetDate,
+          defer_ai: true,
+        }),
       })
+      // **上限に当たったときは、そう言う**（2026-09-02）。
+      // 「保存に失敗しました。接続を確認してください」だと、
+      // 直せない原因を直そうとさせることになる
+      if (res.status === 409) {
+        const body = await res.json().catch(() => null)
+        setSaveError((body && body.message) || 'この日の記録はここまでです。')
+        return
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       // **書いた行の id を覚える**（2026-09-02）。覚えないと、

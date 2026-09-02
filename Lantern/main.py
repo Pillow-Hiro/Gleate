@@ -139,8 +139,26 @@ def save():
     wanted_id = data.get("id")
     if wanted_id:
         previous = next((l for l in logs if l.get("id") == wanted_id), None)
+    elif data.get("new"):
+        # **新しく作ると明示された。** 日付で探さない。
+        #
+        # これが無いと、`id` の無い保存が2つに見分けられない。
+        # 「古いビルドがその日の記録を直している」のか、
+        # 「新しいビルドが2件目を作っている」のか。
+        # 前者は日付で見つけて上書き、後者は挿入でなければならない。
+        previous = None
     else:
         previous = next((l for l in logs if l.get("date") == today), None)
+
+    # **上限を超えて新しく作らせない**（2026-09-02）。
+    # 書き換え（previous がある）は数に入らない。
+    if not previous:
+        same_day = [l for l in logs if l.get("date") == today]
+        if len(same_day) >= MAX_RECORDS_PER_DAY:
+            return jsonify({
+                "error": "too_many",
+                "message": "この日の記録はここまでです。",
+            }), 409
 
     entry = {
         "id": (previous or {}).get("id", ""),
@@ -422,6 +440,17 @@ def revenuecat_webhook():
 # 黙って切り詰めると、受け取った側は全部届いたと思う。
 # 足りないことに気づく場所が無くなる。
 MAX_LOGS_LIMIT = 500
+
+# 1日に置ける記録の数。**上限を持つ**（2026-09-02・作者の判断）。
+#
+# それまで1日1件だった（`REQUIREMENTS.md` の「やらないこと」）。
+# 朝と夜で別のことを書きたい、という理由で開けた。
+#
+# **無制限にはしない。** 数を絞らないと、記録アプリではなく
+# 作業ログに寄っていく。朝・昼・夜で3件あれば足りる。
+#
+# 上限は画面に出さない。**残り何件と出すと、書く前に数を意識させる。**
+MAX_RECORDS_PER_DAY = 3
 
 
 @app.route("/api/logs", methods=["GET"])
