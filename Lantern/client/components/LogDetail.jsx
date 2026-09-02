@@ -31,8 +31,10 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   async function handleDelete() {
     setDeleting(true)
     try {
-      await authFetch(`/api/logs/${log.date}`, { method: 'DELETE' })
-      if (onDelete) onDelete(log.date)
+      // **id で消す**（2026-09-02）。日付版は同じ日を全部消すので、
+      // 1日に複数件あると、片方を消したいときに両方消える
+      await authFetch(`/api/logs/by-id/${log.id}`, { method: 'DELETE' })
+      if (onDelete) onDelete(log.id, log.date)
     } catch (e) {
       console.warn(`[Journal] ${log.date} の削除に失敗`, e)
       setConfirmDelete(false)

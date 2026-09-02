@@ -108,9 +108,10 @@ export default function Journal() {
     setMonth('all')
   }, [filter, search])
 
-  function handleDelete(date) {
+  // **id で消す**（2026-09-02）。日付だと同じ日の別の記録も消える
+  function handleDelete(id, date) {
     setLogs((prev) => {
-      const next = prev.filter((l) => l.date !== date)
+      const next = prev.filter((l) => l.id !== id)
       // **控えも合わせる。**合わせないと、次に開いたとき消したものが戻る
       replaceLogs(next)
       return next
@@ -120,7 +121,7 @@ export default function Journal() {
 
   function handleUpdate(updatedLog) {
     setLogs((prev) => {
-      const next = prev.map((l) => (l.date === updatedLog.date ? updatedLog : l))
+      const next = prev.map((l) => (l.id === updatedLog.id ? updatedLog : l))
       // 削除と同じ理由で控えも合わせる。**2026-08-24 まで抜けていた。**
       // 消したときだけ合わせていたので、直した中身は次に開くと元に戻って見えた
       replaceLogs(next)
@@ -135,12 +136,12 @@ export default function Journal() {
   async function handleToggleFavorite(log) {
     const next = !log.favorite
     setLogs((prev) => {
-      const list = prev.map((l) => (l.date === log.date ? { ...l, favorite: next } : l))
+      const list = prev.map((l) => (l.id === log.id ? { ...l, favorite: next } : l))
       replaceLogs(list)
       return list
     })
     try {
-      const res = await authFetch(`/api/logs/${log.date}/favorite`, {
+      const res = await authFetch(`/api/logs/by-id/${log.id}/favorite`, {
         method: 'PUT',
         body: JSON.stringify({ favorite: next }),
       })
@@ -148,7 +149,7 @@ export default function Journal() {
     } catch (e) {
       console.warn('[記録] お気に入りの変更に失敗', e)
       setLogs((prev) => {
-        const list = prev.map((l) => (l.date === log.date ? { ...l, favorite: !next } : l))
+        const list = prev.map((l) => (l.id === log.id ? { ...l, favorite: !next } : l))
         replaceLogs(list)
         return list
       })

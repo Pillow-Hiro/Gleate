@@ -53,7 +53,7 @@ export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, li
             <View className="bg-surface-lowest border border-border rounded-lg px-4 shadow-bloom">
               {items.map((log, i) => (
                 <LogItem
-                  key={log.date}
+                  key={log.id || log.date}
                   log={log}
                   onDelete={onDelete}
                   onUpdate={onUpdate}

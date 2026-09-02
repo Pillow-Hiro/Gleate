@@ -104,16 +104,36 @@ function latestSavedAt(list) {
 }
 
 /**
- * 差分を控えに畳み込む。**日付が同じものは新しい方で置き換える。**
+ * 差分を控えに畳み込む。**`id` が同じものは新しい方で置き換える。**
  *
- * 記録は1日1件なので、日付が同一性そのもの。
- * `id` で突き合わせると、同じ日を書き直したときに2件に見える。
+ * ## 日付から id へ（2026-09-02）
+ *
+ * 2026-08-27 に書いたときは「記録は1日1件なので、日付が同一性そのもの」
+ * としていた。**1日に複数件を置けるようにしたので、それが崩れた。**
+ * 日付で畳むと、同じ日の2件目が1件目を消してしまう。
+ *
+ * **`id` が無い記録は、そのまま残す。** サーバーが `id` を返す前に
+ * 作られた控えには入っていない。落とすと、控えだけが空になる。
  */
 function merge(base, changed) {
   if (!changed.length) return base
-  const byDate = new Map(base.map((l) => [l.date, l]))
-  for (const l of changed) byDate.set(l.date, l)
-  return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+
+  const byId = new Map()
+  const noId = []
+  for (const l of base) {
+    if (l && l.id) byId.set(l.id, l)
+    else if (l) noId.push(l)
+  }
+  for (const l of changed) {
+    if (l && l.id) byId.set(l.id, l)
+    else if (l) noId.push(l)
+  }
+
+  // 日付の昇順。同じ日は保存時刻の順に並べる（朝→夜）
+  return [...byId.values(), ...noId].sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1
+    return (a.saved_at || '') < (b.saved_at || '') ? -1 : 1
+  })
 }
 
 function fromServer() {

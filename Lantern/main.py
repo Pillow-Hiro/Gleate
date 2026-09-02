@@ -19,6 +19,7 @@ from modules.logs import (
     load_logs, save_logs,
     load_goals,
     delete_log_by_date, set_favorite,
+    delete_log_by_id, set_favorite_by_id,
     load_daily_quote, save_daily_quote,
 )
 from modules.ai import (
@@ -159,7 +160,10 @@ def save():
     # SELECT + UPDATE するため、記録が増えるほど保存が遅くなり、
     # 100件あたりで Render の30秒制限を超えて保存できなくなる。
     try:
-        save_logs([entry], user_id)
+        # **書いた行の id を受け取る。** 新しい記録は DB が採番するので、
+        # 返さないと画面が自分の id を知らず、次の保存で2件目が生まれる
+        saved_ids = save_logs([entry], user_id)
+        entry["id"] = (saved_ids or [None])[0] or entry.get("id") or ""
     except Exception as e:
         print(f"[/save] DB error: {type(e).__name__}: {e}")
         print(traceback.format_exc())
@@ -179,6 +183,7 @@ def save():
     if data.get("defer_ai"):
         return jsonify({
             "status": "ok",
+            "id": entry["id"],
             "ai_response": entry["ai_response"],
             "deferred": True,
         })
@@ -193,14 +198,14 @@ def save():
     # 書き直すたびに1回使う。1日1回ではない
     # （無料の上限を10回にしてあるのはそのぶんの余裕）。
     if not spend_ai_budget(user_id):
-        return jsonify({"status": "ok", "ai_response": entry["ai_response"]})
+        return jsonify({"status": "ok", "id": entry["id"], "ai_response": entry["ai_response"]})
 
     try:
         ai_response = get_ai_response(entry, [l for l in logs if l.get("date") != today], goals)
     except Exception as e:
         # 本文は保存済み。既存の灯りもそのまま残っている
         print(f"[/save] AI error: {type(e).__name__}: {e}")
-        return jsonify({"status": "ok", "ai_response": entry["ai_response"]})
+        return jsonify({"status": "ok", "id": entry["id"], "ai_response": entry["ai_response"]})
 
     entry["ai_response"] = ai_response
     try:
@@ -208,7 +213,7 @@ def save():
     except Exception as e:
         print(f"[/save] DB error (ai_response update): {type(e).__name__}: {e}")
 
-    return jsonify({"status": "ok", "ai_response": ai_response})
+    return jsonify({"status": "ok", "id": entry["id"], "ai_response": ai_response})
 
 
 @app.route("/api/light", methods=["POST"])
@@ -494,6 +499,39 @@ def set_log_favorite(date):
         print(f"[PUT /api/logs/{date}/favorite] DB error: {type(e).__name__}")
         return jsonify({"error": "変更に失敗しました。"}), 500
     return jsonify({"status": "ok", "favorite": favorite})
+
+
+@app.route("/api/logs/by-id/<log_id>/favorite", methods=["PUT"])
+@require_auth
+def set_log_favorite_by_id(log_id):
+    """お気に入りの付け外し（id 版・2026-09-02）。
+
+    **`by-id` を静的な段に挟んでいる。** `/api/logs/<date>/favorite` と
+    段数が同じなので、無いと日付版に吸われる余地がある。
+    """
+    data = request.get_json(silent=True) or {}
+    try:
+        set_favorite_by_id(log_id, bool(data.get("favorite")), g.user_id)
+    except Exception as e:
+        print(f"[PUT /api/logs/by-id/../favorite] DB error: {type(e).__name__}: {e}")
+        return jsonify({"error": "変更に失敗しました"}), 500
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/logs/by-id/<log_id>", methods=["DELETE"])
+@require_auth
+def delete_log_by_id_api(log_id):
+    """1件だけ消す（id 版・2026-09-02）。
+
+    **日付版は同じ日を全部消す。** 1日に複数件あると、
+    片方を消したいときに両方消える。
+    """
+    try:
+        delete_log_by_id(log_id, g.user_id)
+    except Exception as e:
+        print(f"[DELETE /api/logs/by-id/..] DB error: {type(e).__name__}: {e}")
+        return jsonify({"error": "削除に失敗しました"}), 500
+    return jsonify({"status": "ok"})
 
 
 @app.route("/api/logs/<date>", methods=["DELETE"])

@@ -205,7 +205,7 @@ export default function Home() {
         ) : (
           <View className="gap-4">
             {shown.map((log) => (
-              <HomeCard key={log.date} log={log} />
+              <HomeCard key={log.id || log.date} log={log} />
             ))}
           </View>
         )}

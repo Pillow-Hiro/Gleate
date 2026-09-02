@@ -114,7 +114,7 @@ def _upsert_one(row):
             fields = {k: v for k, v in row.items() if k not in ("id", "date")}
             supabase.table("logs").update(fields).eq("id", row_id).eq("user_id", user_id).execute()
             print(f"[Supabase] updated by id: {row.get('date')}")
-            return
+            return row_id
 
         q = supabase.table("logs").select("id").eq("date", row["date"])
         if user_id:
@@ -124,9 +124,13 @@ def _upsert_one(row):
             update_fields = {k: v for k, v in row.items() if k != "date"}
             supabase.table("logs").update(update_fields).eq("date", row["date"]).eq("user_id", user_id).execute()
             print(f"[Supabase] updated: {row.get('date')}")
-        else:
-            supabase.table("logs").insert(row).execute()
-            print(f"[Supabase] inserted: {row.get('date')}")
+            return existing.data[0].get("id")
+
+        # **採番された id を返す**（2026-09-02）。書いた画面がこれを持たないと、
+        # 次の保存で「新しい記録」として2件目が生まれる
+        created = supabase.table("logs").insert(row).execute()
+        print(f"[Supabase] inserted: {row.get('date')}")
+        return (created.data or [{}])[0].get("id")
     except Exception as e:
         print(f"[Supabase] _upsert_one FAILED: {type(e).__name__}: {e}")
         raise
@@ -188,10 +192,14 @@ def load_logs(user_id, since=None, limit=None):
 
 
 def save_logs(logs, user_id):
+    """書いて、**書いた行の id を返す**（渡した順）。
+
+    id は呼ぶ側が画面へ返すために要る。新しい記録は DB が採番するので、
+    ここで拾わないと**画面は自分の id を知らないまま**になる。
+    """
     if not supabase or not logs:
-        return
-    for l in logs:
-        _upsert_one(_to_db(l, user_id))
+        return []
+    return [_upsert_one(_to_db(l, user_id)) for l in logs]
 
 
 def set_favorite(date, favorite, user_id):
@@ -212,6 +220,39 @@ def set_favorite(date, favorite, user_id):
         .eq("user_id", user_id)
         .execute()
     )
+
+
+def set_favorite_by_id(log_id, favorite, user_id):
+    """お気に入りの付け外し（id 版・2026-09-02）。
+
+    日付版（`set_favorite`）は残す。**出回っているビルドが使っている。**
+    1日に複数件あると日付では行が決まらないので、新しい画面はこちらを使う。
+    """
+    if not supabase:
+        return
+    if not user_id:
+        raise ValueError("set_favorite_by_id には user_id が要る")
+    (
+        supabase.table("logs")
+        .update({"favorite": bool(favorite)})
+        .eq("id", log_id)
+        # **他人の記録を触らない。** id が uuid であることを根拠にしない
+        .eq("user_id", user_id)
+        .execute()
+    )
+
+
+def delete_log_by_id(log_id, user_id):
+    """1件だけ消す（id 版・2026-09-02）。
+
+    **日付版は同じ日を全部消す。** 1日に複数件を置くようになると、
+    片方を消したいときに両方消える。新しい画面はこちらを使う。
+    """
+    if not supabase:
+        return
+    if not user_id:
+        raise ValueError("delete_log_by_id には user_id が要る")
+    supabase.table("logs").delete().eq("id", log_id).eq("user_id", user_id).execute()
 
 
 def delete_log_by_date(date, user_id):

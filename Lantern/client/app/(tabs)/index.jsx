@@ -163,7 +163,7 @@ export default function Home() {
             </View>
           ) : null}
           <RecordForm
-            key={existingLog ? existingLog.date : `new-${targetDate}`}
+            key={existingLog ? existingLog.id || existingLog.date : `new-${targetDate}`}
             existingLog={existingLog}
             targetDate={targetDate}
             question={question}

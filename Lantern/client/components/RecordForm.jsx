@@ -284,6 +284,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
   const [savingAnswer, setSavingAnswer] = useState(false)
   // 既にある記録を開いているなら、その時点で探せる
   const [savedOnce, setSavedOnce] = useState(Boolean(existingLog))
+  // どの記録を書いているか。**新規は空**（DB が採番する）
+  const [recordId, setRecordId] = useState(existingLog?.id || '')
   const [photoUrl, setPhotoUrl] = useState(
     existingLog?.photo_url || loadPhoto(targetDate).photo_url,
   )
@@ -364,7 +366,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
     try {
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ ...next, date: targetDate, defer_ai: true }),
+        body: JSON.stringify({ ...next, id: recordId || undefined, date: targetDate, defer_ai: true }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       invalidateLogs()
@@ -394,10 +396,15 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
       // 押した人を AI の生成時間だけ立ち止まらせる理由が無い。
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ ...form, date: targetDate, defer_ai: true }),
+        // **id を送る**（2026-09-02）。同じ日に複数件あるので、
+        // 日付だけでは書き先が決まらない。新規なら空で送らない
+        body: JSON.stringify({ ...form, id: recordId || undefined, date: targetDate, defer_ai: true }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
+      // **書いた行の id を覚える**（2026-09-02）。覚えないと、
+      // 次の保存で「新しい記録」として同じ日に2件目が生まれる
+      if (data.id) setRecordId(data.id)
       if (data.ai_response) setAiResponse(data.ai_response)
 
       // **控えが古くなった。**これを言わないと、記録タブへ移っても

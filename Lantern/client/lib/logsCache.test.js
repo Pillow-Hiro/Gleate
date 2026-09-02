@@ -84,8 +84,8 @@ describe('invalidateLogs', () => {
 
 // 記録が積み上がっても、毎回の通信が全件にならないこと（2026-08-27）
 describe('差分だけ取る', () => {
-  const T1 = [{ date: '2026-08-23', saved_at: '2026-08-23T10:00:00Z' }]
-  const T2 = [{ date: '2026-08-24', saved_at: '2026-08-24T10:00:00Z' }]
+  const T1 = [{ id: 'a', date: '2026-08-23', saved_at: '2026-08-23T10:00:00Z' }]
+  const T2 = [{ id: 'b', date: '2026-08-24', saved_at: '2026-08-24T10:00:00Z' }]
 
   function urlOf(call) {
     return authFetch.mock.calls[call][0]
@@ -122,11 +122,11 @@ describe('差分だけ取る', () => {
     expect(await loadLogs()).toEqual([...T1, ...T2])
   })
 
-  it('同じ日は新しい方で置き換える', async () => {
+  it('同じ id は新しい方で置き換える', async () => {
     respond(T1)
     await loadLogs()
 
-    const edited = [{ date: '2026-08-23', saved_at: '2026-08-25T10:00:00Z', created: '書き直した' }]
+    const edited = [{ id: 'a', date: '2026-08-23', saved_at: '2026-08-25T10:00:00Z', created: '書き直した' }]
     respond(edited)
     invalidateLogs()
 
@@ -136,8 +136,43 @@ describe('差分だけ取る', () => {
     await loadLogs(fresh)
     await vi.waitFor(() => expect(fresh).toHaveBeenCalledWith(edited))
 
-    // 1日1件。**日付が同一性そのもの**なので2件に増えない
+    // **id が同一性。**同じ記録を直しただけなので2件に増えない
     expect(await loadLogs()).toEqual(edited)
+  })
+
+  // 2026-09-02 に日付から id へ移した。**同じ日の2件目が1件目を消さないこと**
+  it('同じ日でも id が違えば両方残る', async () => {
+    respond(T1)
+    await loadLogs()
+
+    const evening = [{ id: 'a2', date: '2026-08-23', saved_at: '2026-08-23T22:00:00Z' }]
+    respond(evening)
+    invalidateLogs()
+    const fresh = vi.fn()
+    await loadLogs(fresh)
+    await vi.waitFor(() => expect(fresh).toHaveBeenCalled())
+
+    const after = await loadLogs()
+    expect(after).toHaveLength(2)
+    // **同じ日は保存時刻の順**（朝→夜）
+    expect(after.map((l) => l.id)).toEqual(['a', 'a2'])
+  })
+
+  it('id を持たない控えは落とさない', async () => {
+    // サーバーが id を返す前に作られた控え。**消すと控えだけ空になる**
+    //
+    // 全件取得を先に済ませる。**それが無いと次は差分ではなく全件**になり、
+    // 畳み込みを通らない（`fromServer` の `stale`）
+    respond([{ date: '2026-08-20', saved_at: '2026-08-20T10:00:00Z' }])
+    await loadLogs()
+
+    respond(T1)
+    invalidateLogs()
+    const fresh = vi.fn()
+    await loadLogs(fresh)
+    await vi.waitFor(() => expect(fresh).toHaveBeenCalled())
+
+    expect((await loadLogs()).length).toBe(2)
   })
 
   it('忘れたあとは、また全件から', async () => {
