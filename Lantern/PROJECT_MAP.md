@@ -127,6 +127,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
+| `HintCard.jsx` | RecordForm | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
@@ -154,6 +155,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `authError.js` | Supabase の英文エラーを利用者向けの一文にする | `authError.test.js` |
 | `authLink.js` | 認証メール（登録の確認・再設定）の戻り先。**渡さないと Supabase の Site URL に落ちる**。再設定はアプリへ（`lantern://reset`）、確認は Web へ | — |
 | `recoveryLink.js` | 再設定リンクの `#` から復帰用のトークンを読む。**ネイティブは自分で読む**（`detectSessionInUrl` が効かない） | `recoveryLink.test.js` |
+| `hint.js` | 手がかりを取りに行く。**どちらを返すかはサーバーが決める**（判定を2か所に置かない） | `hint.test.js` |
 | `recoverySession.js` | 上を使って `setSession` する。**根で受ける**（`_layout`）。画面で受けると、裏で起きていたときに取りこぼす | — |
 | `greeting.js` | 時間帯の挨拶。**材料は時計だけ** | `greeting.test.js` |
 | `notifyText.js` | 通知の文面と時刻の組み立て。**日数も件数も持たない** | `notifyText.test.js` |

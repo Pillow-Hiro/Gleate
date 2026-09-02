@@ -35,6 +35,8 @@ import { keyboardHeadroom } from '../../lib/keyboardMath'
 const KEYBOARD_GAP = TOOLBAR_HEIGHT + 200
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
+import Paywall from '../../components/Paywall'
+import { paywallMessage } from '../../lib/plan'
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 
@@ -62,6 +64,8 @@ export default function Home() {
   // 思いついた瞬間に置くものなので、書く場所にある方が自然。
   // 「記録」は残したものを見る場所であって、置く場所ではなかった。
   const [writeTab, setWriteTab] = useState('record')
+  // 手がかりの枠を使い切ったときだけ出す（`components/RecordForm.jsx`）
+  const [hintPaywall, setHintPaywall] = useState('')
 
   const now = new Date()
   const dateJa = formatDateJa(now)
@@ -167,7 +171,20 @@ export default function Home() {
               refreshData()
               if (isEditingPast) router.replace('/')
             }}
+            onPaywall={(message) => setHintPaywall(message || paywallMessage(null))}
           />
+          {/* 手がかりの枠を使い切ったとき。**フォームの外に出す。**
+              書いている場所に売り物を混ぜない（`RecordForm.jsx`） */}
+          {hintPaywall ? (
+            <View className="mt-4">
+              <Paywall
+                title="Lantern Plus"
+                message={hintPaywall}
+                onClose={() => setHintPaywall('')}
+                onPurchased={() => setHintPaywall('')}
+              />
+            </View>
+          ) : null}
         </View>
 
         {/* アイデア。display で隠すだけにして、入力途中の文字を消さない */}

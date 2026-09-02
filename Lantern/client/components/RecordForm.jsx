@@ -11,6 +11,8 @@ import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
 import { invalidateLogs } from '../lib/logsCache'
 import { getLight, isLighting, forgetLight, requestLight, subscribeLight } from '../lib/lightBuffer'
+import { askHint } from '../lib/hint'
+import HintCard from './HintCard'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
@@ -217,7 +219,11 @@ function Chip({ label, onPress }) {
   )
 }
 
-export default function RecordForm({ existingLog, targetDate, onSaved, question }) {
+// `onPaywall` は手がかりの枠を使い切ったときに呼ばれる。
+// **ここでは Paywall を描かない。**フォームは記録を書く場所で、
+// 売る面を持たせると、書いている最中に売り物が現れることになる。
+// 出す場所は呼ぶ側が決める（`app/(tabs)/index.jsx`）。
+export default function RecordForm({ existingLog, targetDate, onSaved, question, onPaywall }) {
   const isToday = targetDate === todayStr()
   const [y, m, d] = targetDate.split('-')
   const dateLabel = `${y}年${Number(m)}月${Number(d)}日`
@@ -271,6 +277,13 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
     [targetDate],
   )
   const [saveError, setSaveError] = useState('')
+
+  // 手がかり。**書いたあとにだけ探せる**（`lib/hint.js`）
+  const [hint, setHint] = useState(null)
+  const [hinting, setHinting] = useState(false)
+  const [savingAnswer, setSavingAnswer] = useState(false)
+  // 既にある記録を開いているなら、その時点で探せる
+  const [savedOnce, setSavedOnce] = useState(Boolean(existingLog))
   const [photoUrl, setPhotoUrl] = useState(
     existingLog?.photo_url || loadPhoto(targetDate).photo_url,
   )
@@ -323,6 +336,48 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
   // **黙って44秒待たせると、遅いのではなく壊れて見える。**
   // 押した手が悪かったのかと思わせない。
   // 原因（サーバーが眠っていた等）は書かない。利用者にできることが増えない。
+  // 手がかりを探す。**断られたらペイウォールへ**（無料は通算5回）
+  async function askForHint() {
+    setHinting(true)
+    try {
+      const got = await askHint(targetDate)
+      if (!got) return
+      if (got.kind === 'paywall') {
+        onPaywall?.(got.text)
+        return
+      }
+      setHint(got)
+    } finally {
+      setHinting(false)
+    }
+  }
+
+  // 問いへの答えを「困ったこと」に残す。**新しい経路を作らない。**
+  //
+  // `/save` をそのまま使う。`defer_ai` を付けて灯りは頼まない——
+  // 答えを足しただけで灯りを作り直すと、書いた本人の言葉が
+  // 上書きされたように見える。
+  async function handleHintAnswer(answer) {
+    setSavingAnswer(true)
+    const next = { ...form, struggled: answer }
+    setForm(next)
+    try {
+      const res = await authFetch('/save', {
+        method: 'POST',
+        body: JSON.stringify({ ...next, date: targetDate, defer_ai: true }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      invalidateLogs()
+      if (onSaved) onSaved()
+    } catch (e) {
+      // **画面には出さない。**カードは「残しました」を出したあと。
+      // ここで赤い字を足すと、何が起きたのか分からなくなる
+      console.warn('[手がかり] 答えを残せなかった', e)
+    } finally {
+      setSavingAnswer(false)
+    }
+  }
+
   const SLOW_SAVE_MS = 6000
 
   async function handleSave() {
@@ -349,6 +404,8 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
       // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
       // `onSaved` より先に呼ぶ。あちらは取り直しの結果を受け取る側
       invalidateLogs()
+      // **ここから手がかりを探せる。** 書く前には材料が無い
+      setSavedOnce(true)
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。
@@ -501,6 +558,31 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question 
         <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
           <Text className="text-label-md text-on-surface-variant">灯りをともしています。</Text>
         </View>
+      ) : null}
+
+      {/* **手がかり**（2026-09-02）。書いたあとにだけ出す。
+          まだ保存していない記録には、探す材料が無い。
+
+          押すと、材料が足りなければ問いが一つ返る（`lib/hint.js`）。
+          答えは「困ったこと」に入り、次に詰まったときの材料になる。 */}
+      {hint ? (
+        <HintCard
+          kind={hint.kind}
+          text={hint.text}
+          saving={savingAnswer}
+          onAnswer={handleHintAnswer}
+          onClose={() => setHint(null)}
+        />
+      ) : savedOnce ? (
+        <Pressable
+          onPress={askForHint}
+          disabled={hinting}
+          className="border border-outline-variant rounded-full py-3 min-h-touch justify-center items-center active:opacity-70 disabled:opacity-50"
+        >
+          <Text className="text-label-md text-primary">
+            {hinting ? '探しています...' : '手がかりを探す'}
+          </Text>
+        </Pressable>
       ) : null}
     </View>
   )
