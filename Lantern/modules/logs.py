@@ -40,6 +40,12 @@ def _from_db(row):
     plain = {k: decrypt(row.get(k) or "", aad) for k in _SECRET_FIELDS}
 
     return {
+        # **`id` を返す**（2026-09-02）。1日に複数件を置けるようにするため、
+        # 同一性を `date` から `id` へ移す。日付は「いつ書いたか」に戻る。
+        #
+        # DB には最初から `id` があったが、クライアントへ渡していなかった。
+        # 渡していない間は、日付が鍵として使えてしまっていた。
+        "id": str(row.get("id") or ""),
         "date": str(row.get("date") or ""),
         "created": plain["content"],
         "enjoyable": plain["good_things"],
@@ -64,7 +70,7 @@ def _to_db(l, user_id=None):
     # **暗号化はここ1か所**（2026-09-02）。書く経路は全部ここを通る。
     # 鍵が無ければそのまま平文で入る（`modules/crypto.py`）。
     aad = str(user_id or "")
-    return {
+    row = {
         "date": l.get("date", ""),
         "content": encrypt(l.get("created", ""), aad),
         "good_things": encrypt(l.get("enjoyable", ""), aad),
@@ -74,13 +80,42 @@ def _to_db(l, user_id=None):
         "updated_at": l.get("saved_at") or datetime.now().isoformat(),
         "user_id": user_id,
     }
+    # **id は持っているときだけ載せる。**
+    # 新しい記録には無い（DB が採番する）。空文字を入れると挿入が落ちる。
+    if l.get("id"):
+        row["id"] = l["id"]
+    return row
 
 
 def _upsert_one(row):
+    """1件を書く。**`id` があればその行、無ければ日付で探す。**
+
+    ## なぜ2通りあるのか（2026-09-02）
+
+    1日に複数件を置けるようにしたので、**日付だけでは行が決まらない。**
+    id を持っている記録は、その id の行を書き換える。
+
+    id が無いのは2つの場合がある。
+
+    1. **新しい記録**——DB が採番する
+    2. **古いビルドからの保存**——id を知らないまま送ってくる
+
+    2 を落とすと、出回っているアプリが記録を保存できなくなる。
+    だから id が無ければ**これまで通り日付で探す**（＝1日1件の動き）。
+    新しいビルドは必ず id を送るので、この道は使われなくなる。
+    """
     user_id = row.get("user_id")
+    row_id = row.get("id")
     # user_id は出さない。誰がいつ書いたかがログに残る
-    print(f"[Supabase] _upsert_one: date={row.get('date')} user={bool(user_id)}")
+    print(f"[Supabase] _upsert_one: date={row.get('date')} id={bool(row_id)} user={bool(user_id)}")
     try:
+        if row_id:
+            # **id で更新する。** user_id も必ず絞る（他人の行を書き換えない）
+            fields = {k: v for k, v in row.items() if k not in ("id", "date")}
+            supabase.table("logs").update(fields).eq("id", row_id).eq("user_id", user_id).execute()
+            print(f"[Supabase] updated by id: {row.get('date')}")
+            return
+
         q = supabase.table("logs").select("id").eq("date", row["date"])
         if user_id:
             q = q.eq("user_id", user_id)

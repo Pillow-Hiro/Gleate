@@ -132,9 +132,17 @@ def save():
     goals = load_goals()
     today = data.get("date") or today_str()
 
-    previous = next((l for l in logs if l.get("date") == today), None)
+    # **id があればその記録、無ければ日付で探す**（2026-09-02）。
+    # 1日に複数件を置けるようにしたので、日付だけでは決まらない。
+    # 送ってこないのは古いビルドで、そちらは1日1件のまま動く。
+    wanted_id = data.get("id")
+    if wanted_id:
+        previous = next((l for l in logs if l.get("id") == wanted_id), None)
+    else:
+        previous = next((l for l in logs if l.get("date") == today), None)
 
     entry = {
+        "id": (previous or {}).get("id", ""),
         "date": today,
         "created": data.get("created", ""),
         "enjoyable": data.get("enjoyable", ""),
@@ -217,7 +225,12 @@ def make_light():
     date = data.get("date") or today_str()
 
     logs = load_logs(g.user_id)
-    entry = next((l for l in logs if l.get("date") == date), None)
+    # id で引く。無ければ日付（古いビルド・1日1件のまま）
+    wanted_id = data.get("id")
+    if wanted_id:
+        entry = next((l for l in logs if l.get("id") == wanted_id), None)
+    else:
+        entry = next((l for l in logs if l.get("date") == date), None)
     if not entry:
         return jsonify({"error": "not_found"}), 404
 
@@ -287,7 +300,12 @@ def make_hint():
     date = data.get("date") or today_str()
 
     logs = load_logs(g.user_id)
-    entry = next((l for l in logs if l.get("date") == date), None)
+    # id で引く。無ければ日付（古いビルド・1日1件のまま）
+    wanted_id = data.get("id")
+    if wanted_id:
+        entry = next((l for l in logs if l.get("id") == wanted_id), None)
+    else:
+        entry = next((l for l in logs if l.get("date") == date), None)
     if not entry:
         return jsonify({"error": "not_found"}), 404
 

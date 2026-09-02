@@ -26,6 +26,7 @@ from modules.logs import (
 
 
 DB_ROW = {
+    "id": "log-1",
     "date": "2026-07-28",
     "content": "曲を1つ書いた",
     "good_things": "静かな朝だった",
@@ -38,6 +39,9 @@ DB_ROW = {
 }
 
 APP_LOG = {
+    # **`id` を返すようになった**（2026-09-02）。1日に複数件を置くため、
+    # 同一性を `date` から `id` へ移した。日付は「いつ書いたか」に戻る。
+    "id": "log-1",
     "date": "2026-07-28",
     "created": "曲を1つ書いた",
     "enjoyable": "静かな朝だった",
@@ -56,7 +60,7 @@ class TestFromDb:
     def test_空の行でも全キーが空文字で揃う(self):
         result = _from_db({})
         assert result == {
-            "date": "", "created": "", "enjoyable": "",
+            "id": "", "date": "", "created": "", "enjoyable": "",
             "struggled": "", "next": "", "saved_at": "", "ai_response": "",
             # お気に入りだけ真偽値。未設定は False（付いていない）
             "favorite": False,
@@ -119,6 +123,11 @@ class TestToDb:
 class TestRoundTrip:
     def test_アプリからDBへ戻して内容が保たれる(self):
         assert _from_db(_to_db(APP_LOG, "abc-123")) == APP_LOG
+
+    def test_idを持たない記録はidを載せない(self):
+        # 新しい記録には id が無い（DB が採番する）。
+        # **空文字を載せると挿入が落ちる**
+        assert "id" not in _to_db({k: v for k, v in APP_LOG.items() if k != "id"})
 
     def test_DBからアプリへ戻して内容が保たれる(self):
         # お気に入りは `_to_db` が書かない列なので、往復の対象外
@@ -208,7 +217,12 @@ class TestNoPhotoColumns:
             assert key not in row, f"{key} を書こうとしている"
 
     def test_to_dbの出力キーは固定(self):
+        # `id` は**持っているときだけ**載る（新しい記録には無い）
         assert set(_to_db(APP_LOG, "abc-123").keys()) == {
+            "id", "date", "content", "good_things", "struggles",
+            "next_action", "lantern_message", "updated_at", "user_id",
+        }
+        assert set(_to_db({k: v for k, v in APP_LOG.items() if k != "id"}, "abc-123").keys()) == {
             "date", "content", "good_things", "struggles",
             "next_action", "lantern_message", "updated_at", "user_id",
         }
