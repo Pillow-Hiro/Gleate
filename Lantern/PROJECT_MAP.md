@@ -222,6 +222,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `logs.py` | 記録の読み書きとカラム変換。**写真カラムを読み書きしない** | `test_logs_mapping.py` |
 | `metrics.py` | 集計。**画面には出さない** | `test_metrics.py` |
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通。**HMAC で署名し10分で切れる** | `test_oauth_state.py` |
+| `crypto.py` | 記録の本文を AES-256-GCM で包む。**鍵が無ければ素通し**。復号に失敗したら投げる（空を返すと上書きで消える） | `test_crypto.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |

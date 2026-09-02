@@ -116,7 +116,7 @@ index.js が9ウェイト全部を require し、Metro は木揺すりで落と�
 | cryptography | 46.0.4 | 同上 |
 | google-api-python-client | 2.189.0 | YouTube |
 
-規模: モジュール 14 / API 37ルール・35パス。
+規模: モジュール 15 / API 37ルール・35パス。
 
 **I/O 待ちが仕事のほぼ全て**（Supabase・Anthropic）なので、
 プロセスを増やさずスレッドで捌く。**Render Starter は 512MB** なので
@@ -189,7 +189,7 @@ AI憲法に照らして出力を読んでから決める。
 
 | 対象 | 道具 | 件数 |
 |---|---|---|
-| バックエンド | pytest | 1103 |
+| バックエンド | pytest | 1119 |
 | `client/lib` の純粋関数 | vitest | 338 |
 | ネイティブ設定 | `expo config --type introspect` | — |
 

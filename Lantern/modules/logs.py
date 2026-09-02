@@ -2,6 +2,18 @@ import os
 from datetime import datetime, timedelta
 from supabase import create_client
 
+from modules.crypto import decrypt, encrypt
+
+# **暗号化する列**（2026-09-02）。本文にあたるものだけ。
+#
+# `date` と `user_id` は絞り込みに使うので平文のまま。
+# `updated_at` も平文（差分同期がこれで比べる。`/api/logs` の `since`）。
+# `favorite` は真偽値で、中身を語らない。
+#
+# 検索は壊れない。**クライアント側で絞っている**（`app/(tabs)/journal.jsx`）。
+# SQL は本文を触っていないことを確認済み。
+_SECRET_FIELDS = ("content", "good_things", "struggles", "next_action", "lantern_message")
+
 _url = os.environ.get("SUPABASE_URL", "")
 _key = os.environ.get("SUPABASE_KEY", "")
 supabase = create_client(_url, _key) if _url and _key else None
@@ -21,14 +33,20 @@ def _from_db(row):
     # すべて `or ""` を通すのは、テキスト列が NULL の行が実際に存在するため。
     # `row.get("content", "")` は「キーはあるが値が None」では既定値を返さないため、
     # ここを通さないとクライアントに created: null が渡り、.trim() で落ちる。
+    #
+    # **復号はここ1か所**（2026-09-02）。読む経路は全部ここを通る。
+    # 平文の行はそのまま返る（移行中は混ざる。`modules/crypto.py`）。
+    aad = str(row.get("user_id") or "")
+    plain = {k: decrypt(row.get(k) or "", aad) for k in _SECRET_FIELDS}
+
     return {
         "date": str(row.get("date") or ""),
-        "created": row.get("content") or "",
-        "enjoyable": row.get("good_things") or "",
-        "struggled": row.get("struggles") or "",
-        "next": row.get("next_action") or "",
+        "created": plain["content"],
+        "enjoyable": plain["good_things"],
+        "struggled": plain["struggles"],
+        "next": plain["next_action"],
         "saved_at": row.get("updated_at") or "",
-        "ai_response": row.get("lantern_message") or "",
+        "ai_response": plain["lantern_message"],
         "favorite": bool(row.get("favorite")),
     }
 
@@ -42,13 +60,17 @@ def _to_db(l, user_id=None):
     # 記録フォームは favorite を送らない。ここに足すと、
     # 記録を編集するたびにお気に入りが外れる。
     # 付け外しは `set_favorite()` が、その列だけを書く。
+    #
+    # **暗号化はここ1か所**（2026-09-02）。書く経路は全部ここを通る。
+    # 鍵が無ければそのまま平文で入る（`modules/crypto.py`）。
+    aad = str(user_id or "")
     return {
         "date": l.get("date", ""),
-        "content": l.get("created", ""),
-        "good_things": l.get("enjoyable", ""),
-        "struggles": l.get("struggled", ""),
-        "next_action": l.get("next", ""),
-        "lantern_message": l.get("ai_response", ""),
+        "content": encrypt(l.get("created", ""), aad),
+        "good_things": encrypt(l.get("enjoyable", ""), aad),
+        "struggles": encrypt(l.get("struggled", ""), aad),
+        "next_action": encrypt(l.get("next", ""), aad),
+        "lantern_message": encrypt(l.get("ai_response", ""), aad),
         "updated_at": l.get("saved_at") or datetime.now().isoformat(),
         "user_id": user_id,
     }
