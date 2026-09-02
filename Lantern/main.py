@@ -28,7 +28,9 @@ from modules.ai import (
     generate_timeline_reflection,
     generate_milestone_reflection,
     generate_keyword_frequency,
+    generate_hint, generate_hint_question,
 )
+from modules.hintusage import has_free_left, record_use
 from functools import wraps
 
 from modules.auth import require_auth
@@ -248,6 +250,66 @@ def make_light():
         print(f"[/api/light] DB error: {type(e).__name__}: {e}")
 
     return jsonify({"ai_response": ai_response})
+
+
+@app.route("/api/hint", methods=["POST"])
+@require_auth
+@require_ai_budget
+def make_hint():
+    """手がかりを差し出す。**足りなければ、一つだけ問う。**
+
+    2026-09-02 に足した。それまで AI にできるのは2つだけだった
+    （並べる・変化を示す）。3つ目として**本人が過去に取った手を
+    差し出す**を足した。出どころを本人の記録に限れば、
+    「評価しない」と衝突しない（`modules/ai.py` の手がかりの節）。
+
+    ## 分岐はここで決める。**AI に判定させない**
+
+    実データで確かめたところ、手がかりが成立したのは
+    **「困ったこと」が書かれた日だけ**だった。だからそこを条件にする。
+    安く、毎回同じ答えになる。
+
+    | いまの記録の「困ったこと」 | 返すもの |
+    |---|---|
+    | 空 | `question` — 問いを一つ |
+    | ある | `hint` — 手がかり（見つからないこともある） |
+
+    問いへの答えは、クライアントが `/save` で「困ったこと」に入れる。
+    **新しい経路も表も作らない。**
+
+    ## 数える
+
+    最初の `FREE_HINTS` 回は無料（`modules/plan.py`）。
+    そのあとは有料プランで開く。**問いだけを返したときも数える**——
+    数えないと、材料の無い人が何度でも AI を呼べる。
+    """
+    data = request.get_json(silent=True) or {}
+    date = data.get("date") or today_str()
+
+    logs = load_logs(g.user_id)
+    entry = next((l for l in logs if l.get("date") == date), None)
+    if not entry:
+        return jsonify({"error": "not_found"}), 404
+
+    # **無料の枠か、有料か。** どちらでもなければ断る
+    if not has_free_left(g.user_id) and not is_paid(g.user_id):
+        return paid_required_response()
+
+    if not spend_ai_budget(g.user_id):
+        return _budget_exhausted()
+
+    try:
+        if not (entry.get("struggled") or "").strip():
+            body = {"kind": "question", "text": generate_hint_question(entry)}
+        else:
+            past = [l for l in logs if l.get("date") != date]
+            body = {"kind": "hint", "text": generate_hint(entry, past)}
+    except Exception as e:
+        print(f"[/api/hint] AI error: {type(e).__name__}: {e}")
+        return jsonify({"error": "failed"}), 502
+
+    record_use(g.user_id)
+    return jsonify(body)
 
 
 # --- 診断用エンドポイント ---

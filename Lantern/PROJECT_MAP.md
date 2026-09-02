@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。37ルール / 35パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。38ルール / 36パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -224,6 +224,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `oauth_state.py` | OAuth state。YouTube / Twitch 共通。**HMAC で署名し10分で切れる** | `test_oauth_state.py` |
 | `crypto.py` | 記録の本文を AES-256-GCM で包む。**鍵が無ければ素通し**。復号に失敗したら投げる（空を返すと上書きで消える） | `test_crypto.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
+| `hintusage.py` | 手がかりを使った回数。**通算**（1日あたりではない）。**表が無ければ素通し** | `test_hint.py` |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |
@@ -241,7 +242,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・37ルール / 35パス）
+## 6. API（`main.py`・38ルール / 36パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
