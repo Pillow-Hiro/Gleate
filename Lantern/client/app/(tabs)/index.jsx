@@ -22,16 +22,20 @@ import HintPanel from '../../components/HintPanel'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 
-// キーボードが出ているとき、下に余分に空ける高さ。
+// キーボードが出ているとき、**測った高さに足す**ぶん。
 //
 // **書く欄はもうここに無い**（2026-09-03）。全画面へ移した
 // （`app/write.jsx`）。ここでキーボードが出るのは、手がかりの問いに
 // 答えるときだけ（`components/HintCard.jsx`）。
 //
+// 高さそのものは `useKeyboardHeight` で測る。
+// `automaticallyAdjustKeyboardInsets` には任せない——
+// **この repo では効かない**（2026-08-17。`lib/keyboard.js` の由来）。
+//
 // これは `ScrollView` の下余白なので、**空けすぎても画面は壊れない。**
 // 余るぶんはただの余白で、足りないと書いている字が見えない。
 // **足りないほうが悪い**ので、多めに取る。
-const KEYBOARD_GAP = 200
+const KEYBOARD_GAP = 120
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 import Paywall from '../../components/Paywall'
@@ -166,7 +170,7 @@ export default function Home() {
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? KEYBOARD_GAP : 0),
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? keyboardHeight + KEYBOARD_GAP : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

@@ -61,8 +61,14 @@ export default function Write() {
     else router.replace('/')
   }
 
+  // **下の安全域は取らない**（2026-09-03）。
+  //
+  // 装飾の列は `position: absolute` で `bottom: キーボードの高さ` に置く。
+  // RN の絶対配置は**親の内側（padding の内）**を基準にするので、
+  // 下に安全域を取ると、その分だけ列がキーボードより上に浮き、
+  // 隙間から後ろが見える。根元（`app/_layout.jsx`）も取っていない。
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       {/* 上の帯。**閉じると保存だけ。**
           書いている最中に押せるものを増やさない */}
       <View className="flex-row items-center justify-between px-4 py-2 border-b border-border">
@@ -86,8 +92,23 @@ export default function Write() {
 
       <ScrollView
         contentContainerClassName="px-5 pt-4 w-full max-w-read self-center"
+        // **測ったキーボードの高さを足す**（2026-09-03・作者から
+        // 「良かったことなどがキーボードに完全に隠れます」）。
+        //
+        // `automaticallyAdjustKeyboardInsets` に任せていたが、
+        // **この repo では当てにできない**（2026-08-17 に判明済み。
+        // `lib/keyboard.js` はそのために在る）。効いていなかったので、
+        // 主欄の下にある3行がキーボードの裏に入ったまま出せなかった。
+        //
+        // 列の高さも足す。2段になると 100px あり、足りないと
+        // 3行がチップの裏に入る。
+        //
+        // キーボードが下りているときの 60 は、**下の安全域のぶん**。
+        // `SafeAreaView` から `bottom` を外したので（上記）、
+        // 取らないとホームバーの帯に最後の行が入る。
         contentContainerStyle={{
-          paddingBottom: keyboardHeight > 0 ? TOOLBAR_MAX_HEIGHT + 120 : 40,
+          paddingBottom:
+            keyboardHeight > 0 ? keyboardHeight + TOOLBAR_MAX_HEIGHT + 24 : 60,
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
