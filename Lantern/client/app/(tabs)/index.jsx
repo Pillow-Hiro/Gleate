@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -7,7 +7,13 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
-import { todayStr, calcStreak } from '../../lib/date'
+import {
+  MAX_RECORDS_PER_DAY,
+  calcStreak,
+  latestLogOf,
+  logsOfDay,
+  todayStr,
+} from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import RecordForm from '../../components/RecordForm'
 import WriteTabs from '../../components/WriteTabs'
@@ -103,20 +109,18 @@ export default function Home() {
     return () => { cancelled = true }
   }, [refreshTick])
 
-  // **その日の記録は複数ありうる**（2026-09-02）。保存した順に並べる
-  const dayLogs = logs
-    .filter((l) => l.date === targetDate)
-    .sort((a, b) => ((a.saved_at || '') < (b.saved_at || '') ? -1 : 1))
-
-  // どれを書いているか。`null` は「いちばん新しいもの」（＝開いた直後）、
-  // `'new'` は**まだ無い記録**（保存した直後・時刻の帯で選び直せる）
-  const [editingId, setEditingId] = useState(null)
-  const existingLog =
-    editingId === 'new'
-      ? null
-      : editingId
-        ? dayLogs.find((l) => l.id === editingId) || null
-        : dayLogs[dayLogs.length - 1] || null
+  // **この紙はいつでも白紙**（2026-09-03・作者の判断）。
+  //
+  // 前日までは、その日の最後の記録を紙に載せて開いていた。
+  // 書き足しにも書き直しにも見えるので、**別のことを書くと前のが消えた。**
+  // 時刻の帯で選び直せるようにしてみたが、作者に「帯はいらない」と言われた。
+  // 帯は、白紙で開かないことの埋め合わせでしかなかった。
+  //
+  // 白紙で開き、保存は必ず新しい記録として入る（`RecordForm.jsx`）。
+  // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
+  // 書く場所と直す場所を分けると、どちらも一つのことだけをする。
+  const dayLogs = logsOfDay(logs, targetDate)
+  const latestLog = latestLogOf(logs, targetDate)
 
   const streak = calcStreak(logs)
 
@@ -176,46 +180,34 @@ export default function Home() {
               </Text>
             </View>
           ) : null}
-          {/* その日に複数あるとき、どれを書いているかを選ぶ。
-              **件数ではなく時刻で示す。**「2件目」だと数を数える道具になる。
-              時刻なら「朝に書いたもの」と本人の記憶で結びつく */}
-          {/* **「＋ もう一件」は置かない**（2026-09-03）。
-              保存すると欄が空になり、そのまま次を書ける（`RecordForm.jsx`）。
-              帯は**書いたものを選び直す**ためだけにある */}
+          {/* **すでに記録があることだけ伝える**（2026-09-03）。
+              時刻の帯はやめた（作者の判断）。押せるものを並べると、
+              「どれかを選んで書く」ように見える。ここは選ぶ場所ではない。
+              それでも、残っているのに白紙で開くので**黙ってはいない。**
+              一行だけ、押せない字で。
+
+              **数は書かない**（`REQUIREMENTS.md` F1「書く前に数を
+              意識させない」）。伝えたいのは件数ではなく、
+              **ここに書いても前のは消えない**ということ。
+
+              上限に達したときだけは先に言う。書き終えてから断られる
+              （`/save` の 409）より、書く前に分かっている方がよい。 */}
           {dayLogs.length > 0 ? (
-            <View className="flex-row flex-wrap gap-2 mb-3">
-              {dayLogs.map((l) => {
-                const t = l.saved_at ? new Date(l.saved_at) : null
-                const label = t
-                  ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
-                  : '記録'
-                const on = existingLog && existingLog.id === l.id
-                return (
-                  <Pressable
-                    key={l.id || l.date}
-                    onPress={() => setEditingId(l.id)}
-                    className={`border rounded-full px-3 min-h-touch justify-center ${
-                      on ? 'border-lantern-glow bg-lantern-glow/10' : 'border-outline-variant'
-                    }`}
-                  >
-                    <Text className={`text-label-md ${on ? 'text-primary' : 'text-on-surface-variant'}`}>
-                      {label}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
+            <Text className="text-label-md text-outline mb-3">
+              {dayLogs.length >= MAX_RECORDS_PER_DAY
+                ? 'この日の記録はここまでです。直すときは「記録」から。'
+                : 'すでにこの日の記録があります。ここに書くと、別の記録として残ります。'}
+            </Text>
           ) : null}
           <RecordForm
-            key={editingId === 'new' ? `new-${targetDate}` : existingLog ? existingLog.id : `new-${targetDate}`}
-            existingLog={existingLog}
+            // **保存では作り直さない**（2026-09-03）。日付だけを鍵にする。
+            // 以前は記録の id を鍵にしていたので、保存のたびに紙が
+            // 生え直し、書いている最中の灯りが行き先を失っていた
+            key={targetDate}
+            latestLog={latestLog}
             targetDate={targetDate}
             question={question}
             onSaved={() => {
-              // **保存したら空の欄にする**（2026-09-03・作者の判断）。
-              // 1日に複数件置けるので、書いたあとの自然な次は「もう一件」。
-              // 書いたものは上の時刻の帯に並ぶので、消えたようには見えない。
-              setEditingId('new')
               refreshData()
               if (isEditingPast) router.replace('/')
             }}

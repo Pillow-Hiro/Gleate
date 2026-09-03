@@ -56,9 +56,17 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   async function handleSave() {
     setSaving(true)
     try {
+      // **id を送る**（2026-09-03）。消すのは 2026-09-02 に id へ移したが、
+      // **直す方は日付のままだった。**
+      //
+      // 日付だけで送ると、サーバーはその日の**最初の**記録を書き換える
+      // （`main.py` の `/save`）。1日に複数件置けるようにしてから、
+      // 夜の記録を直すと朝の記録が消える経路になっていた。
+      //
+      // ここは「書く」と違って**必ず既存を直す**ので `new` は送らない。
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ date: log.date, ...editForm }),
+        body: JSON.stringify({ id: log.id, date: log.date, ...editForm }),
       })
       if (!res.ok) throw new Error('save failed')
       const data = await res.json()

@@ -5,6 +5,9 @@ import {
   calcStreak,
   monthsAgoStr,
   findNearestLog,
+  logsOfDay,
+  latestLogOf,
+  countDays,
 } from './date'
 
 // ローカルタイムゾーン基準の日付を作るヘルパー（new Date('2026-03-15') はUTC解釈になる）
@@ -162,5 +165,73 @@ describe('findNearestLog', () => {
   it('同じ距離なら先に見つかった方を返す', () => {
     // 2026-04-24 からの距離: 25日=1, 23日=1 → 配列で先の 25日
     expect(findNearestLog(logs('2026-04-25', '2026-04-23'), '2026-04-24').date).toBe('2026-04-25')
+  })
+})
+
+// 1日に複数件（2026-09-02）。**上書きせずに別のことを書ける**ための土台。
+// 書く紙は白紙で開き、保存は必ず新しい記録として入る
+// （`app/(tabs)/index.jsx` / `components/RecordForm.jsx`）ので、
+// 「その日の何件目か」「いちばん新しいのはどれか」はここが決める。
+const at = (date, saved_at, extra = {}) => ({ date, saved_at, ...extra })
+
+describe('logsOfDay', () => {
+  const day = [
+    at('2026-09-03', '2026-09-03T12:00:00Z', { id: 'b' }),
+    at('2026-09-02', '2026-09-02T09:00:00Z', { id: 'x' }),
+    at('2026-09-03', '2026-09-03T01:00:00Z', { id: 'a' }),
+    at('2026-09-03', '2026-09-03T23:00:00Z', { id: 'c' }),
+  ]
+
+  it('その日のものだけを、保存した順に返す', () => {
+    expect(logsOfDay(day, '2026-09-03').map((l) => l.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('記録の無い日は空', () => {
+    expect(logsOfDay(day, '2026-09-01')).toEqual([])
+  })
+
+  // 古い記録には `saved_at` が無い。並べ直す材料が無いので前に置く
+  it('saved_at の無い記録は前に置く', () => {
+    const mixed = [
+      at('2026-09-03', '2026-09-03T10:00:00Z', { id: 'new' }),
+      { date: '2026-09-03', id: 'old' },
+    ]
+    expect(logsOfDay(mixed, '2026-09-03').map((l) => l.id)).toEqual(['old', 'new'])
+  })
+
+  it('元の配列を書き換えない', () => {
+    const before = day.map((l) => l.id)
+    logsOfDay(day, '2026-09-03')
+    expect(day.map((l) => l.id)).toEqual(before)
+  })
+})
+
+describe('latestLogOf', () => {
+  const day = [
+    at('2026-09-03', '2026-09-03T01:00:00Z', { id: 'asa' }),
+    at('2026-09-03', '2026-09-03T23:00:00Z', { id: 'yoru' }),
+  ]
+
+  // **手がかりが指す先。** ここが朝の記録を返すと、
+  // 夜に書いた話について朝の話を探しにいくことになる
+  it('その日のいちばん新しい記録を返す', () => {
+    expect(latestLogOf(day, '2026-09-03').id).toBe('yoru')
+  })
+
+  it('記録の無い日は null', () => {
+    expect(latestLogOf(day, '2026-09-01')).toBeNull()
+  })
+})
+
+describe('countDays', () => {
+  // 「N日間の記録」の N。**件数ではない**（`app/(tabs)/journal.jsx`）
+  it('同じ日に何件あっても1日と数える', () => {
+    const list = logs('2026-09-03', '2026-09-03', '2026-09-03', '2026-09-01')
+    expect(countDays(list)).toBe(2)
+    expect(list.length).toBe(4)
+  })
+
+  it('記録が無ければ0', () => {
+    expect(countDays([])).toBe(0)
   })
 })

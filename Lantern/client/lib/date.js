@@ -42,6 +42,41 @@ export function monthsAgoStr(months, now = new Date()) {
   return localDateStr(target)
 }
 
+// 1日に残せる記録の数。**`main.py` の `MAX_RECORDS_PER_DAY` と同じ数。**
+// 止めているのはサーバー（超えると 409）。ここにあるのは、
+// 書く前に「あと置けるかどうか」を言うためだけ。
+export const MAX_RECORDS_PER_DAY = 3
+
+// その日の記録。**1日に複数ありうる**（2026-09-02）。
+// 保存した順（`saved_at` の昇順）に並べる。
+//
+// `saved_at` の無い古い記録は前に置く。並べ直す材料が無いので、
+// 「先にあったもの」として扱うほかない。
+export function logsOfDay(logs, date) {
+  return logs
+    .filter((l) => l.date === date)
+    .sort((a, b) => {
+      const x = a.saved_at || ''
+      const y = b.saved_at || ''
+      return x < y ? -1 : x > y ? 1 : 0
+    })
+}
+
+// その日のいちばん新しい記録。無ければ null。
+//
+// **手がかりが指す先**でもある（`components/RecordForm.jsx`）。
+// 書く紙はいつでも白紙なので、「いま何の話か」はここでしか分からない。
+export function latestLogOf(logs, date) {
+  const day = logsOfDay(logs, date)
+  return day[day.length - 1] || null
+}
+
+// 記録した**日数**。件数ではない（2026-09-03）。
+// 1日に複数件置けるようにしてから、`logs.length` は日数と一致しない。
+export function countDays(logs) {
+  return new Set(logs.map((l) => l.date)).size
+}
+
 // 目標日から rangeInDays 日以内で最も近い記録を返す。該当なしなら null。
 export function findNearestLog(logs, targetStr, rangeInDays = 3) {
   let best = null

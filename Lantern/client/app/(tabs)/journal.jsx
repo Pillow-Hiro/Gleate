@@ -11,7 +11,7 @@ import { loadLogs, replaceLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
-import { todayStr } from '../../lib/date'
+import { countDays, logsOfDay, todayStr } from '../../lib/date'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import AppHeader from '../../components/AppHeader'
@@ -165,12 +165,9 @@ export default function Journal() {
   //
   // 過去の日は「書く」から遡れないので、モーダルのままにする。
   function handleDateClick(date) {
-    const existingLog = logs.find((l) => l.date === date)
-    if (existingLog) {
-      setSelectedDate(date)
-      return
-    }
     setSelectedDate(date)
+    // 記録のある日は下に開くだけ。無い過去の日にだけ、書く窓を出す
+    if (logs.some((l) => l.date === date)) return
     if (date !== todayStr()) setModalDate(date)
   }
 
@@ -178,7 +175,10 @@ export default function Journal() {
     setModalDate(null)
   }
 
-  const selectedLog = selectedDate ? logs.find((l) => l.date === selectedDate) || null : null
+  // **その日の全部を出す**（2026-09-03）。
+  // `find` で1件だけ出していたので、1日に複数件置けるようにしてから、
+  // 暦から開くと**2件目以降が無いように見えていた。**
+  const selectedLogs = selectedDate ? logsOfDay(logs, selectedDate) : []
 
   const q = search.trim().toLowerCase()
   const searched = q
@@ -233,7 +233,9 @@ export default function Journal() {
         <View>
           <Text className="font-display text-headline-md text-ink">記録</Text>
           {!loading && logs.length > 0 ? (
-            <Text className="text-body text-ink-soft mt-1">{logs.length}日間の記録</Text>
+            {/* **日数で数える**（2026-09-03）。`logs.length` は件数で、
+                1日に複数件置けるようにしてから日数と合わなくなった */}
+            <Text className="text-body text-ink-soft mt-1">{countDays(logs)}日間の記録</Text>
           ) : null}
         </View>
 
@@ -315,14 +317,21 @@ export default function Journal() {
                 ) : null}
               </View>
 
-              {selectedDate && selectedLog ? (
-                <View className="mt-3 bg-stone/40 rounded-lg px-5 py-4">
-                  <Text className="text-aux text-ink-faint mb-2">{dateDisplayJa(selectedDate)}</Text>
-                  <LogDetail log={selectedLog} onDelete={handleDelete} onUpdate={handleUpdate} />
+              {selectedDate && selectedLogs.length > 0 ? (
+                <View className="mt-3 bg-stone/40 rounded-lg px-5 py-4 gap-4">
+                  <Text className="text-aux text-ink-faint">{dateDisplayJa(selectedDate)}</Text>
+                  {selectedLogs.map((l, i) => (
+                    <View
+                      key={l.id || `${l.date}-${i}`}
+                      className={i > 0 ? 'border-t border-outline-variant pt-4' : undefined}
+                    >
+                      <LogDetail log={l} onDelete={handleDelete} onUpdate={handleUpdate} />
+                    </View>
+                  ))}
                 </View>
               ) : null}
 
-              {selectedDate && !selectedLog ? (
+              {selectedDate && selectedLogs.length === 0 ? (
                 <Text className="text-label-md text-outline text-center mt-3">
                   {selectedDate === todayStr()
                     ? '今日の記録はまだありません。「書く」から残せます。'

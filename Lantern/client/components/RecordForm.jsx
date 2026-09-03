@@ -223,18 +223,23 @@ function Chip({ label, onPress }) {
 // **ここでは Paywall を描かない。**フォームは記録を書く場所で、
 // 売る面を持たせると、書いている最中に売り物が現れることになる。
 // 出す場所は呼ぶ側が決める（`app/(tabs)/index.jsx`）。
-export default function RecordForm({ existingLog, targetDate, onSaved, question, onPaywall }) {
+// `latestLog` は**その日の最後の記録**（無ければ null）。
+// 紙には載せない。**手がかりが「何の話か」を知るためだけ**に受け取る。
+export default function RecordForm({ latestLog, targetDate, onSaved, question, onPaywall }) {
   const isToday = targetDate === todayStr()
   const [y, m, d] = targetDate.split('-')
   const dateLabel = `${y}年${Number(m)}月${Number(d)}日`
-  const stamp = existingLog?.saved_at ? new Date(existingLog.saved_at) : new Date()
+  // **この紙はいつでも白紙**（2026-09-03・作者の判断）。
+  //
+  // 前は、その日の最後の記録を載せて開いていた。**別のことを書くと
+  // 前のが消えた**（同じ記録を書き直したことになるため）。
+  // 時刻の帯で選び直せるようにしたが、作者に「帯はいらない」と言われた。
+  //
+  // 白紙で開き、保存は必ず新しい記録として入る。
+  // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
+  const stamp = new Date()
   const timeLabel = `${String(stamp.getHours()).padStart(2, '0')}:${String(stamp.getMinutes()).padStart(2, '0')}`
-  const [form, setForm] = useState({
-    created: existingLog?.created || '',
-    enjoyable: existingLog?.enjoyable || '',
-    struggled: existingLog?.struggled || '',
-    next: existingLog?.next || '',
-  })
+  const [form, setForm] = useState({ created: '', enjoyable: '', struggled: '', next: '' })
   // **開いている欄。**（2026-08-14）
   //
   // それまでは「もっと詳しく書く」ひとつで3項目をまとめて畳んでいた。
@@ -247,24 +252,26 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
   // **欄そのものは消さない**（CLAUDE.md）。実測で
   // 次にやること 16.7% / よかった 5.6% / 困った 5.6% と低いが、使われている。
   // 消すと後から分け直せない。
-  const initiallyOpen = new Set(
-    EXTRA_FIELDS.filter(({ key }) => existingLog?.[key]).map(({ key }) => key)
-  )
-  const [openFields, setOpenFields] = useState(initiallyOpen)
+  //
+  // **白紙なので、開いた欄も無い。** 以前は既存の記録に中身のある欄を
+  // 開いた状態で出していたが、載せる記録そのものが無くなった。
+  const [openFields, setOpenFields] = useState(() => new Set())
   // **直前にチップで開いた欄。** その欄にだけ焦点を移す。
   //
-  // 既に開いている欄（記録を開き直したとき）には移さない。
   // `autoFocus` は生えたときにしか効かないので、開いた瞬間の1回だけ働く。
   const [justOpened, setJustOpened] = useState(null)
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   // 灯りは**画面の外に置いてある**（`lib/lightBuffer.js`）。
-  // このフォームは保存のたびに作り直されるので、ここで持つと消える。
+  // 灯りは保存よりずっと遅れて届くので、その間にこの紙が消えても
+  // （タブを移る、日付が変わる、書く場所を閉じる）受け皿には残る。
   // 生えた時点で受け皿を見て、以後は変化を受け取る。
   const [lighting, setLighting] = useState(() => isLighting(targetDate))
-  const [aiResponse, setAiResponse] = useState(
-    () => getLight(targetDate) || existingLog?.ai_response || '',
-  )
+  // **この画面で書いたぶんの灯りだけを出す**（2026-09-03）。
+  // 前は既存の記録の灯りも載せていたが、紙が白紙になったので、
+  // **何も書いていない紙の下に返事がある**ことになってしまう。
+  // 残っている灯りはホームと「記録」で読める。
+  const [aiResponse, setAiResponse] = useState(() => getLight(targetDate) || '')
 
   useEffect(
     () =>
@@ -282,13 +289,16 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
   const [hint, setHint] = useState(null)
   const [hinting, setHinting] = useState(false)
   const [savingAnswer, setSavingAnswer] = useState(false)
-  // 既にある記録を開いているなら、その時点で探せる
-  const [savedOnce, setSavedOnce] = useState(Boolean(existingLog))
-  // どの記録を書いているか。**新規は空**（DB が採番する）
-  const [recordId, setRecordId] = useState(existingLog?.id || '')
-  const [photoUrl, setPhotoUrl] = useState(
-    existingLog?.photo_url || loadPhoto(targetDate).photo_url,
-  )
+  // **この画面で書いて残したもの。** 保存できたときだけ入る。
+  //
+  // 紙は保存すると白紙に戻るので、`form` はもう当てにならない。
+  // 手がかりの答えを**どの記録に足すか**、そのとき何が書いてあったかは
+  // ここが覚えている（`handleHintAnswer`）。
+  const [written, setWritten] = useState(null)
+  // 手がかりが指す記録。書いた直後はそれ、開いた直後はその日の最後。
+  // **どちらも無ければ探せない。** 材料が一つも無い
+  const hintTarget = written || latestLog || null
+  const [photoUrl, setPhotoUrl] = useState(loadPhoto(targetDate).photo_url)
 
   // 写真は端末に即座に置く。テキストの「記録する」を待たない。
   // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
@@ -359,16 +369,34 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
   // `/save` をそのまま使う。`defer_ai` を付けて灯りは頼まない——
   // 答えを足しただけで灯りを作り直すと、書いた本人の言葉が
   // 上書きされたように見える。
+  //
+  // **書き先は手がかりが見ていた記録**（2026-09-03）。
+  //
+  // それまでは、いま紙に書いてあるもの（`form`）を送っていた。
+  // 保存すると紙が白紙に戻るようになったので、**空の4欄で
+  // 保存済みの記録を塗り潰していた。** `id` も送っていなかったため、
+  // その日の1件目が消える経路にもなっていた。
+  //
+  // 送るのは「その記録の中身＋答え」。紙には触らない。
   async function handleHintAnswer(answer) {
+    const target = hintTarget
+    // 残す先が無い。**問いは出ていないはず**なので、ここには来ない
+    if (!target?.id) return
     setSavingAnswer(true)
-    const next = { ...form, struggled: answer }
-    setForm(next)
+    const next = {
+      created: target.created || '',
+      enjoyable: target.enjoyable || '',
+      next: target.next || '',
+      struggled: answer,
+    }
     try {
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ ...next, id: recordId || undefined, date: targetDate, defer_ai: true }),
+        body: JSON.stringify({ ...next, id: target.id, date: targetDate, defer_ai: true }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // 覚えも合わせる。合わせないと、続けて答えたときに前の答えが戻る
+      setWritten({ ...target, ...next })
       invalidateLogs()
       if (onSaved) onSaved()
     } catch (e) {
@@ -396,17 +424,12 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
       // 押した人を AI の生成時間だけ立ち止まらせる理由が無い。
       const res = await authFetch('/save', {
         method: 'POST',
-        // **id を送る**（2026-09-02）。同じ日に複数件あるので、
-        // 日付だけでは書き先が決まらない。新規なら空で送らない
-        // **新しく作るときは明示する**（2026-09-02）。
-        // 送らないと、サーバーは日付で既存を見つけて上書きしてしまう
-        body: JSON.stringify({
-          ...form,
-          id: recordId || undefined,
-          new: recordId ? undefined : true,
-          date: targetDate,
-          defer_ai: true,
-        }),
+        // **必ず新しい記録として入れる**（2026-09-03）。
+        //
+        // この紙は白紙でしか開かないので、ここから既存を直すことはない。
+        // `new` を送らないと、サーバーは日付で既存を見つけて上書きする
+        // （`main.py` の `/save`）。**別のことを書いたのに前のが消える。**
+        body: JSON.stringify({ ...form, new: true, date: targetDate, defer_ai: true }),
       })
       // **上限に当たったときは、そう言う**（2026-09-02）。
       // 「保存に失敗しました。接続を確認してください」だと、
@@ -418,35 +441,32 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      // **書いた行の id を覚える**（2026-09-02）。覚えないと、
-      // 次の保存で「新しい記録」として同じ日に2件目が生まれる
-      if (data.id) setRecordId(data.id)
+      // **書いた記録を覚える**（2026-09-03）。紙はこのあと白紙に戻るので、
+      // 手がかりの答えを足す先が、ここにしか残らない
+      setWritten({ id: data.id || '', ...form })
       if (data.ai_response) setAiResponse(data.ai_response)
 
       // **控えが古くなった。**これを言わないと、記録タブへ移っても
       // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
       // `onSaved` より先に呼ぶ。あちらは取り直しの結果を受け取る側
       invalidateLogs()
-      // **ここから手がかりを探せる。** 書く前には材料が無い
-      setSavedOnce(true)
 
-      // **保存したら欄を空にする**（2026-09-03・作者の判断）。
+      // **保存したら紙を白紙に戻す**（2026-09-03・作者の判断）。
       //
-      // 1日に複数件を置けるようにしたので、書いたあとの自然な次は
-      // 「もう一件書く」になる。**残しておくと、次に書くとき先に消す手間が要る。**
+      // 1日に複数件を置けるので、書いたあとの自然な次は「もう一件書く」。
+      // 残しておくと、次に書くとき先に消す手間が要る。
       //
-      // `recordId` も捨てる。次の保存は**別の記録**として入る。
-      // 直したいときは、上の時刻の帯から選び直す。
+      // 開いた欄も畳む。畳まないと、次の記録に前の見出しだけが残る。
       setForm({ created: '', enjoyable: '', struggled: '', next: '' })
-      setRecordId('')
+      setOpenFields(new Set())
+      setJustOpened(null)
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。
       //
       // **待ちはこの画面が持たない**（`lib/lightBuffer.js`）。
-      // 保存すると親が記録を取り直し、その拍子にこのフォームは
-      // `key` が変わって作り直される。ここで待っていると、
-      // 返ってきた頃には受け取る画面が居ない。
+      // 灯りは十数秒かかることがある。その間にタブを移られたら、
+      // ここで待っていても受け取る画面が居ない。
       if (data.deferred) requestLight(targetDate)
     } catch (e) {
       // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
@@ -469,9 +489,6 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
         <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
         <Text className="text-label-md text-outline">·</Text>
         <Text className="font-label text-label-md text-outline">{timeLabel}</Text>
-        {existingLog ? (
-          <Text className="font-label text-label-md text-outline ml-auto">記録済</Text>
-        ) : null}
       </View>
 
       {/* 問いはプレースホルダとして入力欄の中に出す。
@@ -606,7 +623,7 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
           onAnswer={handleHintAnswer}
           onClose={() => setHint(null)}
         />
-      ) : savedOnce ? (
+      ) : hintTarget ? (
         <Pressable
           onPress={askForHint}
           disabled={hinting}
