@@ -232,9 +232,9 @@ export default function Journal() {
         {/* ヘッダー */}
         <View>
           <Text className="font-display text-headline-md text-ink">記録</Text>
+          {/* **日数で数える**（2026-09-03）。`logs.length` は件数で、
+              1日に複数件置けるようにしてから日数と合わなくなった */}
           {!loading && logs.length > 0 ? (
-            {/* **日数で数える**（2026-09-03）。`logs.length` は件数で、
-                1日に複数件置けるようにしてから日数と合わなくなった */}
             <Text className="text-body text-ink-soft mt-1">{countDays(logs)}日間の記録</Text>
           ) : null}
         </View>

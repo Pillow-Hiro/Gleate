@@ -25,6 +25,8 @@ pytest も vitest も expo-doctor も通っていた。
 import io
 import os
 import re
+import shutil
+import subprocess
 
 import pytest
 
@@ -242,3 +244,54 @@ class TestNativeOnlyModulesAreLoadedLazily:
                 assert "try {" in src and "catch" in src, (
                     f"{os.path.basename(path)} が {pkg} を包まずに require している"
                 )
+
+
+class TestJsxParses:
+    """画面のファイルが**構文として通るか。**
+
+    ## 2026-09-03 に配信の直前で見つかった壊れ方
+
+    三項演算子の枝の先頭に JSX のコメントを置いた。
+
+        {!loading && logs.length > 0 ? (
+          {/* … */}
+          <Text>…</Text>
+        ) : null}
+
+    枝の中に式が2つ並ぶので構文にならない。**気づいたのは
+    `eas update` が82秒かけて束ね直しに失敗したとき。**
+
+    pytest も vitest も通っていた。vitest が見ているのは `lib/` の
+    純粋関数だけで、**画面のファイルは1行も読まれていない**
+    （このファイルの冒頭に理由がある）。lint も入っていない。
+    つまり**構文を見る場所がどこにも無かった。**
+
+    Python では JSX を読めないので、`client/scripts/parse-check.mjs`
+    （@babel/parser）に読ませる。node が無ければ飛ばす——
+    検査のために node を必須にはしない。
+    """
+
+    def test_全ての画面が読める(self):
+        script = os.path.join(CLIENT, "scripts", "parse-check.mjs")
+        assert os.path.isfile(script), "parse-check.mjs が無い"
+
+        node = shutil.which("node")
+        if not node:
+            pytest.skip("node が無い環境。構文検査は飛ばす")
+
+        # `@babel/parser` は client/node_modules にある。入っていなければ飛ばす
+        if not os.path.isdir(os.path.join(CLIENT, "node_modules", "@babel", "parser")):
+            pytest.skip("client/node_modules が無い環境。構文検査は飛ばす")
+
+        proc = subprocess.run(
+            [node, script],
+            cwd=CLIENT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+        )
+        assert proc.returncode == 0, (
+            "画面のファイルが構文として読めない:\n" + (proc.stderr or proc.stdout)
+        )

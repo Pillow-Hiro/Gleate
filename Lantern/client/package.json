@@ -47,7 +47,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "node scripts/parse-check.mjs"
   },
   "private": true,
   "devDependencies": {
