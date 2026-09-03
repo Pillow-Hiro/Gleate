@@ -38,10 +38,14 @@ import Paywall from '../../components/Paywall'
 import { paywallMessage } from '../../lib/plan'
 
 // 右下のボタンに置く鉛筆。**絵文字は使わない**ので図形で描く
-// （`components/RecordForm.jsx` の暦と同じ理由）
+// （`components/RecordForm.jsx` の暦と同じ理由）。
+//
+// **これ1つでボタンになる**（2026-09-03・作者から「ペンマークだけでいい」）。
+// 字が無いぶん大きく描く。読み上げには名前が要るので
+// `accessibilityLabel` は残す。
 function PencilIcon() {
   return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
       <Path
         d="M4 20h4L19.5 8.5a2.1 2.1 0 00-3-3L5 17v3z"
         stroke="#1D1D1F"
@@ -286,16 +290,16 @@ export default function Home() {
             その高さぶん持ち上げないと下半分が隠れる（`lib/tabBar.js`）
           - 上限に達したら出さない。押せないボタンを置くくらいなら、
             無い方がいい。理由は紙の側に書いてある
-          - アイデアを書いているときも出さない。行き先が違う */}
+          - アイデアを書いているときも出さない。行き先が違う
+          - **記号だけ**（作者の指示）。「書く」の字は置かない */}
       {!full && writeTab === 'record' ? (
         <Pressable
           onPress={openWrite}
           accessibilityLabel="記録を書く"
-          style={{ position: 'absolute', right: 20, bottom: tabInset + 16 }}
-          className="flex-row items-center gap-2 bg-lantern-glow rounded-full px-5 min-h-touch justify-center shadow-bloom active:opacity-80"
+          style={{ position: 'absolute', right: 20, bottom: tabInset + 16, width: 56, height: 56 }}
+          className="items-center justify-center bg-lantern-glow rounded-full shadow-bloom active:opacity-80"
         >
           <PencilIcon />
-          <Text className="font-strong text-label-md text-on-lantern">書く</Text>
         </Pressable>
       ) : null}
       </ScreenFade>
