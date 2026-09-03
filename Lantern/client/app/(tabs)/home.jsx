@@ -3,6 +3,7 @@ import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
+import WriteButton from '../../components/WriteButton'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
@@ -172,8 +173,12 @@ export default function Home() {
             <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">
               今日の問い
             </Text>
+            {/* **全画面へ直に行く**（2026-09-03）。
+                それまでは「書く」タブへ送っていたが、書く場所が
+                全画面に移ったので、そこで**もう一度押させる**ことになる。
+                問いも一緒に連れていく（欄のプレースホルダになる）。 */}
             <Pressable
-              onPress={() => router.push('/')}
+              onPress={() => router.push({ pathname: '/write', params: { question } })}
               accessibilityLabel={`${question} について書く`}
               className="bg-surface-lowest border border-outline-variant rounded-lg px-5 py-4 gap-3 active:opacity-70"
             >
@@ -225,6 +230,11 @@ export default function Home() {
           </Pressable>
         ) : null}
       </ScrollView>
+
+      {/* 右下の書くボタン。**ホーム・記録・書くの3つに置く**（作者の指示）。
+          ここは問いを取っているので、一緒に連れていける
+          （`components/WriteButton.jsx`） */}
+      <WriteButton question={question} />
       </ScreenFade>
     </SafeAreaView>
   )

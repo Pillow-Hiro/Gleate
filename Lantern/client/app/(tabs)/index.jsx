@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -19,6 +18,7 @@ import AppHeader from '../../components/AppHeader'
 import WriteTabs from '../../components/WriteTabs'
 import LightCard from '../../components/LightCard'
 import HintPanel from '../../components/HintPanel'
+import WriteButton from '../../components/WriteButton'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 
@@ -40,25 +40,6 @@ import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 import Paywall from '../../components/Paywall'
 import { paywallMessage } from '../../lib/plan'
-
-// 右下のボタンに置く鉛筆。**絵文字は使わない**ので図形で描く
-// （`components/RecordForm.jsx` の暦と同じ理由）。
-//
-// **これ1つでボタンになる**（2026-09-03・作者から「ペンマークだけでいい」）。
-// 字が無いぶん大きく描く。読み上げには名前が要るので
-// `accessibilityLabel` は残す。
-function PencilIcon() {
-  return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4 20h4L19.5 8.5a2.1 2.1 0 00-3-3L5 17v3z"
-        stroke="#1D1D1F"
-        strokeWidth="1.9"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  )
-}
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 
@@ -145,9 +126,6 @@ export default function Home() {
   const latestLog = latestLogOf(logs, targetDate)
   const full = dayLogs.length >= MAX_RECORDS_PER_DAY
 
-  const [ty, tm, td] = targetDate.split('-')
-  const dateLabel = `${ty}年${Number(tm)}月${Number(td)}日`
-
   const streak = calcStreak(logs)
 
   // 全画面を開く。**紙からも右下のボタンからも同じところへ行く**
@@ -217,14 +195,18 @@ export default function Home() {
           ) : null}
 
           {/* **押すと全画面が開く紙。**
-              見た目は書く紙のまま（日付の行と問い）にしてある。
+              見た目は書く紙のまま（問いだけ）にしてある。
               「入口」と分かる別の飾りを足すと、押す前に一段考えることになる。
+
+              **日付は書かない**（2026-09-03）。すぐ上の見出しに
+              「2026年9月4日 木曜日」がある。**同じことを2回書かない**——
+              2026-08-09 に「8 AUG」を外したのと同じ判断。
+              ここに置くのは問いだけ。書き始める場所に、書き始める手がかりを置く。
 
               上限に達していたら開かない。書き終えてから 409 で断るより、
               **押せないことが先に分かる**方がよい。 */}
           {full ? (
-            <View className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom opacity-60">
-              <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
+            <View className="bg-surface-lowest rounded-lg px-5 py-5 shadow-bloom opacity-60">
               <Text className="text-body-md text-outline leading-relaxed">
                 この日の記録はここまでです。直すときは「記録」から。
               </Text>
@@ -235,7 +217,6 @@ export default function Home() {
               accessibilityLabel="記録を書く"
               className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-80"
             >
-              <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
               <Text className="text-body-md text-outline leading-relaxed">
                 {question && !isEditingPast
                   ? question
@@ -295,16 +276,12 @@ export default function Home() {
           - 上限に達したら出さない。押せないボタンを置くくらいなら、
             無い方がいい。理由は紙の側に書いてある
           - アイデアを書いているときも出さない。行き先が違う
-          - **記号だけ**（作者の指示）。「書く」の字は置かない */}
+          - **記号だけ**（作者の指示）。「書く」の字は置かない
+
+          形と置き場所は `components/WriteButton.jsx`。
+          ホーム・記録にも同じものを置いてある（作者の指示） */}
       {!full && writeTab === 'record' ? (
-        <Pressable
-          onPress={openWrite}
-          accessibilityLabel="記録を書く"
-          style={{ position: 'absolute', right: 20, bottom: tabInset + 16, width: 56, height: 56 }}
-          className="items-center justify-center bg-lantern-glow rounded-full shadow-bloom active:opacity-80"
-        >
-          <PencilIcon />
-        </Pressable>
+        <WriteButton date={targetDate} question={question} />
       ) : null}
       </ScreenFade>
     </SafeAreaView>

@@ -131,6 +131,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | (tabs)/index | 手がかりの入口。**書いたあとに読むもの**なので入口の側にある。答えはその日の最後の記録に `id` で足す |
 | `LightCard.jsx` | (tabs)/index | その日の灯り。受け皿（`lib/lightBuffer.js`）をそのまま映す。**独自に覚えない** |
+| `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |

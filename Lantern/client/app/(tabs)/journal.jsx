@@ -16,6 +16,7 @@ import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import AppHeader from '../../components/AppHeader'
 import LogList from '../../components/LogList'
+import WriteButton from '../../components/WriteButton'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
@@ -384,6 +385,12 @@ export default function Journal() {
           </View>
         )}
       </ScrollView>
+
+      {/* 右下の書くボタン。**ホーム・記録・書くの3つに置く**（作者の指示）。
+          ここは問いを取っていないので渡さない。全画面では決まり文句に
+          落ちる（`components/WriteButton.jsx`）。
+          過去の日を書く窓が開いている間は出さない——行き先が2つになる */}
+      {modalDate === null ? <WriteButton /> : null}
 
       {/* 記録モーダル。
           **中身は「書く」と同じ `RecordForm`**（2026-08-14）。
