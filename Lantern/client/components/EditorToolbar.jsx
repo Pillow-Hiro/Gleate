@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Keyboard, Platform, Pressable, View } from 'react-native'
+import { Animated, Keyboard, Platform, Pressable, ScrollView, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { toggleBullet, wrapSelection } from '../lib/markdown'
@@ -242,12 +242,22 @@ function ToolbarBar({ field }) {
 
   // **いま効いている装飾**。欄が知らせてくる（`WebEditor` の `state`）
   const active = field.active || {}
+  // まだ開いていない欄。`[{key, label, onPress}]`（`RecordForm.jsx`）
+  const extras = field.extras || []
 
-  const buttons = [
-    { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
-    { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
-    { id: 'bullet', label: '箇条書き', Icon: Bullet, onPress: () => apply('bullet') },
-  ]
+  // **装飾は `rich` の欄だけ**（`components/RecordForm.jsx`）。
+  //
+  // 2026-09-03 に、装飾を持たない欄も列に登録するようにした。
+  // 欄を開くチップをここへ移したので、**どの欄を書いていても
+  // 手が届く**ようにするため。装飾まで出すと、短いメモの欄に
+  // 道具立てが増える——それは元から避けてある。
+  const buttons = field.rich
+    ? [
+        { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
+        { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
+        { id: 'bullet', label: '箇条書き', Icon: Bullet, onPress: () => apply('bullet') },
+      ]
+    : []
   if (field.onPhoto) {
     buttons.push({ id: 'photo', label: '写真を追加', Icon: Photo, onPress: field.onPhoto })
   }
@@ -266,7 +276,19 @@ function ToolbarBar({ field }) {
       }}
       className="bg-surface-low border-t border-border"
     >
-      <View className="flex-row items-center px-3 py-1" style={{ minHeight: TOOLBAR_HEIGHT }}>
+      <View className="flex-row items-center pl-3 py-1" style={{ minHeight: TOOLBAR_HEIGHT }}>
+        {/* **横に流す**（2026-09-03）。
+            欄を開くチップをここへ入れたので、狭い端末では並びきらない。
+            iPhone SE の幅（375）だと、記号5つと「完了」で既に埋まる。
+
+            **「完了」は流さない。**いつでも同じ場所にあること。
+            閉じる手立てが流れて隠れると、閉じられなくなる。 */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          contentContainerStyle={{ alignItems: 'center' }}
+        >
         {/* **効いている装飾は塗る。**
             押しても何も変わらないと、効いたのかどうかが分からない。
             Apple の「メモ」も同じで、選ばれているボタンだけ地が付く。
@@ -306,7 +328,28 @@ function ToolbarBar({ field }) {
           />
         ) : null}
 
-        <View className="flex-1" />
+        {/* **まだ開いていない欄をここで開く**（2026-09-03・作者の判断）。
+            それまでは主欄のすぐ下にチップの列があった。記録を全画面に
+            するには、そこに置き場所が無くなる。
+
+            **記号と混ぜない。**装飾は「いま書いている字」に効くもの、
+            こちらは「欄を増やす」もので、効く先が違う。
+            区切りを1本引き、字のチップにして別のものだと分かるようにする。 */}
+        {extras.length > 0 ? (
+          <View className="w-px h-6 bg-outline-variant mx-2" />
+        ) : null}
+        {extras.map(({ key, label, onPress }) => (
+          <Pressable
+            key={key}
+            onPress={onPress}
+            accessibilityLabel={`${label}を追加`}
+            className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 mr-2 min-h-touch justify-center active:bg-surface-high"
+          >
+            <Text className="text-label-md text-primary">＋</Text>
+            <Text className="text-label-md text-on-surface-variant">{label}</Text>
+          </Pressable>
+        ))}
+        </ScrollView>
 
         <Pressable
           onPress={dismiss}

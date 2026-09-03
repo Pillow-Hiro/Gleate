@@ -1,10 +1,10 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import WebEditor from './WebEditor'
-import { Appear, PressBounce } from './Motion'
+import { Appear } from './Motion'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
@@ -72,6 +72,10 @@ function Field({
   // `bare` の欄は WebView が中身を持っているので、`value` を空にしても
   // 画面は変わらない。渡された側が `clear()` を呼ぶ（`WebEditor.jsx`）。
   editorRef: externalEditorRef,
+  // まだ開いていない欄。**キーボードの上の列に並ぶ**（`EditorToolbar.jsx`）。
+  // 書いている欄が自分と一緒に渡すので、**どの欄からでも手が届く。**
+  // 毎回作り直すと登録が回り続けるので、呼ぶ側が覚えておくこと
+  extras,
 }) {
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
@@ -103,14 +107,21 @@ function Field({
   //
   // `bare` の欄は WebView なので、**装飾は中で効かせる**（`exec`）。
   // こちらから文字列を組み直すと、中の選択が失われる。
+  //
+  // **装飾を持たない欄も登録する**（2026-09-03）。
+  // 欄を開くチップを列へ移したので、登録しないと
+  // 「よかったこと」を書いている最中に「困ったこと」を開けない。
+  // 装飾の記号は出ない（`rich` を見て列が決める）。
   useEffect(() => {
-    if (!rich || !editing) return
+    if (!editing) return
     register({
       owner,
-      exec: (cmd) => editorRef.current?.exec(cmd),
+      rich: Boolean(rich),
+      exec: rich ? (cmd) => editorRef.current?.exec(cmd) : null,
       onPhoto,
       onFile,
       active,
+      extras,
       // **「日記の候補」で選ばれた1行を差し込む口。**
       // 中身は WebView が持っているので `value` を書き換えても
       // 画面には出ない。命令で入れる（`bare` の欄だけが持つ）。
@@ -118,7 +129,7 @@ function Field({
     })
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rich, editing, owner, active])
+  }, [rich, editing, owner, active, extras])
 
   function handleSelectionChange(e) {
     setSelection(e.nativeEvent.selection)
@@ -190,6 +201,11 @@ function Field({
         onChangeText={onChange}
         onSelectionChange={handleSelectionChange}
         selection={pending ?? undefined}
+        // **書いていることを列に伝える**（2026-09-03）。
+        // 伝えないと、この欄を書いている間は列が消え、
+        // 残りの欄を開くチップに手が届かない
+        onFocus={() => setEditing(true)}
+        onBlur={() => setEditing(false)}
         multiline
         textAlignVertical="top"
         style={{ minHeight: rows * 22 + 16 }}
@@ -203,26 +219,10 @@ function Field({
 
 // Web版 frontend/src/pages/Home.jsx の RecordForm を移植したもの。
 // 文言・保存先・項目は変更していない。
-// 欄を開くチップ。**押している間だけ沈む。**
-// 色が薄くなるだけだと、押した手応えが無い（`components/Motion.jsx`）。
-function Chip({ label, onPress }) {
-  const [pressed, setPressed] = useState(false)
-  return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      accessibilityLabel={`${label}を追加`}
-    >
-      <PressBounce pressed={pressed}>
-        <View className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 min-h-touch justify-center">
-          <Text className="text-label-md text-primary">＋</Text>
-          <Text className="text-label-md text-on-surface-variant">{label}</Text>
-        </View>
-      </PressBounce>
-    </Pressable>
-  )
-}
+//
+// **欄を開くチップは、ここには無い**（2026-09-03・作者の判断）。
+// キーボードの上の列へ移した（`components/EditorToolbar.jsx`）。
+// 紙のすぐ下に置いていたが、記録を全画面にすると置き場所が無くなる。
 
 // `onPaywall` は手がかりの枠を使い切ったときに呼ばれる。
 // **ここでは Paywall を描かない。**フォームは記録を書く場所で、
@@ -265,6 +265,24 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
   //
   // `autoFocus` は生えたときにしか効かないので、開いた瞬間の1回だけ働く。
   const [justOpened, setJustOpened] = useState(null)
+
+  // まだ開いていない欄。**キーボードの上の列に渡す**（`EditorToolbar.jsx`）。
+  //
+  // **覚えておくこと。**書いている欄はこれを一緒に登録するので、
+  // 毎回作り直すと「登録 → 再描画 → 作り直し → 登録」で回り続ける。
+  const extras = useMemo(
+    () =>
+      EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => ({
+        key,
+        label: chip,
+        onPress: () => {
+          setOpenFields((prev) => new Set(prev).add(key))
+          setJustOpened(key)
+        },
+      })),
+    [openFields],
+  )
+
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   // 灯りは**画面の外に置いてある**（`lib/lightBuffer.js`）。
@@ -521,6 +539,7 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
           問いが取れなかったときは元の固定文に戻る。 */}
       <Field
         editorRef={bodyRef}
+        extras={extras}
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}
@@ -541,30 +560,16 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
             : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
         }
       />
-      {/* **まだ開いていない欄をチップで出す。**
-          押した欄だけが現れる。既定の姿は「やったこと」1段のまま。
-          全部開いたらチップの列は消える。 */}
-      {EXTRA_FIELDS.some(({ key }) => !openFields.has(key)) ? (
-        <View className="flex-row flex-wrap gap-2">
-          {EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => (
-            <Chip
-              key={key}
-              label={chip}
-              onPress={() => {
-                setOpenFields((prev) => new Set(prev).add(key))
-                setJustOpened(key)
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
-
+      {/* **開いた欄だけを並べる。**
+          開く手立ては**キーボードの上の列**にある（`EditorToolbar.jsx`）。
+          既定の姿は「やったこと」1段のまま。 */}
       {EXTRA_FIELDS.filter(({ key }) => openFields.has(key)).map(({ key, label }) => (
         <Appear key={key}>
           <Field
           value={form[key]}
           onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
           label={label}
+          extras={extras}
           autoFocus={justOpened === key}
           // **畳めるようにする**（2026-08-15）。開いたら戻せなかった。
           //
