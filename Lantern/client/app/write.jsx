@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../components/Text'
 import RecordForm from '../components/RecordForm'
 import { EditorToolbarBar, TOOLBAR_MAX_HEIGHT } from '../components/EditorToolbar'
+import { ZoomIn } from '../components/Motion'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
 import { bodyRowsFor } from '../lib/keyboardMath'
@@ -68,6 +69,10 @@ export default function Write() {
   // 下に安全域を取ると、その分だけ列がキーボードより上に浮き、
   // 隙間から後ろが見える。根元（`app/_layout.jsx`）も取っていない。
   return (
+    // **入り込む**（2026-09-04・作者の指示）。面ごと少し小さいところから
+    // 広がる。押した紙がそのまま大きくなったように見せる（`Motion.jsx`）。
+    // 右下のボタンから入っても同じ動き——行き先が同じなら入り方も同じ
+    <ZoomIn>
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       {/* 上の帯。**閉じると保存だけ。**
           書いている最中に押せるものを増やさない */}
@@ -126,5 +131,6 @@ export default function Write() {
       {/* 装飾の列。**この画面は根の列より上に出る**ので、ここにも置く */}
       <EditorToolbarBar />
     </SafeAreaView>
+    </ZoomIn>
   )
 }

@@ -254,8 +254,14 @@ function RootNavigator() {
         <Stack.Screen name="plan" />
         {/* 記録を書く全画面。**上から被さる**（2026-09-03・作者の判断）。
             `modal` にすると下へ払っても閉じられる。書き終えて閉じるのと
-            同じ形なので、戻り方を別に覚えなくていい */}
-        <Stack.Screen name="write" options={{ presentation: 'modal' }} />
+            同じ形なので、戻り方を別に覚えなくていい。
+
+            **滑らせず、薄く出す**（2026-09-04・作者の指示「入り込む演出」）。
+            下からせり上がると「別の場所へ移った」に見える。入り込むのは
+            面が広がる動きなので、そちらは画面の側でやる
+            （`components/Motion.jsx` の `ZoomIn`）。
+            ここが滑っていると、2つの動きが喧嘩する。 */}
+        <Stack.Screen name="write" options={{ presentation: 'modal', animation: 'fade' }} />
       </Stack>
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）
