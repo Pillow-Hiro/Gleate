@@ -27,6 +27,14 @@ const WebEditor = forwardRef(function WebEditor(
           : wrapSelection(value, start, end, cmd === 'bold' ? '**' : '*')
       onChange(next.text)
     },
+    // **ここは何もしなくていい。**（2026-09-03）
+    //
+    // Web の欄は `value` で描いているので、呼ぶ側が `form` を空に
+    // した時点でもう空になっている。実機の方は WebView が中身を
+    // 持っていて `value` が届かないため、命令が要る（`WebEditor.jsx`）。
+    //
+    // それでも口は開けておく。**片方に無いと呼ぶ側が落ちる。**
+    clear() {},
   }))
 
   return (

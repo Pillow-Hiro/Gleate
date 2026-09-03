@@ -63,6 +63,15 @@ const WebEditor = forwardRef(function WebEditor(
     insertText(text) {
       webRef.current?.injectJavaScript(`window.lanternInsert(${JSON.stringify(text)}); true;`)
     },
+    // **外から空にする**（2026-09-03）。差し込むのと同じ理由で、
+    // `value` を空にしても中身は消えない。
+    //
+    // 記録すると紙は白紙に戻るが、**主欄だけが残っていた。**
+    // 他の3つは素の `TextInput` なので `value` を空にすれば消える。
+    // ここだけが消えず、書いたものが残ったまま次を書くことになっていた。
+    clear() {
+      webRef.current?.injectJavaScript('window.lanternClear(); true;')
+    },
   }))
 
   function handleMessage(e) {

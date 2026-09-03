@@ -68,10 +68,15 @@ function Field({
   onClose,
   closeLabel,
   autoFocus,
+  // **外から欄を空にするための取っ手**（2026-09-03）。
+  // `bare` の欄は WebView が中身を持っているので、`value` を空にしても
+  // 画面は変わらない。渡された側が `clear()` を呼ぶ（`WebEditor.jsx`）。
+  editorRef: externalEditorRef,
 }) {
   // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
   const [editing, setEditing] = useState(false)
-  const editorRef = useRef(null)
+  const ownEditorRef = useRef(null)
+  const editorRef = externalEditorRef || ownEditorRef
   // いま効いている装飾。**欄が知らせてくる。**
   // これが無いと、押したボタンが効いたのかどうかが分からない
   const [active, setActive] = useState(null)
@@ -307,6 +312,13 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
     setPhotoUrl(savePhoto(targetDate, photo, thumb).photo_url)
   }
 
+  // 主欄（「やったこと」）の取っ手。**空にするために要る。**
+  //
+  // この欄だけ WebView で、中身は向こうが持っている。
+  // `form.created` を空にしても画面は変わらないので、命令で消す
+  // （`WebEditor.jsx` の `clear`）。
+  const bodyRef = useRef(null)
+
   // 写真を選ぶ手続きは `PhotoPicker` が持っている。
   // キーボードの上のボタンからも同じ手続きを呼べるように、口を預かる
   const pickRef = useRef(null)
@@ -457,7 +469,15 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
       // 残しておくと、次に書くとき先に消す手間が要る。
       //
       // 開いた欄も畳む。畳まないと、次の記録に前の見出しだけが残る。
+      //
+      // **主欄は命令で消す**（2026-09-03・作者から「白紙にならない」）。
+      // 他の3つは素の `TextInput` なので `value` を空にすれば消えるが、
+      // 主欄は WebView が中身を持っていて、`value` は届かない。
+      //
+      // 前は紙ごと作り直されていた（`key` が記録の id だった）ので、
+      // 消さなくても消えて見えていた。**作り直さなくしたので出てきた。**
       setForm({ created: '', enjoyable: '', struggled: '', next: '' })
+      bodyRef.current?.clear()
       setOpenFields(new Set())
       setJustOpened(null)
       if (onSaved) onSaved()
@@ -500,6 +520,7 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
           今日の問いを出しても合わない。
           問いが取れなかったときは元の固定文に戻る。 */}
       <Field
+        editorRef={bodyRef}
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}

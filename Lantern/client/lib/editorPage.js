@@ -112,6 +112,26 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sendState();
   };
 
+  // **外から空にする。**（2026-09-03）
+  //
+  // **この中でバッククォートを使わないこと**（上の註釈と同じ理由）。
+  // 実際にここで一度閉じてしまい、構文が壊れた。
+  //
+  // 記録すると紙は白紙に戻る（components/RecordForm.jsx）が、
+  // value を空にしても**ここには届かない。**中身は最初の1回しか
+  // 渡していないので、命令で消すほかない。
+  //
+  // innerHTML ごと空にする。br を1つでも残すと :empty にならず、
+  // **問いのプレースホルダが戻らない**（上の CSS）。
+  //
+  // 焦点は当てない。書き終えた直後なので、キーボードは閉じてよい。
+  window.lanternClear = function () {
+    ed.innerHTML = '';
+    sendHtml();
+    sendHeight();
+    sendState();
+  };
+
   setTimeout(function () { sendHeight(); sendState(); }, 0);
   if (AUTOFOCUS) setTimeout(function () { ed.focus(); }, 60);
   document.addEventListener('selectionchange', function () { sendHeight(); sendState(); });
