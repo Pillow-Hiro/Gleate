@@ -108,8 +108,8 @@ export default function Home() {
     .filter((l) => l.date === targetDate)
     .sort((a, b) => ((a.saved_at || '') < (b.saved_at || '') ? -1 : 1))
 
-  // どれを書いているか。`null` は「いちばん新しいもの」、
-  // `'new'` は**まだ無い記録**（＋ もう一件で切り替わる）
+  // どれを書いているか。`null` は「いちばん新しいもの」（＝開いた直後）、
+  // `'new'` は**まだ無い記録**（保存した直後・時刻の帯で選び直せる）
   const [editingId, setEditingId] = useState(null)
   const existingLog =
     editingId === 'new'
@@ -118,7 +118,6 @@ export default function Home() {
         ? dayLogs.find((l) => l.id === editingId) || null
         : dayLogs[dayLogs.length - 1] || null
 
-  const canAddMore = dayLogs.length > 0 && dayLogs.length < 3
   const streak = calcStreak(logs)
 
   return (
@@ -180,7 +179,10 @@ export default function Home() {
           {/* その日に複数あるとき、どれを書いているかを選ぶ。
               **件数ではなく時刻で示す。**「2件目」だと数を数える道具になる。
               時刻なら「朝に書いたもの」と本人の記憶で結びつく */}
-          {dayLogs.length > 1 || editingId === 'new' || canAddMore ? (
+          {/* **「＋ もう一件」は置かない**（2026-09-03）。
+              保存すると欄が空になり、そのまま次を書ける（`RecordForm.jsx`）。
+              帯は**書いたものを選び直す**ためだけにある */}
+          {dayLogs.length > 0 ? (
             <View className="flex-row flex-wrap gap-2 mb-3">
               {dayLogs.map((l) => {
                 const t = l.saved_at ? new Date(l.saved_at) : null
@@ -202,16 +204,6 @@ export default function Home() {
                   </Pressable>
                 )
               })}
-              {canAddMore || editingId === 'new' ? (
-                <Pressable
-                  onPress={() => setEditingId('new')}
-                  className={`border rounded-full px-3 min-h-touch justify-center ${
-                    editingId === 'new' ? 'border-lantern-glow bg-lantern-glow/10' : 'border-outline-variant'
-                  }`}
-                >
-                  <Text className="text-label-md text-primary">＋ もう一件</Text>
-                </Pressable>
-              ) : null}
             </View>
           ) : null}
           <RecordForm
@@ -220,9 +212,10 @@ export default function Home() {
             targetDate={targetDate}
             question={question}
             onSaved={() => {
-              // **書いたものを開いた状態に戻す。** `'new'` のままだと、
-              // 保存した直後にまた空の欄が出て、消えたように見える
-              setEditingId(null)
+              // **保存したら空の欄にする**（2026-09-03・作者の判断）。
+              // 1日に複数件置けるので、書いたあとの自然な次は「もう一件」。
+              // 書いたものは上の時刻の帯に並ぶので、消えたようには見えない。
+              setEditingId('new')
               refreshData()
               if (isEditingPast) router.replace('/')
             }}

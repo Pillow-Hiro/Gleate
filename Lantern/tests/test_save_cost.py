@@ -30,7 +30,8 @@ def upserted(monkeypatch):
     """_upsert_one に渡された行を記録する。DBには繋がない。"""
     rows = []
     monkeypatch.setattr(logs_mod, "supabase", object())
-    monkeypatch.setattr(logs_mod, "_upsert_one", lambda row: rows.append(row))
+    monkeypatch.setattr(logs_mod, "_upsert_one",
+                        lambda row, create=False: rows.append(row))
     monkeypatch.setattr(main, "get_ai_response", lambda *a, **k: "新しい灯り")
     monkeypatch.setattr(main, "load_goals", lambda: {})
     return rows

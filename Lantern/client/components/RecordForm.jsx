@@ -429,6 +429,16 @@ export default function RecordForm({ existingLog, targetDate, onSaved, question,
       invalidateLogs()
       // **ここから手がかりを探せる。** 書く前には材料が無い
       setSavedOnce(true)
+
+      // **保存したら欄を空にする**（2026-09-03・作者の判断）。
+      //
+      // 1日に複数件を置けるようにしたので、書いたあとの自然な次は
+      // 「もう一件書く」になる。**残しておくと、次に書くとき先に消す手間が要る。**
+      //
+      // `recordId` も捨てる。次の保存は**別の記録**として入る。
+      // 直したいときは、上の時刻の帯から選び直す。
+      setForm({ created: '', enjoyable: '', struggled: '', next: '' })
+      setRecordId('')
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。

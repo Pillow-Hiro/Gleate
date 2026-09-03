@@ -23,7 +23,8 @@ def written(monkeypatch):
     """`_upsert_one` に渡った行を控える。DB には繋がない。"""
     rows = []
     monkeypatch.setattr(logs_mod, "supabase", object())
-    monkeypatch.setattr(logs_mod, "_upsert_one", lambda row: rows.append(row))
+    monkeypatch.setattr(logs_mod, "_upsert_one",
+                        lambda row, create=False: rows.append({**row, "_create": create}))
     monkeypatch.setattr(main, "get_ai_response", lambda *a, **k: "灯り")
     monkeypatch.setattr(main, "load_goals", lambda: {})
     return rows
@@ -213,3 +214,90 @@ class Test新規かどうかの見分け:
 
         # id を載せない＝挿入。**朝の記録を巻き込まない**
         assert "id" not in written[0]
+
+
+class Test書き手そのものの分岐:
+    """**`_upsert_one` を差し替えずに通す**（2026-09-03）。
+
+    それまでの検査は `_upsert_one` を stub していたため、
+    **本物の分岐を一度も通していなかった。**
+    `/save` が「新規だ」と決めていても、`_upsert_one` は独自に
+    日付で探し直して既存を上書きしていた。実機で朝の記録が消えた。
+
+    判断が2か所にあると、片方だけ直したときにこうなる。
+    """
+
+    class _Fake:
+        """Supabase の呼び出しの形だけ真似る。**繋がない。**
+
+        `select().eq().execute()` も `update().eq().eq().execute()` も
+        鎖で続くので、どの段でも自分を返す。
+        """
+
+        def __init__(self, store):
+            self.store = store
+
+        def table(self, name):
+            return self
+
+        def select(self, *a, **k):
+            self.store["selected"] = True
+            self.store["mode"] = "select"
+            return self
+
+        def insert(self, row):
+            self.store["op"] = "insert"
+            self.store["mode"] = "insert"
+            return self
+
+        def update(self, fields):
+            self.store["op"] = "update"
+            self.store["mode"] = "update"
+            return self
+
+        def eq(self, *a, **k):
+            return self
+
+        def execute(self):
+            if self.store.get("mode") == "select":
+                # 「同じ日に既にある」を返す
+                return _Result([{"id": "existing"}])
+            return _Result([{"id": "new-id"}])
+
+    def _run(self, monkeypatch, row, create):
+        store = {}
+        monkeypatch.setattr(logs_mod, "supabase", self._Fake(store))
+        logs_mod._upsert_one(row, create=create)
+        return store
+
+    def test_createなら日付を探さずに挿入する(self, monkeypatch):
+        store = self._run(
+            monkeypatch,
+            {"date": "2026-09-03", "user_id": "u1", "content": "夜のこと"},
+            create=True,
+        )
+        assert store.get("op") == "insert", "同じ日の既存を上書きしている"
+        assert not store.get("selected"), "create なのに日付で探している"
+
+    def test_createでなければ日付で探して上書きする(self, monkeypatch):
+        # 古いビルドの経路。**1日1件のまま動くこと**
+        store = self._run(
+            monkeypatch,
+            {"date": "2026-09-03", "user_id": "u1", "content": "書き直した"},
+            create=False,
+        )
+        assert store.get("op") == "update"
+
+    def test_idがあればcreateでも更新する(self, monkeypatch):
+        # 既にある記録を直しているのに挿入すると、同じ内容が増える
+        store = self._run(
+            monkeypatch,
+            {"id": "r1", "date": "2026-09-03", "user_id": "u1", "content": "直した"},
+            create=True,
+        )
+        assert store.get("op") == "update"
+
+
+class _Result:
+    def __init__(self, data):
+        self.data = data

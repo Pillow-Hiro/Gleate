@@ -87,8 +87,15 @@ def _to_db(l, user_id=None):
     return row
 
 
-def _upsert_one(row):
+def _upsert_one(row, create=False):
     """1件を書く。**`id` があればその行、無ければ日付で探す。**
+
+    `create=True` なら**必ず挿入する。** 日付で探さない。
+
+    ここを持たせないと、呼ぶ側（`/save`）が「新規だ」と決めていても、
+    この関数が独自に日付で探し直して既存を上書きする。
+    **2026-09-03 に実際に起きた**——1日2件目を作ったつもりが、
+    朝の記録が夜の内容で置き換わっていた。判断を2か所に置いていた。
 
     ## なぜ2通りあるのか（2026-09-02）
 
@@ -107,8 +114,14 @@ def _upsert_one(row):
     user_id = row.get("user_id")
     row_id = row.get("id")
     # user_id は出さない。誰がいつ書いたかがログに残る
-    print(f"[Supabase] _upsert_one: date={row.get('date')} id={bool(row_id)} user={bool(user_id)}")
+    print(f"[Supabase] _upsert_one: date={row.get('date')} id={bool(row_id)} create={create} user={bool(user_id)}")
     try:
+        if create and not row_id:
+            # **探さない。** 同じ日に既にあっても、これは別の記録
+            result = supabase.table("logs").insert(row).execute()
+            print(f"[Supabase] inserted (new): {row.get('date')}")
+            return (result.data or [{}])[0].get("id")
+
         if row_id:
             # **id で更新する。** user_id も必ず絞る（他人の行を書き換えない）
             fields = {k: v for k, v in row.items() if k not in ("id", "date")}
@@ -191,15 +204,19 @@ def load_logs(user_id, since=None, limit=None):
     return []
 
 
-def save_logs(logs, user_id):
+def save_logs(logs, user_id, create=False):
     """書いて、**書いた行の id を返す**（渡した順）。
 
     id は呼ぶ側が画面へ返すために要る。新しい記録は DB が採番するので、
     ここで拾わないと**画面は自分の id を知らないまま**になる。
+
+    `create=True` は**「新しく作る」を下まで伝える**（2026-09-03）。
+    これが無いと、`/save` が「新規だ」と決めていても `_upsert_one` が
+    日付で探し直し、**同じ日の既存を上書きしてしまう。**
     """
     if not supabase or not logs:
         return []
-    return [_upsert_one(_to_db(l, user_id)) for l in logs]
+    return [_upsert_one(_to_db(l, user_id), create=create) for l in logs]
 
 
 def set_favorite(date, favorite, user_id):

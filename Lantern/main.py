@@ -180,7 +180,10 @@ def save():
     try:
         # **書いた行の id を受け取る。** 新しい記録は DB が採番するので、
         # 返さないと画面が自分の id を知らず、次の保存で2件目が生まれる
-        saved_ids = save_logs([entry], user_id)
+        # **「新しく作る」を下まで伝える**（2026-09-03）。
+        # ここで伝えないと `_upsert_one` が日付で探し直し、
+        # 同じ日の既存を上書きする。実際に朝の記録が消えた。
+        saved_ids = save_logs([entry], user_id, create=bool(data.get("new")) and not previous)
         entry["id"] = (saved_ids or [None])[0] or entry.get("id") or ""
     except Exception as e:
         print(f"[/save] DB error: {type(e).__name__}: {e}")
