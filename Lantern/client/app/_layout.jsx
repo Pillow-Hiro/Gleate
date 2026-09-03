@@ -252,6 +252,10 @@ function RootNavigator() {
         <Stack.Screen name="reset" />
         <Stack.Screen name="account" />
         <Stack.Screen name="plan" />
+        {/* 記録を書く全画面。**上から被さる**（2026-09-03・作者の判断）。
+            `modal` にすると下へ払っても閉じられる。書き終えて閉じるのと
+            同じ形なので、戻り方を別に覚えなくていい */}
+        <Stack.Screen name="write" options={{ presentation: 'modal' }} />
       </Stack>
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）

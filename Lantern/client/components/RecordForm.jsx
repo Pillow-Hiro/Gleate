@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Pressable, TextInput, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
@@ -10,9 +10,7 @@ import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
 import { invalidateLogs } from '../lib/logsCache'
-import { getLight, isLighting, forgetLight, requestLight, subscribeLight } from '../lib/lightBuffer'
-import { askHint } from '../lib/hint'
-import HintCard from './HintCard'
+import { forgetLight, requestLight } from '../lib/lightBuffer'
 import { todayStr } from '../lib/date'
 import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
@@ -224,13 +222,20 @@ function Field({
 // キーボードの上の列へ移した（`components/EditorToolbar.jsx`）。
 // 紙のすぐ下に置いていたが、記録を全画面にすると置き場所が無くなる。
 
-// `onPaywall` は手がかりの枠を使い切ったときに呼ばれる。
-// **ここでは Paywall を描かない。**フォームは記録を書く場所で、
-// 売る面を持たせると、書いている最中に売り物が現れることになる。
-// 出す場所は呼ぶ側が決める（`app/(tabs)/index.jsx`）。
-// `latestLog` は**その日の最後の記録**（無ければ null）。
-// 紙には載せない。**手がかりが「何の話か」を知るためだけ**に受け取る。
-export default function RecordForm({ latestLog, targetDate, onSaved, question, onPaywall }) {
+// **ここは書いて残すだけ**（2026-09-03）。
+//
+// 灯りと手がかりは外へ出した（`components/LightCard.jsx` /
+// `components/HintPanel.jsx`）。記録は全画面で書いて書き終えると閉じるので、
+// **返ってくるものを、書いている画面が受け取れない。**
+// どちらも「書いたあとに読むもの」で、置き場所は戻った先の紙。
+//
+// `ref` からは `save()` を呼べる。全画面の「記録する」は上の帯にあり、
+// この中のボタンは出さない（`hideSaveButton`）。
+// 戻り値は**残せたかどうか**。呼ぶ側はそれを見て閉じる。
+const RecordForm = forwardRef(function RecordForm(
+  { targetDate, onSaved, question, hideSaveButton, bodyRows = 7 },
+  ref,
+) {
   const isToday = targetDate === todayStr()
   const [y, m, d] = targetDate.split('-')
   const dateLabel = `${y}年${Number(m)}月${Number(d)}日`
@@ -285,43 +290,12 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
 
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
-  // 灯りは**画面の外に置いてある**（`lib/lightBuffer.js`）。
-  // 灯りは保存よりずっと遅れて届くので、その間にこの紙が消えても
-  // （タブを移る、日付が変わる、書く場所を閉じる）受け皿には残る。
-  // 生えた時点で受け皿を見て、以後は変化を受け取る。
-  const [lighting, setLighting] = useState(() => isLighting(targetDate))
-  // **この画面で書いたぶんの灯りだけを出す**（2026-09-03）。
-  // 前は既存の記録の灯りも載せていたが、紙が白紙になったので、
-  // **何も書いていない紙の下に返事がある**ことになってしまう。
-  // 残っている灯りはホームと「記録」で読める。
-  const [aiResponse, setAiResponse] = useState(() => getLight(targetDate) || '')
-
-  useEffect(
-    () =>
-      subscribeLight(() => {
-        // **受け皿が空でも消さない。** 保存済みの灯りを持っている場合がある
-        const next = getLight(targetDate)
-        if (next) setAiResponse(next)
-        setLighting(isLighting(targetDate))
-      }),
-    [targetDate],
-  )
   const [saveError, setSaveError] = useState('')
-
-  // 手がかり。**書いたあとにだけ探せる**（`lib/hint.js`）
-  const [hint, setHint] = useState(null)
-  const [hinting, setHinting] = useState(false)
-  const [savingAnswer, setSavingAnswer] = useState(false)
-  // **この画面で書いて残したもの。** 保存できたときだけ入る。
-  //
-  // 紙は保存すると白紙に戻るので、`form` はもう当てにならない。
-  // 手がかりの答えを**どの記録に足すか**、そのとき何が書いてあったかは
-  // ここが覚えている（`handleHintAnswer`）。
-  const [written, setWritten] = useState(null)
-  // 手がかりが指す記録。書いた直後はそれ、開いた直後はその日の最後。
-  // **どちらも無ければ探せない。** 材料が一つも無い
-  const hintTarget = written || latestLog || null
   const [photoUrl, setPhotoUrl] = useState(loadPhoto(targetDate).photo_url)
+
+  // 全画面の「記録する」はこの外にある。**同じ手続きを呼ばせる。**
+  // 保存の中身が2か所に分かれると、片方だけ古くなる
+  useImperativeHandle(ref, () => ({ save: handleSave }))
 
   // 写真は端末に即座に置く。テキストの「記録する」を待たない。
   // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
@@ -378,74 +352,17 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
   // **黙って44秒待たせると、遅いのではなく壊れて見える。**
   // 押した手が悪かったのかと思わせない。
   // 原因（サーバーが眠っていた等）は書かない。利用者にできることが増えない。
-  // 手がかりを探す。**断られたらペイウォールへ**（無料は通算5回）
-  async function askForHint() {
-    setHinting(true)
-    try {
-      const got = await askHint(targetDate)
-      if (!got) return
-      if (got.kind === 'paywall') {
-        onPaywall?.(got.text)
-        return
-      }
-      setHint(got)
-    } finally {
-      setHinting(false)
-    }
-  }
-
-  // 問いへの答えを「困ったこと」に残す。**新しい経路を作らない。**
-  //
-  // `/save` をそのまま使う。`defer_ai` を付けて灯りは頼まない——
-  // 答えを足しただけで灯りを作り直すと、書いた本人の言葉が
-  // 上書きされたように見える。
-  //
-  // **書き先は手がかりが見ていた記録**（2026-09-03）。
-  //
-  // それまでは、いま紙に書いてあるもの（`form`）を送っていた。
-  // 保存すると紙が白紙に戻るようになったので、**空の4欄で
-  // 保存済みの記録を塗り潰していた。** `id` も送っていなかったため、
-  // その日の1件目が消える経路にもなっていた。
-  //
-  // 送るのは「その記録の中身＋答え」。紙には触らない。
-  async function handleHintAnswer(answer) {
-    const target = hintTarget
-    // 残す先が無い。**問いは出ていないはず**なので、ここには来ない
-    if (!target?.id) return
-    setSavingAnswer(true)
-    const next = {
-      created: target.created || '',
-      enjoyable: target.enjoyable || '',
-      next: target.next || '',
-      struggled: answer,
-    }
-    try {
-      const res = await authFetch('/save', {
-        method: 'POST',
-        body: JSON.stringify({ ...next, id: target.id, date: targetDate, defer_ai: true }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      // 覚えも合わせる。合わせないと、続けて答えたときに前の答えが戻る
-      setWritten({ ...target, ...next })
-      invalidateLogs()
-      if (onSaved) onSaved()
-    } catch (e) {
-      // **画面には出さない。**カードは「残しました」を出したあと。
-      // ここで赤い字を足すと、何が起きたのか分からなくなる
-      console.warn('[手がかり] 答えを残せなかった', e)
-    } finally {
-      setSavingAnswer(false)
-    }
-  }
 
   const SLOW_SAVE_MS = 6000
 
+  // **戻り値は「残せたか」。** 呼ぶ側（`app/write.jsx`）はこれを見て
+  // 画面を閉じるかどうかを決める。上限に当たったときは閉じない——
+  // 閉じると、書いたものが行き場を失う。
   async function handleSave() {
     setLoading(true)
     setSlow(false)
     // 書き直したので、前の灯りは捨てる。**受け皿からも消す**
     forgetLight(targetDate)
-    setAiResponse('')
     setSaveError('')
     const slowTimer = setTimeout(() => setSlow(true), SLOW_SAVE_MS)
     try {
@@ -467,33 +384,21 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
       if (res.status === 409) {
         const body = await res.json().catch(() => null)
         setSaveError((body && body.message) || 'この日の記録はここまでです。')
-        return
+        return false
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      // **書いた記録を覚える**（2026-09-03）。紙はこのあと白紙に戻るので、
-      // 手がかりの答えを足す先が、ここにしか残らない
-      setWritten({ id: data.id || '', ...form })
-      if (data.ai_response) setAiResponse(data.ai_response)
 
       // **控えが古くなった。**これを言わないと、記録タブへ移っても
       // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
       // `onSaved` より先に呼ぶ。あちらは取り直しの結果を受け取る側
       invalidateLogs()
 
-      // **保存したら紙を白紙に戻す**（2026-09-03・作者の判断）。
+      // **紙を白紙に戻す。**（2026-09-03・作者から「白紙にならない」）
       //
-      // 1日に複数件を置けるので、書いたあとの自然な次は「もう一件書く」。
-      // 残しておくと、次に書くとき先に消す手間が要る。
-      //
-      // 開いた欄も畳む。畳まないと、次の記録に前の見出しだけが残る。
-      //
-      // **主欄は命令で消す**（2026-09-03・作者から「白紙にならない」）。
-      // 他の3つは素の `TextInput` なので `value` を空にすれば消えるが、
-      // 主欄は WebView が中身を持っていて、`value` は届かない。
-      //
-      // 前は紙ごと作り直されていた（`key` が記録の id だった）ので、
-      // 消さなくても消えて見えていた。**作り直さなくしたので出てきた。**
+      // 書いたあとに紙が残っている呼ばれ方もある（記録タブの窓）。
+      // 主欄は WebView が中身を持っていて `value` が届かないので、
+      // 命令で消す（`WebEditor.jsx` の `clear`）。他の3つは `value` で消える。
       setForm({ created: '', enjoyable: '', struggled: '', next: '' })
       bodyRef.current?.clear()
       setOpenFields(new Set())
@@ -503,13 +408,16 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
       // 灯りは**あとから届く。**ボタンはもう戻っている。
       //
       // **待ちはこの画面が持たない**（`lib/lightBuffer.js`）。
-      // 灯りは十数秒かかることがある。その間にタブを移られたら、
-      // ここで待っていても受け取る画面が居ない。
+      // 灯りは十数秒かかる。書き終えるとこの画面は閉じるので、
+      // ここで待っていても受け取る先が居ない。
+      // 届いた灯りは戻った先の紙に出る（`components/LightCard.jsx`）。
       if (data.deferred) requestLight(targetDate)
+      return true
     } catch (e) {
       // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
       console.warn('[Home] 記録の保存に失敗', e)
       setSaveError('保存に失敗しました。接続を確認してください。')
+      return false
     } finally {
       clearTimeout(slowTimer)
       setLoading(false)
@@ -543,7 +451,7 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
         label={`${isToday ? '今日' : 'この日'}のこと`}
-        rows={7}
+        rows={bodyRows}
         rich
         bare
         // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
@@ -604,15 +512,20 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
         onReady={(pick) => { pickRef.current = pick }}
       />
 
-      <Pressable
-        onPress={handleSave}
-        disabled={loading}
-        className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
-      >
-        <Text className="font-strong text-body-md text-on-lantern">
-          {loading ? '保存中...' : '記録する'}
-        </Text>
-      </Pressable>
+      {/* **全画面のときはボタンを外に出す**（2026-09-03）。
+          欄が画面いっぱいなので、下に置くと画面の外へ出てしまう。
+          全画面では上の帯に置き、押すと保存して閉じる（`app/write.jsx`）。 */}
+      {hideSaveButton ? null : (
+        <Pressable
+          onPress={handleSave}
+          disabled={loading}
+          className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+        >
+          <Text className="font-strong text-body-md text-on-lantern">
+            {loading ? '保存中...' : '記録する'}
+          </Text>
+        </Pressable>
+      )}
 
       {slow ? (
         <Text className="text-label-md text-outline text-center">
@@ -623,43 +536,8 @@ export default function RecordForm({ latestLog, targetDate, onSaved, question, o
       {saveError ? (
         <Text className="text-label-md text-error text-center">{saveError}</Text>
       ) : null}
-
-      {aiResponse ? (
-        <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
-          <Text className="text-body-md leading-relaxed text-ai-ink">{aiResponse}</Text>
-        </View>
-      ) : lighting ? (
-        // **記録はもう残っている。**待っているのは灯りだけなので、
-        // 「保存中」とは書かない。書いた人を不安にさせない
-        <View className="bg-ai-surface rounded-lg px-5 py-4 mt-4">
-          <Text className="text-label-md text-on-surface-variant">灯りをともしています。</Text>
-        </View>
-      ) : null}
-
-      {/* **手がかり**（2026-09-02）。書いたあとにだけ出す。
-          まだ保存していない記録には、探す材料が無い。
-
-          押すと、材料が足りなければ問いが一つ返る（`lib/hint.js`）。
-          答えは「困ったこと」に入り、次に詰まったときの材料になる。 */}
-      {hint ? (
-        <HintCard
-          kind={hint.kind}
-          text={hint.text}
-          saving={savingAnswer}
-          onAnswer={handleHintAnswer}
-          onClose={() => setHint(null)}
-        />
-      ) : hintTarget ? (
-        <Pressable
-          onPress={askForHint}
-          disabled={hinting}
-          className="border border-outline-variant rounded-full py-3 min-h-touch justify-center items-center active:opacity-70 disabled:opacity-50"
-        >
-          <Text className="text-label-md text-primary">
-            {hinting ? '探しています...' : '手がかりを探す'}
-          </Text>
-        </Pressable>
-      ) : null}
     </View>
   )
-}
+})
+
+export default RecordForm

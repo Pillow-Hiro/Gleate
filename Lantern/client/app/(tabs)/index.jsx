@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -15,30 +15,22 @@ import {
   todayStr,
 } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
-import RecordForm from '../../components/RecordForm'
 import WriteTabs from '../../components/WriteTabs'
-import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
+import LightCard from '../../components/LightCard'
+import HintPanel from '../../components/HintPanel'
 import { useKeyboardHeight } from '../../lib/keyboard'
-import { keyboardHeadroom } from '../../lib/keyboardMath'
+import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 
 // キーボードが出ているとき、下に余分に空ける高さ。
 //
-// **装飾の列（52px）だけでは足りなかった**（2026-08-20）。
-// `automaticallyAdjustKeyboardInsets` は焦点の当たった欄の
-// **下端**をキーボードのすぐ上に合わせる。欄が2〜3行あると、
-// 書いている行が画面のいちばん下に貼り付いて読みにくい。
-//
-// 1行ぶん（32px）＋余白を足して、書いている場所が
-// キーボードから離れるようにする。
-//
-// **2026-08-23 に 96 から 200 へ上げた。3度目の報告。**
-// 96 でも、チップから欄を開いたときに下の欄が隠れていた。
-// 開いた欄は複数行に育つので、1行ぶんでは足りない。
+// **書く欄はもうここに無い**（2026-09-03）。全画面へ移した
+// （`app/write.jsx`）。ここでキーボードが出るのは、手がかりの問いに
+// 答えるときだけ（`components/HintCard.jsx`）。
 //
 // これは `ScrollView` の下余白なので、**空けすぎても画面は壊れない。**
 // 余るぶんはただの余白で、足りないと書いている字が見えない。
 // **足りないほうが悪い**ので、多めに取る。
-const KEYBOARD_GAP = TOOLBAR_HEIGHT + 200
+const KEYBOARD_GAP = 200
 import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 import Paywall from '../../components/Paywall'
@@ -70,7 +62,7 @@ export default function Home() {
   // 思いついた瞬間に置くものなので、書く場所にある方が自然。
   // 「記録」は残したものを見る場所であって、置く場所ではなかった。
   const [writeTab, setWriteTab] = useState('record')
-  // 手がかりの枠を使い切ったときだけ出す（`components/RecordForm.jsx`）
+  // 手がかりの枠を使い切ったときだけ出す（`components/HintPanel.jsx`）
   const [hintPaywall, setHintPaywall] = useState('')
 
   const now = new Date()
@@ -81,6 +73,12 @@ export default function Home() {
   const isEditingPast = targetDate !== todayStr()
 
   const refreshData = useCallback(() => setRefreshTick((t) => t + 1), [])
+
+  // **全画面から戻ったら取り直す**（2026-09-03）。
+  // 書いたのは別の画面（`app/write.jsx`）なので、ここの `useEffect` は
+  // 走らない。取り直さないと、書いたのに入口が何も変わらない
+  // （灯りも手がかりも、その日の記録があることも）。
+  useRefreshOnFocus(refreshData)
 
   useEffect(() => {
     let cancelled = false
@@ -116,11 +114,15 @@ export default function Home() {
   // 時刻の帯で選び直せるようにしてみたが、作者に「帯はいらない」と言われた。
   // 帯は、白紙で開かないことの埋め合わせでしかなかった。
   //
-  // 白紙で開き、保存は必ず新しい記録として入る（`RecordForm.jsx`）。
+  // 白紙で開き、保存は必ず新しい記録として入る（`app/write.jsx`）。
   // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
   // 書く場所と直す場所を分けると、どちらも一つのことだけをする。
   const dayLogs = logsOfDay(logs, targetDate)
   const latestLog = latestLogOf(logs, targetDate)
+  const full = dayLogs.length >= MAX_RECORDS_PER_DAY
+
+  const [ty, tm, td] = targetDate.split('-')
+  const dateLabel = `${ty}年${Number(tm)}月${Number(td)}日`
 
   const streak = calcStreak(logs)
 
@@ -132,10 +134,9 @@ export default function Home() {
           それまで避けが1つも無く、「よかったこと」「困ったこと」を開くと
           欄がキーボードの下に入って見えなかった。
 
-          `automaticallyAdjustKeyboardInsets` は iOS が
-          キーボードのぶんを自分で空け、焦点の当たった欄まで送ってくれる。
-          **ただし装飾の列は知らない**ので、その高さだけこちらで足す
-          （`lib/keyboardMath.js`）。 */}
+          **書く欄はもうここに無い**（2026-09-03）。全画面へ移した。
+          いま出るのは手がかりの問いに答えるときだけだが、
+          そのときも同じ理由で下が要る。 */}
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{
@@ -168,62 +169,88 @@ export default function Home() {
             形と動きの由来は `components/WriteTabs.jsx` に書いてある。 */}
         {!isEditingPast ? <WriteTabs value={writeTab} onChange={setWriteTab} /> : null}
 
-        {/* 記録フォーム */}
-        <View style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}>
+        {/* **ここは入口になった**（2026-09-03・作者の判断）。
+            書くのは全画面（`app/write.jsx`）。ここに残るのは、
+            開く紙と、**書いたあとに読むもの**——灯りと手がかり。 */}
+        <View
+          className="gap-4"
+          style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}
+        >
           {isEditingPast ? (
-            <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center justify-between">
               <Text className="text-label-md text-outline">
-                {dateDisplayJa(targetDate)}の記録を編集中
+                {dateDisplayJa(targetDate)}の記録
               </Text>
               <Text onPress={() => router.replace('/')} className="text-label-md text-primary">
                 ← 今日に戻る
               </Text>
             </View>
           ) : null}
-          {/* **すでに記録があることだけ伝える**（2026-09-03）。
-              時刻の帯はやめた（作者の判断）。押せるものを並べると、
-              「どれかを選んで書く」ように見える。ここは選ぶ場所ではない。
-              それでも、残っているのに白紙で開くので**黙ってはいない。**
-              一行だけ、押せない字で。
 
-              **数は書かない**（`REQUIREMENTS.md` F1「書く前に数を
-              意識させない」）。伝えたいのは件数ではなく、
-              **ここに書いても前のは消えない**ということ。
+          {/* **押すと全画面が開く紙。**
+              見た目は書く紙のまま（日付の行と問い）にしてある。
+              「入口」と分かる別の飾りを足すと、押す前に一段考えることになる。
 
-              上限に達したときだけは先に言う。書き終えてから断られる
-              （`/save` の 409）より、書く前に分かっている方がよい。 */}
-          {dayLogs.length > 0 ? (
-            <Text className="text-label-md text-outline mb-3">
-              {dayLogs.length >= MAX_RECORDS_PER_DAY
-                ? 'この日の記録はここまでです。直すときは「記録」から。'
-                : 'すでにこの日の記録があります。ここに書くと、別の記録として残ります。'}
-            </Text>
-          ) : null}
-          <RecordForm
-            // **保存では作り直さない**（2026-09-03）。日付だけを鍵にする。
-            // 以前は記録の id を鍵にしていたので、保存のたびに紙が
-            // 生え直し、書いている最中の灯りが行き先を失っていた
-            key={targetDate}
-            latestLog={latestLog}
-            targetDate={targetDate}
-            question={question}
-            onSaved={() => {
-              refreshData()
-              if (isEditingPast) router.replace('/')
-            }}
+              上限に達していたら開かない。書き終えてから 409 で断るより、
+              **押せないことが先に分かる**方がよい。 */}
+          {full ? (
+            <View className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom opacity-60">
+              <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
+              <Text className="text-body-md text-outline leading-relaxed">
+                この日の記録はここまでです。直すときは「記録」から。
+              </Text>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/write',
+                  params: { date: targetDate, question },
+                })
+              }
+              accessibilityLabel="記録を書く"
+              className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-80"
+            >
+              <Text className="font-label text-label-md text-on-surface-variant">{dateLabel}</Text>
+              <Text className="text-body-md text-outline leading-relaxed">
+                {question && !isEditingPast
+                  ? question
+                  : `${isEditingPast ? 'この日' : '今日'}どんなことをしましたか。`}
+              </Text>
+              {/* **すでに記録があることだけ伝える**（2026-09-03）。
+                  数は書かない（`REQUIREMENTS.md` F1「書く前に数を
+                  意識させない」）。伝えたいのは件数ではなく、
+                  **ここに書いても前のは消えない**ということ */}
+              {dayLogs.length > 0 ? (
+                <Text className="text-label-md text-outline">
+                  書くと、別の記録として残ります。
+                </Text>
+              ) : null}
+            </Pressable>
+          )}
+
+          {/* 灯り。**保存の十数秒あとに届く**（`components/LightCard.jsx`）。
+              書いている画面はもう閉じているので、受け取るのはここ */}
+          <LightCard date={targetDate} />
+
+          {/* 手がかり。**書いたあとにだけ探せる。**
+              探す先はその日のいちばん新しい記録（`components/HintPanel.jsx`） */}
+          <HintPanel
+            date={targetDate}
+            target={latestLog}
+            onSaved={refreshData}
             onPaywall={(message) => setHintPaywall(message || paywallMessage(null))}
           />
-          {/* 手がかりの枠を使い切ったとき。**フォームの外に出す。**
-              書いている場所に売り物を混ぜない（`RecordForm.jsx`） */}
+
+          {/* 手がかりの枠を使い切ったとき。**手がかりの外に出す。**
+              読む場所に売り物を混ぜない（`components/HintPanel.jsx`） */}
           {hintPaywall ? (
-            <View className="mt-4">
-              <Paywall
-                title="Lantern Plus"
-                message={hintPaywall}
-                onClose={() => setHintPaywall('')}
-                onPurchased={() => setHintPaywall('')}
-              />
-            </View>
+            <Paywall
+              title="Lantern Plus"
+              message={hintPaywall}
+              onClose={() => setHintPaywall('')}
+              onPurchased={() => setHintPaywall('')}
+            />
           ) : null}
         </View>
 

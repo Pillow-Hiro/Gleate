@@ -44,3 +44,18 @@ export function sheetMaxHeight({
   // **最低限は残す。** 0 にすると欄が消えて、何も書けない窓になる
   return Math.max(160, capped)
 }
+
+/**
+ * 全画面で書くときの、主欄の行数（`app/write.jsx`）。
+ *
+ * `RecordForm` の `bodyRows` は**1行32px**で数える
+ * （`WebEditor` の行送りと同じ）。上の帯・日付の行・余白でおよそ
+ * 220px 使うので、その分を引いた高さを行数に直す。
+ *
+ * **下限は7行。** 元の紙と同じ高さで、小さい端末でも今より狭くしない。
+ * 画面の高さが取れなかったとき（0）もここへ落ちる。
+ */
+export function bodyRowsFor(windowHeight = 0, { lineHeight = 32, chrome = 220, min = 7 } = {}) {
+  const h = Number(windowHeight) || 0
+  return Math.max(min, Math.floor((h - chrome) / lineHeight))
+}

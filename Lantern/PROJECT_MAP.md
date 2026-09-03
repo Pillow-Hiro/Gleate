@@ -52,7 +52,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `_layout.jsx` | 全体 | 認証ガード・テーマ・`ErrorBoundary`・起動画面（1日1回） |
 | `(tabs)/_layout.jsx` | タブ | **ネイティブ。本物の `UITabBar`（`NativeTabs`）。iOS 26 では OS が Liquid Glass にする** |
 | `(tabs)/_layout.web.jsx` | 同上 | **Web。** 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス |
-| `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。今日の灯りは持たない |
+| `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。**入口**——書くのは `/write`。ここは開く紙と灯りと手がかり |
 | `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋3枚**（`HomeCard`）|
 | `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 ＋ 振り返りのタブ |
 | `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続けて記録した日 ＋ YouTube / Twitch |
@@ -63,6 +63,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
 | `account.jsx` | `/account` | アカウント。設定から1枚めくる。**削除はここにある** |
 | `plan.jsx` | `/plan` | プラン。設定の「現在のプラン」から1枚めくる。**購入と復元はここにある** |
+| `write.jsx` | `/write` | **記録を書く全画面**（上から被さる）。「記録する」は上の帯。保存すると閉じ、灯りは戻った先に出る |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの
@@ -127,7 +128,9 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
-| `HintCard.jsx` | RecordForm | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
+| `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
+| `HintPanel.jsx` | (tabs)/index | 手がかりの入口。**書いたあとに読むもの**なので入口の側にある。答えはその日の最後の記録に `id` で足す |
+| `LightCard.jsx` | (tabs)/index | その日の灯り。受け皿（`lib/lightBuffer.js`）をそのまま映す。**独自に覚えない** |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |

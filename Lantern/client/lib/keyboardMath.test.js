@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keyboardHeadroom, sheetMaxHeight } from './keyboardMath'
+import { bodyRowsFor, keyboardHeadroom, sheetMaxHeight } from './keyboardMath'
 
 describe('下に空ける高さ', () => {
   it('キーボードと装飾の列を足す', () => {
@@ -56,5 +56,27 @@ describe('窓の高さ', () => {
 
   it('何も渡さなくても落ちない', () => {
     expect(sheetMaxHeight()).toBe(160)
+  })
+})
+
+// 全画面で書くときの主欄の行数（`app/write.jsx`）。
+// **画面いっぱいに見せるための数字**で、`RecordForm` の `bodyRows` に入る。
+describe('全画面の欄の行数', () => {
+  it('画面が高いほど行数が増える', () => {
+    // iPhone 15 Pro（852）… (852-220)/32 = 19.75 → 19
+    expect(bodyRowsFor(852)).toBe(19)
+    // iPad（1180）… (1180-220)/32 = 30
+    expect(bodyRowsFor(1180)).toBe(30)
+  })
+
+  // **元の紙と同じ高さを下回らない。**
+  // 小さい端末で「全画面にしたら今より狭くなった」が起きない
+  it('小さい端末でも7行を下回らない', () => {
+    expect(bodyRowsFor(400)).toBe(7)
+    expect(bodyRowsFor(0)).toBe(7)
+  })
+
+  it('何も渡さなくても落ちない', () => {
+    expect(bodyRowsFor()).toBe(7)
   })
 })
