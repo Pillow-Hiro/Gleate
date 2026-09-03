@@ -275,11 +275,15 @@ const RecordForm = forwardRef(function RecordForm(
   //
   // **覚えておくこと。**書いている欄はこれを一緒に登録するので、
   // 毎回作り直すと「登録 → 再描画 → 作り直し → 登録」で回り続ける。
+  //
+  // `label` は短い名前（キーボードの上の列。幅が無い）、
+  // `full` は略さない名前（紙の上の行。**何を書く場所かを名前で伝える**）。
   const extras = useMemo(
     () =>
-      EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip }) => ({
+      EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip, label }) => ({
         key,
         label: chip,
+        full: label,
         onPress: () => {
           setOpenFields((prev) => new Set(prev).add(key))
           setJustOpened(key)
@@ -498,6 +502,39 @@ const RecordForm = forwardRef(function RecordForm(
         />
         </Appear>
       ))}
+
+      {/* **まだ開いていない欄を、いつでも見えるところに置く**
+          （2026-09-03・作者から「ユーザーが気付けるように配置する」）。
+
+          キーボードの上の列にもあるが、**列はキーボードが出ている間しか
+          見えない。**この欄を一度も使っていない人は、書き始める前に
+          何が書けるのかを知らないままになる。実測の記入率は
+          次にやること 16.7% / よかった 5.6% / 困った 5.6%——
+          使われていないのではなく、**在ることが見えていなかった。**
+
+          チップではなく**行**にしてある。全画面には横幅があるので、
+          丸めて小さくする理由が無い。名前も略さずに出す
+          （「詰まったこと・困ったこと」）。**何を書く場所なのかは、
+          名前でしか伝わらない。**
+
+          これは手がかりの材料でもある（`lib/hint.js`）。過去の
+          「困ったこと」を探しに行く仕組みなので、ここが空だと
+          探しても見つからない。 */}
+      {extras.length > 0 ? (
+        <View className="border-t border-outline-variant">
+          {extras.map(({ key, full, onPress }) => (
+            <Pressable
+              key={key}
+              onPress={onPress}
+              accessibilityLabel={`${full}を追加`}
+              className="flex-row items-center gap-2 py-3 min-h-touch active:opacity-70"
+            >
+              <Text className="text-label-md text-primary">＋</Text>
+              <Text className="text-body-md text-on-surface-variant">{full}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ） */}
       <FileList files={files} onChange={refreshFiles} />

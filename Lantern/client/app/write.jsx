@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../components/Text'
 import RecordForm from '../components/RecordForm'
-import { EditorToolbarBar, TOOLBAR_HEIGHT } from '../components/EditorToolbar'
+import { EditorToolbarBar, TOOLBAR_MAX_HEIGHT } from '../components/EditorToolbar'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
 import { bodyRowsFor } from '../lib/keyboardMath'
@@ -87,7 +87,7 @@ export default function Write() {
       <ScrollView
         contentContainerClassName="px-5 pt-4 w-full max-w-read self-center"
         contentContainerStyle={{
-          paddingBottom: keyboardHeight > 0 ? TOOLBAR_HEIGHT + 120 : 40,
+          paddingBottom: keyboardHeight > 0 ? TOOLBAR_MAX_HEIGHT + 120 : 40,
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

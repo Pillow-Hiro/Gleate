@@ -20,7 +20,7 @@ import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
 import RecordForm from '../../components/RecordForm'
-import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
+import { TOOLBAR_MAX_HEIGHT } from '../../components/EditorToolbar'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { sheetMaxHeight } from '../../lib/keyboardMath'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
@@ -224,7 +224,7 @@ export default function Journal() {
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_HEIGHT : 0),
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_MAX_HEIGHT : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
@@ -404,7 +404,7 @@ export default function Journal() {
             紙そのものは動かない。ここは外側を持ち上げる。 */}
         <Pressable
           className="flex-1 bg-black/50 justify-end"
-          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + TOOLBAR_HEIGHT : 0 }}
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + TOOLBAR_MAX_HEIGHT : 0 }}
           onPress={closeModal}
         >
           <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
@@ -430,7 +430,7 @@ export default function Journal() {
                 maxHeight: sheetMaxHeight({
                   windowHeight: Dimensions.get('window').height,
                   keyboardHeight,
-                  toolbarHeight: TOOLBAR_HEIGHT,
+                  toolbarHeight: TOOLBAR_MAX_HEIGHT,
                 }),
               }}
               automaticallyAdjustKeyboardInsets

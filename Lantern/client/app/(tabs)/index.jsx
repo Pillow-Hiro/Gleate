@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
+import Svg, { Path } from 'react-native-svg'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -35,6 +36,21 @@ import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 import Paywall from '../../components/Paywall'
 import { paywallMessage } from '../../lib/plan'
+
+// 右下のボタンに置く鉛筆。**絵文字は使わない**ので図形で描く
+// （`components/RecordForm.jsx` の暦と同じ理由）
+function PencilIcon() {
+  return (
+    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 20h4L19.5 8.5a2.1 2.1 0 00-3-3L5 17v3z"
+        stroke="#1D1D1F"
+        strokeWidth="1.9"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
 
 const WEEKDAYS_JA = ['日','月','火','水','木','金','土']
 
@@ -126,6 +142,11 @@ export default function Home() {
 
   const streak = calcStreak(logs)
 
+  // 全画面を開く。**紙からも右下のボタンからも同じところへ行く**
+  function openWrite() {
+    router.push({ pathname: '/write', params: { date: targetDate, question } })
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScreenFade>
@@ -202,12 +223,7 @@ export default function Home() {
             </View>
           ) : (
             <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: '/write',
-                  params: { date: targetDate, question },
-                })
-              }
+              onPress={openWrite}
               accessibilityLabel="記録を書く"
               className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-80"
             >
@@ -260,6 +276,28 @@ export default function Home() {
         </View>
 
       </ScrollView>
+
+      {/* **右下の書くボタン**（2026-09-03・作者の指示）。
+          入口の紙は押せるが、**紙に見えるので押せると分からない。**
+          押す場所がはっきりしているものを、いつもの位置に置く。
+
+          - 流れない。紙は下へ送れば見えなくなるが、これは残る
+          - **タブバーの上**。すりガラスのタブバーは内容の上に浮くので、
+            その高さぶん持ち上げないと下半分が隠れる（`lib/tabBar.js`）
+          - 上限に達したら出さない。押せないボタンを置くくらいなら、
+            無い方がいい。理由は紙の側に書いてある
+          - アイデアを書いているときも出さない。行き先が違う */}
+      {!full && writeTab === 'record' ? (
+        <Pressable
+          onPress={openWrite}
+          accessibilityLabel="記録を書く"
+          style={{ position: 'absolute', right: 20, bottom: tabInset + 16 }}
+          className="flex-row items-center gap-2 bg-lantern-glow rounded-full px-5 min-h-touch justify-center shadow-bloom active:opacity-80"
+        >
+          <PencilIcon />
+          <Text className="font-strong text-label-md text-on-lantern">書く</Text>
+        </Pressable>
+      ) : null}
       </ScreenFade>
     </SafeAreaView>
   )
