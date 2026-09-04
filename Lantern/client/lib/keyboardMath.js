@@ -51,17 +51,16 @@ export function sheetMaxHeight({
  * `RecordForm` の `bodyRows` は**1行32px**で数える
  * （`WebEditor` の行送りと同じ）。
  *
- * `chrome` は主欄以外が使う高さ。上の帯・日付の行・余白でおよそ 220px、
- * **足りない欄の3行で 150px**（2026-09-03）。
+ * `chrome` は主欄以外が使う高さ。上の帯・日付の行・余白でおよそ 220px。
  *
- * 3行は主欄を短くしてでも**最初の画面に入れる**。入っていないと、
- * 一度も下まで送らない人には無いのと同じで、それが記入率
- * 5.6% の理由だった。主欄はそれでも元の紙の倍ある。
+ * **2026-09-04 に 370 から戻した。**足りない欄の3行ぶんを空けていたが、
+ * 欄そのものを消したので、空ける相手が居なくなった
+ * （`components/RecordForm.jsx`）。書く面は画面いっぱいに広がる。
  *
  * **下限は7行。** 元の紙と同じ高さで、小さい端末でも今より狭くしない。
  * 画面の高さが取れなかったとき（0）もここへ落ちる。
  */
-export function bodyRowsFor(windowHeight = 0, { lineHeight = 32, chrome = 370, min = 7 } = {}) {
+export function bodyRowsFor(windowHeight = 0, { lineHeight = 32, chrome = 220, min = 7 } = {}) {
   const h = Number(windowHeight) || 0
   return Math.max(min, Math.floor((h - chrome) / lineHeight))
 }

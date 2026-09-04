@@ -63,19 +63,10 @@ describe('窓の高さ', () => {
 // **画面いっぱいに見せるための数字**で、`RecordForm` の `bodyRows` に入る。
 describe('全画面の欄の行数', () => {
   it('画面が高いほど行数が増える', () => {
-    // iPhone 15 Pro（852）… (852-370)/32 = 15.06 → 15
-    expect(bodyRowsFor(852)).toBe(15)
-    // iPad（1180）… (1180-370)/32 = 25.3 → 25
-    expect(bodyRowsFor(1180)).toBe(25)
-  })
-
-  // **足りない欄の3行を最初の画面に入れる**（2026-09-03）。
-  // 主欄を目一杯にすると3行が下へ押し出され、送らない人には
-  // 無いのと同じになる。それでも元の紙（7行）の倍はある
-  it('足りない欄の分だけ主欄を短くする', () => {
-    expect(bodyRowsFor(852, { chrome: 220 })).toBe(19)
-    expect(bodyRowsFor(852)).toBeLessThan(19)
-    expect(bodyRowsFor(852)).toBeGreaterThan(14)
+    // iPhone 15 Pro（852）… (852-220)/32 = 19.75 → 19
+    expect(bodyRowsFor(852)).toBe(19)
+    // iPad（1180）… (1180-220)/32 = 30
+    expect(bodyRowsFor(1180)).toBe(30)
   })
 
   // **元の紙と同じ高さを下回らない。**

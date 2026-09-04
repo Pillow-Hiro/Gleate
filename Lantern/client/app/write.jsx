@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../components/Text'
 import RecordForm from '../components/RecordForm'
-import { EditorToolbarBar, TOOLBAR_MAX_HEIGHT } from '../components/EditorToolbar'
+import { EditorToolbarBar, TOOLBAR_HEIGHT } from '../components/EditorToolbar'
 import { ZoomIn } from '../components/Motion'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
@@ -105,15 +105,14 @@ export default function Write() {
         // `lib/keyboard.js` はそのために在る）。効いていなかったので、
         // 主欄の下にある3行がキーボードの裏に入ったまま出せなかった。
         //
-        // 列の高さも足す。2段になると 100px あり、足りないと
-        // 3行がチップの裏に入る。
+        // 列の高さも足す。足りないと、書いている行が列の裏に入る。
         //
         // キーボードが下りているときの 60 は、**下の安全域のぶん**。
         // `SafeAreaView` から `bottom` を外したので（上記）、
         // 取らないとホームバーの帯に最後の行が入る。
         contentContainerStyle={{
           paddingBottom:
-            keyboardHeight > 0 ? keyboardHeight + TOOLBAR_MAX_HEIGHT + 24 : 60,
+            keyboardHeight > 0 ? keyboardHeight + TOOLBAR_HEIGHT + 24 : 60,
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

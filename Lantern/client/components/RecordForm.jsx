@@ -1,10 +1,9 @@
-import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { Pressable, TextInput, View } from 'react-native'
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
+import { Pressable, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import WebEditor from './WebEditor'
-import { Appear } from './Motion'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
@@ -35,15 +34,6 @@ import { useEditorToolbar } from './EditorToolbar'
 // 実装は `EditorToolbar.jsx`。欄の下には置かない — 作者の判断。
 // この欄は「いま書いているのは自分だ」と登録するだけ。
 
-// 「やったこと」以外の3項目。**畳んで並べる。**
-const EXTRA_FIELDS = [
-  { key: 'enjoyable', chip: 'よかったこと', label: 'よかったこと・楽しかったこと' },
-  { key: 'struggled', chip: '困ったこと', label: '詰まったこと・困ったこと' },
-  // 次にやることは「あったこと」ではなく予定で、他の3つと性質が違う。
-  // アイデアの溜め場とも役割が重なるため、ここに置く。
-  { key: 'next', chip: '次にやること', label: '次にやること' },
-]
-
 // 日付の行に置く小さな暦。**絵文字は使わない**ので図形で描く
 function CalendarIcon({ color = '#847563' }) {
   return (
@@ -53,165 +43,69 @@ function CalendarIcon({ color = '#847563' }) {
     </Svg>
   )
 }
-function Field({
-  value,
-  onChange,
-  label,
-  rows = 2,
-  placeholder = '（任意）',
-  rich,
-  bare,
-  onPhoto,
-  onFile,
-  onClose,
-  closeLabel,
-  autoFocus,
-  // **外から欄を空にするための取っ手**（2026-09-03）。
-  // `bare` の欄は WebView が中身を持っているので、`value` を空にしても
-  // 画面は変わらない。渡された側が `clear()` を呼ぶ（`WebEditor.jsx`）。
-  editorRef: externalEditorRef,
-  // まだ開いていない欄。**キーボードの上の列に並ぶ**（`EditorToolbar.jsx`）。
-  // 書いている欄が自分と一緒に渡すので、**どの欄からでも手が届く。**
-  // 毎回作り直すと登録が回り続けるので、呼ぶ側が覚えておくこと
-  extras,
-}) {
-  // 書いている最中かどうか。**押されるまで入力欄を置かない**（`bare` のとき）
+// 書く面。**WebView をひとつ持つだけ**（`components/WebEditor.jsx`）。
+//
+// **モジュールの外に置くこと。**
+//
+// 2026-08-07 まで RecordForm の中で定義していた。1文字打つたびに
+// `setForm` で再描画され、そのたびに別の関数になるため、React は
+// 「別のコンポーネントに変わった」と見なして中身を作り直していた。
+// 結果、**焦点が外れ、キーボードが閉じ、1文字しか打てなかった。**
+//
+// **枠を持たない**（2026-08-14・デザイン案 `3_write`）。
+// 書くところが「入力欄」ではなく「紙」に見えるようにする。
+//
+// **読む面と書く面は1つ**（2026-08-20）。書いていない間だけ `Text` を
+// 置く作りだったが、押すたびに WebView が生え直してちらつき、
+// 書体が違って字の大きさも変わって見えた（WebView からは
+// `expo-font` の書体が見えない）。描く部品を1つにすれば揃える必要がない。
+//
+// **道具はキーボードの上にしか置かない**（2026-08-15・作者の判断）。
+// この面は「いま書いているのは自分だ」と列に登録するだけ
+// （`components/EditorToolbar.jsx`）。
+function Body({ value, onChange, placeholder, rows, onPhoto, onFile, editorRef }) {
+  // 書いている最中かどうか。**書いている面だけが列に登録する**
   const [editing, setEditing] = useState(false)
-  const ownEditorRef = useRef(null)
-  const editorRef = externalEditorRef || ownEditorRef
-  // いま効いている装飾。**欄が知らせてくる。**
+  // いま効いている装飾。**面が知らせてくる。**
   // これが無いと、押したボタンが効いたのかどうかが分からない
   const [active, setActive] = useState(null)
   const { isDark } = useThemeContext()
-  // 装飾は「いまどこを選んでいるか」を知らないと入れられない。
-  // TextInput が教えてくれるのはこれだけなので、控えておく。
-  const [selection, setSelection] = useState(null)
-  // **カーソルを動かしたい一瞬だけ `selection` を渡す。**
-  // 常に渡すと、指でカーソルを動かせなくなる。
-  const [pending, setPending] = useState(null)
-  const inputRef = useRef(null)
   const owner = useId()
   const { register, release } = useEditorToolbar()
 
-  function applyMark(next, cursor) {
-    onChange(next)
-    setPending({ start: cursor, end: cursor })
-    setSelection({ start: cursor, end: cursor })
-    // ボタンを押すと入力欄から焦点が外れる。戻さないとキーボードが閉じる
-    inputRef.current?.focus()
-  }
-
-  // **キーボードの上の道具に、いまの欄を渡す。**
+  // **キーボードの上の道具に、この面を渡す。**
   //
-  // `bare` の欄は WebView なので、**装飾は中で効かせる**（`exec`）。
-  // こちらから文字列を組み直すと、中の選択が失われる。
-  //
-  // **装飾を持たない欄も登録する**（2026-09-03）。
-  // 欄を開くチップを列へ移したので、登録しないと
-  // 「よかったこと」を書いている最中に「困ったこと」を開けない。
-  // 装飾の記号は出ない（`rich` を見て列が決める）。
+  // 装飾は**中で効かせる**（`exec`）。こちらから文字列を組み直すと、
+  // WebView が持っている選択範囲が失われる。
   useEffect(() => {
     if (!editing) return
     register({
       owner,
-      rich: Boolean(rich),
-      exec: rich ? (cmd) => editorRef.current?.exec(cmd) : null,
+      exec: (cmd) => editorRef.current?.exec(cmd),
       onPhoto,
       onFile,
       active,
-      extras,
       // **「日記の候補」で選ばれた1行を差し込む口。**
       // 中身は WebView が持っているので `value` を書き換えても
-      // 画面には出ない。命令で入れる（`bare` の欄だけが持つ）。
-      onSuggest: bare ? (text) => editorRef.current?.insertText(text) : null,
+      // 画面には出ない。命令で入れる。
+      onSuggest: (text) => editorRef.current?.insertText(text),
     })
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rich, editing, owner, active, extras])
-
-  function handleSelectionChange(e) {
-    setSelection(e.nativeEvent.selection)
-    if (pending) setPending(null)
-  }
-
-  // **主欄は枠を持たない。**（2026-08-14・デザイン案 `3_write`）
-  // 書くところが「入力欄」ではなく「紙」に見えるようにする。
-  if (bare) {
-    // **読む面と書く面を1つにした**（2026-08-20）。
-    //
-    // それまでは、書いていないあいだ `Text` を置き、押されたら
-    // `WebEditor` に差し替えていた（素の `TextInput` を敷くと
-    // スクロールのために指を置いただけで焦点が入るため）。
-    //
-    // 作者から2つ報告があった。**押すと一瞬消えて出直す**、
-    // **押す前と後で字の大きさが違う。** どちらも同じ原因で、
-    // 別々の部品が同じ文を描いていたことによる。
-    //
-    // - ちらつき … 差し替えのたびに WebView が生え直していた
-    // - 字の大きさ … アプリの本文は Noto Sans JP（`lib/fonts.js` が
-    //   `expo-font` で読む）だが、**WebView からは見えない。**
-    //   中では `-apple-system` に落ちるので、同じ 19px でも
-    //   和文の見た目の大きさが変わる
-    //
-    // 書体を合わせる道は無い（WebView に同じ書体を渡すには
-    // 5MB の font を data URI で埋める必要がある）。
-    // **描く部品を1つにすれば、揃える必要がなくなる。**
-    //
-    // WebView は指を置いただけでは焦点が入らない（押したときだけ）。
-    // 差し替えをやめても、元の心配は起きない。
-    return (
-      <WebEditor
-        ref={editorRef}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setEditing(true)}
-        onBlur={() => setEditing(false)}
-        onState={(s) => setActive({ bold: s.bold, italic: s.italic, bullet: s.bullet })}
-        isDark={isDark}
-        minHeight={rows * 32 + 16}
-        placeholder={placeholder}
-      />
-    )
-  }
+  }, [editing, owner, active])
 
   return (
-    <View>
-      <View className="flex-row items-center justify-between mb-1.5">
-        <Text className="text-label-md text-outline">{label}</Text>
-        {onClose ? (
-          <Pressable onPress={onClose} className="min-h-touch px-1 justify-center active:opacity-70">
-            <Text className="text-label-md text-outline">{closeLabel}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      {/* **開いた欄に焦点を移す**（2026-08-18）。
-          チップを押して欄が現れても、焦点が動かないと
-          `automaticallyAdjustKeyboardInsets`（`app/(tabs)/index.jsx`）が
-          働かない。あれは**焦点の当たった欄しか送らない。**
-          3つ開くと下2つがキーボードの下に隠れていた。
-
-          押した人はそこに書くつもりで押しているので、
-          焦点を移すのは見え方の都合だけでなく、順当な動きでもある。 */}
-      <TextInput
-        ref={inputRef}
-        autoFocus={autoFocus}
-        value={value}
-        onChangeText={onChange}
-        onSelectionChange={handleSelectionChange}
-        selection={pending ?? undefined}
-        // **書いていることを列に伝える**（2026-09-03）。
-        // 伝えないと、この欄を書いている間は列が消え、
-        // 残りの欄を開くチップに手が届かない
-        onFocus={() => setEditing(true)}
-        onBlur={() => setEditing(false)}
-        multiline
-        textAlignVertical="top"
-        style={{ minHeight: rows * 22 + 16 }}
-        className="bg-surface-lowest border border-border rounded px-3 py-2 font-body text-body-md text-on-surface"
-        placeholder={placeholder}
-        placeholderTextColor="#8E8478"
-      />
-    </View>
+    <WebEditor
+      ref={editorRef}
+      value={value}
+      onChange={onChange}
+      onFocus={() => setEditing(true)}
+      onBlur={() => setEditing(false)}
+      onState={(st) => setActive({ bold: st.bold, italic: st.italic, bullet: st.bullet })}
+      isDark={isDark}
+      minHeight={rows * 32 + 16}
+      placeholder={placeholder}
+    />
   )
 }
 
@@ -250,48 +144,43 @@ const RecordForm = forwardRef(function RecordForm(
   const stamp = new Date()
   const timeLabel = `${String(stamp.getHours()).padStart(2, '0')}:${String(stamp.getMinutes()).padStart(2, '0')}`
   const [form, setForm] = useState({ created: '', enjoyable: '', struggled: '', next: '' })
-  // **開いている欄。**（2026-08-14）
+  // **書く欄はひとつだけ**（2026-09-04・作者の指示
+  // 「よかったこと、困ったこと、次にやることの入力フィールドを消して、
+  // アプローチ方法を変えましょう」）。
   //
-  // それまでは「もっと詳しく書く」ひとつで3項目をまとめて畳んでいた。
-  // 実機で「ユーザーが迷うかも」と言われた。畳まれていると
-  // **何が書けるのかが分からない**まま、開くかどうかを決めることになる。
+  // ## なぜ消したか
   //
-  // 項目ごとのチップにした。**名前が見えているので、開く前に分かる。**
-  // 押した欄だけが現れるので、既定の姿は1段のまま。
+  // 2026-08-06 の実測（全18件）で 15/18 が「やったこと」だけで完結し、
+  // 記入率は 次にやること 16.7% / よかった 5.6% / 困った 5.6% だった。
+  // 畳んでも、チップにしても、紙の下に行として並べても動かなかった
+  // （2026-08-14 / 2026-09-03 / 2026-09-03）。
   //
-  // **欄そのものは消さない**（CLAUDE.md）。実測で
-  // 次にやること 16.7% / よかった 5.6% / 困った 5.6% と低いが、使われている。
-  // 消すと後から分け直せない。
+  // **置き方の問題ではなかった。** 書いたあとに自分で分類させる形が、
+  // 書く手を止めていた。3度置き直して動かないものは、置き方ではない。
   //
-  // **白紙なので、開いた欄も無い。** 以前は既存の記録に中身のある欄を
-  // 開いた状態で出していたが、載せる記録そのものが無くなった。
-  const [openFields, setOpenFields] = useState(() => new Set())
-  // **直前にチップで開いた欄。** その欄にだけ焦点を移す。
+  // ## 代わりに何をするか
   //
-  // `autoFocus` は生えたときにしか効かないので、開いた瞬間の1回だけ働く。
-  const [justOpened, setJustOpened] = useState(null)
-
-  // まだ開いていない欄。**キーボードの上の列に渡す**（`EditorToolbar.jsx`）。
+  // **手がかりが、詰まっている瞬間に一つだけ聞く**
+  // （`modules/ai.py` の「手がかりのための問い」）。あそこには
+  // こう書いてある——「書く瞬間は一行のままにしておきたい。だが
+  // 手がかりには詰まりと打った手が要る。**同じ入力に両方を負わせない。**
+  // 集めるのは『手がかりが欲しい』と思った瞬間にする。
+  // **そのとき人は詰まっている。**一番濃いところで聞ける。」
   //
-  // **覚えておくこと。**書いている欄はこれを一緒に登録するので、
-  // 毎回作り直すと「登録 → 再描画 → 作り直し → 登録」で回り続ける。
+  // 欄を消すのは、**そこで始まっていた移動の完了**にあたる。
   //
-  // `label` は短い名前（キーボードの上の列。幅が無い）、
-  // `full` は略さない名前（紙の上の行。**何を書く場所かを名前で伝える**）。
-  const extras = useMemo(
-    () =>
-      EXTRA_FIELDS.filter(({ key }) => !openFields.has(key)).map(({ key, chip, label }) => ({
-        key,
-        label: chip,
-        full: label,
-        onPress: () => {
-          setOpenFields((prev) => new Set(prev).add(key))
-          setJustOpened(key)
-        },
-      })),
-    [openFields],
-  )
-
+  // ## 何を消していないか
+  //
+  // **列（`enjoyable` / `struggled` / `next`）は消さない。**
+  // - これまでの記録に中身が入っている。読めなくなる
+  // - 「記録」タブでは今までどおり出るし、直せる（`LogDetail.jsx`）
+  // - 検索も書き出しも4つとも見る
+  // - 灯りと手がかりは材料として読む（`modules/ai.py`）
+  // - 手がかりの答えは `struggled` に入る。**いまはそこが唯一の書き手**
+  //   （`components/HintPanel.jsx`）
+  //
+  // 送るのは空文字。古いビルドは今までどおり4つ送ってくるので、
+  // サーバーは何も変えていない。
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -441,23 +330,21 @@ const RecordForm = forwardRef(function RecordForm(
         <Text className="font-label text-label-md text-outline">{timeLabel}</Text>
       </View>
 
-      {/* 問いはプレースホルダとして入力欄の中に出す。
-          欄の上に別行で置くと「読むもの」が増えるが、中に出せば
-          書き始める場所と問いが同じ位置になる。
-          プレースホルダなので、書き始めれば自然に消える。
+      {/* **書く欄はひとつだけ**（2026-09-04）。よかったこと・困ったこと・
+          次にやることの欄は消した。理由は上の状態のところに書いてある。
+
+          問いはプレースホルダとして中に出す。欄の上に別行で置くと
+          「読むもの」が増えるが、中に出せば書き始める場所と問いが
+          同じ位置になる。書き始めれば自然に消える。
 
           今日の記録のときだけ差し替える。過去の日を編集するときに
           今日の問いを出しても合わない。
           問いが取れなかったときは元の固定文に戻る。 */}
-      <Field
+      <Body
         editorRef={bodyRef}
-        extras={extras}
         value={form.created}
         onChange={(v) => setForm((f) => ({ ...f, created: v }))}
-        label={`${isToday ? '今日' : 'この日'}のこと`}
         rows={bodyRows}
-        rich
-        bare
         // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
         onPhoto={pickPhoto}
         onFile={pickFile}
@@ -472,69 +359,6 @@ const RecordForm = forwardRef(function RecordForm(
             : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
         }
       />
-      {/* **開いた欄だけを並べる。**
-          開く手立ては**キーボードの上の列**にある（`EditorToolbar.jsx`）。
-          既定の姿は「やったこと」1段のまま。 */}
-      {EXTRA_FIELDS.filter(({ key }) => openFields.has(key)).map(({ key, label }) => (
-        <Appear key={key}>
-          <Field
-          value={form[key]}
-          onChange={(v) => setForm((f) => ({ ...f, [key]: v }))}
-          label={label}
-          extras={extras}
-          autoFocus={justOpened === key}
-          // **畳めるようにする**（2026-08-15）。開いたら戻せなかった。
-          //
-          // 中身があるまま畳むと、**見えていない文が保存される。**
-          // だから畳むときは消す。押す前にそう書いてある
-          // （空なら「やめる」、書いてあれば「消して閉じる」）。
-          onClose={() => {
-            setForm((f) => ({ ...f, [key]: '' }))
-            setOpenFields((prev) => {
-              const next = new Set(prev)
-              next.delete(key)
-              return next
-            })
-            // 覚えを捨てる。捨てないと、開き直しても生え直さない扱いになる
-            setJustOpened((prev) => (prev === key ? null : prev))
-          }}
-          closeLabel={form[key] ? '消して閉じる' : '閉じる'}
-        />
-        </Appear>
-      ))}
-
-      {/* **まだ開いていない欄を、いつでも見えるところに置く**
-          （2026-09-03・作者から「ユーザーが気付けるように配置する」）。
-
-          キーボードの上の列にもあるが、**列はキーボードが出ている間しか
-          見えない。**この欄を一度も使っていない人は、書き始める前に
-          何が書けるのかを知らないままになる。実測の記入率は
-          次にやること 16.7% / よかった 5.6% / 困った 5.6%——
-          使われていないのではなく、**在ることが見えていなかった。**
-
-          チップではなく**行**にしてある。全画面には横幅があるので、
-          丸めて小さくする理由が無い。名前も略さずに出す
-          （「詰まったこと・困ったこと」）。**何を書く場所なのかは、
-          名前でしか伝わらない。**
-
-          これは手がかりの材料でもある（`lib/hint.js`）。過去の
-          「困ったこと」を探しに行く仕組みなので、ここが空だと
-          探しても見つからない。 */}
-      {extras.length > 0 ? (
-        <View className="border-t border-outline-variant">
-          {extras.map(({ key, full, onPress }) => (
-            <Pressable
-              key={key}
-              onPress={onPress}
-              accessibilityLabel={`${full}を追加`}
-              className="flex-row items-center gap-2 py-3 min-h-touch active:opacity-70"
-            >
-              <Text className="text-label-md text-primary">＋</Text>
-              <Text className="text-body-md text-on-surface-variant">{full}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
 
       {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ） */}
       <FileList files={files} onChange={refreshFiles} />

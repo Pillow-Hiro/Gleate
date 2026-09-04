@@ -14,6 +14,15 @@ import { invalidateLogs } from '../lib/logsCache'
 //
 // `target` はその日のいちばん新しい記録（`lib/date.js` の `latestLogOf`）。
 // **無ければ何も出さない。** 材料が一つも無いのに探せると言わない。
+//
+// ## ここが「困ったこと」の唯一の書き手（2026-09-04）
+//
+// 書く面から3つの欄を消した（`components/RecordForm.jsx`）ので、
+// `struggled` に字が入る道はここだけになった。
+//
+// **それが狙い。** 書く瞬間に「困ったことは？」と聞くと手が止まる。
+// 手がかりを押した人は**いま詰まっている**ので、そこで聞けば
+// 一番濃いところが取れる（`modules/ai.py` の「手がかりのための問い」）。
 export default function HintPanel({ date, target, onSaved, onPaywall }) {
   const [hint, setHint] = useState(null)
   const [hinting, setHinting] = useState(false)

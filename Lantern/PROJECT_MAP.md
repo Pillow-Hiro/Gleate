@@ -117,7 +117,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
 | `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。`compact` で道具の列に入る |
 | `PhotoPicker.web.jsx` | 同上 | **何も描かない。** 分岐ではなくファイルを分けて、expo-image-picker を Web バンドルに乗せない |
-| `RecordForm.jsx` | 書く / 記録のモーダル | 記録フォーム。既定で見えるのは「やったこと」だけ |
+| `RecordForm.jsx` | write / 記録のモーダル | 記録フォーム。**欄は「やったこと」ひとつだけ**（2026-09-04 に残り3つを消した） |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `RichText.jsx` | LogDetail / LogSnapshot | 記録を装飾つきで出す。**出せるのは3つだけ** |
 | `RichEditor.jsx` | WebEditor.web | Web 用の入力欄。記号は消さず薄くする |
@@ -129,7 +129,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
-| `HintPanel.jsx` | (tabs)/index | 手がかりの入口。**書いたあとに読むもの**なので入口の側にある。答えはその日の最後の記録に `id` で足す |
+| `HintPanel.jsx` | (tabs)/index | 手がかりの入口。**書いたあとに読むもの**なので入口の側にある。答えはその日の最後の記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `LightCard.jsx` | (tabs)/index | その日の灯り。受け皿（`lib/lightBuffer.js`）をそのまま映す。**独自に覚えない** |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |

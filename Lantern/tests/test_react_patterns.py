@@ -172,13 +172,20 @@ class TestTextInputsAreControlledFromOutside:
     親の state を直接触ると、結局同じ場所に戻る。
     """
 
-    def test_Fieldがvalueとonchangeを受け取る(self):
+    def test_書く面がvalueとonchangeを受け取る(self):
+        """`RecordForm.jsx` の書く面。
+
+        2026-09-04 まで `Field` という名前だった。よかったこと・困ったこと・
+        次にやることの欄を消し、書く面がひとつになったので `Body` にした
+        （`CLAUDE.md`「入力欄は『やったこと』ひとつだけ」）。
+        見ているのは名前ではなく**値と変更を外から受け取っているか。**
+        """
         src = read(os.path.join(CLIENT, "components", "RecordForm.jsx"))
-        m = re.search(r"function Field\(\{([^}]*)\}", src)
-        assert m, "RecordForm.jsx に Field が無い"
+        m = re.search(r"function Body\(\{([^}]*)\}", src)
+        assert m, "RecordForm.jsx に Body が無い"
         params = {p.strip().split("=")[0].strip() for p in m.group(1).split(",")}
         assert "value" in params and "onChange" in params, (
-            f"Field が value / onChange を受け取っていない: {sorted(params)}"
+            f"Body が value / onChange を受け取っていない: {sorted(params)}"
         )
 
 

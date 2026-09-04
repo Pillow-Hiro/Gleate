@@ -38,15 +38,6 @@ import {
 // （下の `minHeight`）。片方だけ変えても食い違わない。
 export const TOOLBAR_HEIGHT = 52
 
-// **2段になったときの高さ**（2026-09-03・作者から「2列にできないか」）。
-//
-// 欄を開くチップを横に流していたが、狭い端末では
-// **記号に隠れて見えなかった。**下に段を足して、3つとも一度に見せる。
-//
-// 画面が下を空けるときはこちらを使う。**空けすぎても壊れない**が、
-// 足りないと書いている字がチップの下に入る。
-export const TOOLBAR_MAX_HEIGHT = TOOLBAR_HEIGHT + 48
-
 const ToolbarContext = createContext({ register: () => {}, release: () => {} })
 // いま書いている欄。**別に持つ。**
 // `Modal` の中にもう1つ列を置けるようにするため（`RN` の Modal は
@@ -251,22 +242,12 @@ function ToolbarBar({ field }) {
 
   // **いま効いている装飾**。欄が知らせてくる（`WebEditor` の `state`）
   const active = field.active || {}
-  // まだ開いていない欄。`[{key, label, onPress}]`（`RecordForm.jsx`）
-  const extras = field.extras || []
 
-  // **装飾は `rich` の欄だけ**（`components/RecordForm.jsx`）。
-  //
-  // 2026-09-03 に、装飾を持たない欄も列に登録するようにした。
-  // 欄を開くチップをここへ移したので、**どの欄を書いていても
-  // 手が届く**ようにするため。装飾まで出すと、短いメモの欄に
-  // 道具立てが増える——それは元から避けてある。
-  const buttons = field.rich
-    ? [
-        { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
-        { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
-        { id: 'bullet', label: '箇条書き', Icon: Bullet, onPress: () => apply('bullet') },
-      ]
-    : []
+  const buttons = [
+    { id: 'bold', label: '太字', Icon: Bold, onPress: () => apply('bold') },
+    { id: 'italic', label: '斜体', Icon: Italic, onPress: () => apply('italic') },
+    { id: 'bullet', label: '箇条書き', Icon: Bullet, onPress: () => apply('bullet') },
+  ]
   if (field.onPhoto) {
     buttons.push({ id: 'photo', label: '写真を追加', Icon: Photo, onPress: field.onPhoto })
   }
@@ -285,9 +266,6 @@ function ToolbarBar({ field }) {
       }}
       className="bg-surface-low border-t border-border"
     >
-      {/* **上の段は装飾だけ**（2026-09-03・作者から「2列にできないか」）。
-          チップを同じ段に流していたが、狭い端末では記号に隠れて
-          **3つとも見えなかった。**段を分ければ、流さずに全部出せる。 */}
       <View className="flex-row items-center pl-3 py-1" style={{ minHeight: TOOLBAR_HEIGHT }}>
         {/* **「完了」は流さない。**いつでも同じ場所にあること。
             閉じる手立てが流れて隠れると、閉じられなくなる。 */}
@@ -347,28 +325,6 @@ function ToolbarBar({ field }) {
         </Pressable>
       </View>
 
-      {/* **下の段は「欄を増やす」だけ**（2026-09-03）。
-          装飾は「いま書いている字」に効き、こちらは欄を増やす。
-          効く先が違うので、同じ段に混ぜない。段が分かれていれば
-          区切り線も要らない。
-
-          **流さない。**3つとも一度に見えること。それが分けた理由。
-          残りが1つ2つになっても、位置は変わらないまま左に詰まる。 */}
-      {extras.length > 0 ? (
-        <View className="flex-row flex-wrap items-center gap-2 px-3 pb-2 border-t border-border pt-2">
-          {extras.map(({ key, label, onPress }) => (
-            <Pressable
-              key={key}
-              onPress={onPress}
-              accessibilityLabel={`${label}を追加`}
-              className="flex-row items-center gap-1 border border-outline-variant rounded-full px-3 py-1.5 justify-center active:bg-surface-high"
-            >
-              <Text className="text-label-md text-primary">＋</Text>
-              <Text className="text-label-md text-on-surface-variant">{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
     </Animated.View>
   )
 }
