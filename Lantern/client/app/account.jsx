@@ -12,13 +12,21 @@ import { forgetAllLights } from '../lib/lightBuffer'
 import { authErrorMessage } from '../lib/authError'
 import * as avatar from '../lib/avatarStore'
 import { compressPhoto } from '../lib/image'
+import SwatchPicker from '../components/SwatchPicker'
+import { useThemeContext } from '../lib/theme'
+import { ACCENTS, accentSwatch } from '../lib/accent'
+import { PAPERS, paperSwatch } from '../lib/paper'
 
-// アカウント。**設定から1枚めくったところ。**
+// マイページ。**設定から1枚めくったところ。**
 //
 // 2026-08-15 まで設定の中に畳んであり、押すとアドレスが開くだけだった。
 // **開いた先が同じ画面だと、めくった感じがしない。**
 //
-// ここに置くのは「自分が誰として使っているか」だけ。
+// **2026-09-04 に「アカウント」から改称し、灯りの色と紙の色を移した**
+// （作者の指示）。設定は道具の設定、こちらは**自分の場所の設え**。
+// 色を選ぶのは後者で、アドレスや画像と並ぶ方が素直だった。
+//
+// ここに置くのは「自分が誰として使っているか」と、その場所の見え方。
 // **プロフィールは持たない**（`REQUIREMENTS.md`）。名前も顔写真も無い。
 //
 // **アカウントの削除をここへ移した。** 取り返しがつかない操作は、
@@ -40,6 +48,8 @@ function Row({ label, value, isLast }) {
 
 export default function Account() {
   const router = useRouter()
+  // 色の選択（`lib/theme.js`）。見本は**いま見ている側**で引く
+  const { isDark, accent, setAccent, paper, setPaper } = useThemeContext()
   const [email, setEmail] = useState('')
   const [since, setSince] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -225,6 +235,26 @@ export default function Account() {
             </Text>
           </Pressable>
         </View>
+
+        {/* **色は設定から移した**（2026-09-04・作者の指示）。
+            灯りと紙は別の選択なので、区画も分ける（`lib/accent.js` /
+            `lib/paper.js`）。明暗の切り替えは設定に残してある——
+            あれは色ではなく、いつ何を出すかの設定。 */}
+        <SwatchPicker
+          title="灯りの色"
+          options={ACCENTS}
+          value={accent}
+          onChange={setAccent}
+          swatchOf={(id) => accentSwatch(id, isDark)}
+        />
+
+        <SwatchPicker
+          title="紙の色"
+          options={PAPERS}
+          value={paper}
+          onChange={setPaper}
+          swatchOf={(id) => paperSwatch(id, isDark)}
+        />
 
         <Text className="text-label-md text-outline leading-relaxed">
           記録とアイデアはこのアカウントに紐づいています。

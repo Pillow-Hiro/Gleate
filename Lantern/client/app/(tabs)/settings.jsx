@@ -11,8 +11,6 @@ import { forgetAllLights } from '../../lib/lightBuffer'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
-import { ACCENTS, accentSwatch } from '../../lib/accent'
-import { PAPERS, paperSwatch } from '../../lib/paper'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
@@ -86,46 +84,6 @@ function ChoiceRow({ label, selected, isLast, onPress }) {
   )
 }
 
-// 色を選ぶ行。**見本を左に置く**（2026-09-04）。
-//
-// 名前だけでは、選ぶ前にどんな色か分からない。「蝋燭」「生成り」は
-// 手がかりにはなるが、**画面がどう変わるかは色を見ないと分からない。**
-//
-// **説明文は置かない**（作者の指示）。見本と名前で足りている。
-//
-// 見本は丸。四角だと小さな面に見えて、地の色と競う。
-// 紙の見本は白に近いので、輪郭を1本足さないと地に沈む。
-function SwatchRow({ label, swatch, selected, isLast, onPress, what }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
-      accessibilityLabel={`${what}を${label}にする`}
-      className="active:opacity-70"
-    >
-      <View
-        className={`flex-row items-center gap-3 py-3.5 min-h-touch ${
-          isLast ? '' : 'border-b border-border'
-        }`}
-      >
-        <View
-          style={{ backgroundColor: `rgb(${swatch})`, width: 22, height: 22 }}
-          className="rounded-full border border-outline-variant"
-        />
-        <Text
-          className={`flex-1 text-body-md ${
-            selected ? 'font-strong text-primary' : 'text-on-surface'
-          }`}
-        >
-          {label}
-        </Text>
-        {selected ? <Text className="text-body-md text-primary">✓</Text> : null}
-      </View>
-    </Pressable>
-  )
-}
-
 function Group({ title, children }) {
   return (
     <View>
@@ -141,7 +99,7 @@ export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const router = useRouter()
-  const { mode, setMode, isDark, accent, setAccent, paper, setPaper } = useThemeContext()
+  const { mode, setMode } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -265,16 +223,18 @@ export default function Settings() {
 
         {/* **押すと画面が変わる**（2026-08-15）。
             それまでは同じ画面でアドレスが開くだけで、めくった感じがしなかった。
-            中身は `app/account.jsx`。アカウントの削除もそちらへ移した。 */}
+            中身は `app/account.jsx`。**マイページ**（2026-09-04 に
+            「アカウント」から改称）。灯りの色と紙の色もそちらへ移した——
+            設定は道具の設定、色は自分の場所の設えで、性質が違う。 */}
         {email ? (
           <Group>
             <Pressable
               onPress={() => router.push('/account')}
-              accessibilityLabel="アカウント"
+              accessibilityLabel="マイページ"
               className="flex-row items-center gap-3 py-3.5 min-h-touch active:opacity-70"
             >
               <AccountMark email={email} />
-              <Text className="flex-1 text-body-md text-on-surface">アカウント</Text>
+              <Text className="flex-1 text-body-md text-on-surface">マイページ</Text>
               <Text className="text-label-md text-outline">›</Text>
             </Pressable>
           </Group>
@@ -339,45 +299,6 @@ export default function Settings() {
               selected={mode === m}
               isLast={i === THEME_MODES.length - 1}
               onPress={() => setMode(m)}
-            />
-          ))}
-        </Group>
-
-        {/* **灯りの色**（2026-09-04・作者の指示
-            「Muute みたいに他の色を選べるように」）。
-
-            外観（明暗）とは別の区画にする。**別のことを選んでいる**ので、
-            同じ枠に6行並べると1つの設定に見える。
-
-            既定の「蝋燭」は、いままでの琥珀そのもの（`lib/accent.js`）。 */}
-        <Group title="灯りの色">
-          {ACCENTS.map((a, i) => (
-            <SwatchRow
-              key={a.id}
-              what="灯りの色"
-              label={a.label}
-              swatch={accentSwatch(a.id, isDark)}
-              selected={accent === a.id}
-              isLast={i === ACCENTS.length - 1}
-              onPress={() => setAccent(a.id)}
-            />
-          ))}
-        </Group>
-
-        {/* **紙の色**（2026-09-04・作者の指示「紙の色も白以外を候補に」）。
-            地は6段ある（`lib/paper.js`）。1段だけ替えると段差が壊れるので
-            梯子ごと持ち替える。**カードは白に寄せたまま**——
-            Lantern の言葉がカードの中に敷かれるので、両方暖色にすると溶ける */}
-        <Group title="紙の色">
-          {PAPERS.map((p, i) => (
-            <SwatchRow
-              key={p.id}
-              what="紙の色"
-              label={p.label}
-              swatch={paperSwatch(p.id, isDark)}
-              selected={paper === p.id}
-              isLast={i === PAPERS.length - 1}
-              onPress={() => setPaper(p.id)}
             />
           ))}
         </Group>

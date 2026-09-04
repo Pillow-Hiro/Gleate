@@ -61,7 +61,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `signup.jsx` | `/signup` | 新規登録だけ。確認メールの案内と再送を持つ |
 | `forgot.jsx` | `/forgot` | パスワード再設定メールを送る。**宛先を出す・再送を置く** |
 | `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
-| `account.jsx` | `/account` | アカウント。設定から1枚めくる。**削除はここにある** |
+| `account.jsx` | `/account` | **マイページ**（2026-09-04 に「アカウント」から改称）。設定から1枚めくる。灯りの色・紙の色・**削除はここにある** |
 | `plan.jsx` | `/plan` | プラン。設定の「現在のプラン」から1枚めくる。**購入と復元はここにある** |
 | `write.jsx` | `/write` | **記録を書く全画面**（上から被さる）。「記録する」は上の帯。保存すると閉じ、灯りは戻った先に出る |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
@@ -144,6 +144,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
 | `AccountMark.jsx` | 設定 | アカウントの印。**顔写真は持たない**。アドレスから決まる |
+| `SwatchPicker.jsx` | マイページ | 色を選ぶ区画。灯りと紙で同じ形を使う。見本は呼ぶ側が明暗で引く |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
 | `YouTubePanel.jsx` | Dashboard | YouTube 側の中身 |
