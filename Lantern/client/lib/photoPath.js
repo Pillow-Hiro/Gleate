@@ -15,6 +15,18 @@
 //
 // 日付を先頭に置いているので、ディレクトリを一覧するだけで
 // 「どの日に写真があるか」が分かる。索引を別に持たない。
+//
+// ## 記録ごとに持つ（2026-09-05・作者の指示）
+//
+// 1日に複数件置けるようにしてから、**日付で持つと同じ写真が
+// その日の全部の記録に付いた。** 記録の id を末尾に足す。
+//
+//   2026-09-05__1757000000000__3f9a1b.jpg
+//
+// **古い名前は読めるまま残す。** 写真は端末の中にしか無く、
+// 消したら戻らない。名前を付け替える処理は書かない——
+// 途中で落ちたときに失うものが大きすぎる。
+// id を持たない古い写真は、これまでどおり日付のものとして扱う。
 
 export const PHOTO_DIR = 'photos'
 
@@ -34,10 +46,15 @@ export function isValidDate(date) {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === date
 }
 
-export function buildNames(date, stamp) {
+// id は英数字と `-` だけ受ける。ファイル名になるので、区切りの `__` や
+// パスの記号が混ざると読み解けなくなる
+const ID_RE = /^[A-Za-z0-9-]+$/
+
+export function buildNames(date, stamp, id = '') {
   if (!isValidDate(date)) throw new Error(`不正な日付: ${date}`)
   if (!Number.isInteger(stamp) || stamp < 0) throw new Error(`不正な stamp: ${stamp}`)
-  const base = `${date}${SEP}${stamp}`
+  if (id && !ID_RE.test(id)) throw new Error(`不正な id: ${id}`)
+  const base = id ? `${date}${SEP}${stamp}${SEP}${id}` : `${date}${SEP}${stamp}`
   return { photo: `${base}${PHOTO_SUFFIX}`, thumb: `${base}${THUMB_SUFFIX}` }
 }
 
@@ -55,10 +72,38 @@ export function parsePhotoName(name) {
   if (at < 0) return null
 
   const date = base.slice(0, at)
-  const stamp = Number(base.slice(at + SEP.length))
+  const rest = base.slice(at + SEP.length)
+  // `stamp` だけの古い名前と、`stamp__id` の新しい名前の両方を読む
+  const at2 = rest.indexOf(SEP)
+  const stamp = Number(at2 < 0 ? rest : rest.slice(0, at2))
+  const id = at2 < 0 ? '' : rest.slice(at2 + SEP.length)
   if (!isValidDate(date) || !Number.isInteger(stamp)) return null
+  if (id && !ID_RE.test(id)) return null
 
-  return { date, stamp, isThumb }
+  return { date, stamp, id, isThumb }
+}
+
+// 記録ごとの最新世代。**id を持つ名前だけ**を見る。
+// 日付だけの古い写真はここに現れない（`latestByDate` が拾う）。
+export function latestById(names) {
+  const best = new Map()
+  for (const name of names) {
+    const parsed = parsePhotoName(name)
+    if (!parsed || !parsed.id) continue
+    const cur = best.get(parsed.id)
+    if (!cur || parsed.stamp > cur.stamp) {
+      best.set(parsed.id, { stamp: parsed.stamp, photo: null, thumb: null })
+    }
+  }
+  for (const name of names) {
+    const parsed = parsePhotoName(name)
+    if (!parsed || !parsed.id) continue
+    const entry = best.get(parsed.id)
+    if (!entry || entry.stamp !== parsed.stamp) continue
+    if (parsed.isThumb) entry.thumb = name
+    else entry.photo = name
+  }
+  return best
 }
 
 // 同じ日に複数の世代が残っていたら、いちばん新しいものを採る。
@@ -67,7 +112,9 @@ export function latestByDate(names) {
   const best = new Map()
   for (const name of names) {
     const parsed = parsePhotoName(name)
-    if (!parsed) continue
+    // **記録に紐づいたものは日付の側で数えない**（2026-09-05）。
+    // 数えると、記録ごとの写真がその日の全部の記録にも付く
+    if (!parsed || parsed.id) continue
     const cur = best.get(parsed.date)
     if (!cur || parsed.stamp > cur.stamp) {
       best.set(parsed.date, { stamp: parsed.stamp, photo: null, thumb: null })
@@ -76,7 +123,7 @@ export function latestByDate(names) {
   // 採用した世代のファイル名を割り当てる
   for (const name of names) {
     const parsed = parsePhotoName(name)
-    if (!parsed) continue
+    if (!parsed || parsed.id) continue
     const entry = best.get(parsed.date)
     if (!entry || entry.stamp !== parsed.stamp) continue
     if (parsed.isThumb) entry.thumb = name
@@ -86,11 +133,15 @@ export function latestByDate(names) {
 }
 
 // 採用しなかった世代。保存後の掃除に使う。
+// **持ち主ごとに数える。** 記録に紐づいたものは id で、
+// 古いものは日付で。混ぜると、片方が片方を消す。
 export function staleNames(names) {
-  const best = latestByDate(names)
+  const byDate = latestByDate(names)
+  const byId = latestById(names)
   return names.filter((name) => {
     const parsed = parsePhotoName(name)
     if (!parsed) return false
-    return best.get(parsed.date).stamp !== parsed.stamp
+    const best = parsed.id ? byId.get(parsed.id) : byDate.get(parsed.date)
+    return Boolean(best) && best.stamp !== parsed.stamp
   })
 }

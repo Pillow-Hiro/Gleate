@@ -3,6 +3,7 @@ import {
   buildNames,
   isValidDate,
   latestByDate,
+  latestById,
   parsePhotoName,
   staleNames,
 } from './photoPath'
@@ -57,10 +58,10 @@ describe('buildNames', () => {
 describe('parsePhotoName', () => {
   it('本体とサムネイルを見分ける', () => {
     expect(parsePhotoName('2026-08-04__7.jpg')).toEqual({
-      date: '2026-08-04', stamp: 7, isThumb: false,
+      date: '2026-08-04', stamp: 7, id: '', isThumb: false,
     })
     expect(parsePhotoName('2026-08-04__7.thumb.jpg')).toEqual({
-      date: '2026-08-04', stamp: 7, isThumb: true,
+      date: '2026-08-04', stamp: 7, id: '', isThumb: true,
     })
   })
 
@@ -75,8 +76,8 @@ describe('parsePhotoName', () => {
 
   it('buildNames の出力を読み戻せる', () => {
     const { photo, thumb } = buildNames('2026-01-31', 42)
-    expect(parsePhotoName(photo)).toEqual({ date: '2026-01-31', stamp: 42, isThumb: false })
-    expect(parsePhotoName(thumb)).toEqual({ date: '2026-01-31', stamp: 42, isThumb: true })
+    expect(parsePhotoName(photo)).toEqual({ date: '2026-01-31', stamp: 42, id: '', isThumb: false })
+    expect(parsePhotoName(thumb)).toEqual({ date: '2026-01-31', stamp: 42, id: '', isThumb: true })
   })
 })
 
@@ -145,3 +146,70 @@ describe('staleNames', () => {
     expect(staleNames(['メモ.txt', '2026-08-04__1.jpg'])).toEqual([])
   })
 })
+
+// 記録ごとに持つ（2026-09-05・作者の指示「写真は記録ごとに紐づける」）。
+//
+// 1日に複数件置けるようにしてから、**日付で持つと同じ写真が
+// その日の全部の記録に付いていた。**
+//
+// **古い名前は読めるまま残す。** 写真は端末の中にしか無く、消したら
+// 戻らない。名前を付け替える処理は書かない——途中で落ちたときに
+// 失うものが大きすぎる。
+describe('記録ごとの写真', () => {
+  it('id を足した名前を組める', () => {
+    const { photo, thumb } = buildNames('2026-09-05', 7, 'abc-1')
+    expect(photo).toBe('2026-09-05__7__abc-1.jpg')
+    expect(thumb).toBe('2026-09-05__7__abc-1.thumb.jpg')
+  })
+
+  it('id を渡さなければ今までの名前', () => {
+    expect(buildNames('2026-09-05', 7).photo).toBe('2026-09-05__7.jpg')
+  })
+
+  it('ファイル名にできない id は断る', () => {
+    expect(() => buildNames('2026-09-05', 7, 'a__b')).toThrow()
+    expect(() => buildNames('2026-09-05', 7, '../x')).toThrow()
+  })
+
+  it('新しい名前も古い名前も読める', () => {
+    expect(parsePhotoName('2026-09-05__7__abc.jpg')).toEqual({
+      date: '2026-09-05', stamp: 7, id: 'abc', isThumb: false,
+    })
+    expect(parsePhotoName('2026-09-05__7.jpg')).toEqual({
+      date: '2026-09-05', stamp: 7, id: '', isThumb: false,
+    })
+  })
+
+  it('記録ごとに最新の世代を採る', () => {
+    const names = [
+      '2026-09-05__1__a.jpg', '2026-09-05__1__a.thumb.jpg',
+      '2026-09-05__2__a.jpg', '2026-09-05__2__a.thumb.jpg',
+      '2026-09-05__1__b.jpg',
+    ]
+    const best = latestById(names)
+    expect(best.get('a').photo).toBe('2026-09-05__2__a.jpg')
+    expect(best.get('b').photo).toBe('2026-09-05__1__b.jpg')
+  })
+
+  // **記録に紐づいたものは日付の側で数えない。**
+  // 数えると、記録ごとの写真がその日の全部の記録にも付く
+  it('日付の側は id 付きを拾わない', () => {
+    const best = latestByDate(['2026-09-05__1__a.jpg', '2026-09-05__2.jpg'])
+    expect(best.get('2026-09-05').photo).toBe('2026-09-05__2.jpg')
+  })
+
+  it('日付だけの写真しか無ければ、記録ごとの一覧は空', () => {
+    expect(latestById(['2026-09-05__1.jpg']).size).toBe(0)
+  })
+
+  // **持ち主ごとに数える。** 混ぜると片方が片方を消す
+  it('掃除は持ち主ごとに数える', () => {
+    const names = [
+      '2026-09-05__1.jpg',        // 日付のもの（1世代だけ）
+      '2026-09-05__1__a.jpg',     // 記録 a の古い世代
+      '2026-09-05__2__a.jpg',     // 記録 a の最新
+    ]
+    expect(staleNames(names)).toEqual(['2026-09-05__1__a.jpg'])
+  })
+})
+

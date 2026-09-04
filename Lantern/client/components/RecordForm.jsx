@@ -11,7 +11,7 @@ import { authFetch } from '../lib/supabase'
 import { invalidateLogs } from '../lib/logsCache'
 import { forgetLight, requestLight } from '../lib/lightBuffer'
 import { todayStr } from '../lib/date'
-import { load as loadPhoto, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
+import { loadFor as loadPhotoFor, remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 import { useEditorToolbar } from './EditorToolbar'
 
@@ -126,8 +126,11 @@ function Body({ value, onChange, placeholder, rows, onPhoto, onFile, editorRef }
 // `ref` からは `save()` を呼べる。全画面の「記録する」は上の帯にあり、
 // この中のボタンは出さない（`hideSaveButton`）。
 // 戻り値は**残せたかどうか**。呼ぶ側はそれを見て閉じる。
+// `editing` は**直す相手の記録**（2026-09-05・作者の指示で
+// 「記録」タブの編集を全画面へ移した）。渡されると中身を載せて開き、
+// 保存はその記録を書き換える。渡されなければ今までどおり白紙。
 const RecordForm = forwardRef(function RecordForm(
-  { targetDate, onSaved, question, hideSaveButton, bodyRows = 7 },
+  { targetDate, onSaved, question, hideSaveButton, bodyRows = 7, editing },
   ref,
 ) {
   const isToday = targetDate === todayStr()
@@ -143,7 +146,14 @@ const RecordForm = forwardRef(function RecordForm(
   // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
   const stamp = new Date()
   const timeLabel = `${String(stamp.getHours()).padStart(2, '0')}:${String(stamp.getMinutes()).padStart(2, '0')}`
-  const [form, setForm] = useState({ created: '', enjoyable: '', struggled: '', next: '' })
+  const [form, setForm] = useState(() => ({
+    created: editing?.created || '',
+    // 見えない3つは**触らずに持ち回る**（`components/LogDetail.jsx` と同じ）。
+    // 送らないとサーバーが空文字で上書きする（`main.py` の `/save`）
+    enjoyable: editing?.enjoyable || '',
+    struggled: editing?.struggled || '',
+    next: editing?.next || '',
+  }))
   // **書く欄はひとつだけ**（2026-09-04・作者の指示
   // 「よかったこと、困ったこと、次にやることの入力フィールドを消して、
   // アプローチ方法を変えましょう」）。
@@ -184,7 +194,13 @@ const RecordForm = forwardRef(function RecordForm(
   const [loading, setLoading] = useState(false)
   const [slow, setSlow] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [photoUrl, setPhotoUrl] = useState(loadPhoto(targetDate).photo_url)
+  // **写真は記録ごと**（2026-09-05・作者の指示）。
+  //
+  // 新しく書くときは、まだ id が無い（サーバーが採番する）。
+  // **選んだものを持っておき、残せた時点で id の名前で置く。**
+  // 途中でやめた人の写真が端末に残らないのも、こちらの方が正しい。
+  const [photoUrl, setPhotoUrl] = useState(() => loadPhotoFor(editing?.id).photo_url)
+  const pending = useRef(null)
 
   // 全画面の「記録する」はこの外にある。**同じ手続きを呼ばせる。**
   // 保存の中身が2か所に分かれると、片方だけ古くなる
@@ -194,7 +210,13 @@ const RecordForm = forwardRef(function RecordForm(
   // ここで onSaved() を呼ばないのは、logs を取り直すと key が変わって
   // このフォームが作り直され、入力途中のテキストが消えるため。
   async function handlePhotoSelect(photo, thumb) {
-    setPhotoUrl(savePhoto(targetDate, photo, thumb).photo_url)
+    if (editing?.id) {
+      setPhotoUrl(savePhoto(targetDate, photo, thumb, editing.id).photo_url)
+      return
+    }
+    // まだ id が無い。**残せたときに置く**（`handleSave`）
+    pending.current = { photo, thumb }
+    setPhotoUrl(photo)
   }
 
   // 主欄（「やったこと」）の取っ手。**空にするために要る。**
@@ -232,7 +254,8 @@ const RecordForm = forwardRef(function RecordForm(
   }
 
   async function handlePhotoRemove() {
-    removePhoto(targetDate)
+    if (editing?.id) removePhoto(targetDate, editing.id)
+    pending.current = null
     setPhotoUrl(null)
   }
 
@@ -269,7 +292,13 @@ const RecordForm = forwardRef(function RecordForm(
         // この紙は白紙でしか開かないので、ここから既存を直すことはない。
         // `new` を送らないと、サーバーは日付で既存を見つけて上書きする
         // （`main.py` の `/save`）。**別のことを書いたのに前のが消える。**
-        body: JSON.stringify({ ...form, new: true, date: targetDate, defer_ai: true }),
+        // **直すときは id を送る**（2026-09-05）。送らないと `new` の側に
+        // 落ちて、直したつもりが**もう1件増える**
+        body: JSON.stringify(
+          editing?.id
+            ? { ...form, id: editing.id, date: targetDate, defer_ai: true }
+            : { ...form, new: true, date: targetDate, defer_ai: true },
+        ),
       })
       // **上限に当たったときは、そう言う**（2026-09-02）。
       // 「保存に失敗しました。接続を確認してください」だと、
@@ -282,6 +311,17 @@ const RecordForm = forwardRef(function RecordForm(
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
 
+      // **残せたので、預かっていた写真を置く**（2026-09-05）。
+      // id はいまサーバーが返してきたもの。失敗しても記録は残っている
+      if (pending.current && data.id) {
+        try {
+          savePhoto(targetDate, pending.current.photo, pending.current.thumb, data.id)
+          pending.current = null
+        } catch (e) {
+          console.warn('[Photo] 保存に失敗', e)
+        }
+      }
+
       // **控えが古くなった。**これを言わないと、記録タブへ移っても
       // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
       // `onSaved` より先に呼ぶ。あちらは取り直しの結果を受け取る側
@@ -292,8 +332,12 @@ const RecordForm = forwardRef(function RecordForm(
       // 書いたあとに紙が残っている呼ばれ方もある（記録タブの窓）。
       // 主欄は WebView が中身を持っていて `value` が届かないので、
       // 命令で消す（`WebEditor.jsx` の `clear`）。他の3つは `value` で消える。
-      setForm({ created: '', enjoyable: '', struggled: '', next: '' })
-      bodyRef.current?.clear()
+      // **直したときは白紙に戻さない。** 呼ぶ側が閉じる
+      if (!editing?.id) {
+        setForm({ created: '', enjoyable: '', struggled: '', next: '' })
+        bodyRef.current?.clear()
+        setPhotoUrl(null)
+      }
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。

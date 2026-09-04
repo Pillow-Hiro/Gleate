@@ -1,12 +1,20 @@
 import { useState } from 'react'
-import { Pressable, TextInput, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { Pressable, View } from 'react-native'
 import Text from './Text'
 import { authFetch } from '../lib/supabase'
 import RichText from './RichText'
 import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 
-// Web版 Journal.jsx の LogDetail を移植したもの。表示・編集・削除の挙動と文言は変更していない。
+// 記録の1件を読む。**直すのはここではない**（2026-09-05・作者の指示）。
+//
+// 2026-09-04 まで、押すと4欄（のちに1欄）が開いた。装飾も写真も無い
+// **二等の書く場所**で、全画面には有るものが揃っていなかった。
+// 「編集」は `/write?id=` へ送る。書く場所を2つに分けない。
+//
+// 出すのは4項目とも。**これまでの記録に中身が入っており、
+// 編集できないことと、見えないことは別。**
 const DISPLAY_FIELDS = [
   { key: 'created', label: 'やったこと' },
   { key: 'enjoyable', label: 'よかったこと' },
@@ -14,29 +22,10 @@ const DISPLAY_FIELDS = [
   { key: 'next', label: '次にやること' },
 ]
 
-// **直せるのは「やったこと」だけ**（2026-09-04・作者の指示
-// 「3つの入力フィールドに関しては削除で」）。
-//
-// 書く側からは 2026-09-04 に消した（`components/RecordForm.jsx`）。
-// **直す側にだけ残っていると、消したはずの欄が別の入口から生えてくる。**
-//
-// 読む側（`DISPLAY_FIELDS`）は4つのまま。これまでの記録に中身が
-// 入っており、**編集できないことと、見えないことは別**。
-// 消したのは入力欄であって、記録ではない。
-//
-// 保存では触っていない3つを**そのまま送り直す**（`handleSave`）。
-// 送らないとサーバーは空文字で上書きする（`main.py` の `/save` は
-// 4項目を毎回置き換える）。
-const EDIT_FIELDS = [
-  { field: 'created', label: 'やったこと', placeholder: 'この日やったこと' },
-]
-
 export default function LogDetail({ log, onDelete, onUpdate }) {
+  const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState({})
-  const [saving, setSaving] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -53,51 +42,6 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     }
   }
 
-  function handleEditStart() {
-    // **開くのは「やったこと」だけ。** 残り3つは触らずに持ち回る
-    setEditForm({ created: log.created || '' })
-    setEditing(true)
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    try {
-      // **id を送る**（2026-09-03）。消すのは 2026-09-02 に id へ移したが、
-      // **直す方は日付のままだった。**
-      //
-      // 日付だけで送ると、サーバーはその日の**最初の**記録を書き換える
-      // （`main.py` の `/save`）。1日に複数件置けるようにしてから、
-      // 夜の記録を直すと朝の記録が消える経路になっていた。
-      //
-      // ここは「書く」と違って**必ず既存を直す**ので `new` は送らない。
-      const res = await authFetch('/save', {
-        method: 'POST',
-        // **触っていない3つも送り直す**（2026-09-04）。
-        // `/save` は4項目を毎回置き換えるので、送らないと空になる。
-        // 入力欄は消したが、**入っているものは消さない。**
-        body: JSON.stringify({
-          enjoyable: log.enjoyable || '',
-          struggled: log.struggled || '',
-          next: log.next || '',
-          ...editForm,
-          id: log.id,
-          date: log.date,
-        }),
-      })
-      if (!res.ok) throw new Error('save failed')
-      const data = await res.json()
-      if (onUpdate) {
-        onUpdate({ ...log, ...editForm, ai_response: data.ai_response ?? log.ai_response })
-      }
-      setEditing(false)
-    } catch (e) {
-      // エラー時は編集状態を維持し、入力を捨てない
-      console.warn(`[Journal] ${log.date} の保存に失敗`, e)
-    } finally {
-      setSaving(false)
-    }
-  }
-
   // 写真は端末の中にだけ置く。サーバーには送らない（lib/photoStore.js）。
   // テキストの保存（/save）とは経路が別なので、片方が他方を消すことはない。
   async function handlePhotoSelect(photo, thumb) {
@@ -108,40 +52,6 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   async function handlePhotoRemove() {
     removePhoto(log.date)
     if (onUpdate) onUpdate({ ...log, photo_url: null, photo_thumb_url: null })
-  }
-
-  if (editing) {
-    return (
-      <View className="mt-3 gap-3 pb-1">
-        {EDIT_FIELDS.map(({ field, label, placeholder }) => (
-          <View key={field}>
-            <Text className="text-[10px] text-outline mb-1">{label}</Text>
-            <TextInput
-              value={editForm[field]}
-              onChangeText={(v) => setEditForm((f) => ({ ...f, [field]: v }))}
-              placeholder={placeholder}
-              placeholderTextColor="#8E8478"
-              multiline
-              textAlignVertical="top"
-              style={{ minHeight: 72 }}
-              className="bg-surface-low border border-border rounded px-3 py-2.5 font-body text-body text-on-surface"
-            />
-          </View>
-        ))}
-        <View className="flex-row justify-end items-center gap-4 pt-1">
-          <Pressable onPress={() => { setEditing(false); setEditForm({}) }}>
-            <Text className="text-aux text-outline">キャンセル</Text>
-          </Pressable>
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            className="border border-ai-ink/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
-          >
-            <Text className="text-aux text-primary">{saving ? '保存中...' : '保存する'}</Text>
-          </Pressable>
-        </View>
-      </View>
-    )
   }
 
   return (
@@ -186,7 +96,12 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
           </>
         ) : (
           <>
-            <Pressable onPress={handleEditStart}>
+            {/* **直すのも全画面**（2026-09-05・作者の指示）。
+                ここに欄を出すと、装飾も写真も無い**二等の書く場所**に
+                なる。書く場所を2つに分けない（`app/write.jsx`）。 */}
+            <Pressable
+              onPress={() => router.push({ pathname: '/write', params: { id: log.id } })}
+            >
               <Text className="text-aux text-outline">編集</Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>

@@ -20,6 +20,15 @@ export function exportEntries() {
   return []
 }
 
+export function loadAllById() {
+  return new Map()
+}
+
+// **口だけ合わせる。** 呼ぶ側が Web かどうかを見なくて済む
+export function loadFor() {
+  return { photo_url: null, photo_thumb_url: null }
+}
+
 export function load() {
   return { photo_url: null, photo_thumb_url: null }
 }

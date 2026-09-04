@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Dimensions, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -8,6 +8,7 @@ import { EditorToolbarBar, TOOLBAR_HEIGHT } from '../components/EditorToolbar'
 import { ZoomIn } from '../components/Motion'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
+import { loadLogs } from '../lib/logsCache'
 import { bodyRowsFor } from '../lib/keyboardMath'
 
 // 記録を書く全画面。**作者の判断**（2026-09-03）。
@@ -41,6 +42,33 @@ export default function Write() {
   // ここで `/api/question` を叩くと、開いた瞬間に問いの無い欄が出て、
   // あとから差し替わる
   const question = typeof params.question === 'string' ? params.question : ''
+
+  // **直す相手**（2026-09-05・作者の指示で「記録」タブの編集をここへ移した）。
+  //
+  // `id` だけを受け取り、中身は控えから引く（`lib/logsCache.js`）。
+  // 記録の本文を URL に載せない——長いし、書いたものが経路に残る。
+  //
+  // 引けるまでは紙を出さない。**白紙を一瞬見せてから中身を入れると、
+  // 消えたように見える。**
+  const wantedId = typeof params.id === 'string' ? params.id : ''
+  const [editing, setEditing] = useState(null)
+  const [looking, setLooking] = useState(Boolean(wantedId))
+
+  useEffect(() => {
+    if (!wantedId) return undefined
+    let cancelled = false
+    ;(async () => {
+      try {
+        const logs = await loadLogs()
+        if (!cancelled) setEditing(logs.find((l) => l.id === wantedId) || null)
+      } catch (e) {
+        console.warn('[書く] 直す記録を引けなかった', e)
+      } finally {
+        if (!cancelled) setLooking(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [wantedId])
 
   async function save() {
     if (saving) return
@@ -90,7 +118,7 @@ export default function Write() {
           className="bg-lantern-glow rounded-full px-5 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
         >
           <Text className="font-strong text-label-md text-on-lantern">
-            {saving ? '保存中...' : '記録する'}
+            {saving ? '保存中...' : editing ? '直す' : '記録する'}
           </Text>
         </Pressable>
       </View>
@@ -118,13 +146,18 @@ export default function Write() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <RecordForm
-          ref={formRef}
-          targetDate={targetDate}
-          question={question}
-          hideSaveButton
-          bodyRows={bodyRowsFor(Dimensions.get('window').height)}
-        />
+        {looking ? null : (
+          <RecordForm
+            ref={formRef}
+            // **相手が変わったら作り直す。** 中身は生えたときにしか読まない
+            key={editing?.id || 'new'}
+            targetDate={editing?.date || targetDate}
+            question={question}
+            editing={editing}
+            hideSaveButton
+            bodyRows={bodyRowsFor(Dimensions.get('window').height)}
+          />
+        )}
       </ScrollView>
 
       {/* 装飾の列。**この画面は根の列より上に出る**ので、ここにも置く */}

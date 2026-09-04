@@ -23,7 +23,7 @@
 // document は消されず、iOS のバックアップにも入る。
 
 import { Directory, File, Paths } from 'expo-file-system'
-import { PHOTO_DIR, buildNames, latestByDate, staleNames } from './photoPath'
+import { PHOTO_DIR, buildNames, latestByDate, latestById, parsePhotoName, staleNames } from './photoPath'
 
 export const PHOTOS_SUPPORTED = true
 
@@ -66,17 +66,44 @@ export function loadAll() {
  * `loadAll()` は画面に出すための URI を返すが、こちらは
  * **ZIP に入れる実体**が要るので、名前と一緒に返す。
  */
+/** 記録の id → { photo_url, photo_thumb_url }（2026-09-05） */
+export function loadAllById() {
+  const found = new Map()
+  for (const [id, entry] of latestById(names())) {
+    found.set(id, {
+      photo_url: uriOf(entry.photo),
+      photo_thumb_url: uriOf(entry.thumb) || uriOf(entry.photo),
+    })
+  }
+  return found
+}
+
+// 書き出しは日付でまとめる。**中身は全部入れる**ので、
+// 記録ごとのものも日付のものも一緒に出す
 export function exportEntries() {
   const out = []
-  for (const [date, entry] of latestByDate(names())) {
+  const all = names()
+  for (const [date, entry] of latestByDate(all)) {
     if (!entry.photo) continue
     out.push({ date, name: entry.photo, uri: uriOf(entry.photo) })
+  }
+  for (const [, entry] of latestById(all)) {
+    if (!entry.photo) continue
+    const parsed = parsePhotoName(entry.photo)
+    out.push({ date: parsed.date, name: entry.photo, uri: uriOf(entry.photo) })
   }
   return out
 }
 
+const NONE = { photo_url: null, photo_thumb_url: null }
+
 export function load(date) {
-  return loadAll().get(date) || { photo_url: null, photo_thumb_url: null }
+  return loadAll().get(date) || NONE
+}
+
+/** その記録の写真（2026-09-05・作者の指示で記録ごとに持つ） */
+export function loadFor(id) {
+  return (id && loadAllById().get(id)) || NONE
 }
 
 /**
@@ -85,21 +112,29 @@ export function load(date) {
  * 先に消してから書くと、途中で失敗したときに写真が無くなる。
  * 新しいものを置いてから古いものを消す順にしている。
  */
-export function save(date, photoUri, thumbUri) {
+export function save(date, photoUri, thumbUri, id = '') {
   const target = dir()
-  const { photo, thumb } = buildNames(date, Date.now())
+  const { photo, thumb } = buildNames(date, Date.now(), id)
 
   new File(photoUri).copy(new File(target, photo), { overwrite: true })
   new File(thumbUri).copy(new File(target, thumb), { overwrite: true })
 
   cleanup()
-  return load(date)
+  return id ? loadFor(id) : load(date)
 }
 
-export function remove(date) {
+/**
+ * 消す。**持ち主のものだけ。**（2026-09-05）
+ *
+ * 名前の前方一致で消していたので、`id` を足すと**その日の記録ぜんぶの
+ * 写真が消える**ようになっていた。名前を読み解いて持ち主を確かめる。
+ */
+export function remove(date, id = '') {
   const target = dir()
   for (const name of names()) {
-    if (!name.startsWith(`${date}__`)) continue
+    const parsed = parsePhotoName(name)
+    if (!parsed) continue
+    if (id ? parsed.id !== id : parsed.date !== date || parsed.id) continue
     try {
       new File(target, name).delete()
     } catch (e) {
@@ -129,7 +164,13 @@ function cleanup() {
  */
 export function attach(logs) {
   const found = loadAll()
-  const merged = logs.map((log) => ({ ...log, ...(found.get(log.date) || {}) }))
+  const byId = loadAllById()
+  // **記録に紐づいたものが先**（2026-09-05）。無ければ日付のもの——
+  // 付け替えていない古い写真は、これまでどおりその日の記録に付く
+  const merged = logs.map((log) => ({
+    ...log,
+    ...((log.id && byId.get(log.id)) || found.get(log.date) || {}),
+  }))
 
   const known = new Set(logs.map((l) => l.date))
   const photoOnly = [...found.entries()]

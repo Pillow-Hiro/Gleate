@@ -63,7 +63,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
 | `account.jsx` | `/account` | **マイページ**（2026-09-04 に「アカウント」から改称）。設定から1枚めくる。灯りの色・紙の色・**削除はここにある** |
 | `plan.jsx` | `/plan` | プラン。設定の「現在のプラン」から1枚めくる。**購入と復元はここにある** |
-| `write.jsx` | `/write` | **記録を書く全画面**（上から被さる）。「記録する」は上の帯。保存すると閉じ、灯りは戻った先に出る |
+| `write.jsx` | `/write` | **記録を書く全画面**（上から被さる）。`?id=` で直す、`?date=` で過去の日。「記録する」は上の帯。保存すると閉じ、灯りは戻った先に出る |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
 ### Home が呼ぶもの
@@ -105,7 +105,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱**（行が横スクロール。方向の裁定は OS に任せる） |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
-| `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤。**直せるのは「やったこと」だけ**（読む側は4つとも出る） |
+| `LogDetail.jsx` | LogItem | 記録の詳細と削除。削除は赤。**直すのは `/write?id=`**（全画面。書く場所を2つに分けない）。読む側は4項目とも出る |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
 | `EditorToolbar.jsx` | _layout / RecordForm | **キーボードに貼り付く装飾の列**（太字・斜体・箇条書き・写真）。`InputAccessoryView` は使わない |
