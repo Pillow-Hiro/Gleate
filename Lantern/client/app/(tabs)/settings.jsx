@@ -11,8 +11,8 @@ import { forgetAllLights } from '../../lib/lightBuffer'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
-import { ACCENTS } from '../../lib/accent'
-import { PAPERS } from '../../lib/paper'
+import { ACCENTS, accentSwatch } from '../../lib/accent'
+import { PAPERS, paperSwatch } from '../../lib/paper'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
@@ -141,7 +141,7 @@ export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const router = useRouter()
-  const { mode, setMode, accent, setAccent, paper, setPaper } = useThemeContext()
+  const { mode, setMode, isDark, accent, setAccent, paper, setPaper } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -356,7 +356,7 @@ export default function Settings() {
               key={a.id}
               what="灯りの色"
               label={a.label}
-              swatch={a.swatch}
+              swatch={accentSwatch(a.id, isDark)}
               selected={accent === a.id}
               isLast={i === ACCENTS.length - 1}
               onPress={() => setAccent(a.id)}
@@ -374,7 +374,7 @@ export default function Settings() {
               key={p.id}
               what="紙の色"
               label={p.label}
-              swatch={p.swatch}
+              swatch={paperSwatch(p.id, isDark)}
               selected={paper === p.id}
               isLast={i === PAPERS.length - 1}
               onPress={() => setPaper(p.id)}

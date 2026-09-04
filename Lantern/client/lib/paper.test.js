@@ -139,3 +139,42 @@ describe('当てる値', () => {
     expect(paperVars('nope', false)).toEqual(paperVars('white', false))
   })
 })
+
+// **互いに見分けられること**（2026-09-04・作者から「白と灰白の違いが
+// 分からない」「ダークモードになったときに分かりにくい」）。
+//
+// どちらもそのとおりだった。最初に置いた4つは、暗い側の値が
+// 互いに 2〜5 しか違わなかった。**読みやすさの検査は全部通っていた**
+// ——見分けられるかは、誰も見ていなかった。
+//
+// RGB の距離は粗い物差しだが、**同じ色を2つ並べていないか**を見るには
+// 足りる。落とした「灰白」は白との距離が 8.7 だった。
+describe('見分けられる', () => {
+  function distance(a, b) {
+    const [x, y] = [a.split(' ').map(Number), b.split(' ').map(Number)]
+    return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2])
+  }
+
+  const pairs = PAPERS.flatMap((a, i) =>
+    PAPERS.slice(i + 1).map((b) => [`${a.id} と ${b.id}`, a, b]),
+  )
+
+  it.each(pairs)('%s は地の色が違う', (_name, a, b) => {
+    for (const scheme of ['light', 'dark']) {
+      const d = distance(a[scheme].ground, b[scheme].ground)
+      expect(d, `${a.id}/${b.id}.${scheme} = ${d.toFixed(1)}`).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  // **暗い側でこそ振り幅が要る。** 字が明るい側にあるので地を深くしても
+  // 読みやすさが減らない。明るい側と同じ加減で振ると差が見えない
+  it.each(pairs)('%s は暗い側でも十分に違う', (_name, a, b) => {
+    const d = distance(a.dark.ground, b.dark.ground)
+    expect(d, `${a.id}/${b.id} = ${d.toFixed(1)}`).toBeGreaterThanOrEqual(12)
+  })
+
+  it('灰白は落とした', () => {
+    expect(PAPERS.some((p) => p.id === 'grey')).toBe(false)
+  })
+})
+

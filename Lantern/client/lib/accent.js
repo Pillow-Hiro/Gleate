@@ -41,8 +41,6 @@ export const ACCENTS = [
   {
     id: 'candle',
     label: '蝋燭',
-    // 見本に出す1色。**`glow` の明るい側**を使う
-    swatch: '251 176 59',
     light: {
       glow: '251 176 59',
       onGlow: '29 29 31',
@@ -71,7 +69,6 @@ export const ACCENTS = [
   {
     id: 'moon',
     label: '月',
-    swatch: '124 179 232',
     light: {
       glow: '124 179 232',
       onGlow: '29 29 31',
@@ -100,7 +97,6 @@ export const ACCENTS = [
   {
     id: 'fire',
     label: '焚火',
-    swatch: '242 118 75',
     light: {
       glow: '242 118 75',
       onGlow: '29 29 31',
@@ -129,7 +125,6 @@ export const ACCENTS = [
   {
     id: 'firefly',
     label: '蛍',
-    swatch: '163 198 68',
     light: {
       glow: '163 198 68',
       onGlow: '29 29 31',
@@ -158,7 +153,6 @@ export const ACCENTS = [
   {
     id: 'ash',
     label: '灰',
-    swatch: '207 202 194',
     light: {
       glow: '207 202 194',
       onGlow: '29 29 31',
@@ -196,6 +190,17 @@ export function normalizeAccent(id) {
 /** 見本や名前を引く。**必ず何かを返す** */
 export function findAccent(id) {
   return ACCENTS.find((a) => a.id === normalizeAccent(id)) || ACCENTS[0]
+}
+
+/**
+ * 設定に出す見本の色。**いま見ている側を出す**（2026-09-04）。
+ *
+ * 明るい側で固定していたら、暗いテーマでは**実際より淡い丸**が並んだ。
+ * 選ぶ前にどうなるかを見せるための丸なので、いまの明暗に合わせる。
+ */
+export function accentSwatch(id, isDark) {
+  const accent = findAccent(id)
+  return (isDark ? accent.dark : accent.light).glow
 }
 
 // 役目 → `global.css` の変数名。**1つの役目が複数の名前を持つ。**
