@@ -105,7 +105,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱**（行が横スクロール。方向の裁定は OS に任せる） |
 | `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
-| `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤 |
+| `LogDetail.jsx` | LogItem | 記録の詳細・編集・削除。削除は赤。**直せるのは「やったこと」だけ**（読む側は4つとも出る） |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
 | `EditorToolbar.jsx` | _layout / RecordForm | **キーボードに貼り付く装飾の列**（太字・斜体・箇条書き・写真）。`InputAccessoryView` は使わない |
@@ -117,7 +117,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `PhotoLightbox.jsx` | PhotoPicker | 写真の拡大 |
 | `PhotoPicker.jsx` | Journal / LogDetail / RecordForm | ネイティブ。1記録1枚。`compact` で道具の列に入る |
 | `PhotoPicker.web.jsx` | 同上 | **何も描かない。** 分岐ではなくファイルを分けて、expo-image-picker を Web バンドルに乗せない |
-| `RecordForm.jsx` | write / 記録のモーダル | 記録フォーム。**欄は「やったこと」ひとつだけ**（2026-09-04 に残り3つを消した） |
+| `RecordForm.jsx` | write | 記録フォーム。**欄は「やったこと」ひとつだけ**（2026-09-04 に残り3つを消した） |
 | `ReviewSection.jsx` | Journal / TimelineSection | 観察と問いの組を出す |
 | `RichText.jsx` | LogDetail / LogSnapshot | 記録を装飾つきで出す。**出せるのは3つだけ** |
 | `RichEditor.jsx` | WebEditor.web | Web 用の入力欄。記号は消さず薄くする |

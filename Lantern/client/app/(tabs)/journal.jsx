@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Dimensions, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -20,12 +20,8 @@ import WriteButton from '../../components/WriteButton'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
 import KeywordSection from '../../components/KeywordSection'
-import RecordForm from '../../components/RecordForm'
-import { TOOLBAR_HEIGHT } from '../../components/EditorToolbar'
 import { useKeyboardHeight } from '../../lib/keyboard'
-import { sheetMaxHeight } from '../../lib/keyboardMath'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
-import { EditorToolbarBar } from '../../components/EditorToolbar'
 
 // 当月。`new Date()` から作る。UTC に寄る `toISOString()` は使わない
 function thisMonth() {
@@ -34,6 +30,7 @@ function thisMonth() {
 }
 
 export default function Journal() {
+  const router = useRouter()
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   // 記録の窓がキーボードに隠れないよう、出ている高さを測る
@@ -47,7 +44,6 @@ export default function Journal() {
   // 絞り込み。'all' / 'favorite' / '2026' のような年
   const [filter, setFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('record')
-  const [modalDate, setModalDate] = useState(null)
   // 一覧を月で区切る。'all' か '2026-06' のような月。
   // **既定は当月**（2026-08-14）。全部の月を最初から縦に並べない
   const [month, setMonth] = useState(thisMonth())
@@ -164,16 +160,21 @@ export default function Journal() {
   // 装飾も写真も問いも揃っている。
   // ここで小さいモーダルを開くと、**同じことをする場所が2つ**になる。
   //
-  // 過去の日は「書く」から遡れないので、モーダルのままにする。
+  // **過去の日も全画面で書く**（2026-09-04・作者の指示
+  // 「記録タブの窓を全画面表示にしてください」）。
+  //
+  // それまでは下から出る小さい紙（`Modal`）だった。書く場所が2つに
+  // 分かれていて、**片方だけ古くなる。**実際、全画面には有る
+  // カードも灯りも手がかりも、窓には無かった。
+  // 装飾の列も窓の中にもう1つ抱えていた。
+  //
+  // 全画面（`app/write.jsx`）は `?date=` を受け取るので、そのまま渡せる。
+  // 書き終えると閉じてここへ戻り、`useRefreshOnFocus` が取り直す。
   function handleDateClick(date) {
     setSelectedDate(date)
-    // 記録のある日は下に開くだけ。無い過去の日にだけ、書く窓を出す
+    // 記録のある日は下に開くだけ。無い過去の日にだけ、書く場所を出す
     if (logs.some((l) => l.date === date)) return
-    if (date !== todayStr()) setModalDate(date)
-  }
-
-  function closeModal() {
-    setModalDate(null)
+    if (date !== todayStr()) router.push({ pathname: '/write', params: { date } })
   }
 
   // **その日の全部を出す**（2026-09-03）。
@@ -219,13 +220,18 @@ export default function Journal() {
     <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
       <ScreenFade>
       <AppHeader />
-      {/* 一覧から記録を開いて直すときも欄が出る（`LogDetail`）。
-          **窓と同じ扱いにする**（2026-08-17） */}
+      {/* 一覧から記録を開いて直すときと、検索のときに欄が出る。
+          **測った高さを足す**（2026-09-04）。
+          `automaticallyAdjustKeyboardInsets` はこの repo では
+          当てにできない（2026-08-17。`lib/keyboard.js` の由来）。
+
+          装飾の列はもう出ない。書く場所を全画面へ移したので、
+          この画面に列へ登録する欄が無くなった。 */}
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? TOOLBAR_HEIGHT : 0),
+            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? keyboardHeight + 120 : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
@@ -388,82 +394,9 @@ export default function Journal() {
 
       {/* 右下の書くボタン。**ホーム・記録・書くの3つに置く**（作者の指示）。
           ここは問いを取っていないので渡さない。全画面では決まり文句に
-          落ちる（`components/WriteButton.jsx`）。
-          過去の日を書く窓が開いている間は出さない——行き先が2つになる */}
-      {modalDate === null ? <WriteButton /> : null}
+          落ちる（`components/WriteButton.jsx`） */}
+      <WriteButton />
 
-      {/* 記録モーダル。
-          **中身は「書く」と同じ `RecordForm`**（2026-08-14）。
-          それまでは4欄を並べた別物で、「書く」には有る
-          「もっと詳しく書く」の畳みも装飾のボタンも無かった。
-          **同じことを2か所で書いていたので、片方だけ古くなっていた。** */}
-      <Modal
-        visible={modalDate !== null}
-        animationType="slide"
-        transparent
-        onRequestClose={closeModal}
-      >
-        {/* **紙をキーボードの上へ逃がす**（2026-08-17）。
-            下に貼り付いた紙なので、避けが無いと**丸ごと隠れる。**
-            「よかったこと」「困ったこと」どころか、欄が1つも見えなかった。
-
-            `automaticallyAdjustKeyboardInsets` は中の一覧を送るだけで、
-            紙そのものは動かない。ここは外側を持ち上げる。 */}
-        <Pressable
-          className="flex-1 bg-black/50 justify-end"
-          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + TOOLBAR_HEIGHT : 0 }}
-          onPress={closeModal}
-        >
-          <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
-            {/* つまみ。どこを掴めば閉じるかの目印 */}
-            <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="font-strong text-body-md text-on-surface">
-                {modalDate ? dateDisplayJa(modalDate) : ''}
-              </Text>
-              <Pressable onPress={closeModal} accessibilityLabel="閉じる" className="p-1 min-h-touch justify-center">
-                <Text className="text-outline text-body-md">✕</Text>
-              </Pressable>
-            </View>
-
-            {/* **上まで伸ばす**（2026-08-14）。
-                `max-h-96`（384px）だと、詳しく書く欄を開いた時点で
-                中だけが小さくスクロールし、下半分が余っていた。
-                画面の高さから割り出す。 */}
-            {/* キーボードが出ると使える縦が減る。**7割のままだと
-                紙が画面からはみ出す**（`lib/keyboardMath.js`）。 */}
-            <ScrollView
-              style={{
-                maxHeight: sheetMaxHeight({
-                  windowHeight: Dimensions.get('window').height,
-                  keyboardHeight,
-                  toolbarHeight: TOOLBAR_HEIGHT,
-                }),
-              }}
-              automaticallyAdjustKeyboardInsets
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-              {modalDate ? (
-                <RecordForm
-                  key={modalDate}
-                  targetDate={modalDate}
-                  onSaved={() => {
-                    setSelectedDate(modalDate)
-                    setTick((t) => t + 1)
-                    closeModal()
-                  }}
-                />
-              ) : null}
-            </ScrollView>
-          </Pressable>
-
-          {/* 装飾の列。**Modal の中にも置く。**
-              RN の Modal は画面の一番外より上に出るので、
-              根元（`_layout.jsx`）に置いた列はここでは隠れる */}
-          <EditorToolbarBar />
-        </Pressable>
-      </Modal>
       </ScreenFade>
     </SafeAreaView>
   )

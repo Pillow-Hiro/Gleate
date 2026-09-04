@@ -14,11 +14,21 @@ const DISPLAY_FIELDS = [
   { key: 'next', label: '次にやること' },
 ]
 
+// **直せるのは「やったこと」だけ**（2026-09-04・作者の指示
+// 「3つの入力フィールドに関しては削除で」）。
+//
+// 書く側からは 2026-09-04 に消した（`components/RecordForm.jsx`）。
+// **直す側にだけ残っていると、消したはずの欄が別の入口から生えてくる。**
+//
+// 読む側（`DISPLAY_FIELDS`）は4つのまま。これまでの記録に中身が
+// 入っており、**編集できないことと、見えないことは別**。
+// 消したのは入力欄であって、記録ではない。
+//
+// 保存では触っていない3つを**そのまま送り直す**（`handleSave`）。
+// 送らないとサーバーは空文字で上書きする（`main.py` の `/save` は
+// 4項目を毎回置き換える）。
 const EDIT_FIELDS = [
-  { field: 'created', label: 'やったこと', placeholder: '今日やったこと' },
-  { field: 'enjoyable', label: 'よかったこと', placeholder: 'よかったこと' },
-  { field: 'struggled', label: '困ったこと', placeholder: '詰まったこと' },
-  { field: 'next', label: '次にやること', placeholder: '（任意）' },
+  { field: 'created', label: 'やったこと', placeholder: 'この日やったこと' },
 ]
 
 export default function LogDetail({ log, onDelete, onUpdate }) {
@@ -44,12 +54,8 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   }
 
   function handleEditStart() {
-    setEditForm({
-      created: log.created || '',
-      enjoyable: log.enjoyable || '',
-      struggled: log.struggled || '',
-      next: log.next || '',
-    })
+    // **開くのは「やったこと」だけ。** 残り3つは触らずに持ち回る
+    setEditForm({ created: log.created || '' })
     setEditing(true)
   }
 
@@ -66,7 +72,17 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       // ここは「書く」と違って**必ず既存を直す**ので `new` は送らない。
       const res = await authFetch('/save', {
         method: 'POST',
-        body: JSON.stringify({ id: log.id, date: log.date, ...editForm }),
+        // **触っていない3つも送り直す**（2026-09-04）。
+        // `/save` は4項目を毎回置き換えるので、送らないと空になる。
+        // 入力欄は消したが、**入っているものは消さない。**
+        body: JSON.stringify({
+          enjoyable: log.enjoyable || '',
+          struggled: log.struggled || '',
+          next: log.next || '',
+          ...editForm,
+          id: log.id,
+          date: log.date,
+        }),
       })
       if (!res.ok) throw new Error('save failed')
       const data = await res.json()
