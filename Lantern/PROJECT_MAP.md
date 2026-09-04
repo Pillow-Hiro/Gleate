@@ -198,8 +198,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `exportLogs.js` ＋ `exportLogs.web.js` | 書き出し。**ZIP に本文・写真・添付・Markdown をまとめる**（Web は写真を持たない） | — |
 | `exportMarkdown.js` | 記録を Markdown にする。**空の欄で見出しを作らない** | `exportMarkdown.test.js` |
 | `keyboard.js` | キーボードの高さを聞く（`react-native` を読む） | — |
-| `refreshOnFocus.js` | ホーム / 記録 / 分析 | **戻ってきたら取り直す**。タブは裏で生きたままなので、載せたときの取得は二度と走らない |
-| `logsCache.js` | ホーム / 書く / 記録 / 分析 / 設定 | **記録の取り方を1か所に。**控えを先に出し、裏で取り直す。5画面が別々に全記録を取っていたのをまとめた |
+| `refreshOnFocus.js` | ホーム / 書く / 記録 / 分析 | **戻ってきたら取り直す**。タブは裏で生きたままなので、載せたときの取得は二度と走らない。**引き下げての取り直し**（`usePullToRefresh`）もここ |
+| `logsCache.js` | ホーム / 書く / 記録 / 分析 / 設定 | **記録の取り方を1か所に。**控えを先に出し、裏で取り直す。5画面が別々に全記録を取っていたのをまとめた。手で引いたときは**全件**（`refreshLogs`） |
 | `lightBuffer.js` | 書く | **灯りの受け皿。画面より長生きする。**保存でフォームが作り直されるため、待ちも結果も React の外に置く |
 | `trialText.js` | Paywall | **無料お試しの一文**。ストアの `introPrice` から組む。値引きは「無料」と言わない |
 | `keyboardMath.js` | 下に空ける高さと窓の高さの計算。**安全域を二重に数えない** | `keyboardMath.test.js` |
