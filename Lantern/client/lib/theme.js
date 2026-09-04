@@ -11,6 +11,7 @@ import {
   toggledMode,
 } from './themeMode'
 import { DEFAULT_ACCENT, normalizeAccent } from './accent'
+import { DEFAULT_PAPER, normalizePaper } from './paper'
 
 // 外観。**3つから選ぶ**（2026-08-17 に2択から変更）。
 //
@@ -27,13 +28,18 @@ const STORAGE_KEY = 'lantern-theme'
 // 灯りの色。**外観とは別に覚える**（2026-09-04）。
 // 明暗と色は別の選択で、片方を変えたらもう片方も戻る、では困る
 const ACCENT_KEY = 'lantern-accent'
+// 紙の色。**灯りとも外観とも別に覚える**（2026-09-04）。
+// 3つは別々の選択で、1つ変えたら他が戻る、では困る
+const PAPER_KEY = 'lantern-paper'
 
 const ThemeContext = createContext({
   mode: DEFAULT_MODE,
   isDark: false,
   accent: DEFAULT_ACCENT,
+  paper: DEFAULT_PAPER,
   setMode: () => {},
   setAccent: () => {},
+  setPaper: () => {},
   toggleTheme: () => {},
 })
 
@@ -45,6 +51,8 @@ export function ThemeProvider({ children }) {
   const [mode, setModeState] = useState(DEFAULT_MODE)
   // 灯りの色（`lib/accent.js`）。当てるのは根（`app/_layout.jsx`）
   const [accent, setAccentState] = useState(DEFAULT_ACCENT)
+  // 紙の色（`lib/paper.js`）。同じく根で当てる
+  const [paper, setPaperState] = useState(DEFAULT_PAPER)
   // 端末の設定。`system` のときだけ見る。**変われば描き直される**ので、
   // アプリを開いたまま夜モードにしても付いていく
   const deviceScheme = useColorScheme()
@@ -82,6 +90,19 @@ export function ThemeProvider({ children }) {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const stored = await AsyncStorage.getItem(PAPER_KEY)
+        if (!cancelled) setPaperState(normalizePaper(stored))
+      } catch (e) {
+        console.warn('[Theme] 紙の色の読み込みに失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   // NativeWind への反映は1か所にまとめる。**読み込み前でも動かす** —
   // 最初の一瞬だけ端末の設定に従い、読み終えたら選ばれた方へ寄る。
   // ここを待たせると、JS で塗る色（暗い）と `dark:` クラス（明るい）が
@@ -106,14 +127,22 @@ export function ThemeProvider({ children }) {
     })
   }, [])
 
+  const setPaper = useCallback((next) => {
+    const safe = normalizePaper(next)
+    setPaperState(safe)
+    AsyncStorage.setItem(PAPER_KEY, safe).catch((e) => {
+      console.warn('[Theme] 紙の色の保存に失敗', e)
+    })
+  }, [])
+
   // Web のサイドバーにある1押しの切り替え。**いま見えているものの逆へ**
   const toggleTheme = useCallback(() => {
     setMode(toggledMode(isDark))
   }, [isDark, setMode])
 
   const value = useMemo(
-    () => ({ mode, isDark, accent, setMode, setAccent, toggleTheme }),
-    [mode, isDark, accent, setMode, setAccent, toggleTheme]
+    () => ({ mode, isDark, accent, paper, setMode, setAccent, setPaper, toggleTheme }),
+    [mode, isDark, accent, paper, setMode, setAccent, setPaper, toggleTheme]
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

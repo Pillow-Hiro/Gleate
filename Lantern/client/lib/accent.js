@@ -41,7 +41,6 @@ export const ACCENTS = [
   {
     id: 'candle',
     label: '蝋燭',
-    note: '琥珀。はじめからの色',
     // 見本に出す1色。**`glow` の明るい側**を使う
     swatch: '251 176 59',
     light: {
@@ -72,7 +71,6 @@ export const ACCENTS = [
   {
     id: 'moon',
     label: '月',
-    note: '青白い光',
     swatch: '124 179 232',
     light: {
       glow: '124 179 232',
@@ -102,7 +100,6 @@ export const ACCENTS = [
   {
     id: 'fire',
     label: '焚火',
-    note: '朱',
     swatch: '242 118 75',
     light: {
       glow: '242 118 75',
@@ -132,7 +129,6 @@ export const ACCENTS = [
   {
     id: 'firefly',
     label: '蛍',
-    note: '萌黄',
     swatch: '163 198 68',
     light: {
       glow: '163 198 68',
@@ -162,7 +158,6 @@ export const ACCENTS = [
   {
     id: 'ash',
     label: '灰',
-    note: '色を持たない',
     swatch: '207 202 194',
     light: {
       glow: '207 202 194',

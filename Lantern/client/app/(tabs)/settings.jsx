@@ -12,6 +12,7 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
 import { ACCENTS } from '../../lib/accent'
+import { PAPERS } from '../../lib/paper'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
@@ -85,19 +86,22 @@ function ChoiceRow({ label, selected, isLast, onPress }) {
   )
 }
 
-// 灯りの色を選ぶ行。**見本を左に置く**（2026-09-04）。
+// 色を選ぶ行。**見本を左に置く**（2026-09-04）。
 //
-// 名前だけでは、選ぶ前にどんな色か分からない。「蝋燭」「月」「焚火」は
+// 名前だけでは、選ぶ前にどんな色か分からない。「蝋燭」「生成り」は
 // 手がかりにはなるが、**画面がどう変わるかは色を見ないと分からない。**
 //
+// **説明文は置かない**（作者の指示）。見本と名前で足りている。
+//
 // 見本は丸。四角だと小さな面に見えて、地の色と競う。
-function AccentRow({ accent, selected, isLast, onPress }) {
+// 紙の見本は白に近いので、輪郭を1本足さないと地に沈む。
+function SwatchRow({ label, swatch, selected, isLast, onPress, what }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`灯りの色を${accent.label}にする`}
+      accessibilityLabel={`${what}を${label}にする`}
       className="active:opacity-70"
     >
       <View
@@ -106,15 +110,16 @@ function AccentRow({ accent, selected, isLast, onPress }) {
         }`}
       >
         <View
-          style={{ backgroundColor: `rgb(${accent.swatch})`, width: 22, height: 22 }}
-          className="rounded-full"
+          style={{ backgroundColor: `rgb(${swatch})`, width: 22, height: 22 }}
+          className="rounded-full border border-outline-variant"
         />
         <Text
-          className={`text-body-md ${selected ? 'font-strong text-primary' : 'text-on-surface'}`}
+          className={`flex-1 text-body-md ${
+            selected ? 'font-strong text-primary' : 'text-on-surface'
+          }`}
         >
-          {accent.label}
+          {label}
         </Text>
-        <Text className="text-label-md text-outline flex-1">{accent.note}</Text>
         {selected ? <Text className="text-body-md text-primary">✓</Text> : null}
       </View>
     </Pressable>
@@ -136,7 +141,7 @@ export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const router = useRouter()
-  const { mode, setMode, accent, setAccent } = useThemeContext()
+  const { mode, setMode, accent, setAccent, paper, setPaper } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -347,12 +352,32 @@ export default function Settings() {
             既定の「蝋燭」は、いままでの琥珀そのもの（`lib/accent.js`）。 */}
         <Group title="灯りの色">
           {ACCENTS.map((a, i) => (
-            <AccentRow
+            <SwatchRow
               key={a.id}
-              accent={a}
+              what="灯りの色"
+              label={a.label}
+              swatch={a.swatch}
               selected={accent === a.id}
               isLast={i === ACCENTS.length - 1}
               onPress={() => setAccent(a.id)}
+            />
+          ))}
+        </Group>
+
+        {/* **紙の色**（2026-09-04・作者の指示「紙の色も白以外を候補に」）。
+            地は6段ある（`lib/paper.js`）。1段だけ替えると段差が壊れるので
+            梯子ごと持ち替える。**カードは白に寄せたまま**——
+            Lantern の言葉がカードの中に敷かれるので、両方暖色にすると溶ける */}
+        <Group title="紙の色">
+          {PAPERS.map((p, i) => (
+            <SwatchRow
+              key={p.id}
+              what="紙の色"
+              label={p.label}
+              swatch={p.swatch}
+              selected={paper === p.id}
+              isLast={i === PAPERS.length - 1}
+              onPress={() => setPaper(p.id)}
             />
           ))}
         </Group>

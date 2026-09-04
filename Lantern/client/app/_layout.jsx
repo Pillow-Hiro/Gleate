@@ -27,6 +27,7 @@ import { watchRecoveryLinks } from '../lib/recoverySession'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 import { vars } from 'nativewind'
 import { accentVars } from '../lib/accent'
+import { paperVars } from '../lib/paper'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
 //
@@ -288,9 +289,12 @@ function RootNavigator() {
 // `flex-1` を落とさないこと。**この `View` が縦に潰れると
 // 画面が丸ごと消える。**
 function AccentVars({ children }) {
-  const { accent, isDark } = useThemeContext()
+  const { accent, paper, isDark } = useThemeContext()
+  // 紙が先、灯りが後。**重なる名前は無い**が、順を決めておくと
+  // 後から片方に足したときに、どちらが勝つかが読んで分かる
+  const style = vars({ ...paperVars(paper, isDark), ...accentVars(accent, isDark) })
   return (
-    <View className="flex-1" style={vars(accentVars(accent, isDark))}>
+    <View className="flex-1" style={style}>
       {children}
     </View>
   )
