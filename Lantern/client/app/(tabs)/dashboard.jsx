@@ -8,6 +8,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { loadLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { calcStreak, countDays } from '../../lib/date'
+import WordDrift from '../../components/WordDrift'
 import AppHeader from '../../components/AppHeader'
 import OverviewPanel from '../../components/OverviewPanel'
 import YouTubePanel from '../../components/YouTubePanel'
@@ -133,6 +134,12 @@ export default function Dashboard() {
           <Stat label="記録した日" value={countDays(logs)} unit="日" />
           <Stat label="続けて記録した日" value={calcStreak(logs)} unit="日" />
         </View>
+
+        {/* **言葉の移り変わり**（2026-09-05・作者の選択）。
+            数字の下、外の世界の話より上。**ここが記録そのものを
+            見ている唯一の場所**で、連携していない人にも出る。
+            AI も有料の枠も使わない（`lib/wordDrift.js`）。 */}
+        <WordDrift logs={logs} />
 
         {/* 外の世界に届いた形跡。
             **フォロワー数は最も外部評価に近い指標なので上に置かない。** */}

@@ -131,6 +131,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
+| `WordDrift.jsx` | 分析 | **言葉の移り変わり。**今月から出てきた語／先月まで出ていた語。AI も有料の枠も使わない |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |
@@ -173,6 +174,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
+| `wordDrift.js` | **語を数えて月で引き算する。**形態素解析は入れず、漢字とカタカナの連なりを拾う | `wordDrift.test.js` |
 | `accent.js` | **灯りの色**。5つの束（蝋燭・月・焚火・蛍・灰）を明暗ともに持つ。当てるのは `app/_layout.jsx` の `vars()` | `accent.test.js` |
 | `paper.js` | **紙の色**。4つの梯子（白・生成り・象牙・月白）×6段。カードは白に寄せたまま。**暗い側は振り幅を広く取る** | `paper.test.js` |
 | `theme.js` | 外観と灯りの色の保持、NativeWind への反映（`react-native` を読む） | — |
