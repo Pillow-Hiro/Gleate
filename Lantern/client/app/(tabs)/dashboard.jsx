@@ -7,7 +7,7 @@ import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { loadLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
-import { calcStreak } from '../../lib/date'
+import { calcStreak, countDays } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import OverviewPanel from '../../components/OverviewPanel'
 import YouTubePanel from '../../components/YouTubePanel'
@@ -125,7 +125,12 @@ export default function Dashboard() {
             現在進行の言い方は「まだ続いている＝切らすな」と読める。
             起きた事実として過去形で置く。数字は同じ。 */}
         <View className="flex-row gap-4">
-          <Stat label="記録した日" value={logs.length} unit="日" />
+          {/* **日数で数える**（2026-09-05）。`logs.length` は件数で、
+              1日に複数件置けるようにした 2026-09-02 から日数と合わない。
+              「記録した日 12日」と出ていたのが、実は12**件**だった。
+              記録タブの「N日間の記録」は 2026-09-03 に直したが、
+              **ここだけ残っていた**（`lib/date.js` の `countDays`） */}
+          <Stat label="記録した日" value={countDays(logs)} unit="日" />
           <Stat label="続けて記録した日" value={calcStreak(logs)} unit="日" />
         </View>
 
