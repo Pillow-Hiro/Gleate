@@ -233,10 +233,14 @@ const RecordForm = forwardRef(function RecordForm(
     pickRef.current?.()
   }
 
-  // 添えたファイル。**端末の中だけ**（`lib/fileStore.js`）
-  const [files, setFiles] = useState(() => listFiles(targetDate))
+  // 添えたファイル。**端末の中だけ**（`lib/fileStore.js`）。
+  //
+  // **記録ごとに持つ**（2026-09-05・作者の指示）。写真と同じで、
+  // 新しく書くときはまだ id が無いので**預かっておき、残せた時点で置く。**
+  const [files, setFiles] = useState(() => (editing?.id ? listFiles('', editing.id) : []))
+  const [pendingFiles, setPendingFiles] = useState([])
   function refreshFiles() {
-    setFiles(listFiles(targetDate))
+    if (editing?.id) setFiles(listFiles('', editing.id))
   }
 
   async function pickFile() {
@@ -244,7 +248,16 @@ const RecordForm = forwardRef(function RecordForm(
       const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
       if (res.canceled) return
       for (const asset of res.assets ?? []) {
-        saveFile(targetDate, asset.uri, asset.name || 'file')
+        const name = asset.name || 'file'
+        if (editing?.id) {
+          saveFile(targetDate, asset.uri, name, editing.id)
+        } else {
+          // まだ id が無い。**残せたときに置く**（`handleSave`）
+          setPendingFiles((prev) => [
+            ...prev,
+            { uri: asset.uri, name, size: asset.size ?? 0, pending: true },
+          ])
+        }
       }
       refreshFiles()
     } catch (e) {
@@ -320,6 +333,16 @@ const RecordForm = forwardRef(function RecordForm(
         } catch (e) {
           console.warn('[Photo] 保存に失敗', e)
         }
+      }
+      if (pendingFiles.length && data.id) {
+        for (const f of pendingFiles) {
+          try {
+            saveFile(targetDate, f.uri, f.name, data.id)
+          } catch (e) {
+            console.warn('[File] 保存に失敗', e)
+          }
+        }
+        setPendingFiles([])
       }
 
       // **控えが古くなった。**これを言わないと、記録タブへ移っても
@@ -407,8 +430,16 @@ const RecordForm = forwardRef(function RecordForm(
         }
       />
 
-      {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ） */}
-      <FileList files={files} onChange={refreshFiles} />
+      {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ）。
+          まだ置いていないものは、消し方をこちらが持つ（`FileList`） */}
+      <FileList
+        files={[...files, ...pendingFiles]}
+        onChange={refreshFiles}
+        onRemove={(file) => {
+          if (!file.pending) return
+          setPendingFiles((prev) => prev.filter((f) => f.uri !== file.uri))
+        }}
+      />
 
       {/* 選んだ写真の見た目。**選ぶボタンはキーボードの上にある** */}
       <PhotoPicker

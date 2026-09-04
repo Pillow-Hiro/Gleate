@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import * as DocumentPicker from 'expo-document-picker'
 import { useRouter } from 'expo-router'
 import { Pressable, View } from 'react-native'
 import Text from './Text'
@@ -6,6 +7,8 @@ import { authFetch } from '../lib/supabase'
 import RichText from './RichText'
 import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
+import FileList from './FileList'
+import { list as listFiles, save as saveFile } from '../lib/fileStore'
 
 // 記録の1件を読む。**直すのはここではない**（2026-09-05・作者の指示）。
 //
@@ -26,6 +29,25 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [files, setFiles] = useState(() => (log.id ? listFiles('', log.id) : listFiles(log.date)))
+
+  function refreshFiles() {
+    setFiles(log.id ? listFiles('', log.id) : listFiles(log.date))
+  }
+
+  async function pickFile() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
+      if (res.canceled) return
+      for (const asset of res.assets ?? []) {
+        saveFile(log.date, asset.uri, asset.name || 'file', log.id || '')
+      }
+      refreshFiles()
+    } catch (e) {
+      // 添えられなくても記録は残っている
+      console.warn('[File] 追加に失敗', e)
+    }
+  }
 
   async function handleDelete() {
     setDeleting(true)
@@ -44,13 +66,15 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
 
   // 写真は端末の中にだけ置く。サーバーには送らない（lib/photoStore.js）。
   // テキストの保存（/save）とは経路が別なので、片方が他方を消すことはない。
+  // **記録ごとに紐づける**（2026-09-05・作者の指示）。id を渡さないと、
+  // その日の全部の記録に同じ写真が付く（`lib/photoStore.js`）
   async function handlePhotoSelect(photo, thumb) {
-    const urls = savePhoto(log.date, photo, thumb)
+    const urls = savePhoto(log.date, photo, thumb, log.id || '')
     if (onUpdate) onUpdate({ ...log, ...urls })
   }
 
   async function handlePhotoRemove() {
-    removePhoto(log.date)
+    removePhoto(log.date, log.id || '')
     if (onUpdate) onUpdate({ ...log, photo_url: null, photo_thumb_url: null })
   }
 
@@ -68,6 +92,11 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
           </View>
         ) : null
       )}
+
+      {/* **ファイルもここで足せる**（2026-09-05・作者の指示
+          「写真以外にファイルも対象にしたい」）。写真と同じ扱い——
+          読む場所から直に添えられる。中身は端末の中だけ */}
+      <FileList files={files} onChange={refreshFiles} />
 
       <PhotoPicker
         photoUrl={log.photo_url}
@@ -99,6 +128,9 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
             {/* **直すのも全画面**（2026-09-05・作者の指示）。
                 ここに欄を出すと、装飾も写真も無い**二等の書く場所**に
                 なる。書く場所を2つに分けない（`app/write.jsx`）。 */}
+            <Pressable onPress={pickFile}>
+              <Text className="text-aux text-outline">ファイル</Text>
+            </Pressable>
             <Pressable
               onPress={() => router.push({ pathname: '/write', params: { id: log.id } })}
             >

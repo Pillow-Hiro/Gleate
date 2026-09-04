@@ -32,7 +32,10 @@ function readableSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-export default function FileList({ files, onChange }) {
+// `onRemove` を渡すと、消し方をそちらに任せる（2026-09-05）。
+// **まだ端末に置いていないファイル**（新しい記録に添えたもの）は、
+// 置き場所が無いので `fileStore` では消せない（`RecordForm`）。
+export default function FileList({ files, onChange, onRemove }) {
   if (!files || files.length === 0) return null
 
   async function open(file) {
@@ -44,6 +47,10 @@ export default function FileList({ files, onChange }) {
   }
 
   function drop(file) {
+    if (onRemove) {
+      onRemove(file)
+      return
+    }
     remove(file.uri)
     onChange()
   }
