@@ -274,17 +274,9 @@ export default function Home() {
               まだ届いていない一番新しい記録には、息をする字が出る。 */}
           {cards.length > 0 ? (
             <View className="gap-4">
-              <View className="flex-row items-baseline justify-between">
-                <Text className="font-strong text-label-md text-on-surface-variant">
-                  今日の記録
-                </Text>
-                {/* **直せないことを言っておく**（2026-09-04）。
-                    書く場所と直す場所は分けてある（`CLAUDE.md`）が、
-                    **画面には書いていなかった。**タブの説明文にだけあり、
-                    切り替えた人しか読めない。カードを押しても何も
-                    起きないので、行き先だけは示す */}
-                <Text className="text-label-md text-outline">直すのは「記録」から</Text>
-              </View>
+              <Text className="font-strong text-label-md text-on-surface-variant">
+                今日の記録
+              </Text>
               {cards.map((l, i) => (
                 <HomeCard
                   key={l.id || `${l.date}-${i}`}

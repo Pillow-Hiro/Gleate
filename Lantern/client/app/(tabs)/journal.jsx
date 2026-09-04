@@ -11,7 +11,7 @@ import { loadLogs, replaceLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
-import { countDays, logsOfDay, todayStr } from '../../lib/date'
+import { MAX_RECORDS_PER_DAY, countDays, logsOfDay, todayStr } from '../../lib/date'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import AppHeader from '../../components/AppHeader'
@@ -335,6 +335,25 @@ export default function Journal() {
                       <LogDetail log={l} onDelete={handleDelete} onUpdate={handleUpdate} />
                     </View>
                   ))}
+
+                  {/* **この日にもう一件**（2026-09-04）。
+                      記録のある日を押すと開くだけで、**書き足す道が
+                      どこにも無かった。**暦から入った人は、その日に
+                      2件目を置けないまま戻ることになる。
+
+                      数えるのは本物の記録だけ。写真だけの札
+                      （`lib/photoStore.js` の `attach`）は `id` を
+                      持たず、行としては存在しないので上限に入れない。 */}
+                  {selectedLogs.filter((l) => l.id).length < MAX_RECORDS_PER_DAY ? (
+                    <Pressable
+                      onPress={() =>
+                        router.push({ pathname: '/write', params: { date: selectedDate } })
+                      }
+                      className="border-t border-outline-variant pt-4 min-h-touch justify-center active:opacity-70"
+                    >
+                      <Text className="text-label-md text-primary">この日に書く ›</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ) : null}
 

@@ -53,7 +53,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `(tabs)/_layout.jsx` | タブ | **ネイティブ。本物の `UITabBar`（`NativeTabs`）。iOS 26 では OS が Liquid Glass にする** |
 | `(tabs)/_layout.web.jsx` | 同上 | **Web。** 幅768pxでボトムタブ／サイドバーを切り替える。狭いときはすりガラス |
 | `(tabs)/index.jsx` | `/` | **書く。起動時に開く画面**（記録・アイデアの2タブ）。**入口**——書くのは `/write`。ここは開く紙と灯りと手がかり |
-| `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋3枚**（`HomeCard`）|
+| `(tabs)/home.jsx` | `/home` | ホーム。挨拶・**今日の灯り**・今週の発見 ＋ **日替わりの抜粋3枚**（`HomeCard`。**今日は抜く**——書くタブと二重になる）|
 | `(tabs)/journal.jsx` | `/journal` | 記録。検索・カレンダー・全件 ＋ 振り返りのタブ |
 | `(tabs)/dashboard.jsx` | `/dashboard` | 分析。記録した日・続けて記録した日 ＋ YouTube / Twitch |
 | `(tabs)/settings.jsx` | `/settings` | Settings |

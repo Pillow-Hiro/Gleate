@@ -61,7 +61,17 @@ export default function Home() {
   // 読み込みのたびに評価し直す。開きっぱなしで日付が変わる場面までは追わない
   const greeting = greetingFor()
   // 抜粋の種は日付。日が変われば顔ぶれが変わる
-  const shown = dailySample(logs, RECENT_LIMIT, todayStr())
+  // **今日は抜かす**（2026-09-04・作者の指摘「ホームと書くで今日の
+  // 記録が二重に出る」）。
+  //
+  // `dailySample` は必ず一番新しいものを含めるので、今日書くと
+  // **ホームと書くタブに同じカードが並んでいた。**
+  //
+  // ホームは眺める場所、書くタブは書いた直後の場所。
+  // ここを「これまで」に寄せると、役割が言葉どおりに分かれる。
+  // 今日のぶんは、この上の**今日の灯り**が受け持っている。
+  const past = logs.filter((l) => l.date !== todayStr())
+  const shown = dailySample(past, RECENT_LIMIT, todayStr())
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
   useRefreshOnFocus(refresh)
@@ -225,7 +235,7 @@ export default function Home() {
             **抜粋なので「これより前」ではない。** 全部を見るなら「記録」へ行く。
             ここに「もっと見る」を置いて延々と伸ばすと、
             探すための画面と役割が重なる。 */}
-        {!loading && logs.length > RECENT_LIMIT ? (
+        {!loading && past.length > RECENT_LIMIT ? (
           <Pressable
             onPress={() => router.navigate('/journal?tab=record')}
             className="self-center border border-border rounded-full px-4 min-h-touch justify-center active:opacity-70"
