@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -9,7 +9,7 @@ import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
-import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { loadLogs } from '../../lib/logsCache'
 import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
@@ -76,6 +76,8 @@ export default function Home() {
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
   useRefreshOnFocus(refresh)
+  // **引き下げて取り直す**（2026-09-04・作者の指示）
+  const { refreshing, onRefresh } = usePullToRefresh(refresh)
 
   // 読み込み中の表示は**最初の1回だけ。**
   // 戻ってくるたびに全面が読み込み中に戻ると、画面が瞬いて
@@ -143,6 +145,7 @@ export default function Home() {
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View>
           <Text className="font-display text-headline-md text-on-surface">{greeting}</Text>

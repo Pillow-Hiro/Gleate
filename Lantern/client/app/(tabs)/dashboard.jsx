@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { loadLogs } from '../../lib/logsCache'
-import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { calcStreak } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import OverviewPanel from '../../components/OverviewPanel'
@@ -59,7 +59,10 @@ export default function Dashboard() {
   const tabInset = useTabBarInset()
   const [logs, setLogs] = useState([])
   const [tick, setTick] = useState(0)
-  useRefreshOnFocus(useCallback(() => setTick((t) => t + 1), []))
+  const refresh = useCallback(() => setTick((t) => t + 1), [])
+  useRefreshOnFocus(refresh)
+  // **引き下げて取り直す**（2026-09-04・作者の指示）
+  const { refreshing, onRefresh } = usePullToRefresh(refresh)
   const [activeTab, setActiveTab] = useState('overview')
   // **一度開いたパネルは残す。**
   //
@@ -96,7 +99,11 @@ export default function Dashboard() {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
-      <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
+      <ScrollView
+        contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
+        contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View>
           <Text className="font-display text-headline-md text-on-surface">分析</Text>
           {/* 案の "Recent writing habits." に当たる一文。

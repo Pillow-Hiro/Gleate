@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -14,7 +14,7 @@ import HomeCard from '../../components/HomeCard'
 import HintPanel from '../../components/HintPanel'
 import WriteButton from '../../components/WriteButton'
 import { useKeyboardHeight } from '../../lib/keyboard'
-import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { isLighting, subscribeLight, getLight, lightNote } from '../../lib/lightBuffer'
 
@@ -78,6 +78,9 @@ export default function Home() {
   // 走らない。取り直さないと、書いたのに入口が何も変わらない
   // （灯りも手がかりも、その日の記録があることも）。
   useRefreshOnFocus(refreshData)
+
+  // **引き下げて取り直す**（2026-09-04・作者の指示）
+  const { refreshing, onRefresh } = usePullToRefresh(refreshData)
 
   useEffect(() => {
     let cancelled = false
@@ -188,6 +191,7 @@ export default function Home() {
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* 日付ヘッダー。
             2026-08-09 まで「8 AUG」を上に重ねていた。
@@ -245,9 +249,13 @@ export default function Home() {
               // 下に今日の記録が同じ形のカードで並ぶので、**同じ姿だと
               // 一枚目の記録に見える。**押すものだけ縁を灯り色にして、
               // 地も薄く敷く。記録のカードは無地の面のまま。
-              className="bg-lantern-glow/5 border border-lantern-glow rounded-lg px-5 py-5 gap-3 active:opacity-80"
+              // **大きくした**（2026-09-04・作者の指示
+              // 「もう少し大きくてもいい」）。この画面でいちばん先に
+              // 押してほしいものなので、いちばん大きい面にする。
+              // 下に並ぶ記録のカードより背が高ければ、順番は目で分かる
+              className="bg-lantern-glow/5 border border-lantern-glow rounded-lg px-6 py-8 gap-4 active:opacity-80"
             >
-              <Text className="text-body-md text-outline leading-relaxed">
+              <Text className="text-body-lg text-on-surface-variant leading-relaxed">
                 {question || '今日どんなことをしましたか。'}
               </Text>
               {/* **「書くと、別の記録として残ります」は置かない**

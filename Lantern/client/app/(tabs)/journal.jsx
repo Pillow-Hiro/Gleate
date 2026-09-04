@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, ScrollView, TextInput, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -8,7 +8,7 @@ import UnderlineTabs from '../../components/UnderlineTabs'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs, replaceLogs } from '../../lib/logsCache'
-import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
 import { MAX_RECORDS_PER_DAY, countDays, isDayFull, logsOfDay, todayStr } from '../../lib/date'
@@ -49,7 +49,10 @@ export default function Journal() {
   const [month, setMonth] = useState(thisMonth())
 
   const [tick, setTick] = useState(0)
-  useRefreshOnFocus(useCallback(() => setTick((t) => t + 1), []))
+  const refresh = useCallback(() => setTick((t) => t + 1), [])
+  useRefreshOnFocus(refresh)
+  // **引き下げて取り直す**（2026-09-04・作者の指示）
+  const { refreshing, onRefresh } = usePullToRefresh(refresh)
 
   useEffect(() => {
     let cancelled = false
@@ -235,6 +238,7 @@ export default function Journal() {
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* ヘッダー */}
         <View>

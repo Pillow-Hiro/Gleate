@@ -1,5 +1,6 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
+import { refreshLogs } from './logsCache'
 
 // 画面に戻ってきたら取り直す。
 //
@@ -26,3 +27,32 @@ export function useRefreshOnFocus(refresh) {
     }, [refresh]),
   )
 }
+
+/**
+ * 引き下げて取り直す（2026-09-04・作者の指示）。
+ *
+ * `ScrollView` の `refreshControl` に渡す2つを返す。
+ * 記録を**全件**取り直してから、画面の取り直しを呼ぶ（問いや観察など、
+ * 記録以外のものはそれぞれの画面が持っているため）。
+ *
+ * **失敗しても赤い字は出さない。** 引き直せばいいだけで、
+ * 記録は端末の控えに残っている（`lib/logsCache.js`）。
+ */
+export function usePullToRefresh(after) {
+  const [refreshing, setRefreshing] = useState(false)
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await refreshLogs()
+      if (after) after()
+    } catch (e) {
+      console.warn('[記録] 引き下げての取り直しに失敗', e)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [after])
+
+  return { refreshing, onRefresh }
+}
+
