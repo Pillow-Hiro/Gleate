@@ -124,7 +124,7 @@ export default function Signup() {
         </Pressable>
 
         <View className="mt-4 mb-7">
-          <Text className="font-display text-headline-lg text-ink">アカウントを作成</Text>
+          <Text className="font-display text-headline-lg text-on-surface">アカウントを作成</Text>
           <Text className="text-body-md text-on-surface-variant mt-2 leading-relaxed">
             メールアドレスとパスワードだけで始められます。
           </Text>

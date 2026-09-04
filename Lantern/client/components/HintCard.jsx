@@ -43,7 +43,7 @@ export default function HintCard({ kind, text, saving, onAnswer, onClose }) {
             ひとつだけ聞いてもいいですか。
           </Text>
 
-          <Text className="font-display text-body-lg text-ink leading-relaxed">{text}</Text>
+          <Text className="font-display text-body-lg text-on-surface leading-relaxed">{text}</Text>
 
           <TextInput
             value={answer}

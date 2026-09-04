@@ -35,6 +35,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 import { parse } from '@babel/parser'
 import _traverse from '@babel/traverse'
 
@@ -144,4 +145,80 @@ if (broken.length > 0 || undefined_.length > 0) {
   process.exit(1)
 }
 
-console.log(`${files.length} ファイル、すべて読めます。無い名前もありません。`)
+// ── 色の名前 ──────────────────────────────────────────────
+//
+// **打ち間違えた色は、黙って消える**（2026-09-04）。
+//
+// Tailwind は知らないクラス名を無視する。`text-primry` と書いても
+// エラーにならず、**その字だけ既定の色で出る。**構文も名前も通るので、
+// ここまでの検査では捕まらない。
+//
+// 色の名前は `tailwind.config.js` にある。使っている名前が
+// そこに無ければ報せる。**打ち間違いと、消した名前の使い残しが捕まる。**
+const require_ = createRequire(import.meta.url)
+const config = require_(join(CLIENT, 'tailwind.config.js'))
+
+// `{ surface: { DEFAULT, low } }` → `surface`, `surface-low`
+function flatten(colors, prefix = '') {
+  const out = new Set()
+  for (const [key, value] of Object.entries(colors || {})) {
+    const name = key === 'DEFAULT' ? prefix : prefix ? `${prefix}-${key}` : key
+    if (value && typeof value === 'object') {
+      for (const n of flatten(value, name)) out.add(n)
+    } else if (name) {
+      out.add(name)
+    }
+  }
+  return out
+}
+
+const COLORS = flatten(config?.theme?.extend?.colors)
+// Tailwind が元から持つもの。設定に書かなくても使える
+for (const n of ['black', 'white', 'transparent', 'current', 'inherit']) COLORS.add(n)
+
+// 色ではない `text-` / `border-` / `bg-`。**ここに無いものは色として見る**
+const NOT_COLORS = new Set([
+  // 大きさ（`tailwind.config.js` の fontSize）
+  ...Object.keys(config?.theme?.extend?.fontSize || {}),
+  // Tailwind が元から持つ大きさ
+  'xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl',
+  // 揃え・装飾
+  'center', 'left', 'right', 'justify', 'start', 'end',
+  'wrap', 'nowrap', 'balance', 'pretty', 'ellipsis', 'clip',
+  // 枠の辺と太さと種類
+  'b', 't', 'l', 'r', 'x', 'y', '0', '2', '4', '8',
+  'solid', 'dashed', 'dotted', 'double', 'none', 'hidden',
+])
+
+const CLASS = /(?:^|[\s"'`{])(bg|text|border)-(\[[^\]]+\]|[a-z][a-z0-9-]*?)(?:\/\d+)?(?=[\s"'`}]|$)/gm
+const unknown = []
+
+for (const file of files) {
+  const src = readFileSync(file, 'utf8')
+  const seen = new Set()
+  for (const m of src.matchAll(CLASS)) {
+    const name = m[2]
+    // `text-[11px]` のような直値は見ない。設定の外なので照らす先が無い
+    if (name.startsWith('[')) continue
+    if (COLORS.has(name) || NOT_COLORS.has(name)) continue
+    const key = `${m[1]}-${name}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unknown.push({ file: relative(CLIENT, file), name: key })
+  }
+}
+
+for (const { file, name } of unknown) {
+  console.error(`✖ ${file}
+  知らない色の名前: ${name}`)
+}
+
+if (unknown.length > 0) {
+  console.error(`
+知らない色 ${unknown.length} 件。`)
+  process.exit(1)
+}
+
+console.log(
+  `${files.length} ファイル、すべて読めます。無い名前も、知らない色もありません。`,
+)

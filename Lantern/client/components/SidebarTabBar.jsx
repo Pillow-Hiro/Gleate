@@ -59,14 +59,14 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
 
   return (
     <View
-      className="bg-stone border-r border-border"
+      className="bg-surface-low border-r border-border"
       style={{ width: SIDEBAR_WIDTH, borderRightWidth: 1 }}
     >
       <View className="px-5 py-6 border-b border-border" style={{ borderBottomWidth: 1 }}>
-        <Text className="font-display text-body text-ink" style={{ letterSpacing: 3 }}>
+        <Text className="font-display text-body text-on-surface" style={{ letterSpacing: 3 }}>
           Lantern
         </Text>
-        <Text className="text-[10px] text-ink-faint mt-1">あなたの道は、あなたが照らす。</Text>
+        <Text className="text-[10px] text-outline mt-1">あなたの道は、あなたが照らす。</Text>
       </View>
 
       <View className="flex-1 px-3 py-4 gap-0.5">
@@ -95,11 +95,11 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
               className={`flex-row items-center gap-2.5 px-3 py-2 rounded ${
-                isActive ? 'bg-sage-light' : ''
+                isActive ? 'bg-ai-surface' : ''
               }`}
             >
               {Icon ? <Icon color={isActive ? activeColor : inactiveColor} /> : null}
-              <Text className={`text-body ${isActive ? 'text-forest' : 'text-ink-soft'}`}>
+              <Text className={`text-body ${isActive ? 'text-primary' : 'text-on-surface-variant'}`}>
                 {label}
               </Text>
             </Pressable>
@@ -111,7 +111,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
         className="px-4 pb-5 pt-3 border-t border-border flex-row items-center justify-between"
         style={{ borderTopWidth: 1 }}
       >
-        <Text className="text-[10px] text-ink-faint">Lantern {APP_VERSION}</Text>
+        <Text className="text-[10px] text-outline">Lantern {APP_VERSION}</Text>
         <Pressable
           onPress={toggleTheme}
           className="p-1 rounded"

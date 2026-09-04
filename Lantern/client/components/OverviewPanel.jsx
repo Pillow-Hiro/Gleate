@@ -26,7 +26,7 @@ function Stat({ label, value }) {
   return (
     <View className="flex-1">
       <Text className="text-label-sm text-outline mb-1">{label}</Text>
-      <Text className="font-strong text-headline-md text-ink">{formatCount(value)}</Text>
+      <Text className="font-strong text-headline-md text-on-surface">{formatCount(value)}</Text>
     </View>
   )
 }

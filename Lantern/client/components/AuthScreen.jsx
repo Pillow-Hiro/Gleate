@@ -52,7 +52,7 @@ const RESTING_PAD = 40
 // `className` はログインのためにある。あの画面だけ**背景に写真**が敷いてあり、
 // 地の色を塗ると写真が隠れる。変えられるのはそこだけで、
 // 中の余白と寄せ方は渡せない——**揃っていてほしいのはそちら**なので。
-export default function AuthScreen({ children, className = 'flex-1 bg-cream' }) {
+export default function AuthScreen({ children, className = 'flex-1 bg-surface' }) {
   const keyboardHeight = useKeyboardHeight()
 
   return (

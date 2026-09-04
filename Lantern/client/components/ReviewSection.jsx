@@ -9,9 +9,9 @@ import { formatAge } from '../lib/format'
 
 export function PatternCard({ observation, question }) {
   return (
-    <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-2.5">
-      <Text className="text-body text-ink leading-relaxed">{observation}</Text>
-      <Text className="text-body text-ink-soft italic leading-relaxed">{question}</Text>
+    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
+      <Text className="text-body text-on-surface leading-relaxed">{observation}</Text>
+      <Text className="text-body text-on-surface-variant italic leading-relaxed">{question}</Text>
     </View>
   )
 }
@@ -97,25 +97,25 @@ export default function ReviewSection({ title, type, description }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-body-lg text-ink">{title}</Text>
-          <Text className="text-aux text-ink-faint mt-0.5">{description}</Text>
+          <Text className="font-display text-body-lg text-on-surface">{title}</Text>
+          <Text className="text-aux text-outline mt-0.5">{description}</Text>
         </View>
         <Pressable
           onPress={generate}
           disabled={loading}
-          className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+          className="border border-ai-ink/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-aux text-forest">{loading ? '読んでいます...' : '振り返る'}</Text>
+          <Text className="text-aux text-primary">{loading ? '読んでいます...' : '振り返る'}</Text>
         </Pressable>
       </View>
 
       {loading ? (
         <View className="gap-3">
           {[1, 2].map((i) => (
-            <View key={i} className="bg-stone/60 rounded-lg px-5 py-4 gap-2.5">
-              <View className="h-3.5 bg-parchment rounded-full w-full" />
-              <View className="h-3.5 bg-parchment rounded-full w-4/5" />
-              <View className="h-3 bg-parchment rounded-full w-2/3" />
+            <View key={i} className="bg-surface-low/60 rounded-lg px-5 py-4 gap-2.5">
+              <View className="h-3.5 bg-surface-high rounded-full w-full" />
+              <View className="h-3.5 bg-surface-high rounded-full w-4/5" />
+              <View className="h-3 bg-surface-high rounded-full w-2/3" />
             </View>
           ))}
         </View>
@@ -123,7 +123,7 @@ export default function ReviewSection({ title, type, description }) {
 
       {!loading && hasPatterns ? (
         <View className="gap-3">
-          {generatedAt ? <Text className="text-[10px] text-ink-faint">{formatAge(generatedAt)}</Text> : null}
+          {generatedAt ? <Text className="text-[10px] text-outline">{formatAge(generatedAt)}</Text> : null}
           {patterns.map((p, i) => (
             <PatternCard key={i} observation={p.observation} question={p.question} />
           ))}
@@ -138,7 +138,7 @@ export default function ReviewSection({ title, type, description }) {
           ボタンの説明だけが③に踏み込んでいた。 */}
       {!loading && restored && patterns === null ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
-          <Text className="text-body text-ink-faint text-center">
+          <Text className="text-body text-outline text-center">
             「振り返る」を押すと、Lanternが記録を並べます。
           </Text>
         </View>
@@ -151,7 +151,7 @@ export default function ReviewSection({ title, type, description }) {
           いま無いという事実だけを言う。 */}
       {!loading && isEmpty ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
-          <Text className="text-body text-ink-faint text-center">まだ並べられるほどの記録がありません。</Text>
+          <Text className="text-body text-outline text-center">まだ並べられるほどの記録がありません。</Text>
         </View>
       ) : null}
     </View>

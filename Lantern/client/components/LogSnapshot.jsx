@@ -23,10 +23,10 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
   const hasText = SNAPSHOT_FIELDS.some(({ key }) => log?.[key])
 
   return (
-    <View className="bg-stone/40 rounded-lg px-4 py-4 gap-2.5">
-      <Text className="text-[10px] text-ink-faint tracking-[1px]">{log ? log.date : dateHint}</Text>
+    <View className="bg-surface-low/40 rounded-lg px-4 py-4 gap-2.5">
+      <Text className="text-[10px] text-outline tracking-[1px]">{log ? log.date : dateHint}</Text>
       {!log ? (
-        <Text className="text-body text-ink-faint">
+        <Text className="text-body text-outline">
           {isToday ? '今日の記録はまだありません。' : 'この時期の記録はありません。'}
         </Text>
       ) : (
@@ -34,8 +34,8 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
           {SNAPSHOT_FIELDS.map(({ key, label }) =>
             log[key] ? (
               <View key={key}>
-                {label ? <Text className="text-[9px] text-ink-faint mb-0.5">{label}</Text> : null}
-                <RichText text={log[key]} className="text-body text-ink leading-relaxed" />
+                {label ? <Text className="text-[9px] text-outline mb-0.5">{label}</Text> : null}
+                <RichText text={log[key]} className="text-body text-on-surface leading-relaxed" />
               </View>
             ) : null
           )}
@@ -50,7 +50,7 @@ export default function LogSnapshot({ log, dateHint, isToday }) {
                 resizeMode="cover"
               />
             ) : (
-              <Text className="text-body text-ink-faint">この日の記録があります。</Text>
+              <Text className="text-body text-outline">この日の記録があります。</Text>
             )
           ) : null}
         </>

@@ -155,7 +155,7 @@ export default function Account() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-5 h-11">
         <Pressable onPress={back} className="min-h-touch justify-center active:opacity-70">
           <Text className="text-body-md text-primary">← 設定</Text>

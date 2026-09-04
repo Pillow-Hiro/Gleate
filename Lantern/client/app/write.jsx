@@ -73,7 +73,7 @@ export default function Write() {
     // 広がる。押した紙がそのまま大きくなったように見せる（`Motion.jsx`）。
     // 右下のボタンから入っても同じ動き——行き先が同じなら入り方も同じ
     <ZoomIn>
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       {/* 上の帯。**閉じると保存だけ。**
           書いている最中に押せるものを増やさない */}
       <View className="flex-row items-center justify-between px-4 py-2 border-b border-border">

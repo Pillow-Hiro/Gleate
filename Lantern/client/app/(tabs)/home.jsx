@@ -136,7 +136,7 @@ export default function Home() {
   }, [loading, logs])
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
       <ScrollView
@@ -144,7 +144,7 @@ export default function Home() {
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
       >
         <View>
-          <Text className="font-display text-headline-md text-ink">{greeting}</Text>
+          <Text className="font-display text-headline-md text-on-surface">{greeting}</Text>
         </View>
 
         {/* 今日の灯り。**画面でいちばん強い面にする**（2026-08-14）。
@@ -212,12 +212,12 @@ export default function Home() {
         {loading ? (
           <View className="gap-3">
             {[1, 2, 3].map((i) => (
-              <View key={i} className="h-16 bg-stone rounded-lg" />
+              <View key={i} className="h-16 bg-surface-low rounded-lg" />
             ))}
           </View>
         ) : logs.length === 0 ? (
           <View className="items-center py-16">
-            <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
+            <Text className="text-3xl mb-4 opacity-40 text-on-surface">◇</Text>
             <Text className="text-body-md text-on-surface-variant">まだ記録がありません。</Text>
             <Text className="text-label-md text-outline mt-1.5">「書く」から残せます。</Text>
           </View>

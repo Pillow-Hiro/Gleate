@@ -217,7 +217,7 @@ export default function Journal() {
     effectiveMonth === 'all' ? byChip : byChip.filter((l) => l.date.startsWith(effectiveMonth))
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
       {/* 一覧から記録を開いて直すときと、検索のときに欄が出る。
@@ -238,11 +238,11 @@ export default function Journal() {
       >
         {/* ヘッダー */}
         <View>
-          <Text className="font-display text-headline-md text-ink">記録</Text>
+          <Text className="font-display text-headline-md text-on-surface">記録</Text>
           {/* **日数で数える**（2026-09-03）。`logs.length` は件数で、
               1日に複数件置けるようにしてから日数と合わなくなった */}
           {!loading && logs.length > 0 ? (
-            <Text className="text-body text-ink-soft mt-1">{countDays(logs)}日間の記録</Text>
+            <Text className="text-body text-on-surface-variant mt-1">{countDays(logs)}日間の記録</Text>
           ) : null}
         </View>
 
@@ -274,7 +274,7 @@ export default function Journal() {
                   onChangeText={setSearch}
                   placeholder="記録を検索"
                   placeholderTextColor="#8E8478"
-                  className="flex-1 py-3 font-body text-body-md text-ink"
+                  className="flex-1 py-3 font-body text-body-md text-on-surface"
                 />
                 {search ? (
                   <Pressable onPress={() => setSearch('')} hitSlop={12} className="pl-2">
@@ -318,15 +318,15 @@ export default function Journal() {
                   onDateSelect={handleDateClick}
                 />
                 {!loading && logs.length === 0 ? (
-                  <Text className="text-[11px] text-ink-faint text-center mt-3">
+                  <Text className="text-[11px] text-outline text-center mt-3">
                     日付をタップすると、その日の記録を開けます。
                   </Text>
                 ) : null}
               </View>
 
               {selectedDate && selectedLogs.length > 0 ? (
-                <View className="mt-3 bg-stone/40 rounded-lg px-5 py-4 gap-4">
-                  <Text className="text-aux text-ink-faint">{dateDisplayJa(selectedDate)}</Text>
+                <View className="mt-3 bg-surface-low/40 rounded-lg px-5 py-4 gap-4">
+                  <Text className="text-aux text-outline">{dateDisplayJa(selectedDate)}</Text>
                   {selectedLogs.map((l, i) => (
                     <View
                       key={l.id || `${l.date}-${i}`}
@@ -370,14 +370,14 @@ export default function Journal() {
             {loading ? (
               <View className="gap-3">
                 {[1, 2, 3].map((i) => (
-                  <View key={i} className="h-12 bg-stone rounded" />
+                  <View key={i} className="h-12 bg-surface-low rounded" />
                 ))}
               </View>
             ) : logs.length === 0 ? (
               <View className="items-center py-16">
-                <Text className="text-3xl mb-4 opacity-40 text-ink">◇</Text>
-                <Text className="text-body text-ink-soft">まだ記録がありません。</Text>
-                <Text className="text-aux text-ink-faint mt-1.5">「書く」から残せます。</Text>
+                <Text className="text-3xl mb-4 opacity-40 text-on-surface">◇</Text>
+                <Text className="text-body text-on-surface-variant">まだ記録がありません。</Text>
+                <Text className="text-aux text-outline mt-1.5">「書く」から残せます。</Text>
               </View>
             ) : filtered.length === 0 ? (
               <View className="items-center py-12">

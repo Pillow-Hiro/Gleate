@@ -55,32 +55,32 @@ export default function MilestoneBanner() {
   if (!milestone) return null
 
   return (
-    <View className="bg-forest dark:bg-primary rounded-lg px-4 py-3.5">
+    <View className="bg-primary dark:bg-primary rounded-lg px-4 py-3.5">
       <Pressable
         onPress={() => setOpen((o) => !o)}
         className="flex-row items-center justify-between gap-3"
       >
-        <Text className="flex-1 text-body text-cream dark:text-primary-text">
+        <Text className="flex-1 text-body text-surface dark:text-on-primary">
           記録を始めて{milestone.days}日が経ちました。
         </Text>
-        <Text className="text-cream/60 text-aux">{open ? '⌃' : '⌄'}</Text>
+        <Text className="text-surface/60 text-aux">{open ? '⌃' : '⌄'}</Text>
       </Pressable>
 
       {open ? (
         <View className="mt-3 gap-3">
           {milestone.reflection ? (
             <View className="bg-white/10 dark:bg-black/20 rounded-lg px-4 py-3.5 gap-2">
-              <Text className="text-[10px] text-cream/60 tracking-[2px]">LANTERN</Text>
-              <Text className="text-body text-cream dark:text-primary-text leading-relaxed">
+              <Text className="text-[10px] text-surface/60 tracking-[2px]">LANTERN</Text>
+              <Text className="text-body text-surface dark:text-on-primary leading-relaxed">
                 {milestone.reflection.observation}
               </Text>
-              <Text className="text-body text-cream/80 dark:text-primary-text/80 italic leading-relaxed">
+              <Text className="text-body text-surface/80 dark:text-on-primary/80 italic leading-relaxed">
                 {milestone.reflection.question}
               </Text>
             </View>
           ) : null}
           <Pressable onPress={handleDismiss} className="self-end">
-            <Text className="text-aux text-cream/60">閉じる</Text>
+            <Text className="text-aux text-surface/60">閉じる</Text>
           </Pressable>
         </View>
       ) : null}

@@ -18,7 +18,7 @@ export default function AppHeader({ right }) {
     <View className="flex-row items-center justify-between px-5 h-11">
       <View className="flex-row items-center gap-2">
         <LanternMark size={18} />
-        <Text className="font-latin text-body-md text-ink">Lantern</Text>
+        <Text className="font-latin text-body-md text-on-surface">Lantern</Text>
       </View>
       {right ?? null}
     </View>

@@ -63,12 +63,12 @@ export default function ViewsChart({ data, isDark }) {
 
       {/* SVG内のテキストは端末によって描画が揺れるため、軸ラベルは通常のTextで重ねる */}
       <View className="flex-row justify-between mt-1" style={{ paddingLeft: PADDING.left }}>
-        <Text className="text-[10px] text-ink-faint">{data[0]?.label}</Text>
+        <Text className="text-[10px] text-outline">{data[0]?.label}</Text>
         {data.length > 1 ? (
-          <Text className="text-[10px] text-ink-faint">{data[data.length - 1]?.label}</Text>
+          <Text className="text-[10px] text-outline">{data[data.length - 1]?.label}</Text>
         ) : null}
       </View>
-      <Text className="text-[10px] text-ink-faint mt-0.5">最大 {formatTick(max)} 回</Text>
+      <Text className="text-[10px] text-outline mt-0.5">最大 {formatTick(max)} 回</Text>
     </View>
   )
 }

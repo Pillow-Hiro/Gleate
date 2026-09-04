@@ -71,13 +71,13 @@ export default function Forgot() {
     <AuthScreen>
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-latin text-display text-ink">Lantern</Text>
-          <Text className="text-aux text-ink-faint mt-2 tracking-wider">パスワードの再設定</Text>
+          <Text className="font-latin text-display text-on-surface">Lantern</Text>
+          <Text className="text-aux text-outline mt-2 tracking-wider">パスワードの再設定</Text>
         </View>
 
         {sent ? (
           <View className="gap-4">
-            <Text className="text-body-md text-ink leading-relaxed">
+            <Text className="text-body-md text-on-surface leading-relaxed">
               {email.trim()} に再設定のメールを送りました。
             </Text>
             {/* **ブラウザで開くことを先に言う。** 何も言わずに
@@ -86,13 +86,13 @@ export default function Forgot() {
               メールのリンクはブラウザで開きます。新しいパスワードを決めたら、
               このアプリに戻って、そのパスワードでログインしてください。
             </Text>
-            {resent ? <Text className="text-label-md text-sage">{resent}</Text> : null}
+            {resent ? <Text className="text-label-md text-ai-ink">{resent}</Text> : null}
             <View className="flex-row gap-3 justify-center pt-2">
-              <Pressable onPress={resend} className="border border-sage/40 rounded-full px-3.5 min-h-touch justify-center">
-                <Text className="text-label-md text-forest">もう一度送る</Text>
+              <Pressable onPress={resend} className="border border-ai-ink/40 rounded-full px-3.5 min-h-touch justify-center">
+                <Text className="text-label-md text-primary">もう一度送る</Text>
               </Pressable>
-              <Pressable onPress={back} className="border border-sage/40 rounded-full px-3.5 min-h-touch justify-center">
-                <Text className="text-label-md text-forest">ログインへ</Text>
+              <Pressable onPress={back} className="border border-ai-ink/40 rounded-full px-3.5 min-h-touch justify-center">
+                <Text className="text-label-md text-primary">ログインへ</Text>
               </Pressable>
             </View>
           </View>

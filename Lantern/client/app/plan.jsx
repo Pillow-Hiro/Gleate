@@ -76,7 +76,7 @@ export default function Plan() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-5 h-11">
         <Pressable onPress={back} className="min-h-touch justify-center active:opacity-70">
           <Text className="text-body-md text-primary">← 設定</Text>
@@ -85,7 +85,7 @@ export default function Plan() {
 
       <ScrollView contentContainerClassName="px-5 pt-4 pb-10 gap-6 w-full max-w-read self-center">
         <View className="gap-2">
-          <Text className="font-display text-headline-lg text-ink">プラン</Text>
+          <Text className="font-display text-headline-lg text-on-surface">プラン</Text>
           {/* 取れるまでは出さない。**「無料」と出してから「有料」に
               変わると、一瞬だけ嘘をついたことになる** */}
           {paid === null ? null : (

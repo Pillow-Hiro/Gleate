@@ -216,22 +216,22 @@ export default function TwitchPanel() {
   return (
     <>
       {message ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-4 py-3">
-          <Text className="text-body text-forest">{message}</Text>
+        <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-4 py-3">
+          <Text className="text-body text-primary">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-8 items-center gap-3">
-          <Text className="text-body text-ink-soft text-center">
+          <Text className="text-body text-on-surface-variant text-center">
             Twitchと繋ぐと、配信の記録がここに並びます。
           </Text>
           <Pressable
             onPress={handleConnect}
             disabled={connecting}
-            className="border border-sage/40 rounded-full px-4 py-2 disabled:opacity-50"
+            className="border border-ai-ink/40 rounded-full px-4 py-2 disabled:opacity-50"
           >
-            <Text className="text-aux text-forest">
+            <Text className="text-aux text-primary">
               {connecting ? '接続中...' : 'Twitchと繋ぐ'}
             </Text>
           </Pressable>
@@ -240,13 +240,13 @@ export default function TwitchPanel() {
         <>
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
-              <Text className="font-strong text-aux text-ink-soft mb-0.5">チャンネル</Text>
-              <Text className="text-body text-ink">{status.display_name || '—'}</Text>
+              <Text className="font-strong text-aux text-on-surface-variant mb-0.5">チャンネル</Text>
+              <Text className="text-body text-on-surface">{status.display_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
               <View className="flex-row items-center gap-3">
                 <Pressable onPress={() => setConfirmDisconnect(false)}>
-                  <Text className="text-aux text-ink-faint">キャンセル</Text>
+                  <Text className="text-aux text-outline">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
                   <Text className="text-aux text-error">
@@ -256,7 +256,7 @@ export default function TwitchPanel() {
               </View>
             ) : (
               <Pressable onPress={() => setConfirmDisconnect(true)}>
-                <Text className="text-aux text-ink-faint">連携を解除</Text>
+                <Text className="text-aux text-outline">連携を解除</Text>
               </Pressable>
             )}
           </View>
@@ -272,7 +272,7 @@ export default function TwitchPanel() {
             {loading && streams === null ? (
               <View className="gap-3 pt-2">
                 {[1, 2, 3].map((i) => (
-                  <View key={i} className="h-4 bg-parchment rounded-full w-4/5" />
+                  <View key={i} className="h-4 bg-surface-high rounded-full w-4/5" />
                 ))}
               </View>
             ) : streams && streams.length > 0 ? (
@@ -282,7 +282,7 @@ export default function TwitchPanel() {
                 ))}
               </View>
             ) : (
-              <Text className="text-body text-ink-faint py-4">まだ配信の記録がありません。</Text>
+              <Text className="text-body text-outline py-4">まだ配信の記録がありません。</Text>
             )}
           </View>
 
@@ -328,9 +328,9 @@ export default function TwitchPanel() {
           </View>
 
           {followerCount != null ? (
-            <View className="bg-stone/50 rounded-lg px-4 py-4">
-              <Text className="text-[10px] text-ink-faint mb-1">フォロワー数</Text>
-              <Text className="text-xl text-ink">
+            <View className="bg-surface-low/50 rounded-lg px-4 py-4">
+              <Text className="text-[10px] text-outline mb-1">フォロワー数</Text>
+              <Text className="text-xl text-on-surface">
                 {followerCount.toLocaleString()}
               </Text>
             </View>

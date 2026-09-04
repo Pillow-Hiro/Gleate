@@ -115,7 +115,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       <View className="mt-3 gap-3 pb-1">
         {EDIT_FIELDS.map(({ field, label, placeholder }) => (
           <View key={field}>
-            <Text className="text-[10px] text-ink-faint mb-1">{label}</Text>
+            <Text className="text-[10px] text-outline mb-1">{label}</Text>
             <TextInput
               value={editForm[field]}
               onChangeText={(v) => setEditForm((f) => ({ ...f, [field]: v }))}
@@ -124,20 +124,20 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
               multiline
               textAlignVertical="top"
               style={{ minHeight: 72 }}
-              className="bg-stone border border-border rounded px-3 py-2.5 font-body text-body text-ink"
+              className="bg-surface-low border border-border rounded px-3 py-2.5 font-body text-body text-on-surface"
             />
           </View>
         ))}
         <View className="flex-row justify-end items-center gap-4 pt-1">
           <Pressable onPress={() => { setEditing(false); setEditForm({}) }}>
-            <Text className="text-aux text-ink-faint">キャンセル</Text>
+            <Text className="text-aux text-outline">キャンセル</Text>
           </Pressable>
           <Pressable
             onPress={handleSave}
             disabled={saving}
-            className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+            className="border border-ai-ink/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
           >
-            <Text className="text-aux text-forest">{saving ? '保存中...' : '保存する'}</Text>
+            <Text className="text-aux text-primary">{saving ? '保存中...' : '保存する'}</Text>
           </Pressable>
         </View>
       </View>
@@ -149,11 +149,11 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       {DISPLAY_FIELDS.map(({ key, label }) =>
         log[key] ? (
           <View key={key}>
-            <Text className="text-[10px] text-ink-faint">{label}</Text>
+            <Text className="text-[10px] text-outline">{label}</Text>
             {/* 「やったこと」だけ装飾できる。他は素のテキスト。
                 読む側も同じ扱いにする（RichText は素の文もそのまま出す） */}
             <View className="mt-0.5">
-              <RichText text={log[key]} className="text-body text-ink leading-relaxed" />
+              <RichText text={log[key]} className="text-body text-on-surface leading-relaxed" />
             </View>
           </View>
         ) : null
@@ -167,18 +167,18 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       />
 
       {log.ai_response ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-5 py-4 gap-1.5 mt-3">
-          <Text className="text-[10px] tracking-[2px] text-sage">LANTERN</Text>
-          <Text className="text-body text-forest leading-relaxed">{log.ai_response}</Text>
+        <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-1.5 mt-3">
+          <Text className="text-[10px] tracking-[2px] text-ai-ink">LANTERN</Text>
+          <Text className="text-body text-primary leading-relaxed">{log.ai_response}</Text>
         </View>
       ) : null}
 
       <View className="pt-1 flex-row justify-end items-center gap-3">
         {confirmDelete ? (
           <>
-            <Text className="text-aux text-ink-faint">削除しますか？</Text>
+            <Text className="text-aux text-outline">削除しますか？</Text>
             <Pressable onPress={() => setConfirmDelete(false)}>
-              <Text className="text-aux text-ink-faint">キャンセル</Text>
+              <Text className="text-aux text-outline">キャンセル</Text>
             </Pressable>
             <Pressable onPress={handleDelete} disabled={deleting}>
               <Text className="text-aux text-error">{deleting ? '削除中...' : '削除する'}</Text>
@@ -187,7 +187,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
         ) : (
           <>
             <Pressable onPress={handleEditStart}>
-              <Text className="text-aux text-ink-faint">編集</Text>
+              <Text className="text-aux text-outline">編集</Text>
             </Pressable>
             <Pressable onPress={() => setConfirmDelete(true)}>
               <Text className="text-aux text-error">削除</Text>

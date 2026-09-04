@@ -32,7 +32,7 @@ export default function Onboarding({ onDone }) {
   }
 
   return (
-    <View className="absolute inset-0 bg-cream">
+    <View className="absolute inset-0 bg-surface">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         {/* 飛ばす道。**最初から見えている場所に置く** */}
         <View className="flex-row justify-end px-5 pt-2">
@@ -56,7 +56,7 @@ export default function Onboarding({ onDone }) {
             <View key={slide.key} style={{ width }} className="flex-1 justify-center px-8">
               <View className="w-full max-w-read self-center gap-6">
                 <LanternMark size={34} />
-                <Text className="font-display text-headline-md text-ink leading-relaxed">
+                <Text className="font-display text-headline-md text-on-surface leading-relaxed">
                   {slide.title}
                 </Text>
                 <Text className="text-body-md text-on-surface-variant leading-relaxed">

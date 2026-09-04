@@ -80,7 +80,7 @@ export default function UnderlineTabs({
             })
           }}
         >
-          <Text className={`${textClassName} ${value === id ? 'text-accent' : 'text-ink-faint'}`}>
+          <Text className={`${textClassName} ${value === id ? 'text-primary' : 'text-outline'}`}>
             {label}
           </Text>
         </Pressable>

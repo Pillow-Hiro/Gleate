@@ -141,7 +141,7 @@ export default function Login() {
               <View className="w-16 h-16 rounded-full bg-surface-lowest items-center justify-center shadow-bloom mb-5">
                 <LanternMark size={30} />
               </View>
-              <Text className="font-latin text-display text-ink">Lantern</Text>
+              <Text className="font-latin text-display text-on-surface">Lantern</Text>
               {/* **「照らす」のは Lantern ではない。**
                   2026-08-06 に「創作の道を照らす、AI伴走者」と置き、
                   食い違いを承知で残すと決めていた。2026-08-18 の言葉の精査で

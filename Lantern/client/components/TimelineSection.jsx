@@ -81,15 +81,15 @@ export default function TimelineSection({ logs = [] }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-3">
-          <Text className="font-display text-body-lg text-ink">過去との対話</Text>
-          <Text className="text-aux text-ink-faint mt-0.5">あの頃の自分と、今の自分。</Text>
+          <Text className="font-display text-body-lg text-on-surface">過去との対話</Text>
+          <Text className="text-aux text-outline mt-0.5">あの頃の自分と、今の自分。</Text>
         </View>
         <Pressable
           onPress={handleReflect}
           disabled={loading}
-          className="border border-sage/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
+          className="border border-ai-ink/40 rounded-full px-3.5 py-1.5 disabled:opacity-50"
         >
-          <Text className="text-aux text-forest">{loading ? '読んでいます...' : '振り返る'}</Text>
+          <Text className="text-aux text-primary">{loading ? '読んでいます...' : '振り返る'}</Text>
         </Pressable>
       </View>
 
@@ -111,15 +111,15 @@ export default function TimelineSection({ logs = [] }) {
 
       {/* AIの観察 */}
       {loading ? (
-        <View className="bg-stone/60 rounded-lg px-5 py-4 gap-2.5">
-          <View className="h-3.5 bg-parchment rounded-full w-3/4" />
-          <View className="h-3 bg-parchment rounded-full w-1/2" />
+        <View className="bg-surface-low/60 rounded-lg px-5 py-4 gap-2.5">
+          <View className="h-3.5 bg-surface-high rounded-full w-3/4" />
+          <View className="h-3 bg-surface-high rounded-full w-1/2" />
         </View>
       ) : null}
 
       {!loading && data !== null && data.past_logs.length === 0 ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
-          <Text className="text-body text-ink-faint text-center">{currentLabel}の記録はありません。</Text>
+          <Text className="text-body text-outline text-center">{currentLabel}の記録はありません。</Text>
         </View>
       ) : null}
 
@@ -129,7 +129,7 @@ export default function TimelineSection({ logs = [] }) {
               根拠に観察している。画面にない記録に言及しうるため出典を明示する。
               事実の提示のみで、評価や意味づけは含めない。 */}
           {data.past_date ? (
-            <Text className="text-[10px] text-ink-faint">
+            <Text className="text-[10px] text-outline">
               {formatPastDate(data.past_date)}を含む週の記録から
             </Text>
           ) : null}

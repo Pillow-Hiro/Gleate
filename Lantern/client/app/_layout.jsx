@@ -50,17 +50,17 @@ export function ErrorBoundary({ error, retry }) {
   console.error('[Lantern] 画面の描画に失敗', error)
 
   return (
-    <View className="flex-1 bg-cream items-center justify-center px-6">
+    <View className="flex-1 bg-surface items-center justify-center px-6">
       <View className="max-w-sm items-center gap-4">
         <Text className="text-3xl opacity-40">◇</Text>
-        <Text className="text-body text-ink text-center leading-relaxed">
+        <Text className="text-body text-on-surface text-center leading-relaxed">
           画面をうまく表示できませんでした。
         </Text>
-        <Text className="text-aux text-ink-faint text-center leading-relaxed">
+        <Text className="text-aux text-outline text-center leading-relaxed">
           これまでの記録は残っています。
         </Text>
-        <Pressable onPress={retry} className="border border-sage/40 rounded-full px-3.5 py-1.5">
-          <Text className="text-aux text-forest">読み込み直す</Text>
+        <Pressable onPress={retry} className="border border-ai-ink/40 rounded-full px-3.5 py-1.5">
+          <Text className="text-aux text-primary">読み込み直す</Text>
         </Pressable>
       </View>
     </View>

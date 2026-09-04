@@ -93,12 +93,12 @@ export default function Dashboard() {
 
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
       <ScrollView contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center" contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}>
         <View>
-          <Text className="font-display text-headline-md text-ink">分析</Text>
+          <Text className="font-display text-headline-md text-on-surface">分析</Text>
           {/* 案の "Recent writing habits." に当たる一文。
               **「振り返り」とは書かない。** それは「記録」タブの名前で、
               ここは俯瞰する場所。
@@ -156,7 +156,7 @@ function Stat({ label, value, unit }) {
     <View className="flex-1 bg-surface-lowest rounded-lg px-4 py-5 items-center shadow-bloom">
       <Text className="font-label text-label-md text-outline mb-2">{label}</Text>
       <View className="flex-row items-baseline gap-1">
-        <Text className="font-strong text-headline-lg text-ink">{value}</Text>
+        <Text className="font-strong text-headline-lg text-on-surface">{value}</Text>
         <Text className="text-body-md text-on-surface-variant">{unit}</Text>
       </View>
     </View>

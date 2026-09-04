@@ -61,7 +61,7 @@ export default function VideoTimeline({ videos }) {
   }
 
   if (rows.length === 0) {
-    return <Text className="text-body text-ink-faint py-4">まだ動画がありません。</Text>
+    return <Text className="text-body text-outline py-4">まだ動画がありません。</Text>
   }
 
   return (
@@ -81,7 +81,7 @@ export default function VideoTimeline({ videos }) {
 
         return (
           <View key={v.id} style={{ width: itemWidth }}>
-            <Text className="text-aux text-ink-faint mb-1.5">{year}/{month}/{day}</Text>
+            <Text className="text-aux text-outline mb-1.5">{year}/{month}/{day}</Text>
 
             <Pressable onPress={() => Linking.openURL(watchUrl)}>
               <Image
@@ -91,19 +91,19 @@ export default function VideoTimeline({ videos }) {
                 resizeMode="cover"
                 accessibilityLabel={v.title}
               />
-              <Text className={`text-body leading-snug mt-1.5 ${isDim ? 'text-ink-soft' : 'text-ink'}`}>
+              <Text className={`text-body leading-snug mt-1.5 ${isDim ? 'text-on-surface-variant' : 'text-on-surface'}`}>
                 {v.title}
               </Text>
             </Pressable>
 
             <View className="flex-row items-center gap-2 mt-1 flex-wrap">
-              <Text className="text-aux text-ink-faint">{v.view_count.toLocaleString()} 回</Text>
+              <Text className="text-aux text-outline">{v.view_count.toLocaleString()} 回</Text>
               {v.like_count > 0 ? (
-                <Text className="text-aux text-ink-faint">♡ {v.like_count.toLocaleString()}</Text>
+                <Text className="text-aux text-outline">♡ {v.like_count.toLocaleString()}</Text>
               ) : null}
               {isDim ? (
                 <View className="border border-border rounded-full px-1.5 py-0.5">
-                  <Text className="text-[9px] text-ink-faint">
+                  <Text className="text-[9px] text-outline">
                     {v.privacy === 'private' ? '非公開' : '限定公開'}
                   </Text>
                 </View>
@@ -115,10 +115,10 @@ export default function VideoTimeline({ videos }) {
                 onPress={() => handleAsk(v)}
                 disabled={s.loading}
                 className={`border rounded-full px-2.5 py-1 disabled:opacity-50 ${
-                  s.visible ? 'border-accent bg-accent/10' : 'border-border'
+                  s.visible ? 'border-primary bg-primary/10' : 'border-border'
                 }`}
               >
-                <Text className={`text-[10px] ${s.visible ? 'text-accent' : 'text-ink-faint'}`}>
+                <Text className={`text-[10px] ${s.visible ? 'text-primary' : 'text-outline'}`}>
                   {s.loading ? '読んでいます...' : 'Lanternに聞く'}
                 </Text>
               </Pressable>

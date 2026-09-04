@@ -19,9 +19,9 @@ const PERIODS = [
 
 function SummaryCard({ label, value }) {
   return (
-    <View className="bg-stone/50 rounded-lg px-4 py-4 flex-1">
-      <Text className="text-[10px] text-ink-faint mb-1">{label}</Text>
-      <Text className="text-xl text-ink">{value.toLocaleString()}</Text>
+    <View className="bg-surface-low/50 rounded-lg px-4 py-4 flex-1">
+      <Text className="text-[10px] text-outline mb-1">{label}</Text>
+      <Text className="text-xl text-on-surface">{value.toLocaleString()}</Text>
     </View>
   )
 }
@@ -205,22 +205,22 @@ export default function YouTubePanel() {
   return (
     <>
       {message ? (
-        <View className="bg-sage-light/60 border border-sage/20 rounded-lg px-4 py-3">
-          <Text className="text-body text-forest">{message}</Text>
+        <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-4 py-3">
+          <Text className="text-body text-primary">{message}</Text>
         </View>
       ) : null}
 
       {!status.connected ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-8 items-center gap-3">
-          <Text className="text-body text-ink-soft text-center">
+          <Text className="text-body text-on-surface-variant text-center">
             YouTubeと繋ぐと、動画の記録がここに並びます。
           </Text>
           <Pressable
             onPress={handleConnect}
             disabled={connecting}
-            className="border border-sage/40 rounded-full px-4 py-2 disabled:opacity-50"
+            className="border border-ai-ink/40 rounded-full px-4 py-2 disabled:opacity-50"
           >
-            <Text className="text-aux text-forest">
+            <Text className="text-aux text-primary">
               {connecting ? '接続中...' : 'YouTubeと繋ぐ'}
             </Text>
           </Pressable>
@@ -230,13 +230,13 @@ export default function YouTubePanel() {
           {/* チャンネル */}
           <View className="flex-row items-center justify-between">
             <View className="flex-1 mr-3">
-              <Text className="font-strong text-aux text-ink-soft mb-0.5">チャンネル</Text>
-              <Text className="text-body text-ink">{status.channel_name || '—'}</Text>
+              <Text className="font-strong text-aux text-on-surface-variant mb-0.5">チャンネル</Text>
+              <Text className="text-body text-on-surface">{status.channel_name || '—'}</Text>
             </View>
             {confirmDisconnect ? (
               <View className="flex-row items-center gap-3">
                 <Pressable onPress={() => setConfirmDisconnect(false)}>
-                  <Text className="text-aux text-ink-faint">キャンセル</Text>
+                  <Text className="text-aux text-outline">キャンセル</Text>
                 </Pressable>
                 <Pressable onPress={handleDisconnect} disabled={disconnecting}>
                   <Text className="text-aux text-error">
@@ -246,7 +246,7 @@ export default function YouTubePanel() {
               </View>
             ) : (
               <Pressable onPress={() => setConfirmDisconnect(true)}>
-                <Text className="text-aux text-ink-faint">連携を解除</Text>
+                <Text className="text-aux text-outline">連携を解除</Text>
               </Pressable>
             )}
           </View>
@@ -262,21 +262,21 @@ export default function YouTubePanel() {
           ) : null}
 
           {/* 再生回数推移 */}
-          <View className="bg-stone/50 rounded-lg px-4 pt-5 pb-4">
+          <View className="bg-surface-low/50 rounded-lg px-4 pt-5 pb-4">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="font-strong text-aux text-ink-soft">再生回数推移</Text>
+              <Text className="font-strong text-aux text-on-surface-variant">再生回数推移</Text>
               <View className="flex-row gap-1">
                 {PERIODS.map(({ label, days }) => (
                   <Pressable
                     key={days}
                     onPress={() => handleChangeDays(days)}
                     className={`rounded-full border px-2.5 py-1 ${
-                      analyticsDays === days ? 'border-accent bg-accent/10' : 'border-border'
+                      analyticsDays === days ? 'border-primary bg-primary/10' : 'border-border'
                     }`}
                   >
                     <Text
                       className={`text-[10px] ${
-                        analyticsDays === days ? 'text-accent' : 'text-ink-faint'
+                        analyticsDays === days ? 'text-primary' : 'text-outline'
                       }`}
                     >
                       {label}
@@ -287,9 +287,9 @@ export default function YouTubePanel() {
             </View>
 
             {analyticsLoading ? (
-              <View className="h-48 bg-parchment rounded-lg" />
+              <View className="h-48 bg-surface-high rounded-lg" />
             ) : chartData.length === 0 ? (
-              <Text className="text-aux text-ink-faint py-2">
+              <Text className="text-aux text-outline py-2">
                 この期間に投稿された動画はありません。
               </Text>
             ) : (
@@ -340,18 +340,18 @@ export default function YouTubePanel() {
 
           {/* 動画一覧 */}
           <View>
-            <Text className="font-strong text-aux text-ink-soft mb-3">動画</Text>
+            <Text className="font-strong text-aux text-on-surface-variant mb-3">動画</Text>
             {dataLoading ? (
               <View className="gap-4">
                 {[1, 2, 3].map((i) => (
                   <View key={i}>
-                    <View className="w-full bg-parchment rounded" style={{ aspectRatio: 16 / 9 }} />
-                    <View className="h-3 bg-parchment rounded-full w-4/5 mt-2" />
+                    <View className="w-full bg-surface-high rounded" style={{ aspectRatio: 16 / 9 }} />
+                    <View className="h-3 bg-surface-high rounded-full w-4/5 mt-2" />
                   </View>
                 ))}
               </View>
             ) : videosError ? (
-              <Text className="text-body text-ink-faint">動画を取得できませんでした。</Text>
+              <Text className="text-body text-outline">動画を取得できませんでした。</Text>
             ) : (
               <VideoTimeline videos={videos} />
             )}

@@ -77,13 +77,13 @@ export default function Reset() {
     <AuthScreen>
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-latin text-display text-ink">Lantern</Text>
-          <Text className="text-aux text-ink-faint mt-2 tracking-wider">新しいパスワード</Text>
+          <Text className="font-latin text-display text-on-surface">Lantern</Text>
+          <Text className="text-aux text-outline mt-2 tracking-wider">新しいパスワード</Text>
         </View>
 
         {done ? (
           <View className="gap-4">
-            <Text className="text-body-md text-ink leading-relaxed">
+            <Text className="text-body-md text-on-surface leading-relaxed">
               新しいパスワードを設定しました。
             </Text>
             {/* **「ログインへ」ではない**（2026-08-28）。
@@ -101,7 +101,7 @@ export default function Reset() {
           <View className="gap-4">
             {/* **理由を推測して書かない。** 期限切れなのか、リンクを
                 踏まずに来たのかは、ここからは分からない */}
-            <Text className="text-body-md text-ink leading-relaxed">
+            <Text className="text-body-md text-on-surface leading-relaxed">
               この画面からはパスワードを変えられません。
             </Text>
             <Text className="text-label-md text-outline leading-relaxed">
@@ -115,9 +115,9 @@ export default function Reset() {
             </Text>
             <Pressable
               onPress={() => router.replace('/forgot')}
-              className="border border-sage/40 rounded-full px-3.5 min-h-touch justify-center items-center"
+              className="border border-ai-ink/40 rounded-full px-3.5 min-h-touch justify-center items-center"
             >
-              <Text className="text-label-md text-forest">もう一度メールを送る</Text>
+              <Text className="text-label-md text-primary">もう一度メールを送る</Text>
             </Pressable>
           </View>
         ) : (

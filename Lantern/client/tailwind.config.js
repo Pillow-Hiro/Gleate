@@ -71,6 +71,10 @@ module.exports = {
         lantern: withAlpha('--color-lantern'),
         primary: {
           DEFAULT: withAlpha('--color-primary'),
+          // **淡い灯りの帯。**`amber-light` の新しい名前（2026-09-04）。
+          // 灯りの色は選べるので（`lib/accent.js`）、`amber` と呼ぶと
+          // 月や蛍を選んだ人の画面で**名前が嘘になる**
+          soft: withAlpha('--color-amber-light'),
           hover: withAlpha('--color-primary-hover'),
           text: withAlpha('--color-primary-text'),
         },

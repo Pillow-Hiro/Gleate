@@ -14,22 +14,22 @@ function cellStyle({ isFuture, isToday, hasLog, isSelected }) {
   const base = 'w-9 h-9 rounded items-center justify-center border '
   if (isFuture) return base + 'border-transparent'
   if (isToday && hasLog) {
-    return base + (isSelected ? 'bg-amber/20 border-amber/70' : 'bg-amber-light border-amber/40')
+    return base + (isSelected ? 'bg-primary/20 border-primary/70' : 'bg-primary-soft border-primary/40')
   }
   if (isToday) {
-    return base + (isSelected ? 'bg-accent/10 border-accent/60' : 'border-accent/50')
+    return base + (isSelected ? 'bg-primary/10 border-primary/60' : 'border-primary/50')
   }
   if (hasLog) {
-    return base + (isSelected ? 'bg-amber/20 border-amber/50' : 'bg-amber-light border-amber/30')
+    return base + (isSelected ? 'bg-primary/20 border-primary/50' : 'bg-primary-soft border-primary/30')
   }
-  return base + (isSelected ? 'bg-stone border-border' : 'border-transparent')
+  return base + (isSelected ? 'bg-surface-low border-border' : 'border-transparent')
 }
 
 function cellTextStyle({ isFuture, isToday, hasLog, isSelected }) {
   const base = 'text-label-sm '
-  if (isFuture) return base + 'text-ink-faint/30'
-  if (isToday || hasLog) return base + 'font-strong ' + (isToday && !hasLog ? 'text-accent' : 'text-amber')
-  return base + (isSelected ? 'text-ink' : 'text-ink-faint/60')
+  if (isFuture) return base + 'text-outline/30'
+  if (isToday || hasLog) return base + 'font-strong ' + (isToday && !hasLog ? 'text-primary' : 'text-primary')
+  return base + (isSelected ? 'text-on-surface' : 'text-outline/60')
 }
 
 export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
@@ -77,7 +77,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
     <View>
       <View className="flex-row items-center justify-center gap-2 mb-2">
         <Pressable onPress={prevMonth} className="p-1" accessibilityLabel="前月">
-          <Text className="text-ink-faint text-aux">‹</Text>
+          <Text className="text-outline text-aux">‹</Text>
         </Pressable>
         <Text className="font-strong text-body-md text-on-surface w-28 text-center">
           {viewYear}年{viewMonth + 1}月
@@ -88,7 +88,7 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
           className="p-1 disabled:opacity-25"
           accessibilityLabel="翌月"
         >
-          <Text className="text-ink-faint text-aux">›</Text>
+          <Text className="text-outline text-aux">›</Text>
         </Pressable>
         {/* **「今日」と書く**（2026-08-23）。押すと `goToday` が走り、
             今月を出したうえで**今日を選ぶ。**「今月」だと、

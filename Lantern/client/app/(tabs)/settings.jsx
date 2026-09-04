@@ -210,7 +210,7 @@ export default function Settings() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
       <ScrollView
@@ -218,7 +218,7 @@ export default function Settings() {
         contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
       >
         <View>
-          <Text className="font-display text-headline-md text-ink">設定</Text>
+          <Text className="font-display text-headline-md text-on-surface">設定</Text>
         </View>
 
         {/* **押すと画面が変わる**（2026-08-15）。

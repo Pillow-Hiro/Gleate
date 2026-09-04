@@ -166,7 +166,7 @@ export default function Home() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScreenFade>
       <AppHeader />
       {/* **キーボードのぶんだけ下を空ける**（2026-08-17）。
@@ -193,7 +193,7 @@ export default function Home() {
             読む人に何も足していない。 */}
         <View>
           <View className="flex-row items-baseline">
-            <Text className="font-display text-headline-md text-ink">{dateJa}</Text>
+            <Text className="font-display text-headline-md text-on-surface">{dateJa}</Text>
             {streak >= 2 ? (
               <Text className="text-label-md text-outline ml-2">· {streak}日目</Text>
             ) : null}
