@@ -8,6 +8,8 @@ import {
   logsOfDay,
   latestLogOf,
   countDays,
+  isDayFull,
+  MAX_RECORDS_PER_DAY,
 } from './date'
 
 // ローカルタイムゾーン基準の日付を作るヘルパー（new Date('2026-03-15') はUTC解釈になる）
@@ -235,3 +237,41 @@ describe('countDays', () => {
     expect(countDays([])).toBe(0)
   })
 })
+
+// 書くボタンを出すかどうか（`components/WriteButton.jsx`）。
+// **書く・ホーム・記録の3画面で同じ判定を使う**（2026-09-04・作者の指示）。
+// 画面ごとに数えると、片方だけ古くなる。
+describe('isDayFull', () => {
+  const rec = (id) => ({ date: '2026-09-04', id, saved_at: `2026-09-04T0${id}:00:00Z` })
+
+  it('上限に届いていなければ書ける', () => {
+    expect(isDayFull([], '2026-09-04')).toBe(false)
+    expect(isDayFull([rec(1), rec(2)], '2026-09-04')).toBe(false)
+  })
+
+  it('上限に届いたら書けない', () => {
+    const day = Array.from({ length: MAX_RECORDS_PER_DAY }, (_, i) => rec(i + 1))
+    expect(isDayFull(day, '2026-09-04')).toBe(true)
+  })
+
+  it('別の日は数えない', () => {
+    const other = Array.from({ length: MAX_RECORDS_PER_DAY }, (_, i) => ({
+      date: '2026-09-03',
+      id: `x${i}`,
+    }))
+    expect(isDayFull(other, '2026-09-04')).toBe(false)
+  })
+
+  // **写真だけの日の札は数えない**（`lib/photoStore.js` の `attach`）。
+  // `id` を持たず、行としては存在しない。混ぜるとサーバーの数え方と
+  // ずれて、**まだ置けるのにボタンが消える**
+  it('写真だけの札は数えない', () => {
+    const withPhoto = [
+      rec(1),
+      rec(2),
+      { date: '2026-09-04', created: '', photo_url: 'file://a.jpg' },
+    ]
+    expect(isDayFull(withPhoto, '2026-09-04')).toBe(false)
+  })
+})
+

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import WriteButton from '../../components/WriteButton'
 import { attach as attachPhotos } from '../../lib/photoStore'
+import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
@@ -247,8 +248,12 @@ export default function Home() {
 
       {/* 右下の書くボタン。**ホーム・記録・書くの3つに置く**（作者の指示）。
           ここは問いを取っているので、一緒に連れていける
-          （`components/WriteButton.jsx`） */}
-      <WriteButton question={question} />
+          （`components/WriteButton.jsx`）。
+
+          **上限に達したら出さない**（2026-09-04・作者の指示で
+          「書く」と同じ扱いにした）。押せないボタンを置くくらいなら
+          無い方がいい。理由は「書く」タブの紙に書いてある。 */}
+      {isDayFull(logs, todayStr()) ? null : <WriteButton question={question} />}
       </ScreenFade>
     </SafeAreaView>
   )

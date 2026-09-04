@@ -71,6 +71,22 @@ export function latestLogOf(logs, date) {
   return day[day.length - 1] || null
 }
 
+/**
+ * その日はもう書けないか。**書くボタンを出すかどうかの判定**
+ * （2026-09-04・作者の指示でホーム・記録にも同じ扱いを広げた）。
+ *
+ * **数えるのは本物の記録だけ。** 写真だけの日にも札が立つが
+ * （`lib/photoStore.js` の `attach`）、あれは `id` を持たず、
+ * 行としては存在しない。混ぜるとサーバーの数え方（`main.py` の
+ * `MAX_RECORDS_PER_DAY`）とずれて、**まだ置けるのにボタンが消える。**
+ *
+ * ホームと記録は写真を合流させた一覧を持っているので、ここを通さないと
+ * 画面ごとに違う数を数えることになる。**判定はここ1か所。**
+ */
+export function isDayFull(logs, date) {
+  return logsOfDay(logs, date).filter((l) => l.id).length >= MAX_RECORDS_PER_DAY
+}
+
 // 記録した**日数**。件数ではない（2026-09-03）。
 // 1日に複数件置けるようにしてから、`logs.length` は日数と一致しない。
 export function countDays(logs) {

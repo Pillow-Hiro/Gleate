@@ -7,7 +7,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
-import { MAX_RECORDS_PER_DAY, calcStreak, logsOfDay, todayStr } from '../../lib/date'
+import { MAX_RECORDS_PER_DAY, calcStreak, isDayFull, logsOfDay, todayStr } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import WriteTabs from '../../components/WriteTabs'
 import HomeCard from '../../components/HomeCard'
@@ -116,7 +116,7 @@ export default function Home() {
   // **数えるのは本物の記録だけ。**上限（`MAX_RECORDS_PER_DAY`）は
   // サーバーが行の数で見ているので、下の写真だけの日を混ぜない
   const dayLogs = logsOfDay(logs, targetDate)
-  const full = dayLogs.length >= MAX_RECORDS_PER_DAY
+  const full = isDayFull(logs, targetDate)
 
   const streak = calcStreak(logs)
 

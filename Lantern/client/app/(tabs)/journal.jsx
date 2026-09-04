@@ -11,7 +11,7 @@ import { loadLogs, replaceLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { dateDisplayJa } from '../../lib/format'
-import { MAX_RECORDS_PER_DAY, countDays, logsOfDay, todayStr } from '../../lib/date'
+import { MAX_RECORDS_PER_DAY, countDays, isDayFull, logsOfDay, todayStr } from '../../lib/date'
 import ActivityCalendar from '../../components/ActivityCalendar'
 import LogDetail from '../../components/LogDetail'
 import AppHeader from '../../components/AppHeader'
@@ -413,8 +413,12 @@ export default function Journal() {
 
       {/* 右下の書くボタン。**ホーム・記録・書くの3つに置く**（作者の指示）。
           ここは問いを取っていないので渡さない。全画面では決まり文句に
-          落ちる（`components/WriteButton.jsx`） */}
-      <WriteButton />
+          落ちる（`components/WriteButton.jsx`）。
+
+          **上限に達したら出さない**（2026-09-04）。数えるのは今日の
+          本物の記録だけ——この画面の一覧は写真を合流させてあり、
+          写真だけの日の札は `id` を持たない（`lib/date.js`）。 */}
+      {isDayFull(logs, todayStr()) ? null : <WriteButton />}
 
       </ScreenFade>
     </SafeAreaView>
