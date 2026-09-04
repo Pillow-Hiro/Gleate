@@ -12,7 +12,16 @@ import { invalidateLogs } from '../lib/logsCache'
 // 探す材料はそこで書いたものなので、**探せるのは戻ってから。**
 // 書いている最中に「探す」を置いても、まだ何も残っていない。
 //
-// `target` はその日のいちばん新しい記録（`lib/date.js` の `latestLogOf`）。
+// `target` は**探す相手の記録**。カードの中に置くので、
+// 押したボタンが載っているカードがそのまま相手になる
+// （2026-09-04・作者から「どのカードを対象にしているのだろうか？
+// 明確にしましょう」）。
+//
+// それまでは一覧の下に1つだけ置き、その日の最新を相手にしていた。
+// **画面のどこにもそう書いていなかった**うえ、`askHint` は日付しか
+// 送っていなかったので、**探すのは1件目・書き込むのは最新**という
+// 噛み合わない状態だった。
+//
 // **無ければ何も出さない。** 材料が一つも無いのに探せると言わない。
 //
 // ## ここが「困ったこと」の唯一の書き手（2026-09-04）
@@ -32,7 +41,8 @@ export default function HintPanel({ date, target, onSaved, onPaywall }) {
   async function ask() {
     setHinting(true)
     try {
-      const got = await askHint(date)
+      // **この記録から探す。** どのカードのボタンを押したかで決まる
+      const got = await askHint(date, target?.id || '')
       if (!got) return
       if (got.kind === 'paywall') {
         onPaywall?.(got.text)

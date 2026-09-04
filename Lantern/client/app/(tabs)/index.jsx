@@ -7,13 +7,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
-import {
-  MAX_RECORDS_PER_DAY,
-  calcStreak,
-  latestLogOf,
-  logsOfDay,
-  todayStr,
-} from '../../lib/date'
+import { MAX_RECORDS_PER_DAY, calcStreak, logsOfDay, todayStr } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import WriteTabs from '../../components/WriteTabs'
 import HomeCard from '../../components/HomeCard'
@@ -124,7 +118,6 @@ export default function Home() {
   // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
   // 書く場所と直す場所を分けると、どちらも一つのことだけをする。
   const dayLogs = logsOfDay(logs, targetDate)
-  const latestLog = latestLogOf(logs, targetDate)
   const full = dayLogs.length >= MAX_RECORDS_PER_DAY
 
   const streak = calcStreak(logs)
@@ -256,15 +249,10 @@ export default function Home() {
                   ? question
                   : `${isEditingPast ? 'この日' : '今日'}どんなことをしましたか。`}
               </Text>
-              {/* **すでに記録があることだけ伝える**（2026-09-03）。
-                  数は書かない（`REQUIREMENTS.md` F1「書く前に数を
-                  意識させない」）。伝えたいのは件数ではなく、
-                  **ここに書いても前のは消えない**ということ */}
-              {dayLogs.length > 0 ? (
-                <Text className="text-label-md text-outline">
-                  書くと、別の記録として残ります。
-                </Text>
-              ) : null}
+              {/* **「書くと、別の記録として残ります」は置かない**
+                  （2026-09-04・作者の指示で削除）。
+                  下に今日の記録がカードで並ぶようになったので、
+                  **増えることは見れば分かる。**字で言う必要がなくなった。 */}
               {/* **押せることを字で言う**（2026-09-04・作者の指示
                   「タップしやすいようにユーザーに認識させる工夫が必要」）。
 
@@ -297,19 +285,24 @@ export default function Home() {
                   log={l}
                   label={timeLabel(l)}
                   lighting={i === 0 && lighting}
+                  // **手がかりはカードの中に置く**（2026-09-04・作者の指摘
+                  // 「どのカードを対象にしているのだろうか？明確にしましょう」）。
+                  //
+                  // 一覧の下に1つ置いていたが、**どの記録から探すのかが
+                  // 画面のどこにも書いていなかった。**中に置けば、
+                  // 押したボタンが載っているカードがそのまま相手になる。
+                  footer={
+                    <HintPanel
+                      date={targetDate}
+                      target={l}
+                      onSaved={refreshData}
+                      onPaywall={(m) => setHintPaywall(m || paywallMessage(null))}
+                    />
+                  }
                 />
               ))}
             </View>
           ) : null}
-
-          {/* 手がかり。**書いたあとにだけ探せる。**
-              探す先はその日のいちばん新しい記録（`components/HintPanel.jsx`） */}
-          <HintPanel
-            date={targetDate}
-            target={latestLog}
-            onSaved={refreshData}
-            onPaywall={(message) => setHintPaywall(message || paywallMessage(null))}
-          />
 
           {/* 手がかりの枠を使い切ったとき。**手がかりの外に出す。**
               読む場所に売り物を混ぜない（`components/HintPanel.jsx`） */}

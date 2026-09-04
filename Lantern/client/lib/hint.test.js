@@ -80,3 +80,37 @@ describe('取れなかったとき', () => {
     expect(await askHint('2026-09-02')).toBeNull()
   })
 })
+
+// **どの記録から探すか**（2026-09-04・作者の指摘
+// 「カードが複数あるとき、手がかりを探すはどのカードを対象に
+// しているのだろうか？」）。
+//
+// 日付しか送っていなかったので、サーバーはその日の**1件目**を見ていた
+// （`main.py` の `/api/hint`）。答えを書き込む側は最新を相手にしていたので、
+// **探す相手と書き込む相手が別の記録**という噛み合わない状態だった。
+describe('探す相手', () => {
+  function sentBody() {
+    return JSON.parse(authFetch.mock.calls[0][1].body)
+  }
+
+  it('id を渡すと、その記録を名指しする', async () => {
+    reply(200, { kind: 'hint', text: 'あ' })
+    await askHint('2026-09-02', 'rec-2')
+    expect(sentBody()).toMatchObject({ date: '2026-09-02', id: 'rec-2' })
+  })
+
+  // 名指しできないときは日付だけ送る。**空文字を送らない**——
+  // サーバーは `id` が有ると見て探し、見つからず 404 を返す
+  it('id が無ければ送らない', async () => {
+    reply(200, { kind: 'hint', text: 'あ' })
+    await askHint('2026-09-02')
+    expect(sentBody()).toEqual({ date: '2026-09-02' })
+  })
+
+  it('空文字も送らない', async () => {
+    reply(200, { kind: 'hint', text: 'あ' })
+    await askHint('2026-09-02', '')
+    expect(sentBody()).toEqual({ date: '2026-09-02' })
+  })
+})
+

@@ -25,7 +25,12 @@ import { Breathe } from './Motion'
 //
 // `lighting` は**灯りを待っている最中**（`lib/lightBuffer.js`）。
 // まだ `ai_response` が無いので、代わりに息をする字を置く。
-export default function HomeCard({ log, label, lighting }) {
+//
+// `footer` は**このカードに効くもの**を入れる口（2026-09-04）。
+// 「書く」タブでは手がかりの入口が入る。カードの外に置くと、
+// **どの記録を相手にしているのかが画面から分からない。**
+// ホームからは渡さない（眺める場所に操作を置かない）。
+export default function HomeCard({ log, label, lighting, footer }) {
   const [lightbox, setLightbox] = useState(false)
   const body = log.created || ''
   const photo = log.photo_url || log.photo_thumb_url
@@ -73,6 +78,8 @@ export default function HomeCard({ log, label, lighting }) {
           </Breathe>
         </View>
       ) : null}
+
+      {footer}
 
       {lightbox && photo ? (
         <PhotoLightbox src={photo} onClose={() => setLightbox(false)} />

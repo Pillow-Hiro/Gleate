@@ -22,11 +22,20 @@ import { isPaidRequired } from './plan'
 //   { kind: 'question', text }  … 一つだけの問い
 //   { kind: 'paywall',  text }  … 無料の枠を使い切った
 //   null                        … 取れなかった（画面は何も出さない）
-export async function askHint(date) {
+//
+// ## どの記録から探すか（2026-09-04・作者の指摘）
+//
+// **`id` で名指しする。** 送らないとサーバーは日付で引いて、
+// その日の**1件目**を見る（`main.py` の `/api/hint`）。
+//
+// 1日に複数件置けるようにしてから、**噛み合っていなかった。**
+// 手がかりは朝の記録から探し、答えは夜の記録に書き込んでいた
+// （`components/HintPanel.jsx` は最新を相手にしていた）。
+export async function askHint(date, id = '') {
   try {
     const res = await authFetch('/api/hint', {
       method: 'POST',
-      body: JSON.stringify({ date }),
+      body: JSON.stringify({ date, id: id || undefined }),
     })
 
     let body = null
