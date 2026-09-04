@@ -143,7 +143,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HomeCard.jsx` | ホーム / (tabs)/index | 結果だけの1枚。やったこと・写真・Lanternの言葉。「書く」では時刻を出し、灯り待ちは息をする |
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
-| `AccountMark.jsx` | 設定 | アカウントの印。**顔写真は持たない**。アドレスから決まる |
+| `AccountMark.jsx` | 設定 / マイページ | アカウントの印。画像があれば画像、無ければ**アドレスから決まる印**。色は灯りの色から取る |
 | `SwatchPicker.jsx` | マイページ | 色を選ぶ区画。灯りと紙で同じ形を使う。見本は呼ぶ側が明暗で引く |
 | `AuthField.jsx` | 認証 | アイコン＋下線の入力欄。ログイン/登録/再設定で共有 |
 | `LanternMark.jsx` | 認証 | 灯りのしるし（SVG）。**絵文字を使わない**ため図形で描く |
@@ -178,7 +178,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `theme.js` | 外観と灯りの色の保持、NativeWind への反映（`react-native` を読む） | — |
 | `themeMode.js` | 外観の決め方。**端末に合わせる／ライト／ダークの3つ**。既定は端末 | `themeMode.test.js` |
 | `sample.js` | ホームに並べる記録を選ぶ。**その日のうちは同じ顔ぶれ** | `sample.test.js` |
-| `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
+| `accountMark.js` | アカウントの印の**組と文字**。アドレスだけから決まる（色は灯りの束から引く） | `accountMark.test.js` |
 | `avatarStore.js` ＋ `avatarStore.web.js` | アカウントの画像。**端末の中だけ** | — |
 | `splashPref.js` | 起動画面を毎回出すか。**本来は1日1回** | — |
 | `onboardingPref.js` | 初回の案内を見たか。**一度きり**（鍵に版を持つ） | — |
