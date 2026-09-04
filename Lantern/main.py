@@ -260,9 +260,22 @@ def make_light():
     if not entry:
         return jsonify({"error": "not_found"}), 404
 
-    # **枠が尽きても記録は残っている。**灯りが付かないだけ
+    # **枠が尽きても記録は残っている。**灯りが付かないだけ。
+    #
+    # **なぜ来ないのかを言う**（2026-09-04・作者から「Lanternの回答が
+    # 表示されない。回数制限がある？」）。
+    #
+    # それまでは空の `ai_response` を返すだけだった。画面は何も出さず、
+    # **待っていれば来るのか、もう来ないのかが分からなかった。**
+    # 灯りは十数秒かかるので、来ないことと遅いことが見分けられない。
+    #
+    # 古い画面は知らない鍵を読まないので、そのまま動く。
     if not spend_ai_budget(g.user_id):
-        return jsonify({"ai_response": entry.get("ai_response", "")})
+        return jsonify({
+            "ai_response": entry.get("ai_response", ""),
+            "reason": "budget",
+            "limit": daily_limit(g.user_id),
+        })
 
     try:
         ai_response = get_ai_response(
@@ -270,7 +283,8 @@ def make_light():
         )
     except Exception as e:
         print(f"[/api/light] AI error: {type(e).__name__}: {e}")
-        return jsonify({"ai_response": entry.get("ai_response", "")})
+        # 一度きりの失敗。**次に書けば来る**ので、上限とは別の言い方にする
+        return jsonify({"ai_response": entry.get("ai_response", ""), "reason": "failed"})
 
     entry["ai_response"] = ai_response
     # **時刻を打ち直す**（2026-08-27）。

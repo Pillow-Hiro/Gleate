@@ -94,6 +94,43 @@ class Test灯りと手がかりの引き先:
         # 見つかっていれば 404 にならない
         assert not isinstance(body, tuple)
 
+    # **来なかった理由を言う**（2026-09-04・作者から「Lanternの回答が
+    # 表示されない。回数制限がある？」）。
+    #
+    # 空の `ai_response` を返すだけだと、画面は何も出さない。灯りは
+    # 十数秒かかるので、**待てば来るのか、もう来ないのかが分からない。**
+    def test_枠が尽きたら理由を返す(self, monkeypatch):
+        monkeypatch.setattr(main, "load_logs", lambda uid: self._logs())
+        monkeypatch.setattr(main, "spend_ai_budget", lambda uid: False)
+        monkeypatch.setattr(main, "daily_limit", lambda uid: 10)
+
+        with main.app.test_request_context("/api/light", method="POST",
+                                           json={"id": "b", "date": "2026-09-02"}):
+            g.user_id = "u1"
+            body = main.make_light.__wrapped__()
+
+        assert body.json["reason"] == "budget"
+        assert body.json["limit"] == 10
+        # **記録は残っている。**灯りが付かないだけ
+        assert body.json["ai_response"] == ""
+
+    def test_灯りが作れなければ別の理由を返す(self, monkeypatch):
+        monkeypatch.setattr(main, "load_logs", lambda uid: self._logs())
+        monkeypatch.setattr(main, "spend_ai_budget", lambda uid: True)
+
+        def boom(*a):
+            raise RuntimeError("AI が落ちた")
+
+        monkeypatch.setattr(main, "get_ai_response", boom)
+
+        with main.app.test_request_context("/api/light", method="POST",
+                                           json={"id": "b", "date": "2026-09-02"}):
+            g.user_id = "u1"
+            body = main.make_light.__wrapped__()
+
+        # 一度きりの失敗。**次に書けば来る**ので上限とは別の言い方にする
+        assert body.json["reason"] == "failed"
+
     def test_手がかりはidで引く(self, monkeypatch):
         monkeypatch.setattr(main, "load_logs", lambda uid: self._logs())
         monkeypatch.setattr(main, "has_free_left", lambda uid: True)

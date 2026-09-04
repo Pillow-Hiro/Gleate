@@ -16,7 +16,7 @@ import WriteButton from '../../components/WriteButton'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
 import { attach as attachPhotos } from '../../lib/photoStore'
-import { isLighting, subscribeLight, getLight } from '../../lib/lightBuffer'
+import { isLighting, subscribeLight, getLight, lightNote } from '../../lib/lightBuffer'
 
 // キーボードが出ているとき、**測った高さに足す**ぶん。
 //
@@ -126,10 +126,13 @@ export default function Home() {
   // **取り直せばカードに載る。**取り直さないと、待っている字が
   // 消えるだけで返事が出てこない。
   const [lighting, setLighting] = useState(() => isLighting(targetDate))
+  // 灯りが来なかった理由。**待ち続けさせない**（`lib/lightBuffer.js`）
+  const [note, setNote] = useState(() => lightNote(targetDate))
   useEffect(() => {
     let had = Boolean(getLight(targetDate))
     function sync() {
       setLighting(isLighting(targetDate))
+      setNote(lightNote(targetDate))
       const now = Boolean(getLight(targetDate))
       if (now && !had) refreshData()
       had = now
@@ -283,6 +286,7 @@ export default function Home() {
                   log={l}
                   label={timeLabel(l)}
                   lighting={i === 0 && lighting}
+                  note={i === 0 ? note : ''}
                   // **手がかりはカードの中に置く**（2026-09-04・作者の指摘
                   // 「どのカードを対象にしているのだろうか？明確にしましょう」）。
                   //

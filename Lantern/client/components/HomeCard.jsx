@@ -30,7 +30,7 @@ import { Breathe } from './Motion'
 // 「書く」タブでは手がかりの入口が入る。カードの外に置くと、
 // **どの記録を相手にしているのかが画面から分からない。**
 // ホームからは渡さない（眺める場所に操作を置かない）。
-export default function HomeCard({ log, label, lighting, footer }) {
+export default function HomeCard({ log, label, lighting, note, footer }) {
   const [lightbox, setLightbox] = useState(false)
   const body = log.created || ''
   const photo = log.photo_url || log.photo_thumb_url
@@ -65,6 +65,12 @@ export default function HomeCard({ log, label, lighting, footer }) {
       {log.ai_response ? (
         <View className="bg-ai-surface rounded-lg px-4 py-3.5">
           <Text className="text-body-md text-ai-ink leading-relaxed">{log.ai_response}</Text>
+        </View>
+      ) : note ? (
+        // **来ない理由を出す**（2026-09-04）。灯りは十数秒かかるので、
+        // 何も出さないと**来ないのか遅いのかが分からない**
+        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+          <Text className="text-label-md text-on-surface-variant leading-relaxed">{note}</Text>
         </View>
       ) : lighting ? (
         // **記録はもう残っている。**待っているのは灯りだけなので、

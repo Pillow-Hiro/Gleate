@@ -27,7 +27,7 @@ import { watchRecoveryLinks } from '../lib/recoverySession'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
 import { vars } from 'nativewind'
 import { accentVars } from '../lib/accent'
-import { paperVars } from '../lib/paper'
+import { findPaper, paperVars } from '../lib/paper'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
 //
@@ -159,7 +159,9 @@ function RootNavigator() {
   }
   const segments = useSegments()
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark, paper } = useThemeContext()
+  // 画面の下地。**全画面の記録が開くときの一瞬に効く**（下の `write`）
+  const ground = `rgb(${findPaper(paper)[isDark ? 'dark' : 'light'].ground})`
 
   // **再設定の最中は、上に何も被せない**（2026-08-28・作者の指示）。
   //
@@ -263,8 +265,23 @@ function RootNavigator() {
             下からせり上がると「別の場所へ移った」に見える。入り込むのは
             面が広がる動きなので、そちらは画面の側でやる
             （`components/Motion.jsx` の `ZoomIn`）。
-            ここが滑っていると、2つの動きが喧嘩する。 */}
-        <Stack.Screen name="write" options={{ presentation: 'modal', animation: 'fade' }} />
+            ここが滑っていると、2つの動きが喧嘩する。
+
+            **下地を紙の色にする**（2026-09-04・作者から「開くときに
+            一瞬ノイズが入る。ダークモードだと顕著」）。
+
+            被せ物の入れ物は、既定で**白**。中身は `ZoomIn` が薄いところ
+            から現れるので、**現れ切るまでその白が見えていた。**
+            暗いテーマだと白い板が一瞬光る。地の色と同じにすれば、
+            何も無いところから広がったように見える。 */}
+        <Stack.Screen
+          name="write"
+          options={{
+            presentation: 'modal',
+            animation: 'fade',
+            contentStyle: { backgroundColor: ground },
+          }}
+        />
       </Stack>
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）

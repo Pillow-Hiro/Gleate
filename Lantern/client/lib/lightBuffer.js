@@ -40,6 +40,12 @@ import { invalidateLogs } from './logsCache'
 const lights = new Map()
 const waiting = new Set()
 const listeners = new Set()
+// **来なかった理由**（2026-09-04・作者から「Lanternの回答が
+// 表示されない。回数制限がある？」）。
+//
+// 灯りは十数秒かかるので、**来ないことと遅いことが見分けられない。**
+// 待つのをやめてよいと分かるように、理由を一言だけ持つ。
+const notes = new Map()
 
 function notify() {
   for (const fn of listeners) {
@@ -56,6 +62,11 @@ export function getLight(date) {
   return lights.get(date) || ''
 }
 
+/** 灯りが来なかった理由。無ければ空文字（画面に出す一言） */
+export function lightNote(date) {
+  return notes.get(date) || ''
+}
+
 /** いま作っている最中か */
 export function isLighting(date) {
   return waiting.has(date)
@@ -67,9 +78,11 @@ export function subscribeLight(fn) {
   return () => listeners.delete(fn)
 }
 
-/** 書き直したときなど、前の灯りを捨てる */
+/** 書き直したときなど、前の灯りを捨てる。**理由も一緒に捨てる** */
 export function forgetLight(date) {
-  if (lights.delete(date)) notify()
+  const had = lights.delete(date)
+  notes.delete(date)
+  if (had) notify()
 }
 
 /**
@@ -79,6 +92,7 @@ export function forgetLight(date) {
 export function forgetAllLights() {
   lights.clear()
   waiting.clear()
+  notes.clear()
   notify()
 }
 
@@ -102,14 +116,25 @@ export function requestLight(date, id = '') {
   authFetch('/api/light', { method: 'POST', body: JSON.stringify({ date, id: id || undefined }) })
     .then((r) => (r.ok ? r.json() : null))
     .then((j) => {
-      if (!j || !j.ai_response) return
-      lights.set(date, j.ai_response)
-      // 灯りは記録の一部として保存されている。一覧にも載せる
-      invalidateLogs()
+      if (!j) return
+      if (j.ai_response) {
+        lights.set(date, j.ai_response)
+        // 灯りは記録の一部として保存されている。一覧にも載せる
+        invalidateLogs()
+        return
+      }
+      // **来ない理由をサーバーが言ってきた**（`main.py` の `/api/light`）。
+      // 待ち続けさせない
+      if (j.reason === 'budget') {
+        notes.set(date, `今日の灯りはここまでです（1日${j.limit || ''}回）。記録は残っています。`)
+      } else if (j.reason === 'failed') {
+        notes.set(date, '灯りをともせませんでした。記録は残っています。')
+      }
     })
     .catch((e) => {
-      // 失敗しても何も出さない。**記録は残っている**
+      // **記録は残っている。**言うのはそれだけ
       console.warn('[記録] 灯りを受け取れなかった', e)
+      notes.set(date, '灯りをともせませんでした。記録は残っています。')
     })
     .finally(() => {
       waiting.delete(date)
