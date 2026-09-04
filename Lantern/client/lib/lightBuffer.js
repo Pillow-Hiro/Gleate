@@ -86,13 +86,20 @@ export function forgetAllLights() {
  * 灯りをともす。**待たない。**
  *
  * 同じ日を重ねて頼まない。保存を続けて押しても通信は1本。
+ *
+ * `id` は**どの記録に付けるか**（2026-09-04）。渡さないとサーバーは
+ * 日付で引いて、その日の1件目に付ける。1日に複数件置けるように
+ * してから、2件目を書いた人に朝の記録への返事が返っていた。
+ *
+ * 受け皿の鍵は日付のまま。**画面が出すのは「いま書いたぶんの灯り」**
+ * ひとつだけなので、日付で足りる（`components/LightPending.jsx`）。
  */
-export function requestLight(date) {
+export function requestLight(date, id = '') {
   if (waiting.has(date)) return
   waiting.add(date)
   notify()
 
-  authFetch('/api/light', { method: 'POST', body: JSON.stringify({ date }) })
+  authFetch('/api/light', { method: 'POST', body: JSON.stringify({ date, id: id || undefined }) })
     .then((r) => (r.ok ? r.json() : null))
     .then((j) => {
       if (!j || !j.ai_response) return

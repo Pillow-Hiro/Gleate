@@ -148,3 +148,51 @@ export function ZoomIn({ children, style }) {
     </Animated.View>
   )
 }
+
+/**
+ * **息をする。**（2026-09-04・作者から「回答中、アニメーションをつけてもいいかも」）
+ *
+ * 灯りを待っているあいだの動き（`components/HomeCard.jsx`）。
+ * 薄くなって、戻る。それだけを繰り返す。
+ *
+ * ## なぜ動かすのか
+ *
+ * 灯りは十数秒かかる。**止まった字は、壊れた字と見分けがつかない。**
+ * 「ともしています」と書いてあっても、動いていなければ
+ * 本当に動いているのか分からない。
+ *
+ * ## なぜこの動きか
+ *
+ * **回らない。進まない。** 待ち時間を測って見せるものは、
+ * 待ちを長く感じさせる（CLAUDE.md「読み込み中の表示に動きを付けない」）。
+ * ここで付けるのは**生きている印**であって、進み具合ではない。
+ *
+ * 息の速さは灯り（`BootScreen`）と同じ 1.6 秒。
+ * 同じアプリの中で、待っているものの呼吸を変えない。
+ */
+export function Breathe({ children, low = 0.45, style }) {
+  const t = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, {
+          toValue: low,
+          duration: 800,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(t, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [t, low])
+
+  return <Animated.View style={[{ opacity: t }, style]}>{children}</Animated.View>
+}

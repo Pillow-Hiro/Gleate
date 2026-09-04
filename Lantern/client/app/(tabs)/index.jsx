@@ -16,11 +16,12 @@ import {
 } from '../../lib/date'
 import AppHeader from '../../components/AppHeader'
 import WriteTabs from '../../components/WriteTabs'
-import LightCard from '../../components/LightCard'
+import HomeCard from '../../components/HomeCard'
 import HintPanel from '../../components/HintPanel'
 import WriteButton from '../../components/WriteButton'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { isLighting, subscribeLight, getLight } from '../../lib/lightBuffer'
 
 // キーボードが出ているとき、**測った高さに足す**ぶん。
 //
@@ -128,6 +129,33 @@ export default function Home() {
 
   const streak = calcStreak(logs)
 
+  // **灯りを待っているか。**受け皿を見る（`lib/lightBuffer.js`）。
+  //
+  // 届いたら記録を取り直す。灯りは記録の一部として保存されるので、
+  // **取り直せばカードに載る。**取り直さないと、待っている字が
+  // 消えるだけで返事が出てこない。
+  const [lighting, setLighting] = useState(() => isLighting(targetDate))
+  useEffect(() => {
+    let had = Boolean(getLight(targetDate))
+    function sync() {
+      setLighting(isLighting(targetDate))
+      const now = Boolean(getLight(targetDate))
+      if (now && !had) refreshData()
+      had = now
+    }
+    sync()
+    return subscribeLight(sync)
+  }, [targetDate, refreshData])
+
+  // **新しい順に並べる。**書いた直後のものが一番上に来る
+  const cards = [...dayLogs].reverse()
+
+  function timeLabel(l) {
+    if (!l.saved_at) return '記録'
+    const t = new Date(l.saved_at)
+    return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+  }
+
   // 全画面を開く。**紙からも右下のボタンからも同じところへ行く**
   function openWrite() {
     router.push({ pathname: '/write', params: { date: targetDate, question } })
@@ -215,7 +243,13 @@ export default function Home() {
             <Pressable
               onPress={openWrite}
               accessibilityLabel="記録を書く"
-              className="bg-surface-lowest rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-80"
+              // **他のカードと違う姿にする**（2026-09-04・作者の指示
+              //「新しいカードは分かりやすくタップしやすいように」）。
+              //
+              // 下に今日の記録が同じ形のカードで並ぶので、**同じ姿だと
+              // 一枚目の記録に見える。**押すものだけ縁を灯り色にして、
+              // 地も薄く敷く。記録のカードは無地の面のまま。
+              className="bg-lantern-glow/5 border border-lantern-glow rounded-lg px-5 py-5 gap-3 active:opacity-80"
             >
               <Text className="text-body-md text-outline leading-relaxed">
                 {question && !isEditingPast
@@ -243,9 +277,30 @@ export default function Home() {
             </Pressable>
           )}
 
-          {/* 灯り。**保存の十数秒あとに届く**（`components/LightCard.jsx`）。
-              書いている画面はもう閉じているので、受け取るのはここ */}
-          <LightCard date={targetDate} />
+          {/* **今日の記録**（2026-09-04・作者の指示「当日分の記録は
+              書くタブ内にもカードとして表示する」）。
+
+              **新しい順。**書いた直後のものが一番上に来る。
+              日付ではなく時刻を出す——同じ日が並ぶので「今日」を
+              3枚重ねても見分けがつかない。
+
+              灯りはカードの中に出る（`components/HomeCard.jsx`）。
+              まだ届いていない一番新しい記録には、息をする字が出る。 */}
+          {cards.length > 0 ? (
+            <View className="gap-4">
+              <Text className="font-strong text-label-md text-on-surface-variant">
+                今日の記録
+              </Text>
+              {cards.map((l, i) => (
+                <HomeCard
+                  key={l.id || `${l.date}-${i}`}
+                  log={l}
+                  label={timeLabel(l)}
+                  lighting={i === 0 && lighting}
+                />
+              ))}
+            </View>
+          ) : null}
 
           {/* 手がかり。**書いたあとにだけ探せる。**
               探す先はその日のいちばん新しい記録（`components/HintPanel.jsx`） */}

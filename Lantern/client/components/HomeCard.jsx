@@ -4,6 +4,7 @@ import Text from './Text'
 import RichText from './RichText'
 import PhotoLightbox from './PhotoLightbox'
 import { relativeDayLabel } from '../lib/format'
+import { Breathe } from './Motion'
 
 // ホームに並べる1枚。
 //
@@ -19,7 +20,12 @@ import { relativeDayLabel } from '../lib/format'
 // そのぶん枚数を絞る（ホームは3件）。
 //
 // 本文は装飾つきで出す（`RichText`）。抜粋ではないので記法を外さない。
-export default function HomeCard({ log }) {
+// `label` は日付の代わりに出す字（**「書く」タブでは時刻**）。
+// 同じ日が並ぶので「今日」を3枚重ねても見分けがつかない。
+//
+// `lighting` は**灯りを待っている最中**（`lib/lightBuffer.js`）。
+// まだ `ai_response` が無いので、代わりに息をする字を置く。
+export default function HomeCard({ log, label, lighting }) {
   const [lightbox, setLightbox] = useState(false)
   const body = log.created || ''
   const photo = log.photo_url || log.photo_thumb_url
@@ -30,7 +36,9 @@ export default function HomeCard({ log }) {
   return (
     <View className="bg-surface-lowest rounded-lg px-5 py-5 gap-4 shadow-bloom">
       <View className="flex-row items-center justify-between">
-        <Text className="font-label text-label-md text-outline">{relativeDayLabel(log.date)}</Text>
+        <Text className="font-label text-label-md text-outline">
+          {label || relativeDayLabel(log.date)}
+        </Text>
         {log.favorite ? <Text className="text-lantern-glow">★</Text> : null}
       </View>
 
@@ -52,6 +60,17 @@ export default function HomeCard({ log }) {
       {log.ai_response ? (
         <View className="bg-ai-surface rounded-lg px-4 py-3.5">
           <Text className="text-body-md text-ai-ink leading-relaxed">{log.ai_response}</Text>
+        </View>
+      ) : lighting ? (
+        // **記録はもう残っている。**待っているのは灯りだけなので、
+        // 「保存中」とは書かない。書いた人を不安にさせない。
+        //
+        // 息をさせる（2026-09-04・作者の指示）。十数秒かかるので、
+        // **止まった字は壊れた字と見分けがつかない**（`Motion.jsx`）
+        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+          <Breathe>
+            <Text className="text-label-md text-on-surface-variant">灯りをともしています。</Text>
+          </Breathe>
         </View>
       ) : null}
 

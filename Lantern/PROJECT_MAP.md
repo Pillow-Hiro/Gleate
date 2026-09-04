@@ -130,7 +130,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | (tabs)/index | 手がかりの入口。**書いたあとに読むもの**なので入口の側にある。答えはその日の最後の記録に `id` で足す（**`struggled` の唯一の書き手**） |
-| `LightCard.jsx` | (tabs)/index | その日の灯り。受け皿（`lib/lightBuffer.js`）をそのまま映す。**独自に覚えない** |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
@@ -141,7 +140,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**ので地は灰（砂はLanternの言葉の色） |
 | `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
-| `HomeCard.jsx` | ホーム | 結果だけの1枚。やったこと・写真・Lanternの言葉 |
+| `HomeCard.jsx` | ホーム / (tabs)/index | 結果だけの1枚。やったこと・写真・Lanternの言葉。「書く」では時刻を出し、灯り待ちは息をする |
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
 | `AccountMark.jsx` | 設定 | アカウントの印。**顔写真は持たない**。アドレスから決まる |

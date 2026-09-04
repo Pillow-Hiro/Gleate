@@ -294,8 +294,6 @@ const RecordForm = forwardRef(function RecordForm(
       // 命令で消す（`WebEditor.jsx` の `clear`）。他の3つは `value` で消える。
       setForm({ created: '', enjoyable: '', struggled: '', next: '' })
       bodyRef.current?.clear()
-      setOpenFields(new Set())
-      setJustOpened(null)
       if (onSaved) onSaved()
 
       // 灯りは**あとから届く。**ボタンはもう戻っている。
@@ -303,8 +301,13 @@ const RecordForm = forwardRef(function RecordForm(
       // **待ちはこの画面が持たない**（`lib/lightBuffer.js`）。
       // 灯りは十数秒かかる。書き終えるとこの画面は閉じるので、
       // ここで待っていても受け取る先が居ない。
-      // 届いた灯りは戻った先の紙に出る（`components/LightCard.jsx`）。
-      if (data.deferred) requestLight(targetDate)
+      // 届いた灯りは戻った先に出る（`components/LightPending.jsx` と
+      // 今日の記録のカード）。
+      //
+      // **書いた記録の id を渡す**（2026-09-04）。渡さないとサーバーは
+      // 日付で引いて**その日の1件目**に灯りを付ける（`main.py` の
+      // `/api/light`）。2件目を書いた人には、朝の記録への返事が返っていた。
+      if (data.deferred) requestLight(targetDate, data.id || '')
       return true
     } catch (e) {
       // 画面にはユーザー向けの一文だけ出す。詳細はログに残す
