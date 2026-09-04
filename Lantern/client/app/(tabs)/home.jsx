@@ -4,6 +4,7 @@ import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import WriteButton from '../../components/WriteButton'
+import { attach as attachPhotos } from '../../lib/photoStore'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
@@ -78,11 +79,14 @@ export default function Home() {
         // **記録は控えから先に出す**（`lib/logsCache.js`）。
         // 灯りと問いは日替わりでサーバーが持っているので、そのまま聞く
         const [logsData, quoteRes, questionRes] = await Promise.all([
-          loadLogs((fresh) => { if (!cancelled) setLogs(fresh) }),
+          // **写真を合流させる**（2026-09-04）。写真は端末の中だけに
+          // あり、サーバーは返さない。合流させないと `HomeCard` の
+          // 写真の枝に**一度も火が入らない**（`lib/photoStore.js`）
+          loadLogs((fresh) => { if (!cancelled) setLogs(attachPhotos(fresh)) }),
           authFetch('/api/daily/quote'),
           authFetch('/api/question'),
         ])
-        if (!cancelled) setLogs(logsData)
+        if (!cancelled) setLogs(attachPhotos(logsData))
         if (quoteRes.ok) {
           const q = await quoteRes.json()
           if (!cancelled) setQuote(q.quote || '')

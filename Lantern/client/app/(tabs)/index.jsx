@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
 import { MAX_RECORDS_PER_DAY, calcStreak, logsOfDay, todayStr } from '../../lib/date'
@@ -15,6 +15,7 @@ import HintPanel from '../../components/HintPanel'
 import WriteButton from '../../components/WriteButton'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import { useRefreshOnFocus } from '../../lib/refreshOnFocus'
+import { attach as attachPhotos } from '../../lib/photoStore'
 import { isLighting, subscribeLight, getLight } from '../../lib/lightBuffer'
 
 // キーボードが出ているとき、**測った高さに足す**ぶん。
@@ -42,21 +43,14 @@ function formatDateJa(date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${WEEKDAYS_JA[date.getDay()]}曜日`
 }
 
-function dateDisplayJa(dateStr) {
-  const [, m, d] = dateStr.split('-')
-  return `${Number(m)}月${Number(d)}日`
-}
-
 export default function Home() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   // キーボードに隠れないよう、出ている高さを測る
   const keyboardHeight = useKeyboardHeight()
-  const params = useLocalSearchParams()
   const router = useRouter()
   const [question, setQuestion] = useState('')
   const [logs, setLogs] = useState([])
-  const [loading, setLoading] = useState(true)
   const [refreshTick, setRefreshTick] = useState(0)
   // アイデアは 2026-08-08 に「記録」から移した。
   // 思いついた瞬間に置くものなので、書く場所にある方が自然。
@@ -65,12 +59,17 @@ export default function Home() {
   // 手がかりの枠を使い切ったときだけ出す（`components/HintPanel.jsx`）
   const [hintPaywall, setHintPaywall] = useState('')
 
-  const now = new Date()
-  const dateJa = formatDateJa(now)
+  const dateJa = formatDateJa(new Date())
 
-  const dateParam = typeof params.date === 'string' ? params.date : null
-  const targetDate = dateParam && dateParam <= todayStr() ? dateParam : todayStr()
-  const isEditingPast = targetDate !== todayStr()
+  // **ここは今日だけを扱う**（2026-09-04）。
+  //
+  // `?date=` を読んで過去の日も書けるようにしてあったが、
+  // **そこへ遷移する場所がどこにも無くなっていた。**
+  // 過去の日を書くのは記録タブの窓で、書く場所そのものは
+  // 全画面（`app/write.jsx`）が `?date=` を受け取る。
+  // 使われない分岐を5か所に残しておくと、次に触る人が
+  // 「過去の日にも来る画面だ」と思って設計を歪める。
+  const targetDate = todayStr()
 
   const refreshData = useCallback(() => setRefreshTick((t) => t + 1), [])
 
@@ -84,7 +83,6 @@ export default function Home() {
     let cancelled = false
 
     ;(async () => {
-      setLoading(true)
       try {
         // **記録は控えから先に出す**（`lib/logsCache.js`）
         const [logsData, questionRes] = await Promise.all([
@@ -99,8 +97,6 @@ export default function Home() {
       } catch (e) {
         // 取得できなければ空のまま表示する
         console.warn('[書く] 記録・問いの取得に失敗', e)
-      } finally {
-        if (!cancelled) setLoading(false)
       }
     })()
 
@@ -117,6 +113,8 @@ export default function Home() {
   // 白紙で開き、保存は必ず新しい記録として入る（`app/write.jsx`）。
   // **直すのは「記録」タブ**（`components/LogDetail.jsx`）。
   // 書く場所と直す場所を分けると、どちらも一つのことだけをする。
+  // **数えるのは本物の記録だけ。**上限（`MAX_RECORDS_PER_DAY`）は
+  // サーバーが行の数で見ているので、下の写真だけの日を混ぜない
   const dayLogs = logsOfDay(logs, targetDate)
   const full = dayLogs.length >= MAX_RECORDS_PER_DAY
 
@@ -140,8 +138,21 @@ export default function Home() {
     return subscribeLight(sync)
   }, [targetDate, refreshData])
 
-  // **新しい順に並べる。**書いた直後のものが一番上に来る
-  const cards = [...dayLogs].reverse()
+  // **写真を合流させてから並べる**（2026-09-04・作者への報告どおり）。
+  //
+  // 写真は端末の中だけにあり、サーバーは返さない。合流させないと
+  // `HomeCard` の写真の枝に**一度も火が入らない。**
+  // 呼んでいたのは記録タブだけで、ホームとここは落ちていた。
+  //
+  // `attach` は写真だけの日に**`id` を持たない記録**も作る。
+  // 出すのは構わない（写真だけでも記録）が、手がかりは付けられない
+  // （下の `footer` を参照）。
+  //
+  // **新しい順。**書いた直後のものが一番上に来る。
+  const cards = useMemo(
+    () => [...logsOfDay(attachPhotos(logs), targetDate)].reverse(),
+    [logs, targetDate],
+  )
 
   function timeLabel(l) {
     if (!l.saved_at) return '記録'
@@ -195,26 +206,15 @@ export default function Home() {
             今日の灯りは 2026-08-12 に「ホーム」へ移した。ここには無い。
             過去日の編集中は出さない（アイデアは日付を持たないため）。
             形と動きの由来は `components/WriteTabs.jsx` に書いてある。 */}
-        {!isEditingPast ? <WriteTabs value={writeTab} onChange={setWriteTab} /> : null}
+        <WriteTabs value={writeTab} onChange={setWriteTab} />
 
         {/* **ここは入口になった**（2026-09-03・作者の判断）。
             書くのは全画面（`app/write.jsx`）。ここに残るのは、
             開く紙と、**書いたあとに読むもの**——灯りと手がかり。 */}
         <View
           className="gap-4"
-          style={writeTab === 'record' || isEditingPast ? undefined : { display: 'none' }}
+          style={writeTab === 'record' ? undefined : { display: 'none' }}
         >
-          {isEditingPast ? (
-            <View className="flex-row items-center justify-between">
-              <Text className="text-label-md text-outline">
-                {dateDisplayJa(targetDate)}の記録
-              </Text>
-              <Text onPress={() => router.replace('/')} className="text-label-md text-primary">
-                ← 今日に戻る
-              </Text>
-            </View>
-          ) : null}
-
           {/* **押すと全画面が開く紙。**
               見た目は書く紙のまま（問いだけ）にしてある。
               「入口」と分かる別の飾りを足すと、押す前に一段考えることになる。
@@ -245,9 +245,7 @@ export default function Home() {
               className="bg-lantern-glow/5 border border-lantern-glow rounded-lg px-5 py-5 gap-3 active:opacity-80"
             >
               <Text className="text-body-md text-outline leading-relaxed">
-                {question && !isEditingPast
-                  ? question
-                  : `${isEditingPast ? 'この日' : '今日'}どんなことをしましたか。`}
+                {question || '今日どんなことをしましたか。'}
               </Text>
               {/* **「書くと、別の記録として残ります」は置かない**
                   （2026-09-04・作者の指示で削除）。
@@ -276,9 +274,17 @@ export default function Home() {
               まだ届いていない一番新しい記録には、息をする字が出る。 */}
           {cards.length > 0 ? (
             <View className="gap-4">
-              <Text className="font-strong text-label-md text-on-surface-variant">
-                今日の記録
-              </Text>
+              <View className="flex-row items-baseline justify-between">
+                <Text className="font-strong text-label-md text-on-surface-variant">
+                  今日の記録
+                </Text>
+                {/* **直せないことを言っておく**（2026-09-04）。
+                    書く場所と直す場所は分けてある（`CLAUDE.md`）が、
+                    **画面には書いていなかった。**タブの説明文にだけあり、
+                    切り替えた人しか読めない。カードを押しても何も
+                    起きないので、行き先だけは示す */}
+                <Text className="text-label-md text-outline">直すのは「記録」から</Text>
+              </View>
               {cards.map((l, i) => (
                 <HomeCard
                   key={l.id || `${l.date}-${i}`}
@@ -291,13 +297,20 @@ export default function Home() {
                   // 一覧の下に1つ置いていたが、**どの記録から探すのかが
                   // 画面のどこにも書いていなかった。**中に置けば、
                   // 押したボタンが載っているカードがそのまま相手になる。
+                  //
+                  // **写真だけの日には出さない**（2026-09-04）。
+                  // `attach` が作る札は `id` を持たないので、探す先も
+                  // 答えを書く先も決まらない。押せるのに何も残らない
+                  // ボタンを置かない。
                   footer={
-                    <HintPanel
-                      date={targetDate}
-                      target={l}
-                      onSaved={refreshData}
-                      onPaywall={(m) => setHintPaywall(m || paywallMessage(null))}
-                    />
+                    l.id ? (
+                      <HintPanel
+                        date={targetDate}
+                        target={l}
+                        onSaved={refreshData}
+                        onPaywall={(m) => setHintPaywall(m || paywallMessage(null))}
+                      />
+                    ) : null
                   }
                 />
               ))}
@@ -317,7 +330,7 @@ export default function Home() {
         </View>
 
         {/* アイデア。display で隠すだけにして、入力途中の文字を消さない */}
-        <View style={writeTab === 'ideas' && !isEditingPast ? undefined : { display: 'none' }}>
+        <View style={writeTab === 'ideas' ? undefined : { display: 'none' }}>
           <IdeasPanel />
         </View>
 
