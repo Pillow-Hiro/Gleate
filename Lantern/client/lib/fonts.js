@@ -16,7 +16,8 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold'
 //
 // | 用途 | 書体 | クラス | 容量 |
 // |---|---|---|---|
-// | 見出し・強調（和文） | Noto Sans JP Bold | `font-display` / `font-strong` | 5.2MB |
+// | 見出し（和文） | **端末の明朝**（Hiragino Mincho ProN） | `font-display` | 0MB |
+// | 強調（和文） | Noto Sans JP Bold | `font-strong` | 5.2MB |
 // | 本文（和文） | Noto Sans JP Regular | `font-body` | 5.2MB |
 // | ワードマーク（欧文） | Hanken Grotesk Bold | `font-latin` | 0.06MB |
 // | ラベル（欧文・数字） | Inter Medium / SemiBold | `font-label` / `font-label-sm` | 0.7MB |
@@ -39,6 +40,12 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold'
 // 数字と英字は Inter が受け持つ。
 //
 // Noto Serif JP も外した。仕様に明朝は無い。7.3MB 減った。
+//
+// **2026-09-04 に見出しだけ明朝で試している**（作者の指示）。
+// 読み込むのではなく、**端末が持っているものを借りる**——
+// iOS はどの機種にも Hiragino Mincho ProN が入っている。0バイト。
+// 買う前に試着するのに、服を仕立てる必要はない。
+// 切り替えは `tailwind.config.js` の `display` の1行。
 //
 // **`fontWeight` は使わない。** カスタムフォントに重ねると、
 // その組み合わせの実体が無く Android で端末の既定に落ちる。

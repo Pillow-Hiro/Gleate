@@ -92,7 +92,22 @@ module.exports = {
         // **和文は Noto Sans JP。** DESIGN.md の Hanken Grotesk /
         // Source Sans 3 は和文の字を持たないため、そのままでは使えない。
         // 理由は fonts.js に書いた。
-        display: ['NotoSansJP_700Bold', 'sans-serif'],
+        // **見出しを明朝で試す**（2026-09-04・作者の指示「3を試す」）。
+        //
+        // `DESIGN.md` に明朝は無い。2026-08-14 に Noto Serif JP を
+        // **7.3MB 減らすために外した**——読み込む書体を1つ増やすと、
+        // 起動時にそのぶん待たせることになる。
+        //
+        // **端末が持っている明朝を借りる。0バイト。**
+        // iOS はどの機種にも Hiragino Mincho ProN が入っている。
+        // 買う前に試着するのに、服を仕立てる必要はない。
+        //
+        // Android には無いので、そちらは既定の書体に落ちる。
+        // 出しているのは iOS なので、試すには足りる。
+        //
+        // **戻すのはこの1行。** `['NotoSansJP_700Bold', 'sans-serif']`
+        // に戻せば、7.3MB を足さないまま元の姿になる。
+        display: ['Hiragino Mincho ProN', 'serif'],
         body: ['NotoSansJP_400Regular', 'sans-serif'],
         strong: ['NotoSansJP_700Bold', 'sans-serif'],
         // 欧文だけの「Lantern」の綴りに使う
