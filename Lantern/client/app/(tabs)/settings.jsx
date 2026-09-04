@@ -11,6 +11,7 @@ import { forgetAllLights } from '../../lib/lightBuffer'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
+import { ACCENTS } from '../../lib/accent'
 import { APP_VERSION } from '../../constants'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
@@ -84,6 +85,42 @@ function ChoiceRow({ label, selected, isLast, onPress }) {
   )
 }
 
+// 灯りの色を選ぶ行。**見本を左に置く**（2026-09-04）。
+//
+// 名前だけでは、選ぶ前にどんな色か分からない。「蝋燭」「月」「焚火」は
+// 手がかりにはなるが、**画面がどう変わるかは色を見ないと分からない。**
+//
+// 見本は丸。四角だと小さな面に見えて、地の色と競う。
+function AccentRow({ accent, selected, isLast, onPress }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`灯りの色を${accent.label}にする`}
+      className="active:opacity-70"
+    >
+      <View
+        className={`flex-row items-center gap-3 py-3.5 min-h-touch ${
+          isLast ? '' : 'border-b border-border'
+        }`}
+      >
+        <View
+          style={{ backgroundColor: `rgb(${accent.swatch})`, width: 22, height: 22 }}
+          className="rounded-full"
+        />
+        <Text
+          className={`text-body-md ${selected ? 'font-strong text-primary' : 'text-on-surface'}`}
+        >
+          {accent.label}
+        </Text>
+        <Text className="text-label-md text-outline flex-1">{accent.note}</Text>
+        {selected ? <Text className="text-body-md text-primary">✓</Text> : null}
+      </View>
+    </Pressable>
+  )
+}
+
 function Group({ title, children }) {
   return (
     <View>
@@ -99,7 +136,7 @@ export default function Settings() {
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   const router = useRouter()
-  const { mode, setMode } = useThemeContext()
+  const { mode, setMode, accent, setAccent } = useThemeContext()
   const [logs, setLogs] = useState([])
   const [email, setEmail] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -297,6 +334,25 @@ export default function Settings() {
               selected={mode === m}
               isLast={i === THEME_MODES.length - 1}
               onPress={() => setMode(m)}
+            />
+          ))}
+        </Group>
+
+        {/* **灯りの色**（2026-09-04・作者の指示
+            「Muute みたいに他の色を選べるように」）。
+
+            外観（明暗）とは別の区画にする。**別のことを選んでいる**ので、
+            同じ枠に6行並べると1つの設定に見える。
+
+            既定の「蝋燭」は、いままでの琥珀そのもの（`lib/accent.js`）。 */}
+        <Group title="灯りの色">
+          {ACCENTS.map((a, i) => (
+            <AccentRow
+              key={a.id}
+              accent={a}
+              selected={accent === a.id}
+              isLast={i === ACCENTS.length - 1}
+              onPress={() => setAccent(a.id)}
             />
           ))}
         </Group>

@@ -25,6 +25,8 @@ import { markShowing, markSkipped } from '../lib/splashHandoff'
 import { configure as configurePurchases } from '../lib/purchases'
 import { watchRecoveryLinks } from '../lib/recoverySession'
 import { EditorToolbarProvider } from '../components/EditorToolbar'
+import { vars } from 'nativewind'
+import { accentVars } from '../lib/accent'
 
 // **起動画面が2回出ていた**（2026-08-14・実機）。
 //
@@ -276,6 +278,24 @@ function RootNavigator() {
   )
 }
 
+// 灯りの色を画面全体へ当てる（2026-09-04・`lib/accent.js`）。
+//
+// **`ThemeProvider` の中でなければ読めない**ので、部品に分けている。
+// `vars()` は NativeWind の仕組みで、この `View` から下の全部に
+// CSS 変数を効かせる。実行時に当たるので `global.css` の
+// `.dark:root` より後に来る——だから明暗もこちらが決める。
+//
+// `flex-1` を落とさないこと。**この `View` が縦に潰れると
+// 画面が丸ごと消える。**
+function AccentVars({ children }) {
+  const { accent, isDark } = useThemeContext()
+  return (
+    <View className="flex-1" style={vars(accentVars(accent, isDark))}>
+      {children}
+    </View>
+  )
+}
+
 export default function RootLayout() {
   // フォントは待たない。読み込み中は端末の既定で描き、あとで差し替わる。
   // 13MBの読み込みを白画面で待たせるより、読める状態で待たせる方がよい。
@@ -284,11 +304,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        {/* 装飾の列はキーボードに貼り付く。**画面の一番外に置く。**
-            記録フォームの中だと `ScrollView` と一緒に流れてしまう */}
-        <EditorToolbarProvider>
-          <RootNavigator />
-        </EditorToolbarProvider>
+        <AccentVars>
+          {/* 装飾の列はキーボードに貼り付く。**画面の一番外に置く。**
+              記録フォームの中だと `ScrollView` と一緒に流れてしまう */}
+          <EditorToolbarProvider>
+            <RootNavigator />
+          </EditorToolbarProvider>
+        </AccentVars>
       </SafeAreaProvider>
     </ThemeProvider>
   )

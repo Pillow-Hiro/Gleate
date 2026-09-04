@@ -172,7 +172,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
-| `theme.js` | 外観の保持と NativeWind への反映（`react-native` を読む） | — |
+| `accent.js` | **灯りの色**。5つの束（蝋燭・月・焚火・蛍・灰）を明暗ともに持つ。当てるのは `app/_layout.jsx` の `vars()` | `accent.test.js` |
+| `theme.js` | 外観と灯りの色の保持、NativeWind への反映（`react-native` を読む） | — |
 | `themeMode.js` | 外観の決め方。**端末に合わせる／ライト／ダークの3つ**。既定は端末 | `themeMode.test.js` |
 | `sample.js` | ホームに並べる記録を選ぶ。**その日のうちは同じ顔ぶれ** | `sample.test.js` |
 | `accountMark.js` | アカウントの印の色と文字。**アドレスだけから決まる** | `accountMark.test.js` |
