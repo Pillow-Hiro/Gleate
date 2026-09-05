@@ -71,11 +71,20 @@ export function list(id) {
  * 貼られた文から1つ足す。**読めなければ何もしない。**
  *
  * 戻り値は足せたかどうか。呼ぶ側は、偽なら「読めなかった」と伝える。
+ *
+ * `label` を渡すと、一覧に出す字をそれにする（2026-09-05）。
+ * **Apple Music を探して選んだときだけ使う。**道筋から作り直すと
+ * `Creep` が `creep` になり、**押した字と違うものが残る**
+ * （`lib/musicSearch.js` の `songLabel`）。
+ *
+ * **貼ったときは渡さない。**貼られた URL の題名は取りに行かない、
+ * という決めがある（`lib/attachLink.js`）。
  */
-export function add(id, input) {
+export function add(id, input, label) {
   if (!id) return false
-  const entry = parseAttachLink(input)
+  let entry = parseAttachLink(input)
   if (!entry) return false
+  if (label) entry = { ...entry, label }
   if (!cache) cache = {}
 
   const current = cache[id] || []

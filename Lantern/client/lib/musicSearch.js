@@ -71,3 +71,26 @@ export function parseSongs(body) {
   }
   return out
 }
+
+/**
+ * 選んだ曲を、一覧に出す一行にする。「曲名 — アーティスト」。
+ *
+ * ## 題名を捨てない（2026-09-05）
+ *
+ * 添えたあと、一覧の字は URL の道筋から作られる（`lib/attachLink.js`）。
+ * Apple の道筋は**小文字に潰され、記号が落ちている**ので、
+ * `Creep` を選んだのに `creep` が残る。**押した字と違うものが残る。**
+ *
+ * ここで渡せば、選んだときに見えていた字がそのまま残る。
+ * **これは「取りに行かない」を破っていない**——題名を問い合わせて
+ * 得たのではなく、**本人が探して、見て、選んだもの**だから。
+ *
+ * 繋ぎ方は Swift 側に合わせた（`JournalingSuggestionsModule.swift` の
+ * `join`）。**同じものは同じ形で出す。**
+ */
+export function songLabel(song) {
+  const title = String((song && song.title) || '').trim()
+  const artist = String((song && song.artist) || '').trim()
+  if (title && artist) return `${title} — ${artist}`
+  return title || artist
+}

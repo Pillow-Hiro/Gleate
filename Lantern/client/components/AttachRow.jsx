@@ -4,7 +4,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
-import { parseSongs, searchPath } from '../lib/musicSearch'
+import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
 import { authFetch } from '../lib/supabase'
 
 // 記録に添えるものの入口。**ひとつにまとめた**（2026-09-05・作者の指示
@@ -188,8 +188,9 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
     }
   }
 
+  // **選んだときに見えていた字を、そのまま残す**（`lib/musicSearch.js`）
   function take(song) {
-    if (!addLink(id, song.url)) return
+    if (!addLink(id, song.url, songLabel(song))) return
     setSeeking(false)
     onChange?.()
   }

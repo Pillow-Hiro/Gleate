@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTerm, parseSongs, searchPath } from './musicSearch'
+import { normalizeTerm, parseSongs, searchPath, songLabel } from './musicSearch'
 
 describe('探す言葉を整える', () => {
   it('前後の空白を落とす', () => {
@@ -96,5 +96,31 @@ describe('返ってきたものを読む', () => {
     expect(parseSongs({})).toEqual([])
     expect(parseSongs({ songs: null })).toEqual([])
     expect(parseSongs({ songs: 'まとも でない' })).toEqual([])
+  })
+})
+
+describe('選んだ曲の字', () => {
+  // **押した字と違うものを残さない。** URL の道筋から作り直すと
+  // Apple は小文字に潰しているので `Creep` が `creep` になる
+  it('曲名とアーティストを繋ぐ', () => {
+    expect(songLabel({ title: 'Creep', artist: 'レディオヘッド' })).toBe(
+      'Creep — レディオヘッド',
+    )
+  })
+
+  it('大文字と記号がそのまま残る', () => {
+    expect(songLabel({ title: 'Merry Christmas Mr.Lawrence', artist: '坂本龍一' })).toBe(
+      'Merry Christmas Mr.Lawrence — 坂本龍一',
+    )
+  })
+
+  it('片方しか無ければ、あるほうだけ', () => {
+    expect(songLabel({ title: 'energy flow', artist: '' })).toBe('energy flow')
+    expect(songLabel({ title: '', artist: '誰か' })).toBe('誰か')
+  })
+
+  it('両方無ければ空', () => {
+    expect(songLabel({})).toBe('')
+    expect(songLabel(null)).toBe('')
   })
 })
