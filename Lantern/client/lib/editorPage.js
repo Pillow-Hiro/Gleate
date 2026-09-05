@@ -100,6 +100,16 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
   // insertText に改行入りの文字列を渡すと、contenteditable では
   // **潰れて1行になることがある。**行ごとに分けて、あいだで段落を作る。
   //
+  // **逆斜線は二重に書くこと**（2026-09-06）。ここは丸ごとテンプレート
+  // 文字列の中なので、一重で書くと**出力に本物の改行が入り、
+  // 文字列が閉じずに構文エラーになる。**上のバッククォートの註釈と
+  // 同じ罠で、**その註釈のすぐ下で踏んだ。**この註釈にも一度
+  // 書いてしまい、二度踏んだ——ここでは記号を字で書く。
+  //
+  // 踏んだ結果は「改行が潰れる」ではなかった。**スクリプト全体が
+  // 動かなくなり、合図が1つも出なくなった**——装飾の列が出ず、
+  // **書いた文字も保存されなくなっていた**（ビルド26）。
+  //
   // **この中でバッククォートを使わないこと。** ここは外側の
   // テンプレートリテラルの中で、註釈の中でも文字列が閉じてしまう。
   window.lanternInsert = function (text) {
@@ -111,8 +121,7 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sel.removeAllRanges();
     sel.addRange(range);
     if (ed.textContent.trim()) document.execCommand('insertParagraph');
-    var lines = String(text).split('
-');
+    var lines = String(text).split('\\n');
     for (var i = 0; i < lines.length; i++) {
       if (i > 0) document.execCommand('insertParagraph');
       if (lines[i]) document.execCommand('insertText', false, lines[i]);

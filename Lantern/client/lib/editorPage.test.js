@@ -92,3 +92,37 @@ describe('editorPage', () => {
     })
   })
 })
+
+// **出来上がったページの中身も読む**（2026-09-06）。
+//
+// ここまでの検査は `editorPage.js` が**読み込めるか**しか見ていなかった。
+// バッククォートで閉じてしまう壊れ方はそれで捕まる——ファイル自体が
+// 壊れるので。**しかし今回の壊れ方は違った。**
+//
+// テンプレート文字列の中に一重の逆斜線を書いた。`editorPage.js` は
+// 正しく読み込める。**壊れるのは出来上がったページの方。**
+//
+//     var lines = String(text).split('
+//     ');
+//
+// 中の面のスクリプトが丸ごと動かなくなり、**合図が1つも出なくなった。**
+// 装飾の列が出ず、**書いた文字も保存されなくなっていた**（ビルド26）。
+// 例外も警告も出ない——`post()` は `ReactNativeWebView` が無ければ
+// 黙って諦める作りなので、**外からは静かに壊れる。**
+//
+// **出来上がったものを実際に構文解析する。**それだけで捕まえられた。
+describe('出来上がったページのスクリプト', () => {
+  const script = () => page().match(/<script>([\s\S]*?)<\/script>/)[1]
+
+  it('構文として通る', () => {
+    // **`new Function` は中身を実行しない。**組み立てるだけで構文は分かる
+    expect(() => new Function(script())).not.toThrow()
+  })
+
+  it('合図を出す口がある', () => {
+    // **これが無いと、外からは何も分からないまま静かに壊れる**
+    expect(script()).toContain('ReactNativeWebView.postMessage')
+    expect(script()).toContain("addEventListener('focus'")
+    expect(script()).toContain("addEventListener('input'")
+  })
+})

@@ -55,6 +55,8 @@ const GLOBALS = new Set([
   'Object', 'Array', 'String', 'Number', 'Boolean', 'Symbol', 'BigInt',
   'Math', 'JSON', 'Date', 'RegExp', 'Error', 'TypeError', 'RangeError',
   'Map', 'Set', 'WeakMap', 'WeakSet', 'Promise', 'Proxy', 'Reflect',
+  // 検査が使う。**組み立てるだけで構文の壊れが分かる**（editorPage.test.js）
+  'Function',
   'Intl', 'ArrayBuffer', 'Uint8Array', 'DataView',
   'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURIComponent',
   'decodeURIComponent', 'encodeURI', 'decodeURI', 'structuredClone',

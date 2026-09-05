@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../components/Text'
 import RecordForm from '../components/RecordForm'
-import { webStats } from '../components/WebEditor'
-import { EditorToolbarBar, TOOLBAR_HEIGHT, useToolbarState } from '../components/EditorToolbar'
+import { EditorToolbarBar, TOOLBAR_HEIGHT } from '../components/EditorToolbar'
 import { ZoomIn } from '../components/Motion'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
@@ -33,8 +32,6 @@ export default function Write() {
   const params = useLocalSearchParams()
   const router = useRouter()
   const keyboardHeight = useKeyboardHeight()
-  // **一時的**（2026-09-06）。列が出ない理由を見るため。次の配信で消す
-  const bar = useToolbarState()
   const formRef = useRef(null)
   const [saving, setSaving] = useState(false)
 
@@ -115,13 +112,6 @@ export default function Write() {
         >
           <Text className="text-body-md text-outline">✕</Text>
         </Pressable>
-        {/* **一時的**（2026-09-06）。列が出ない理由を見る。次の配信で消す。
-            **下に置いて失敗した**——キーボードの裏で読めず、
-            下りた状態の値（欄:無 高さ:0）しか見えなかった。
-            **診断したいものと同じ間違いをした。**上の帯なら常に見える */}
-        <Text className="text-label-sm text-outline">
-          {`録:${bar.calls} 合図:${webStats.all} 焦:${webStats.focus} 高:${Math.round(keyboardHeight)}`}
-        </Text>
         <Pressable
           onPress={save}
           disabled={saving}

@@ -156,16 +156,12 @@ const CAN_SUGGEST = isSuggestionsAvailable() && Boolean(SuggestionsPickerView)
 // 配信の順は「ビルドが審査を通ってから」（`HANDOFF.md`）。
 const SUGGESTIONS_READY = true
 
-// **一時的**（2026-09-06）。登録が呼ばれた回数。次の配信で消す
-let calls = 0
-
 export function EditorToolbarProvider({ children }) {
   // いま書いている欄。**1つだけ。** 欄を移ると上書きされる
   const [field, setField] = useState(null)
   const fieldRef = useRef(null)
 
   const register = useCallback((next) => {
-    calls += 1
     fieldRef.current = next
     setField(next)
   }, [])
@@ -191,25 +187,6 @@ export function EditorToolbarProvider({ children }) {
       </FieldContext.Provider>
     </ToolbarContext.Provider>
   )
-}
-
-// **いま列がどう見えているかを外から読む**（2026-09-06・一時的）。
-//
-// 実機で列が出ない。届いていることは確かめた（マイページの配信日時が
-// `9/6 0:41`）。**なのに出ない。**
-//
-// 消える道は2つある——`field` が null（登録が届いていない）か、
-// 高さが 0（`bottom: 0` に描かれ、**キーボードの裏に隠れる**）。
-// **どちらでも「出ない」に見えるので、外からは区別できない。**
-//
-// 一度当てて外している（「出ないなら field が null」と書いたが、
-// 高さ 0 でも同じに見える）。**当てるのをやめて、見る。**
-//
-// **次の配信で消すこと。**
-export function useToolbarState() {
-  const field = useContext(FieldContext)
-  const { ready } = useContext(ToolbarContext)
-  return { field, ready, calls }
 }
 
 // `Modal` の中に置く用。中身は同じ列
