@@ -208,6 +208,52 @@ class TestVersionConsistency:
             "利用者はどちらが本当か分からなくなる"
         )
 
+    # ── 一度出した版数には、もう積めない ──────────────────────
+    #
+    # 2026-09-05・**ビルド25 がこれで拒まれた。**
+    #
+    #     ITMS-90062: must contain a higher version than
+    #                 the previously approved version [1.0.0]
+    #
+    # `eas.json` の `autoIncrement` が上げるのは **build number だけ。**
+    # `CFBundleShortVersionString`（`app.json` の `version`）は別で、
+    # **誰も上げなかった。**
+    #
+    # ## なぜ気づかなかったか
+    #
+    # 精査の対象を「今回変更した所」に限っていた。**version は
+    # 変えていないので見ていない。**ところが壊れたのは変えていない所で、
+    # 動いたのは**外の状態**——1.0.0 がストアで公開されたこと。
+    #
+    # 検査が全部リポジトリの中で閉じていて、**外の世界と噛み合う所が
+    # 丸ごと死角になっていた。**ここはその死角に打つ最初の杭。
+    #
+    # **守れるのは書き留めた分だけ。**`client/submitted.json` を
+    # 出すたびに書き換えないと、この検査は静かに効かなくなる。
+
+    def _submitted(self):
+        import json
+
+        return json.loads(read("client", "submitted.json"))
+
+    def _parts(self, v):
+        return tuple(int(x) for x in v.split("."))
+
+    def test_出した版数より上がっている(self):
+        out = self._submitted()["version"]
+        now = self._release_version()
+        assert self._parts(now) > self._parts(out), (
+            f"版数 {now} は既に出した {out} を超えていない。"
+            "**一度公開した版数には、もう積めない**（ITMS-90062）。"
+            "`client/app.json` と `client/constants.js` の両方を上げること"
+        )
+
+    def test_出した版数の記録が読める(self):
+        # 形が壊れると上の検査が黙って通る。**それがいちばん困る**
+        rec = self._submitted()
+        assert re.fullmatch(r"\d+\.\d+\.\d+", rec["version"]),             f"submitted.json の版数の形が違う: {rec['version']}"
+        assert isinstance(rec["build"], int), "submitted.json の build は数で書く"
+
     def test_版数に接頭辞のvを付けない(self):
         # ストアは "1.0.0" 形式しか受け付けない。画面だけ "v1.0.0" にすると
         # 上の一致検査を通すために app.json 側を壊すことになる
