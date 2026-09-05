@@ -401,11 +401,25 @@ def debug_version():
         if "localhost" in uri
     ]
 
+    # Apple Music の鍵が読めるか（2026-09-05）。
+    #
+    # **値は出さない。** 出すのは「署名できたか」だけ。
+    # `/api/apple-music/token` は認証を要るので、curl 一発では
+    # 401 しか返らず、**鍵が入っているのかどうかが分からなかった。**
+    #
+    # 実際に署名させて確かめる。鍵が壊れていれば `None` が返る——
+    # 「変数はあるが PEM が読めない」を、ここで見分けられる。
+    apple_music = "ok" if applemusic.developer_token() else (
+        "bad_key" if applemusic.is_enabled() else "unset"
+    )
+
     return jsonify({
         "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
         "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
         "youtube_redirect": youtube_redirect,
         "twitch_redirect": twitch_redirect,
+        # unset … 変数が足りない / bad_key … 変数はあるが PEM が読めない
+        "apple_music": apple_music,
         # 本番なのに localhost を指しているものがあれば設定漏れ
         "redirect_misconfigured": misconfigured if on_render else [],
     })
