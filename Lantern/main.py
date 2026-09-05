@@ -37,6 +37,7 @@ from functools import wraps
 from modules.auth import require_auth
 from modules.ratelimit import check_and_count
 from modules.plan import daily_limit, is_paid, paid_required_response, require_paid
+from modules import applemusic
 # 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
 # JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
 from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
@@ -1244,6 +1245,27 @@ def milestone_reflection():
 
     reflection = generate_milestone_reflection(period_logs, hit_milestone)
     return jsonify({"reflection": reflection})
+
+
+@app.route("/api/apple-music/token")
+@require_auth
+def apple_music_token():
+    """MusicKit の開発者トークンを渡す（`modules/applemusic.py`）。
+
+    **秘密鍵はここから出ない。** 署名だけをこちらで行い、
+    出来上がったトークンを渡す。端末で署名させると、鍵を
+    アプリに埋め込むことになり、配布物から取り出せる。
+
+    **認証を要る側に置く。** 誰でも取れると、こちらの開発者名義で
+    Apple Music の API を叩ける状態になる。
+
+    鍵が入っていなければ 503。**画面は繋がっていないものとして扱う**
+    ——出せない機能をボタンにしない、といつもの扱いに合わせる。
+    """
+    body = applemusic.token_response()
+    if not body:
+        return jsonify({"error": "not_configured"}), 503
+    return jsonify(body)
 
 
 @app.route("/api/insights/keywords")

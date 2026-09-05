@@ -874,6 +874,16 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
     を**中継サーバー経由で取りに来る。**`Content-Type` は問われないが、
     **リダイレクトは追わない。**出せているか確認すること
 - **Apple Music の連携**（2026-09-05・作者の指示）
+  - **サーバー側は用意済み**（`modules/applemusic.py` /
+    `GET /api/apple-music/token`）。Team ID `42P5VK92HG`、
+    Key ID `BL55RD3DBN`。**秘密鍵（`.p8`）だけが未設定**
+  - Render と `.env` に入れる環境変数は3つ
+    - `APPLE_MUSIC_KEY_ID` … `BL55RD3DBN`
+    - `APPLE_MUSIC_TEAM_ID` … `42P5VK92HG`
+    - `APPLE_MUSIC_KEY` … `.p8` の中身（改行は `
+` と書いてよい）
+  - **`.p8` はリポジトリに入れない。チャットにも貼らない**
+  - 揃っていなければ 503 を返して黙って止まる。**鍵の無い環境でも動く**
   - MusicKit の識別子と秘密鍵を作り、開発者トークンを発行する
   - iOS のネイティブ側が要るので Expo のままでは足りない
   - `NSAppleMusicUsageDescription` を足す
