@@ -114,6 +114,13 @@ export default function Write() {
         >
           <Text className="text-body-md text-outline">✕</Text>
         </Pressable>
+        {/* **一時的**（2026-09-06）。列が出ない理由を見る。次の配信で消す。
+            **下に置いて失敗した**——キーボードの裏で読めず、
+            下りた状態の値（欄:無 高さ:0）しか見えなかった。
+            **診断したいものと同じ間違いをした。**上の帯なら常に見える */}
+        <Text className="text-label-sm text-outline">
+          {`欄:${toolbarField ? '有' : '無'} 高:${Math.round(keyboardHeight)}`}
+        </Text>
         <Pressable
           onPress={save}
           disabled={saving}
@@ -165,13 +172,6 @@ export default function Write() {
       {/* 装飾の列。**この画面は根の列より上に出る**ので、ここにも置く */}
       <EditorToolbarBar />
 
-      {/* **一時的**（2026-09-06）。列が消える道は2つあり、外からは
-          どちらも「出ない」に見える。**当てずに見る。**次の配信で消す */}
-      <View className="absolute left-3 bottom-1 bg-black/60 rounded px-2 py-1">
-        <Text className="text-label-sm text-white">
-          {`欄:${toolbarField ? '有' : '無'} 高さ:${Math.round(keyboardHeight)}`}
-        </Text>
-      </View>
     </SafeAreaView>
     </ZoomIn>
   )
