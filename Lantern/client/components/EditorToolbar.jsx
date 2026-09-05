@@ -8,6 +8,7 @@ import {
   isSuggestionsAvailable,
   SuggestionsPickerView,
 } from '../modules/journaling-suggestions'
+import Optional from './Optional'
 
 // キーボードに貼り付く装飾の列。**Apple の「メモ」と同じ置き場所。**
 //
@@ -130,7 +131,11 @@ const INK_DARK = '#CDC4B8'
 // 書いている最中に手が届くのはキーボードの上で、
 // 写真やファイルと同じ性質のもの（書きはじめの手がかり）なので、
 // **同じ列に並べるのが正しい置き場所だった。**
-const CAN_SUGGEST = isSuggestionsAvailable()
+//
+// **ビューが本物かどうかも見る**（2026-09-05）。`isAvailable()` が真でも
+// `SuggestionsPickerView` が `null` なら、描いた瞬間に React が投げる
+// ——そして**列ごと消える。**実機でそれが起きた
+const CAN_SUGGEST = isSuggestionsAvailable() && Boolean(SuggestionsPickerView)
 
 // 入口を開けた（2026-09-05）。**閉じていたのは Swift を待っていたから。**
 //
@@ -302,16 +307,21 @@ function ToolbarBar({ field }) {
             受け取るのは**文字だけ。**写真と座標は取らない。
             心の状態は度合いだけ受け取る（2026-09-05・`CLAUDE.md`）。 */}
         {SUGGESTIONS_READY && CAN_SUGGEST && field.onSuggest ? (
-          <SuggestionsPickerView
-            style={{ width: 44, height: 44 }}
-            title="日記の候補から選ぶ"
-            icon="sparkles"
-            tint={INK}
-            onSelect={(e) => {
-              const line = String(e?.nativeEvent?.title || '').trim()
-              if (line) field.onSuggest(line)
-            }}
-          />
+          // **落ちても列を道連れにしない**（`components/Optional.jsx`）。
+          // 実機で列ごと消えた。書く道具が添え物の巻き添えで
+          // 消えていいわけがない
+          <Optional name="日記の候補">
+            <SuggestionsPickerView
+              style={{ width: 44, height: 44 }}
+              title="日記の候補から選ぶ"
+              icon="sparkles"
+              tint={INK}
+              onSelect={(e) => {
+                const line = String(e?.nativeEvent?.title || '').trim()
+                if (line) field.onSuggest(line)
+              }}
+            />
+          </Optional>
         ) : null}
 
         </ScrollView>

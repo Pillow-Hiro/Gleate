@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
@@ -239,6 +249,13 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         transparent
         onRequestClose={() => setAsking(false)}
       >
+        {/* **キーボードに隠れない**（2026-09-05・実機で報告）。
+            `Modal` の中は画面の外側とは別の面なので、
+            **ここにも要る。**外側で避けても届かない */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1"
+        >
         <Pressable className="flex-1 bg-black/50 justify-center px-6" onPress={() => setAsking(false)}>
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
             <Text className="font-strong text-body-md text-on-surface">リンクを添える</Text>
@@ -275,6 +292,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
@@ -284,6 +302,11 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         transparent
         onRequestClose={() => setSeeking(false)}
       >
+        {/* 下から出る面ほどキーボードに食われる。**同じ理由で要る** */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1"
+        >
         <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setSeeking(false)}>
           <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8 gap-4" onPress={() => {}}>
             <View className="self-center w-10 h-1 rounded-full bg-outline-variant" />
@@ -360,6 +383,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   )
