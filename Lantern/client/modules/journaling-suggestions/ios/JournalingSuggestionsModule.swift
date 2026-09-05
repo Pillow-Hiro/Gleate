@@ -59,6 +59,19 @@ import HealthKit
 // Lantern が問いを置いている場所とまっすぐ噛み合う。
 //
 // 取れなければ title に戻す（何も入らないよりはいい）。
+//
+// ## どれが iOS 18 からなのかは、コンパイラが教えてくれた（2026-09-05）
+//
+// `Reflection`・`GenericMedia`・`StateOfMind` の3つは **iOS 18 から。**
+// 17.2 から在ると思って囲わずに書き、**ビルドが落ちて分かった。**
+// `Song`・`Podcast`・`Location` は 17.2 から在る（怒られなかった）。
+//
+// **struct ごと 18 に上げない。**上げると `isAvailable()` が 17.x で
+// false になり、**入口ごと消える。**曲も場所も取れるのに何も出ないのは
+// 惜しい。3つだけ `#available` で囲って、17.x では黙って飛ばす。
+//
+// 17.x では本命の問いが取れないぶん弱くなるが、**弱いことと
+// できないことは違う。**
 public class JournalingSuggestionsModule: Module {
   public func definition() -> ModuleDefinition {
     Name("JournalingSuggestions")
@@ -188,8 +201,10 @@ private struct LanternSuggestionsPicker: View {
 
     // 1. 振り返りの問い。**これが本命**——書きはじめの手がかりとして
     //    いちばん強いので先頭に置く
-    for r in await s.content(forType: JournalingSuggestion.Reflection.self) {
-      lines.append(r.prompt)
+    if #available(iOS 18.0, *) {
+      for r in await s.content(forType: JournalingSuggestion.Reflection.self) {
+        lines.append(r.prompt)
+      }
     }
     // 2. 聴いた曲。**同じ候補に何曲も入ることがある**
     for m in await s.content(forType: JournalingSuggestion.Song.self) {
@@ -200,8 +215,10 @@ private struct LanternSuggestionsPicker: View {
       lines.append(join([p.episode, p.show]))
     }
     // 4. その他のメディア
-    for g in await s.content(forType: JournalingSuggestion.GenericMedia.self) {
-      lines.append(join([g.title, g.artist]))
+    if #available(iOS 18.0, *) {
+      for g in await s.content(forType: JournalingSuggestion.GenericMedia.self) {
+        lines.append(join([g.title, g.artist]))
+      }
     }
     // 5. 行った場所。**名前だけ。座標は取らない**
     for l in await s.content(forType: JournalingSuggestion.Location.self) {
