@@ -188,7 +188,9 @@ function ToolbarBar({ field }) {
   const { isDark } = useThemeContext()
   const INK = isDark ? INK_DARK : INK_LIGHT
   const [height, setHeight] = useState(0)
-  const slide = useRef(new Animated.Value(0)).current
+  // **0 から始めない**（2026-09-06）。合図が来なければ 0 のままで、
+  // 描かれていても見えない。**欄に焦点があるなら、列は在るべき**
+  const slide = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
@@ -234,8 +236,19 @@ function ToolbarBar({ field }) {
     }
   }, [slide])
 
-  // 書いている欄が無いか、キーボードが出ていないときは何も置かない
-  if (!field || height === 0) return null
+  // **焦点のある欄が無ければ置かない。それだけ。**（2026-09-06）
+  //
+  // それまでは `height === 0` でも消していた。「キーボードが出ていない」
+  // の代わりに高さを見ていたわけだが、**高さは合図が来たときしか
+  // 入らない。**合図が来なければ、焦点があっても列が消える。
+  //
+  // 実機で列が丸ごと出ていなかった（作者の画面・2026-09-06）。
+  // 紙の下からキーボードまで、背景色が一様で**帯が無い。**
+  // 「完了」も無いので、**中身が欠けたのではなく列ごと出ていない。**
+  //
+  // 焦点があるならキーボードは出ている。**代わりのものを見ずに、
+  // 見たいものを見る。**位置決めには引き続き高さを使う（0 なら下端）。
+  if (!field) return null
 
   // **欄が自分で効かせられるならそちらに任せる。**
   // WebView の編集画面は中の選択範囲を持っており、
