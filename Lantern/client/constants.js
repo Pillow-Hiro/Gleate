@@ -7,4 +7,4 @@
 // ドキュメントに出てくる「v2.0」はこれとは別のものを指す。
 // あちらはアーキテクチャの世代（Expo + Flask API + Supabase）で、
 // こちらはストアに出す版数。2026-08-06 に 1.0.0 へ統一した（初回リリース）。
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.1.0'
