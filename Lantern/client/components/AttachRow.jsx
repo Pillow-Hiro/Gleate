@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Linking, Modal, Pressable, TextInput, View } from 'react-native'
+import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
+import { parseSongs, searchPath } from '../lib/musicSearch'
+import { authFetch } from '../lib/supabase'
 
 // 記録に添えるものの入口。**ひとつにまとめた**（2026-09-05・作者の指示
 // 「写真を追加だけでなく、ファイルも同じ点から選べるようにしたい」）。
@@ -23,6 +25,18 @@ import { KINDS } from '../lib/attachLink'
 // **題名を取りに行かない。**このアプリは記録の中身を外へ出さない設計で、
 // 「何を見て、何を聴いていたか」を外部へ知らせる通信を黙って足さない。
 // 読めるのは URL に書いてあることだけ。押せば本物のアプリが開く。
+//
+// ## 探すのは別（2026-09-05）
+//
+// Apple Music だけ、**探して選べる。**貼るには一度あちらのアプリへ行って
+// 共有して戻る必要があり、書いている最中の手間としては重い。
+//
+// **上の禁を破っていない。線引きは「黙って」の側にある。**
+// 送るのは本人が探すために打った言葉で、記録の中身ではない
+// （`lib/musicSearch.js` に理由、`modules/applemusic.py` に通信）。
+//
+// だから**押して初めて探す。**打つたびに送ると、消した言葉まで
+// Apple に届く。自動で探す作りにしないこと。
 
 function Photo({ color }) {
   return (
@@ -119,6 +133,15 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
   const [url, setUrl] = useState('')
   const [bad, setBad] = useState(false)
 
+  // 探すほう。`done` は「一度探した」の印——**探す前に「見つかりません」と
+  // 出さない**ため。空の一覧は、探していないのか無かったのか区別が要る
+  const [seeking, setSeeking] = useState(false)
+  const [term, setTerm] = useState('')
+  const [songs, setSongs] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  const [offline, setOffline] = useState(false)
+
   function pick(run) {
     setOpen(false)
     // 面が閉じてから開く。重ねると、選ぶ画面の下に残る
@@ -133,6 +156,41 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
     setUrl('')
     setBad(false)
     setAsking(false)
+    onChange?.()
+  }
+
+  function openSeek() {
+    setTerm('')
+    setSongs([])
+    setDone(false)
+    setOffline(false)
+    setSeeking(true)
+  }
+
+  // **押して初めて出る。**打つたびに送らない（冒頭の節）
+  async function seek() {
+    const path = searchPath(term)
+    if (!path || busy) return
+    setBusy(true)
+    setOffline(false)
+    try {
+      const res = await authFetch(path)
+      // 鍵が入っていなければ 503。**繋がっていないものとして扱う**
+      if (!res.ok) throw new Error(String(res.status))
+      setSongs(parseSongs(await res.json()))
+    } catch (e) {
+      console.warn('[Apple Music] 探せなかった', e)
+      setSongs([])
+      setOffline(true)
+    } finally {
+      setBusy(false)
+      setDone(true)
+    }
+  }
+
+  function take(song) {
+    if (!addLink(id, song.url)) return
+    setSeeking(false)
     onChange?.()
   }
 
@@ -157,8 +215,15 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             <Choice
               Icon={Link}
               label="リンク"
-              isLast
               onPress={() => pick(() => { setAsking(true); setBad(false) })}
+            />
+            {/* **貼るのと並べる。**どちらもリンクになるので隣に置く。
+                探すのは Apple Music だけ——他は貼る道が残っている */}
+            <Choice
+              Icon={Note}
+              label="Apple Music から探す"
+              isLast
+              onPress={() => pick(openSeek)}
             />
           </Pressable>
         </Pressable>
@@ -205,6 +270,91 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 className="bg-lantern-glow rounded-full px-4 py-2 disabled:opacity-50"
               >
                 <Text className="font-strong text-label-md text-on-lantern">添える</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
+      <Modal
+        visible={seeking}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setSeeking(false)}
+      >
+        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setSeeking(false)}>
+          <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8 gap-4" onPress={() => {}}>
+            <View className="self-center w-10 h-1 rounded-full bg-outline-variant" />
+            <Text className="font-strong text-body-md text-on-surface">Apple Music から探す</Text>
+            {/* **何が外に出るかを書く。**黙って送らない、と決めてある */}
+            <Text className="text-label-md text-outline leading-relaxed">
+              曲名か演者を入れて、押すと探します。送るのは打った言葉だけで、
+              記録の中身は送りません。
+            </Text>
+
+            <View className="flex-row items-center gap-2">
+              <TextInput
+                value={term}
+                onChangeText={setTerm}
+                placeholder="曲名、演者"
+                placeholderTextColor="#8E8478"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+                onSubmitEditing={seek}
+                className="flex-1 bg-surface-low rounded px-3 py-3 min-h-touch font-body text-body-md text-on-surface"
+              />
+              <Pressable
+                onPress={seek}
+                disabled={!term.trim() || busy}
+                hitSlop={8}
+                className="bg-lantern-glow rounded-full px-4 py-2 min-h-touch justify-center disabled:opacity-50"
+              >
+                <Text className="font-strong text-label-md text-on-lantern">探す</Text>
+              </Pressable>
+            </View>
+
+            {busy ? (
+              <View className="py-6 items-center">
+                <ActivityIndicator color={INK} />
+              </View>
+            ) : songs.length > 0 ? (
+              // **高さを決める。**結果が多いと面が画面を越える
+              <ScrollView className="max-h-72" keyboardShouldPersistTaps="handled">
+                {songs.map((song, i) => (
+                  <Pressable
+                    key={song.url}
+                    onPress={() => take(song)}
+                    className={`py-3 min-h-touch justify-center active:opacity-70 ${
+                      i === songs.length - 1 ? '' : 'border-b border-border'
+                    }`}
+                  >
+                    <Text className="text-body-md text-on-surface" numberOfLines={1}>
+                      {song.title || '題名のない曲'}
+                    </Text>
+                    {song.artist ? (
+                      <Text className="text-label-sm text-outline mt-0.5" numberOfLines={1}>
+                        {song.artist}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : offline ? (
+              <Text className="text-label-md text-error py-2">
+                いまは探せません。リンクを貼るほうは使えます。
+              </Text>
+            ) : done ? (
+              // **探す前には出さない。**`done` はそのための印
+              <Text className="text-label-md text-outline py-2">
+                見つかりませんでした。
+              </Text>
+            ) : null}
+
+            <View className="flex-row justify-end">
+              <Pressable onPress={() => setSeeking(false)} hitSlop={8} className="py-1">
+                <Text className="text-label-md text-outline">閉じる</Text>
               </Pressable>
             </View>
           </Pressable>

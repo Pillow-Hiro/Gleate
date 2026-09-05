@@ -177,6 +177,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
 | `attachLink.js` | Spotify / Apple Music / YouTube と**知らない場所**のリンクを読み解く。**題名を取りに行かない** | `attachLink.test.js` |
 | `linkStore.js` | 添えたリンク。**端末の中だけ**（AsyncStorage・記録ごと） | — |
+| `musicSearch.js` | Apple Music で曲を探す言葉の組み立てと読み解き。**押して初めて送る**（打つたびに送らない） | `musicSearch.test.js` |
 | `wordDrift.js` | **語を数えて月で引き算する。**形態素解析は入れず、漢字とカタカナの連なりを拾う | `wordDrift.test.js` |
 | `accent.js` | **灯りの色**。5つの束（蝋燭・月・焚火・蛍・灰）を明暗ともに持つ。当てるのは `app/_layout.jsx` の `vars()` | `accent.test.js` |
 | `paper.js` | **紙の色**。4つの梯子（白・生成り・象牙・月白）×6段。カードは白に寄せたまま。**暗い側は振り幅を広く取る** | `paper.test.js` |
