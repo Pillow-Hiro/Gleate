@@ -9,6 +9,7 @@ import AuthField from '../components/AuthField'
 import { supabase, authFetch } from '../lib/supabase'
 import { forgetLogs } from '../lib/logsCache'
 import { forgetAllLights } from '../lib/lightBuffer'
+import { forgetAll as forgetMusic } from '../lib/musicStore'
 import { authErrorMessage } from '../lib/authError'
 import * as avatar from '../lib/avatarStore'
 import { compressPhoto } from '../lib/image'
@@ -141,6 +142,8 @@ export default function Account() {
       // **控えも消す。**退会したのに記録が端末に残るのはおかしい
       await forgetLogs()
       forgetAllLights()
+      // 添えた音楽も**前の人のものを次の人に見せない**
+      forgetMusic()
       await supabase.auth.signOut()
     } catch (e) {
       console.warn('[Account] 削除に失敗', e)

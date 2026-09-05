@@ -8,6 +8,7 @@ import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { supabase, authFetch } from '../../lib/supabase'
 import { forgetLogs, loadLogs } from '../../lib/logsCache'
 import { forgetAllLights } from '../../lib/lightBuffer'
+import { forgetAll as forgetMusic } from '../../lib/musicStore'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
@@ -187,6 +188,8 @@ export default function Settings() {
     // 残すと、同じ端末を別の人が使ったとき前の人の記録が一瞬見える
     await forgetLogs()
     forgetAllLights()
+    // 添えた音楽も**前の人のものを次の人に見せない**（`lib/musicStore.js`）
+    forgetMusic()
     await supabase.auth.signOut()
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
   }
