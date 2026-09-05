@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -321,16 +321,39 @@ export default function Home() {
             </View>
           ) : null}
 
-          {/* 手がかりの枠を使い切ったとき。**手がかりの外に出す。**
-              読む場所に売り物を混ぜない（`components/HintPanel.jsx`） */}
-          {hintPaywall ? (
-            <Paywall
-              title="Lantern Plus"
-              message={hintPaywall}
-              onClose={() => setHintPaywall('')}
-              onPurchased={() => setHintPaywall('')}
-            />
-          ) : null}
+          {/* 手がかりの枠を使い切ったとき。**下から出す**（2026-09-05・
+              作者の指示「ペイウォール画面を表示しよう。コンパクトに
+              まとめるか、下から出てきて案内するか」）。
+
+              一覧の中に差し込んでいたので、**カードの間に売り物が挟まった。**
+              読んでいる途中で場所を取り、閉じるまで残る。
+              下から出せば、読む面はそのまま残って断りだけが手前に来る。
+              閉じれば元の場所に戻っている。
+
+              **読む場所に売り物を混ぜない**（`components/HintPanel.jsx`）
+              の続きでもある。混ぜないだけでなく、押しのけもしない。 */}
+          <Modal
+            visible={Boolean(hintPaywall)}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setHintPaywall('')}
+          >
+            <Pressable
+              className="flex-1 bg-black/50 justify-end"
+              onPress={() => setHintPaywall('')}
+            >
+              <Pressable className="bg-surface rounded-t-2xl px-5 pt-4 pb-8" onPress={() => {}}>
+                {/* つまみ。どこを掴めば閉じるかの目印 */}
+                <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
+                <Paywall
+                  title="Lantern Plus"
+                  message={hintPaywall}
+                  onClose={() => setHintPaywall('')}
+                  onPurchased={() => setHintPaywall('')}
+                />
+              </Pressable>
+            </Pressable>
+          </Modal>
         </View>
 
         {/* アイデア。display で隠すだけにして、入力途中の文字を消さない */}

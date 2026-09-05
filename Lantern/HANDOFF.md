@@ -844,6 +844,22 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
 `GET /api/debug/version` が、どのリダイレクトURIで動いているかを返す。
 値そのものは出さない。設定ミスの検出用。
 
+## 9月のビルドに入れるもの（2026-09-05 時点）
+
+作者の指示・保留になっているもの。**OTA では届かないものだけ**をここに置く。
+
+- **言語表示を `ja` に**（App Store の表示が英語のまま）
+- **Journaling Suggestions を開ける**（`EditorToolbar.jsx` の
+  `SUGGESTIONS_READY`。Swift 側の直しが要るのでビルドから）
+- **Universal Links**（`associatedDomains`。Apple Team ID が要る）
+- **Apple Music の連携**（2026-09-05・作者の指示）
+  - MusicKit の識別子と秘密鍵を作り、開発者トークンを発行する
+  - iOS のネイティブ側が要るので Expo のままでは足りない
+  - `NSAppleMusicUsageDescription` を足す
+  - いまはリンクを貼るだけ（`lib/musicLink.js`）。**貼る道は残す**——
+    連携していない人と、Spotify の人がいる
+- `app.json` の `backgroundColor`（native の地）。**配信では変えられない**
+
 ## 出回っているビルドへ OTA を届けるとき（2026-08-21）
 
 `runtimeVersion` は `fingerprint` 方式なので、**作業ツリーのバイト列が

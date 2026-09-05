@@ -227,9 +227,17 @@ function RootNavigator() {
 
   // 判定が済んだら OS の起動画面を下ろす。
   // **下ろすまで、この下で何を描いていても見えない。**
+  // **こちらが1枚描いてから下ろす**（2026-09-05）。
+  //
+  // 判定が済んだ時点で下ろしていたが、**下ろすのと描くのは別の拍。**
+  // 間に1フレーム入ると、そこだけ窓の地が見える。
+  // 次の描画の後まで待てば、下から出てくるのは必ずこちらの画面になる。
   useEffect(() => {
-    if (loading || showSplash === null) return
-    NativeSplash.hideAsync().catch(() => {})
+    if (loading || showSplash === null) return undefined
+    const id = requestAnimationFrame(() => {
+      NativeSplash.hideAsync().catch(() => {})
+    })
+    return () => cancelAnimationFrame(id)
   }, [loading, showSplash])
 
   // 認証とスプラッシュの判定が両方済むまで、本画面を描画しない。
@@ -324,8 +332,18 @@ function AccentVars({ children }) {
   // 紙が先、灯りが後。**重なる名前は無い**が、順を決めておくと
   // 後から片方に足したときに、どちらが勝つかが読んで分かる
   const style = vars({ ...paperVars(paper, isDark), ...accentVars(accent, isDark) })
+  // **地の色をここで塗る**（2026-09-05・作者から「骨組みが見える」）。
+  //
+  // この `View` は色を持っていなかった。子が描いていない隙間は
+  // **端末の窓の地（白）が透けて見える**——画面の入れ替わりや、
+  // OS の起動画面が下りた直後の1フレームがそれ。
+  // 暗いテーマだと白が光って、いちばん目立つ。
+  //
+  // `app.json` の `backgroundColor` は native の側にあり、
+  // **配信では変えられない。**こちらは JS なので今日から効く。
+  const ground = `rgb(${findPaper(paper)[isDark ? 'dark' : 'light'].ground})`
   return (
-    <View className="flex-1" style={style}>
+    <View className="flex-1" style={[style, { backgroundColor: ground }]}>
       {children}
     </View>
   )
