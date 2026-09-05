@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
-import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
+import { add as addLink, list as listLinks, recentSounds, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
 import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
 import { useKeyboardHeight } from '../lib/keyboard'
@@ -144,6 +144,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [offline, setOffline] = useState(false)
+  const [recent, setRecent] = useState([])
 
   function pick(run) {
     setOpen(false)
@@ -167,6 +168,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
     setSongs([])
     setDone(false)
     setOffline(false)
+    // **前に添えたもの。**端末の中だけを見る（`lib/musicSearch.js`）
+    setRecent(recentSounds(4))
     setSeeking(true)
   }
 
@@ -383,6 +386,26 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               <Text className="text-label-md text-outline py-2">
                 見つかりませんでした。
               </Text>
+            ) : recent.length > 0 ? (
+              // **打たずに選べる道**（2026-09-06・作者の求め）。
+              // 名前で嘘をつかない——これは「最近聴いた曲」ではなく、
+              // **この人が前に添えたもの。**端末の中だけを見ている
+              <View>
+                <Text className="text-label-sm text-outline mb-1">前に添えた曲</Text>
+                {recent.map((item, i) => (
+                  <Pressable
+                    key={item.url}
+                    onPress={() => take({ url: item.url, title: item.label, artist: '' })}
+                    className={`py-3 min-h-touch justify-center active:opacity-70 ${
+                      i === recent.length - 1 ? '' : 'border-b border-border'
+                    }`}
+                  >
+                    <Text className="text-body-md text-on-surface" numberOfLines={1}>
+                      {item.label || item.url}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             ) : null}
 
           </Pressable>

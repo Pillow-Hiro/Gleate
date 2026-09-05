@@ -125,4 +125,37 @@ describe('出来上がったページのスクリプト', () => {
     expect(script()).toContain("addEventListener('focus'")
     expect(script()).toContain("addEventListener('input'")
   })
+
+  // **構文が通るだけでは足りない**（2026-09-06）。
+  // 途中で落ちれば、そこから先の口は付かない。**走らせて確かめる。**
+  it('走らせると合図の口が付き、最初の知らせが出る', () => {
+    const heard = []
+    const posted = []
+    const ed = {
+      addEventListener: (t) => heard.push(t),
+      innerHTML: '', scrollHeight: 200, textContent: '',
+      focus() {}, blur() {},
+    }
+    const doc = {
+      getElementById: () => ed,
+      execCommand: () => true,
+      queryCommandState: () => false,
+      createRange: () => ({ selectNodeContents() {}, collapse() {} }),
+      body: { scrollHeight: 200 },
+      addEventListener: () => {},
+    }
+    const win = {
+      ReactNativeWebView: { postMessage: (m) => posted.push(JSON.parse(m).type) },
+      getSelection: () => ({ removeAllRanges() {}, addRange() {} }),
+    }
+    new Function('window', 'document', 'setTimeout', script())(win, doc, (fn) => fn())
+
+    // **これが無いと、焦点が伝わらず列が出ない**
+    expect(heard).toContain('focus')
+    // **これが無いと、書いた文字が保存されない**
+    expect(heard).toContain('input')
+    expect(posted).toContain('height')
+    // 外から差し込む口（日記の候補）
+    expect(typeof win.lanternInsert).toBe('function')
+  })
 })

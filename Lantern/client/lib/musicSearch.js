@@ -30,6 +30,8 @@
 // Apple に渡す前に整える。**長すぎるものは切る**——曲名として
 // 打たれたとは考えにくく、記録の一節を貼り付けた可能性のほうが高い。
 // 切っても探せる。切らずに送ると、送らないと決めたものが混ざる
+import { KINDS } from './attachLink'
+
 const MAX_TERM = 80
 
 /** 探す言葉を整える。空白を潰し、長すぎるものは切る */
@@ -93,4 +95,42 @@ export function songLabel(song) {
   const artist = String((song && song.artist) || '').trim()
   if (title && artist) return `${title} — ${artist}`
   return title || artist
+}
+
+/**
+ * 前に添えた音のものから、新しい順に拾う（2026-09-06）。
+ *
+ * ## 「最近聴いた曲」ではない
+ *
+ * 作者の求めは**最近聴いていた曲。**それには Apple Music の
+ * 利用者トークンが要り、ネイティブの MusicKit と本人の許可と、
+ * 新しいビルドが要る。**そして聴取の履歴がこちらを通ることになる。**
+ *
+ * ここで出すのは**前にこの人が添えたもの。**端末の中にしかなく、
+ * 外に何も聞きに行かない。打たずに選べる、という用は足りる。
+ * **名前で嘘をつかない**——画面にも「前に添えた曲」と出す。
+ *
+ * ## 新しい順の精度について
+ *
+ * 添えた時刻を持っていない（`lib/linkStore.js` は URL と字だけ）。
+ * **記録ごとの並びを後ろから見る**ので、だいたい新しい順にしかならない。
+ * 持っていない精度を、持っているふりで出さない。
+ */
+export function recentFrom(groups, limit = 4) {
+  const out = []
+  const seen = new Set()
+  const all = Array.isArray(groups) ? groups : []
+  for (let i = all.length - 1; i >= 0; i -= 1) {
+    const items = Array.isArray(all[i]) ? all[i] : []
+    for (let j = items.length - 1; j >= 0; j -= 1) {
+      const item = items[j]
+      if (!item || item.family !== KINDS.sound) continue
+      const url = String(item.url || '').trim()
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      out.push({ url, label: String(item.label || '').trim() })
+      if (out.length >= limit) return out
+    }
+  }
+  return out
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTerm, parseSongs, searchPath, songLabel } from './musicSearch'
+import { normalizeTerm, parseSongs, recentFrom, searchPath, songLabel } from './musicSearch'
 
 describe('探す言葉を整える', () => {
   it('前後の空白を落とす', () => {
@@ -122,5 +122,36 @@ describe('選んだ曲の字', () => {
   it('両方無ければ空', () => {
     expect(songLabel({})).toBe('')
     expect(songLabel(null)).toBe('')
+  })
+})
+
+describe('前に添えた曲', () => {
+  const s = (url, label) => ({ url, label, family: 'sound' })
+  const other = (url) => ({ url, label: 'x', family: 'link' })
+
+  it('新しい順に拾う', () => {
+    const out = recentFrom([[s('a', 'A')], [s('b', 'B')]], 4)
+    expect(out.map((x) => x.url)).toEqual(['b', 'a'])
+  })
+
+  it('音でないものは混ぜない', () => {
+    const out = recentFrom([[other('z'), s('a', 'A')]], 4)
+    expect(out.map((x) => x.url)).toEqual(['a'])
+  })
+
+  it('同じものは一度だけ', () => {
+    const out = recentFrom([[s('a', 'A')], [s('a', 'A')]], 4)
+    expect(out).toHaveLength(1)
+  })
+
+  it('数を守る', () => {
+    const out = recentFrom([[s('a'), s('b'), s('c'), s('d'), s('e')]], 3)
+    expect(out).toHaveLength(3)
+  })
+
+  it('何も無ければ空', () => {
+    expect(recentFrom([], 4)).toEqual([])
+    expect(recentFrom(null, 4)).toEqual([])
+    expect(recentFrom([null, 'まとも でない'], 4)).toEqual([])
   })
 })

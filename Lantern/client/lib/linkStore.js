@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { linkKey, parseAttachLink } from './attachLink'
+import { recentFrom } from './musicSearch'
 
 // 記録に添えたリンク。**端末の中だけ**（2026-09-05・作者の指示）。
 //
@@ -65,6 +66,17 @@ function persist() {
 export function list(id) {
   if (!cache || !id) return []
   return cache[id] || []
+}
+
+/**
+ * 前に添えた音のものを、新しい順に少しだけ（2026-09-06）。
+ *
+ * **端末の中だけを見る。**外へは何も聞きに行かない
+ * （選び方は `lib/musicSearch.js` の `recentFrom`）。
+ */
+export function recentSounds(limit) {
+  if (!cache) return []
+  return recentFrom(Object.values(cache), limit)
 }
 
 /**
