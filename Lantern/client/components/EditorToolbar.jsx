@@ -179,6 +179,23 @@ export function EditorToolbarProvider({ children }) {
   )
 }
 
+// **いま列がどう見えているかを外から読む**（2026-09-06・一時的）。
+//
+// 実機で列が出ない。届いていることは確かめた（マイページの配信日時が
+// `9/6 0:41`）。**なのに出ない。**
+//
+// 消える道は2つある——`field` が null（登録が届いていない）か、
+// 高さが 0（`bottom: 0` に描かれ、**キーボードの裏に隠れる**）。
+// **どちらでも「出ない」に見えるので、外からは区別できない。**
+//
+// 一度当てて外している（「出ないなら field が null」と書いたが、
+// 高さ 0 でも同じに見える）。**当てるのをやめて、見る。**
+//
+// **次の配信で消すこと。**
+export function useToolbarState() {
+  return useContext(FieldContext)
+}
+
 // `Modal` の中に置く用。中身は同じ列
 export function EditorToolbarBar() {
   return <ToolbarBar field={useContext(FieldContext)} />

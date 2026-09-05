@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../components/Text'
 import RecordForm from '../components/RecordForm'
-import { EditorToolbarBar, TOOLBAR_HEIGHT } from '../components/EditorToolbar'
+import { EditorToolbarBar, TOOLBAR_HEIGHT, useToolbarState } from '../components/EditorToolbar'
 import { ZoomIn } from '../components/Motion'
 import { useKeyboardHeight } from '../lib/keyboard'
 import { todayStr } from '../lib/date'
@@ -32,6 +32,8 @@ export default function Write() {
   const params = useLocalSearchParams()
   const router = useRouter()
   const keyboardHeight = useKeyboardHeight()
+  // **一時的**（2026-09-06）。列が出ない理由を見るため。次の配信で消す
+  const toolbarField = useToolbarState()
   const formRef = useRef(null)
   const [saving, setSaving] = useState(false)
 
@@ -162,6 +164,14 @@ export default function Write() {
 
       {/* 装飾の列。**この画面は根の列より上に出る**ので、ここにも置く */}
       <EditorToolbarBar />
+
+      {/* **一時的**（2026-09-06）。列が消える道は2つあり、外からは
+          どちらも「出ない」に見える。**当てずに見る。**次の配信で消す */}
+      <View className="absolute left-3 bottom-1 bg-black/60 rounded px-2 py-1">
+        <Text className="text-label-sm text-white">
+          {`欄:${toolbarField ? '有' : '無'} 高さ:${Math.round(keyboardHeight)}`}
+        </Text>
+      </View>
     </SafeAreaView>
     </ZoomIn>
   )
