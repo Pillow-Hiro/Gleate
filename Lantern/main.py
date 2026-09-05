@@ -412,7 +412,10 @@ def debug_version():
     # **Apple に出して確かめる**（2026-09-05）。署名が通ることと、
     # Apple が受け付けることは別——鍵が MusicKit 用でない、Media ID が
     # 紐付いていない、どちらでも JWT は作れてしまう。
-    # 結果は10分覚えるので、確認のたびに Apple を叩かない
+    #
+    # 叩くのは**画面と同じ道**（検索）。**国が引けても検索が引けるとは
+    # 限らない。**確かめたい方を叩く。送るのは決め打ちの1語で、
+    # **利用者の言葉ではない。**結果は10分覚える
     apple_music = applemusic.verify()
 
     return jsonify({
@@ -420,7 +423,9 @@ def debug_version():
         "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
         "youtube_redirect": youtube_redirect,
         "twitch_redirect": twitch_redirect,
-        # unset … 変数が足りない / bad_key … 変数はあるが PEM が読めない
+        # ok … 検索が返る / empty … 受け付けられたが曲が0件
+        # rejected … 鍵は作れたが Apple が認めていない
+        # bad_key … 変数はあるが PEM が読めない / unset … 変数が足りない
         "apple_music": apple_music,
         # 本番なのに localhost を指しているものがあれば設定漏れ
         "redirect_misconfigured": misconfigured if on_render else [],

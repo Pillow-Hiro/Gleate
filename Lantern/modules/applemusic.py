@@ -174,18 +174,26 @@ def search(term, storefront="jp", limit=8):
     return out
 
 
-# ── Apple が受け付けるか ──────────────────────────────────────
+# ── 検索が返るか ────────────────────────────────────────────
 #
 # **署名が通ることと、Apple が受け付けることは別**（2026-09-05）。
 #
 # 鍵が MusicKit 用に作られていない、Media ID が紐付いていない——
 # どちらでも JWT は作れてしまう。**落ちるのは Apple に出したとき。**
-# ビルドの前にそこを見たい。
 #
-# 叩くのはいちばん小さいもの（国の情報）。**利用者の言葉を送らない。**
+# はじめは国の情報（`/storefronts/jp`）を叩いていた。**そこを変えた**
+# ——作者「確かめてから配信してください」。国が引けても、
+# **検索が引けるとは限らない。**トークンの通る範囲が違えば別々に落ちる。
+#
+# だから**画面と同じ道を叩く。**同じ URL、同じ引数の形、同じ読み方。
+# 200 が返っても曲が0件なら、それは `ok` ではない（`empty`）。
+#
+# **利用者の言葉は送らない。**送るのは下の決め打ちの1語だけ。
 # 結果は少しのあいだ覚える。確認のたびに Apple を叩かない。
 
-VERIFY_URL = "https://api.music.apple.com/v1/storefronts/jp"
+# 決め打ちの語。**誰かが打った言葉ではない。**
+# 日本の目録なら必ず何か返る、当たり障りのないもの
+VERIFY_TERM = "music"
 VERIFY_TTL = 10 * 60
 
 _verified = None
@@ -193,9 +201,9 @@ _verified_at = 0
 
 
 def verify(now=None):
-    """Apple が受け付けるか。`ok` / `rejected` / `error` / `bad_key` / `unset`。
+    """検索が返るか。`ok`/`empty`/`rejected`/`error`/`bad_key`/`unset`。
 
-    **値は返さない。** 返すのは状態を表す語だけ。
+    **値は返さない。** 返すのは状態を表す語だけ——探した中身は出さない。
     """
     global _verified, _verified_at
 
@@ -211,20 +219,27 @@ def verify(now=None):
 
     try:
         res = requests.get(
-            VERIFY_URL,
+            SEARCH_URL.format(storefront="jp"),
+            params={"term": VERIFY_TERM, "types": "songs", "limit": 1},
             headers={"Authorization": f"Bearer {token}"},
             timeout=SEARCH_TIMEOUT,
         )
-        if res.status_code == 200:
-            state = "ok"
-        elif res.status_code in (401, 403):
+        if res.status_code in (401, 403):
             # **鍵は作れたが、Apple が認めていない。**
             # MusicKit を有効にしていない鍵か、Media ID が紐付いていない
-            state = "rejected"
             print(f"[AppleMusic] Apple が受け付けなかった: HTTP {res.status_code}")
-        else:
-            state = "error"
+            state = "rejected"
+        elif res.status_code != 200:
             print(f"[AppleMusic] 確認に失敗: HTTP {res.status_code}")
+            state = "error"
+        else:
+            data = res.json()
+            songs = ((data.get("results") or {}).get("songs") or {}).get("data") or []
+            # **受け付けられたが、曲が返らない。**`ok` と呼ばない——
+            # 画面では空の一覧になり、探せないのと変わらない
+            state = "ok" if songs else "empty"
+            if not songs:
+                print("[AppleMusic] 受け付けられたが曲が返らなかった")
     except Exception as e:
         print(f"[AppleMusic] 確認に失敗: {type(e).__name__}: {e}")
         return "error"

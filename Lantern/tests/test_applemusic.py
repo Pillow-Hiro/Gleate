@@ -244,16 +244,30 @@ class Test曲を探す:
         assert applemusic.search("月") == []
 
 
+ONE_SONG = {"results": {"songs": {"data": [
+    {"attributes": {"name": "曲", "artistName": "誰か",
+                    "url": "https://music.apple.com/jp/album/x/1?i=2"}}
+]}}}
+
+
 class TestAppleが受け付けるか:
     """`applemusic.verify`。**署名が通ることと、受け付けられることは別。**
 
     鍵が MusicKit 用に作られていない、Media ID が紐付いていない——
     どちらでも JWT は作れてしまう。落ちるのは Apple に出したとき。
+
+    叩くのは**画面と同じ道**（検索）。国が引けても検索が引けるとは
+    限らないので、確かめたい方を叩く。
     """
 
-    def _status(self, monkeypatch, code, capture=None):
+    def _status(self, monkeypatch, code, capture=None, body=None):
+        payload = ONE_SONG if body is None else body
+
         class Res:
             status_code = code
+
+            def json(self):
+                return payload
 
         def fake_get(url, **kwargs):
             if capture is not None:
@@ -306,15 +320,46 @@ class TestAppleが受け付けるか:
         monkeypatch.setattr(applemusic.requests, "get", boom)
         assert applemusic.verify(now=1_000_000) == "error"
 
-    # **利用者の言葉を送らない。** 叩くのはいちばん小さいもの
-    def test_言葉を送らない(self, monkeypatch, keypair):
+    # **受け付けられたが曲が返らない。** `ok` と呼ばない——
+    # 画面では空の一覧になり、探せないのと変わらない
+    def test_曲が返らなければempty(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._status(monkeypatch, 200, body={"results": {}})
+        assert applemusic.verify(now=1_000_000) == "empty"
+
+    # **利用者の言葉は送らない。** 送るのは決め打ちの1語だけ
+    def test_利用者の言葉を送らない(self, monkeypatch, keypair):
         pem, _ = keypair
         _configure(monkeypatch, pem)
         seen = {}
         self._status(monkeypatch, 200, capture=seen)
         applemusic.verify(now=1_000_000)
-        assert "storefronts" in seen["url"]
-        assert "params" not in seen
+        assert seen["params"]["term"] == applemusic.VERIFY_TERM
+
+    # **画面と同じ道を叩く。** 国が引けても検索が引けるとは限らない
+    def test_検索の道を叩く(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        seen = {}
+        self._status(monkeypatch, 200, capture=seen)
+        applemusic.verify(now=1_000_000)
+        assert "/search" in seen["url"]
+        assert seen["params"]["types"] == "songs"
+
+    # 壊れた返事でも落ちない
+    def test_返事が読めなくても落ちない(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+
+        class Res:
+            status_code = 200
+
+            def json(self):
+                raise ValueError("読めない")
+
+        monkeypatch.setattr(applemusic.requests, "get", lambda *a, **k: Res())
+        assert applemusic.verify(now=1_000_000) == "error"
 
     # 確認のたびに Apple を叩かない
     def test_少しのあいだ覚える(self, monkeypatch, keypair):
@@ -324,6 +369,9 @@ class TestAppleが受け付けるか:
 
         class Res:
             status_code = 200
+
+            def json(self):
+                return ONE_SONG
 
         def counting(*a, **k):
             calls["n"] += 1
