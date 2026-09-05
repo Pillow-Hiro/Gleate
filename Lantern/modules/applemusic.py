@@ -40,6 +40,7 @@ import os
 import time
 
 import jwt
+import requests
 
 # Apple の上限は 15777000 秒（約6ヶ月）。**そこまで延ばさない**
 TOKEN_TTL = 30 * 24 * 60 * 60
@@ -111,6 +112,66 @@ def token_response(now=None):
     if not token:
         return None
     return {"token": token, "expires_at": _cached_until}
+
+
+# ── 曲を探す ────────────────────────────────────────────────
+#
+# **こちらで代わりに叩く。**（2026-09-05）
+#
+# 端末から直に叩かせると、開発者トークンを配ることになる。
+# 配っても即座に危ないわけではない（Web の再生機は埋め込んでいる）が、
+# **出さずに済むなら出さない。**
+#
+# 代わりに、探した言葉がこのサーバーを通る。**記録そのものではないが、
+# 通る以上は残さない**——ログにも書かない。
+#
+# `storefront` は国。既定は日本。同じ曲でも国で id が変わる。
+
+SEARCH_URL = "https://api.music.apple.com/v1/catalog/{storefront}/search"
+SEARCH_TIMEOUT = 8
+
+
+def search(term, storefront="jp", limit=8):
+    """曲を探して、添えられる形にして返す。
+
+    戻すのは `[{title, artist, url}]`。**URL は本物の Apple Music のもの**で、
+    そのまま `lib/attachLink.js` が読める形（`music.apple.com/...`）。
+
+    取れなければ空。**探せないことでアプリを止めない。**
+    """
+    token = developer_token()
+    word = (term or "").strip()
+    if not token or not word:
+        return []
+
+    try:
+        res = requests.get(
+            SEARCH_URL.format(storefront=storefront),
+            params={"term": word, "types": "songs", "limit": max(1, min(int(limit), 25))},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=SEARCH_TIMEOUT,
+        )
+        if res.status_code != 200:
+            print(f"[AppleMusic] 検索に失敗: HTTP {res.status_code}")
+            return []
+        data = res.json()
+    except Exception as e:
+        print(f"[AppleMusic] 検索に失敗: {type(e).__name__}: {e}")
+        return []
+
+    songs = ((data.get("results") or {}).get("songs") or {}).get("data") or []
+    out = []
+    for song in songs:
+        attrs = song.get("attributes") or {}
+        url = attrs.get("url") or ""
+        if not url:
+            continue
+        out.append({
+            "title": attrs.get("name") or "",
+            "artist": attrs.get("artistName") or "",
+            "url": url,
+        })
+    return out
 
 
 def _reset_for_tests():

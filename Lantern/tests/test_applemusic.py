@@ -140,3 +140,106 @@ class Test壊れた鍵:
         monkeypatch.setenv("APPLE_MUSIC_KEY", "-----BEGIN PRIVATE KEY-----\nこわれている\n-----END PRIVATE KEY-----")
         assert applemusic.is_enabled() is True
         assert applemusic.developer_token() is None
+
+
+class Test曲を探す:
+    """`applemusic.search`。**本物の Apple は叩かない。**"""
+
+    def _reply(self, monkeypatch, status=200, payload=None, capture=None):
+        class Res:
+            status_code = status
+
+            def json(self):
+                return payload or {}
+
+        def fake_get(url, **kwargs):
+            if capture is not None:
+                capture["url"] = url
+                capture.update(kwargs)
+            return Res()
+
+        monkeypatch.setattr(applemusic.requests, "get", fake_get)
+
+    def test_鍵が無ければ探さない(self, monkeypatch):
+        called = {"n": 0}
+
+        def boom(*a, **k):
+            called["n"] += 1
+            raise AssertionError("叩いてはいけない")
+
+        monkeypatch.setattr(applemusic.requests, "get", boom)
+        assert applemusic.search("test") == []
+        assert called["n"] == 0
+
+    def test_空の言葉では探さない(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        monkeypatch.setattr(applemusic.requests, "get", lambda *a, **k: 1 / 0)
+        assert applemusic.search("") == []
+        assert applemusic.search("   ") == []
+
+    def test_添えられる形にして返す(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._reply(monkeypatch, payload={
+            "results": {"songs": {"data": [
+                {"attributes": {
+                    "name": "月の曲",
+                    "artistName": "だれか",
+                    "url": "https://music.apple.com/jp/album/tsuki/1?i=2",
+                }},
+                # URL の無いものは落とす。**押せないものを並べない**
+                {"attributes": {"name": "url が無い", "artistName": "x"}},
+            ]}}
+        })
+        songs = applemusic.search("月")
+        assert songs == [{
+            "title": "月の曲",
+            "artist": "だれか",
+            "url": "https://music.apple.com/jp/album/tsuki/1?i=2",
+        }]
+
+    def test_鍵を頭に載せる(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        seen = {}
+        self._reply(monkeypatch, payload={}, capture=seen)
+        applemusic.search("月", storefront="us")
+
+        assert seen["url"].endswith("/catalog/us/search")
+        assert seen["headers"]["Authorization"].startswith("Bearer ey")
+        assert seen["params"]["term"] == "月"
+        assert seen["params"]["types"] == "songs"
+
+    # **数を絞る。**大きい数を渡されても Apple の上限を越えない
+    def test_数は絞る(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        seen = {}
+        self._reply(monkeypatch, payload={}, capture=seen)
+        applemusic.search("月", limit=999)
+        assert seen["params"]["limit"] == 25
+
+    # **探せないことでアプリを止めない**
+    def test_断られても空を返す(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._reply(monkeypatch, status=401)
+        assert applemusic.search("月") == []
+
+    def test_通信が落ちても空を返す(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+
+        def boom(*a, **k):
+            raise TimeoutError("届かない")
+
+        monkeypatch.setattr(applemusic.requests, "get", boom)
+        assert applemusic.search("月") == []
+
+    def test_形が違っても落ちない(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._reply(monkeypatch, payload={"results": None})
+        assert applemusic.search("月") == []
+

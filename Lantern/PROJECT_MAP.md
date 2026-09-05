@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。41ルール / 39パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。42ルール / 40パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -228,7 +228,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | ファイル | 役割 | test |
 |---|---|---|
 | `account.py` | アカウントの削除。**行を消してから認証の利用者を消す** | `test_account.py` |
-| `applemusic.py` | MusicKit の開発者トークン。**秘密鍵はサーバーから出ない**（端末で署名させると鍵を埋め込むことになる） | `test_applemusic.py` |
+| `applemusic.py` | MusicKit の開発者トークンと曲の検索。**秘密鍵もトークンもサーバーから出ない**（端末で署名させると鍵を埋め込むことになる） | `test_applemusic.py` |
 | `ai.py` | 15関数。全AIプロンプト。ガードレールの文言はここ | `test_ai_parsing.py`・`test_prompts.py` |
 | `auth.py` | `require_auth`（Supabase JWT・ES256） | `test_auth_algorithms.py`・`test_route_auth.py` |
 | `ideas.py` | アイデア。**`done` ではなく `picked_at`** | `test_ideas.py` |
@@ -256,7 +256,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・41ルール / 39パス）
+## 6. API（`main.py`・42ルール / 40パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
@@ -272,7 +272,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | YouTube | `auth-url`・`callback`・`status`・`disconnect`・`channel`・`videos`・`analytics`・`video-insight`・`channel-insight` |
 | Twitch | `auth-url`・`callback`・`status`・`disconnect`・`streams`・`channel`・`stream-insight` |
 | アカウント | `DELETE /api/account`（記録・アイデア・連携・認証をすべて消す） |
-| Apple Music | `GET /api/apple-music/token`（MusicKit の開発者トークン。鍵が無ければ 503） |
+| Apple Music | `GET /api/apple-music/token`（MusicKit の開発者トークン。鍵が無ければ 503）／`GET /api/apple-music/search?q=`（曲を探す。**こちらで代わりに叩く**） |
 | 運用 | `GET /api/debug/version` |
 
 `serve_react` は 2026-08-04 に削除した。Flask は静的ファイルを配らない。

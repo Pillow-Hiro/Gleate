@@ -1282,6 +1282,28 @@ def apple_music_token():
     return jsonify(body)
 
 
+@app.route("/api/apple-music/search")
+@require_auth
+def apple_music_search():
+    """曲を探す（`modules/applemusic.py`）。
+
+    **こちらで代わりに叩く。** 端末から直に叩かせると開発者トークンを
+    配ることになる。配っても即座に危ないわけではないが、
+    **出さずに済むなら出さない。**
+
+    引き換えに、探した言葉がこのサーバーを通る。**残さない**——
+    ログにも書かない（`applemusic.search` を参照）。
+
+    取れなければ空の一覧。**探せないことでアプリを止めない。**
+    """
+    term = request.args.get("q", "")
+    store = request.args.get("storefront", "jp")
+    # 国は2文字だけ通す。**そのまま URL に混ぜるので、形を確かめる**
+    if not re.fullmatch(r"[a-z]{2}", store or ""):
+        store = "jp"
+    return jsonify({"songs": applemusic.search(term, storefront=store)})
+
+
 @app.route("/api/insights/keywords")
 @require_auth
 @require_paid
