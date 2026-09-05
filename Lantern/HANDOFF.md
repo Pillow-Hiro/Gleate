@@ -858,6 +858,13 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
   - 権利を足すとプロファイルの作り直しが要る。**`--non-interactive` を
     付けずに**ビルドすること（ビルド #15 がこれで落ちた）
   - 仕様は `REQUIREMENTS.md` F1 に書いた
+  - **ビルドの回に State of Mind を足す**（2026-09-05・作者が「入れていい。
+    憲法を書き換えていい」）。憲法（`CLAUDE.md`「気分について」）と
+    仕様は書き換え済みで、**Swift だけ残っている。**
+    `JournalingSuggestion.StateOfMind` の中の名前を Xcode で確かめてから
+    書くこと。**当てで書かない**——落ちるか、`String(describing:)` の
+    ようなデバッグ文字列が利用者の記録に入る。後者の方が質が悪い
+  - 運動・連絡先は**入れない**（作者の判断）
 - **Universal Links**（2026-09-05・Team ID をもらって設定済み）
   - `app.json` に `associatedDomains`、`client/public/.well-known/` に
     `apple-app-site-association` を置いた
