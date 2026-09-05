@@ -1,20 +1,11 @@
 import { useState } from 'react'
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from 'react-native'
+import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
 import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
+import { useKeyboardHeight } from '../lib/keyboard'
 import { authFetch } from '../lib/supabase'
 
 // 記録に添えるものの入口。**ひとつにまとめた**（2026-09-05・作者の指示
@@ -138,6 +129,8 @@ function Choice({ Icon, label, onPress, isLast }) {
  * リンクだけはここで受ける（貼るだけなので、外に出す手続きが無い）。
  */
 export default function AttachRow({ id, onPhoto, onFile, onChange }) {
+  // **測って自分で空ける**（`lib/keyboard.js`）
+  const keyboardHeight = useKeyboardHeight()
   const [open, setOpen] = useState(false)
   const [asking, setAsking] = useState(false)
   const [url, setUrl] = useState('')
@@ -250,13 +243,14 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         onRequestClose={() => setAsking(false)}
       >
         {/* **キーボードに隠れない**（2026-09-05・実機で報告）。
-            `Modal` の中は画面の外側とは別の面なので、
-            **ここにも要る。**外側で避けても届かない */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1"
+            測って自分で空ける——`KeyboardAvoidingView` はこの構成では
+            当てにできない（`lib/keyboard.js` の註釈）。
+            **一度そちらで書いて、決定に反していた。** */}
+        <Pressable
+          className="flex-1 bg-black/50 justify-center px-6"
+          style={{ paddingBottom: keyboardHeight }}
+          onPress={() => setAsking(false)}
         >
-        <Pressable className="flex-1 bg-black/50 justify-center px-6" onPress={() => setAsking(false)}>
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
             <Text className="font-strong text-body-md text-on-surface">リンクを添える</Text>
             <Text className="text-label-md text-outline leading-relaxed">
@@ -292,7 +286,6 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             </View>
           </Pressable>
         </Pressable>
-        </KeyboardAvoidingView>
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
@@ -302,15 +295,31 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         transparent
         onRequestClose={() => setSeeking(false)}
       >
-        {/* 下から出る面ほどキーボードに食われる。**同じ理由で要る** */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1"
-        >
+        {/* 下から出る面ほどキーボードに食われる。**同じ理由で測る。**
+            下りたら 32 に戻るので、**下げても隙間が空かない** */}
         <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setSeeking(false)}>
-          <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8 gap-4" onPress={() => {}}>
-            <View className="self-center w-10 h-1 rounded-full bg-outline-variant" />
-            <Text className="font-strong text-body-md text-on-surface">Apple Music から探す</Text>
+          <Pressable
+            className="bg-surface rounded-t-2xl px-5 pt-4 gap-4"
+            style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 32 }}
+            onPress={() => {}}
+          >
+            {/* **閉じるを上にも置く。**下は結果とキーボードで埋まるので、
+                指がいちばん届きにくい所に唯一の出口があった */}
+            <View className="flex-row items-center">
+              <View className="flex-1">
+                <Text className="font-strong text-body-md text-on-surface">
+                  Apple Music から探す
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setSeeking(false)}
+                accessibilityLabel="閉じる"
+                hitSlop={12}
+                className="min-w-touch min-h-touch items-center justify-center rounded-full active:bg-surface-high"
+              >
+                <Text className="text-body-md text-outline">✕</Text>
+              </Pressable>
+            </View>
             {/* **何が外に出るかを書く。**黙って送らない、と決めてある */}
             <Text className="text-label-md text-outline leading-relaxed">
               曲名か演者を入れて、押すと探します。送るのは打った言葉だけで、
@@ -376,14 +385,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               </Text>
             ) : null}
 
-            <View className="flex-row justify-end">
-              <Pressable onPress={() => setSeeking(false)} hitSlop={8} className="py-1">
-                <Text className="text-label-md text-outline">閉じる</Text>
-              </Pressable>
-            </View>
           </Pressable>
         </Pressable>
-        </KeyboardAvoidingView>
       </Modal>
     </>
   )

@@ -210,6 +210,24 @@ function ToolbarBar({ field }) {
       }).start(() => setHeight(0))
     })
 
+    // **既に出ているキーボードには、合図が来ない**（2026-09-06）。
+    //
+    // 高さも動きも `keyboardWillShow` 頼みなので、列が生まれた時点で
+    // もう出ていると、**高さ0のまま（＝何も描かない）か、
+    // `opacity` 0 のまま（＝見えない）になる。**
+    //
+    // 画面や `Modal` が入れ替わると列も生まれ直すので、
+    // **入れ替わりのあいだにキーボードが立っていれば当たる。**
+    //
+    // 実機で「装飾がすべて消えている」と報告があり（2026-09-06）、
+    // これが原因かは**確かめられていない。**ただしここが穴なのは
+    // 読めば分かることなので塞ぐ。**塞いだから直った、とは言わない。**
+    const already = Keyboard.metrics?.()
+    if (already?.height) {
+      setHeight(already.height)
+      slide.setValue(1)
+    }
+
     return () => {
       show.remove()
       hide.remove()
