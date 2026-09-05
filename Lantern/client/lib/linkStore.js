@@ -1,11 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { musicKey, parseMusicLink } from './musicLink'
+import { linkKey, parseAttachLink } from './attachLink'
 
-// 記録に添えた音楽。**端末の中だけ**（2026-09-05・作者の指示）。
+// 記録に添えたリンク。**端末の中だけ**（2026-09-05・作者の指示）。
+//
+// はじめは音楽だけだった。作者から「YouTube や他のリンクも」と言われて
+// 広げ、名前も `musicStore` から改めた（`lib/attachLink.js`）。
 //
 // 写真とファイルと同じ線引き（`lib/photoStore.js`）。中身はリンクの
-// 文字列だけだが、**何を聴いていたかは、書いた内容と同じくらい
-// その人のことを語る。**サーバーへは送らない。
+// 文字列だけだが、**何を見て、何を聴いていたかは、書いた内容と
+// 同じくらいその人のことを語る。**サーバーへは送らない。
+//
+// 覚えの鍵は `lantern.music_v1` のまま。**替えると、いま添えてある
+// ものが読めなくなる。**中身の形は変わっていない。
 //
 // ## なぜ AsyncStorage か
 //
@@ -39,7 +45,7 @@ export function ensureLoaded() {
       })
       .catch((e) => {
         // 読めなくても記録は読める。**空として進む**
-        console.warn('[音楽] 読み込みに失敗', e)
+        console.warn('[リンク] 読み込みに失敗', e)
         cache = {}
       })
       .finally(() => {
@@ -51,11 +57,11 @@ export function ensureLoaded() {
 
 function persist() {
   AsyncStorage.setItem(KEY, JSON.stringify(cache || {})).catch((e) => {
-    console.warn('[音楽] 保存に失敗', e)
+    console.warn('[リンク] 保存に失敗', e)
   })
 }
 
-/** その記録に添えた音楽。**読み込み前は空** */
+/** その記録に添えたリンク。**読み込み前は空** */
 export function list(id) {
   if (!cache || !id) return []
   return cache[id] || []
@@ -68,14 +74,14 @@ export function list(id) {
  */
 export function add(id, input) {
   if (!id) return false
-  const entry = parseMusicLink(input)
+  const entry = parseAttachLink(input)
   if (!entry) return false
   if (!cache) cache = {}
 
   const current = cache[id] || []
   // **同じものを二度足さない。**`?si=` のような付き物は無視して見比べる
-  const key = musicKey(entry.url)
-  if (current.some((e) => musicKey(e.url) === key)) return true
+  const key = linkKey(entry.url)
+  if (current.some((e) => linkKey(e.url) === key)) return true
 
   cache[id] = [...current, entry]
   persist()
@@ -84,8 +90,8 @@ export function add(id, input) {
 
 export function remove(id, url) {
   if (!cache || !cache[id]) return
-  const key = musicKey(url)
-  cache[id] = cache[id].filter((e) => musicKey(e.url) !== key)
+  const key = linkKey(url)
+  cache[id] = cache[id].filter((e) => linkKey(e.url) !== key)
   if (cache[id].length === 0) delete cache[id]
   persist()
 }
@@ -104,6 +110,6 @@ export function removeAll(id) {
 export function forgetAll() {
   cache = {}
   AsyncStorage.removeItem(KEY).catch((e) => {
-    console.warn('[音楽] 消去に失敗', e)
+    console.warn('[リンク] 消去に失敗', e)
   })
 }

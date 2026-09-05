@@ -131,7 +131,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
-| `AttachRow.jsx` | LogDetail | **「＋ 添える」**。写真・ファイル・音楽をひとつの入口から。音楽はリンクを貼るだけ |
+| `AttachRow.jsx` | LogDetail | **「＋ 添える」**。写真・ファイル・リンクをひとつの入口から。リンクは貼るだけ（`LinkList` も持つ） |
 | `WordDrift.jsx` | 分析 | **言葉の移り変わり。**今月から出てきた語／先月まで出ていた語。AI も有料の枠も使わない |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
@@ -175,8 +175,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `photoStore.js` ＋ `photoStore.web.js` | **写真を端末の中だけに置く。**サーバーに送らない | — |
 | `supabase.js` | クライアント初期化と `authFetch`。401 では更新して1回だけ再試行する | — |
 | `tabBar.js` ＋ `tabBar.web.js` | 画面が空ける下の余白。**ネイティブは 0**（`NativeTabs` が持つ）、Web は自前 | — |
-| `musicLink.js` | Spotify / Apple Music のリンクを読み解く。**曲名を取りに行かない** | `musicLink.test.js` |
-| `musicStore.js` | 添えた音楽。**端末の中だけ**（AsyncStorage・記録ごと） | — |
+| `attachLink.js` | Spotify / Apple Music / YouTube と**知らない場所**のリンクを読み解く。**題名を取りに行かない** | `attachLink.test.js` |
+| `linkStore.js` | 添えたリンク。**端末の中だけ**（AsyncStorage・記録ごと） | — |
 | `wordDrift.js` | **語を数えて月で引き算する。**形態素解析は入れず、漢字とカタカナの連なりを拾う | `wordDrift.test.js` |
 | `accent.js` | **灯りの色**。5つの束（蝋燭・月・焚火・蛍・灰）を明暗ともに持つ。当てるのは `app/_layout.jsx` の `vars()` | `accent.test.js` |
 | `paper.js` | **紙の色**。4つの梯子（白・生成り・象牙・月白）×6段。カードは白に寄せたまま。**暗い側は振り幅を広く取る** | `paper.test.js` |

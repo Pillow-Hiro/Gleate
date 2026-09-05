@@ -7,8 +7,8 @@ import { authFetch } from '../lib/supabase'
 import RichText from './RichText'
 import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
-import AttachRow, { MusicList } from './AttachRow'
-import { ensureLoaded as loadMusic, removeAll as removeMusicAll } from '../lib/musicStore'
+import AttachRow, { LinkList } from './AttachRow'
+import { ensureLoaded as loadLinks, removeAll as removeLinksAll } from '../lib/linkStore'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 
@@ -40,11 +40,11 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     setFiles(log.id ? listFiles('', log.id) : listFiles(log.date))
   }
 
-  // 音楽は AsyncStorage にある。**一度読んで覚える**（`lib/musicStore.js`）
+  // リンクは AsyncStorage にある。**一度読んで覚える**（`lib/linkStore.js`）
   const [musicTick, setMusicTick] = useState(0)
   useEffect(() => {
     let cancelled = false
-    loadMusic().then(() => {
+    loadLinks().then(() => {
       if (!cancelled) setMusicTick((t) => t + 1)
     })
     return () => { cancelled = true }
@@ -71,7 +71,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       // 1日に複数件あると、片方を消したいときに両方消える
       await authFetch(`/api/logs/by-id/${log.id}`, { method: 'DELETE' })
       // 添えたものも一緒に消す。**記録が無くなれば持ち主が居ない**
-      removeMusicAll(log.id)
+      removeLinksAll(log.id)
       if (onDelete) onDelete(log.id, log.date)
     } catch (e) {
       console.warn(`[Journal] ${log.date} の削除に失敗`, e)
@@ -113,7 +113,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       {/* 添えたもの。**中身は端末の中だけ**（写真・ファイル・音楽）。
           入口は下の「＋ 添える」ひとつにまとめてある（`AttachRow`） */}
       <FileList files={files} onChange={refreshFiles} />
-      <MusicList id={log.id} onChange={() => setMusicTick((t) => t + 1)} key={musicTick} />
+      <LinkList id={log.id} onChange={() => setMusicTick((t) => t + 1)} key={musicTick} />
 
       <PhotoPicker
         photoUrl={log.photo_url}

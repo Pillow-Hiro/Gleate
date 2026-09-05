@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Linking, Modal, Pressable, TextInput, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
-import { add as addMusic, list as listMusic, remove as removeMusic } from '../lib/musicStore'
+import { add as addLink, list as listLinks, remove as removeLink } from '../lib/linkStore'
+import { KINDS } from '../lib/attachLink'
 
 // 記録に添えるものの入口。**ひとつにまとめた**（2026-09-05・作者の指示
 // 「写真を追加だけでなく、ファイルも同じ点から選べるようにしたい」）。
@@ -13,11 +14,14 @@ import { add as addMusic, list as listMusic, remove as removeMusic } from '../li
 // 「写真を追加」という字もやめた（作者の指示）。**添えるのは写真だけ
 // ではない。**「＋ 添える」なら、増えても字を変えなくていい。
 //
-// ## 音楽はリンクを貼る
+// ## リンクは貼るだけ
 //
-// Spotify と Apple Music の共有リンクを受ける（`lib/musicLink.js`）。
-// **曲名を取りに行かない。**このアプリは記録の中身を外へ出さない設計で、
-// 「いま何を聴いていたか」を外部へ知らせる通信を黙って足さない。
+// Spotify・Apple Music・YouTube と、**知らない場所も受ける**
+// （`lib/attachLink.js`）。はじめは音楽だけだったが、作者から
+// 「YouTube や他のリンクも」と言われて広げた。
+//
+// **題名を取りに行かない。**このアプリは記録の中身を外へ出さない設計で、
+// 「何を見て、何を聴いていたか」を外部へ知らせる通信を黙って足さない。
 // 読めるのは URL に書いてあることだけ。押せば本物のアプリが開く。
 
 function Photo({ color }) {
@@ -60,6 +64,34 @@ function Note({ color }) {
   )
 }
 
+function Play({ color }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Rect x="2.5" y="5" width="19" height="14" rx="3.5" stroke={color} strokeWidth="1.8" />
+      <Path d="M10.5 9.5l4.5 2.5-4.5 2.5z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+    </Svg>
+  )
+}
+
+function Link({ color }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10 13.5a4 4 0 006 .5l2.5-2.5a4 4 0 00-5.7-5.7L11.5 7"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M14 10.5a4 4 0 00-6-.5L5.5 12.5a4 4 0 005.7 5.7L12.5 17"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </Svg>
+  )
+}
+
 const INK = '#847563'
 
 function Choice({ Icon, label, onPress, isLast }) {
@@ -79,7 +111,7 @@ function Choice({ Icon, label, onPress, isLast }) {
 
 /**
  * `onPhoto` / `onFile` … それぞれの選び方は呼ぶ側が持つ。
- * 音楽だけはここで受ける（貼るだけなので、外に出す手続きが無い）。
+ * リンクだけはここで受ける（貼るだけなので、外に出す手続きが無い）。
  */
 export default function AttachRow({ id, onPhoto, onFile, onChange }) {
   const [open, setOpen] = useState(false)
@@ -94,7 +126,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
   }
 
   function submit() {
-    if (!addMusic(id, url)) {
+    if (!addLink(id, url)) {
       setBad(true)
       return
     }
@@ -123,8 +155,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             <Choice Icon={Photo} label="写真" onPress={() => pick(onPhoto)} />
             <Choice Icon={Clip} label="ファイル" onPress={() => pick(onFile)} />
             <Choice
-              Icon={Note}
-              label="音楽"
+              Icon={Link}
+              label="リンク"
               isLast
               onPress={() => pick(() => { setAsking(true); setBad(false) })}
             />
@@ -132,8 +164,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         </Pressable>
       </Modal>
 
-      {/* 音楽。**リンクを貼るだけ。** Spotify と Apple Music の
-          共有リンクを受ける（`lib/musicLink.js`）。
+      {/* リンク。**貼るだけ。** Spotify・Apple Music・YouTube と、
+          知らない場所も受ける（`lib/attachLink.js`）。
           題名や説明が前後に付いていても、中から URL を拾う */}
       <Modal
         visible={asking}
@@ -143,14 +175,14 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
       >
         <Pressable className="flex-1 bg-black/50 justify-center px-6" onPress={() => setAsking(false)}>
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
-            <Text className="font-strong text-body-md text-on-surface">音楽を添える</Text>
+            <Text className="font-strong text-body-md text-on-surface">リンクを添える</Text>
             <Text className="text-label-md text-outline leading-relaxed">
-              Spotify か Apple Music の共有リンクを貼ってください。
+              曲でも動画でも記事でも。共有リンクをそのまま貼ってください。
             </Text>
             <TextInput
               value={url}
               onChangeText={(v) => { setUrl(v); setBad(false) }}
-              placeholder="https://open.spotify.com/..."
+              placeholder="https://..."
               placeholderTextColor="#8E8478"
               autoCapitalize="none"
               autoCorrect={false}
@@ -159,7 +191,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             />
             {bad ? (
               <Text className="text-label-md text-error">
-                Spotify か Apple Music のリンクが見つかりませんでした。
+                リンクが見つかりませんでした。
               </Text>
             ) : null}
             <View className="flex-row justify-end items-center gap-4">
@@ -182,16 +214,16 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
   )
 }
 
-/** 添えた音楽の一覧。**押すと本物のアプリが開く** */
-export function MusicList({ id, onChange }) {
-  const items = listMusic(id)
+/** 添えたリンクの一覧。**押すと本物のアプリが開く** */
+export function LinkList({ id, onChange }) {
+  const items = listLinks(id)
   if (items.length === 0) return null
 
   async function open(url) {
     try {
       await Linking.openURL(url)
     } catch (e) {
-      console.warn('[音楽] 開けなかった', e)
+      console.warn('[リンク] 開けなかった', e)
     }
   }
 
@@ -204,7 +236,15 @@ export function MusicList({ id, onChange }) {
             i === items.length - 1 ? '' : 'border-b border-border'
           }`}
         >
-          <Note color={INK} />
+          {/* **区分で印を変える。**音・映像・それ以外（`lib/attachLink.js`）。
+              一覧に混ざるので、押す前にどれか分かる方がいい */}
+          {item.family === KINDS.sound ? (
+            <Note color={INK} />
+          ) : item.family === KINDS.video ? (
+            <Play color={INK} />
+          ) : (
+            <Link color={INK} />
+          )}
           <Pressable onPress={() => open(item.url)} className="flex-1 min-h-touch justify-center">
             <Text className="text-body-md text-on-surface" numberOfLines={1}>
               {item.label}
@@ -212,7 +252,7 @@ export function MusicList({ id, onChange }) {
             <Text className="text-label-sm text-outline mt-0.5">{item.serviceLabel}</Text>
           </Pressable>
           <Pressable
-            onPress={() => { removeMusic(id, item.url); onChange?.() }}
+            onPress={() => { removeLink(id, item.url); onChange?.() }}
             accessibilityLabel={`${item.label} を外す`}
             hitSlop={8}
             className="min-h-touch justify-center px-1"
