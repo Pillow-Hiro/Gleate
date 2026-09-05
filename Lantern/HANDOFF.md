@@ -849,8 +849,15 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
 作者の指示・保留になっているもの。**OTA では届かないものだけ**をここに置く。
 
 - **言語表示を `ja` に**（App Store の表示が英語のまま）
-- **Journaling Suggestions を開ける**（`EditorToolbar.jsx` の
-  `SUGGESTIONS_READY`。Swift 側の直しが要るのでビルドから）
+- **Journaling Suggestions を開ける**（2026-09-05・作者が「今回入れる」）
+  - **Swift はもう直っている**（2026-08-21）。`Reflection.prompt` を第一に
+    取る形で、分類の名前は最後の逃げ道。**直しが要るという理解は誤り**だった
+  - 残っているのは `EditorToolbar.jsx` の `SUGGESTIONS_READY` を `true` に
+    するだけ。ただし**ビルドと同じ回で入れること**——先に配信すると、
+    出回っているビルド22の古い Swift（分類の名前しか返さない）に当たる
+  - 権利を足すとプロファイルの作り直しが要る。**`--non-interactive` を
+    付けずに**ビルドすること（ビルド #15 がこれで落ちた）
+  - 仕様は `REQUIREMENTS.md` F1 に書いた
 - **Universal Links**（`associatedDomains`。Apple Team ID が要る）
 - **Apple Music の連携**（2026-09-05・作者の指示）
   - MusicKit の識別子と秘密鍵を作り、開発者トークンを発行する
