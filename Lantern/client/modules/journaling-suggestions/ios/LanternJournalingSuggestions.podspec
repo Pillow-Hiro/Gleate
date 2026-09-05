@@ -30,7 +30,15 @@ Pod::Spec.new do |s|
 
   # **weak。** アプリの下限は iOS 15.1 で、この framework は 17.2 から。
   # 強リンクにすると 15〜17.1 の端末が**起動した瞬間に落ちる。**
-  s.weak_frameworks = 'JournalingSuggestions'
+  #
+  # HealthKit も weak（2026-09-05）。心の状態の型（`HKStateOfMind`）が
+  # そちらに在るので読む必要がある。**iPad では iOS 17 まで HealthKit が
+  # 無い。**`supportsTablet` を立ててあるので、強リンクにすると
+  # iPadOS 15〜16 が**起動した瞬間に落ちる**——上と同じ落ち方。
+  #
+  # `import` の自動リンクに任せず明示するのは、**strong で入るのを
+  # 避けるため。**任せると強リンクになる。
+  s.weak_frameworks = 'JournalingSuggestions', 'HealthKit'
 
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',

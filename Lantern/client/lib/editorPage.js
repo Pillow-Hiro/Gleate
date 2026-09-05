@@ -88,12 +88,17 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sendState();
   };
 
-  // 書きはじめの1行を差し込む（Journaling Suggestions）。
+  // 書きはじめを差し込む（Journaling Suggestions）。
   // **末尾に足す。書いてあるものを消さない。**
   //
   // insertText を使うのは、中身を組み直さないため。
   // ed.innerHTML に代入すると打っている途中のカーソルが飛ぶ
   // （WebEditor が中身を1回しか渡さないのと同じ理由）。
+  //
+  // **1行とは限らない**（2026-09-05）。Swift が「最初に取れた1つ」から
+  // 「取れたもの全部」に変わり、問い・曲・場所が改行で繋がって来る。
+  // insertText に改行入りの文字列を渡すと、contenteditable では
+  // **潰れて1行になることがある。**行ごとに分けて、あいだで段落を作る。
   //
   // **この中でバッククォートを使わないこと。** ここは外側の
   // テンプレートリテラルの中で、註釈の中でも文字列が閉じてしまう。
@@ -106,7 +111,12 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     sel.removeAllRanges();
     sel.addRange(range);
     if (ed.textContent.trim()) document.execCommand('insertParagraph');
-    document.execCommand('insertText', false, text);
+    var lines = String(text).split('
+');
+    for (var i = 0; i < lines.length; i++) {
+      if (i > 0) document.execCommand('insertParagraph');
+      if (lines[i]) document.execCommand('insertText', false, lines[i]);
+    }
     sendHtml();
     sendHeight();
     sendState();

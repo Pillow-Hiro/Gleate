@@ -299,7 +299,8 @@ function ToolbarBar({ field }) {
         {/* Apple の「日記の候補」。**ボタンではなく Apple のビュー。**
             押すと Apple の画面が開き、端末の中の出来事が並ぶ。
             選ぶまでアプリからは何も見えない。
-            受け取るのは文字だけで、写真も座標も気分も取らない。 */}
+            受け取るのは**文字だけ。**写真と座標は取らない。
+            心の状態は度合いだけ受け取る（2026-09-05・`CLAUDE.md`）。 */}
         {SUGGESTIONS_READY && CAN_SUGGEST && field.onSuggest ? (
           <SuggestionsPickerView
             style={{ width: 44, height: 44 }}

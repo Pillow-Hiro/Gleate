@@ -188,7 +188,7 @@ export default function Settings() {
     // 残すと、同じ端末を別の人が使ったとき前の人の記録が一瞬見える
     await forgetLogs()
     forgetAllLights()
-    // 添えたリンクも**前の人のものを次の人に見せない**（`lib/musicStore.js`）
+    // 添えたリンクも**前の人のものを次の人に見せない**（`lib/linkStore.js`）
     forgetLinks()
     await supabase.auth.signOut()
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
