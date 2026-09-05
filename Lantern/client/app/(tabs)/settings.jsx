@@ -13,6 +13,7 @@ import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
 import { APP_VERSION } from '../../constants'
+import { buildStamp } from '../../lib/buildStamp'
 import * as notify from '../../lib/notify'
 import AppHeader from '../../components/AppHeader'
 import TimeDial from '../../components/TimeDial'
@@ -356,7 +357,11 @@ export default function Settings() {
           <Row label="利用規約" value="↗" onPress={openTerms} />
           <Row label="プライバシーポリシー" value="↗" onPress={openPrivacy} />
           <Row label="特定商取引法に基づく表記" value="↗" onPress={openTokushoho} />
-          <Row label="バージョン" value={APP_VERSION} isLast />
+          {/* **いま動いているのがどれかを言えるようにする**（2026-09-06）。
+              配信した直しが届いているのか、まだ古いままなのかが
+              分からないと、**直っていないのか届いていないのかを
+              区別できない**（`lib/buildStamp.js`） */}
+          <Row label="バージョン" value={`${APP_VERSION}  ${buildStamp()}`} isLast />
         </Group>
 
         <Pressable
