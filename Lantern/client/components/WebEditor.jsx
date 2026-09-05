@@ -4,6 +4,14 @@ import { WebView } from 'react-native-webview'
 import { htmlToMarkdown, markdownToHtml } from '../lib/htmlMarkdown'
 import { editorPage } from '../lib/editorPage'
 
+// **一時的**（2026-09-06）。中の面から合図が届いているかを数える。
+//
+// `post()` は `window.ReactNativeWebView` が無ければ**黙って空振りする。**
+// 文脈の既定が「何もしない関数」だったのと同じ形で、**気づく手立てが無い。**
+// 「焦点の合図だけ来ない」のか「1つも来ていない」のかを分ける。
+// **次の配信で消す。**
+export const webStats = { all: 0, focus: 0 }
+
 // 本物の編集画面。**記号が見えない。**
 //
 // 2026-08-15 まで、太字は `**強い**` と記号ごと見えていた。
@@ -75,6 +83,7 @@ const WebEditor = forwardRef(function WebEditor(
   }))
 
   function handleMessage(e) {
+    webStats.all += 1
     let msg
     try {
       msg = JSON.parse(e.nativeEvent.data)
@@ -84,7 +93,7 @@ const WebEditor = forwardRef(function WebEditor(
     if (msg.type === 'change') onChange(htmlToMarkdown(msg.html))
     else if (msg.type === 'state') onState?.(msg)
     else if (msg.type === 'height') setHeight(Math.max(minHeight, msg.height))
-    else if (msg.type === 'focus') onFocus?.()
+    else if (msg.type === 'focus') { webStats.focus += 1; onFocus?.() }
     else if (msg.type === 'blur') onBlur?.()
   }
 
