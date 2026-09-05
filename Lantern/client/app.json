@@ -16,7 +16,8 @@
       },
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": ["applinks:golantern.app", "applinks:www.golantern.app"]
     },
     "android": {
       "package": "com.pillowhiro.lantern",

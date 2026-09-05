@@ -858,7 +858,14 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
   - 権利を足すとプロファイルの作り直しが要る。**`--non-interactive` を
     付けずに**ビルドすること（ビルド #15 がこれで落ちた）
   - 仕様は `REQUIREMENTS.md` F1 に書いた
-- **Universal Links**（`associatedDomains`。Apple Team ID が要る）
+- **Universal Links**（2026-09-05・Team ID をもらって設定済み）
+  - `app.json` に `associatedDomains`、`client/public/.well-known/` に
+    `apple-app-site-association` を置いた
+  - **配信では効かない。**`associatedDomains` は entitlement なので
+    ビルドが要る。AASA の方はサーバーを出した時点で効く
+  - Apple は `https://golantern.app/.well-known/apple-app-site-association`
+    を**中継サーバー経由で取りに来る。**`Content-Type` は問われないが、
+    **リダイレクトは追わない。**出せているか確認すること
 - **Apple Music の連携**（2026-09-05・作者の指示）
   - MusicKit の識別子と秘密鍵を作り、開発者トークンを発行する
   - iOS のネイティブ側が要るので Expo のままでは足りない

@@ -14,13 +14,26 @@ import JournalingSuggestions
 //
 // ## 何を受け取るか
 //
-// **文字だけ。** 選ばれた提案には写真・運動・心拍・場所の座標・
-// State of Mind まで入ってくるが、**受け取らない。**
+// **文字だけ。** 中身は「ジャーナル」アプリと同じだけ拾うが、
+// 写真・動画は取らない（2026-09-05・作者の指示
+// 「写真は Lantern 独自の仕様があるので追加しなくていい。それ以外は入れて」）。
 //
-// - 写真は端末の中だけに置くと決めてある。新しい経路を開けない
-// - State of Mind は気分の分類そのもので、Insights AI憲法が禁じている
-// - 運動や心拍は、記録アプリが持つ理由がない
-// - 場所は**名前だけ。**座標は取らない
+// - **写真・動画・Live Photo** … 取らない。写真は端末の中だけに置くと
+//   決めてある（`REQUIREMENTS.md` F1）。**新しい経路を開けない**
+// - **State of Mind** … 取らない。気分の分類そのもので、
+//   Insights AI憲法が禁じている。**作者に確認するまで開けない**
+// - 場所は**名前だけ。**座標は取らない——一行の文に座標は足さないし、
+//   記録はサーバーへ送られる（`modules/logs.py`）
+//
+// ## 1つではなく、あるものを全部（2026-09-05）
+//
+// それまでは**最初に取れた1つだけ**を返していた。「ジャーナル」は
+// 選んだ候補を丸ごと1件として入れるので、**同じ候補から曲も場所も
+// 出ているのに、片方しか入らなかった。**
+//
+// 順に見て、取れたものを行として積む。並びは
+// **問い → 聴いたもの → 行った場所**。問いが先頭なのは、
+// それが書きはじめの手がかりとしていちばん強いため。
 //
 // ## なぜ title で足りないか（2026-08-21）
 //
@@ -157,33 +170,41 @@ private struct LanternSuggestionsPicker: View {
     .accessibilityLabel(Text(title))
   }
 
-  /// 提案から**書きはじめの1行**を組む。
+  /// 提案から**書きはじめの行**を組む。
   ///
-  /// 上から順に見て、最初に取れたものを返す。
-  /// **写真・動画・運動・気分・連絡先には触れない。**
+  /// あるものを全部積む。**写真・動画・気分には触れない**（冒頭の節）。
   static func text(from s: JournalingSuggestion) async -> String {
-    // 1. 振り返りの問い。**これが本命**
-    if let r = await s.content(forType: JournalingSuggestion.Reflection.self).first {
-      return r.prompt
+    var lines: [String] = []
+
+    // 1. 振り返りの問い。**これが本命**——書きはじめの手がかりとして
+    //    いちばん強いので先頭に置く
+    for r in await s.content(forType: JournalingSuggestion.Reflection.self) {
+      lines.append(r.prompt)
     }
-    // 2. 聴いた曲
-    if let m = await s.content(forType: JournalingSuggestion.Song.self).first {
-      return join([m.song, m.artist])
+    // 2. 聴いた曲。**同じ候補に何曲も入ることがある**
+    for m in await s.content(forType: JournalingSuggestion.Song.self) {
+      lines.append(join([m.song, m.artist]))
     }
     // 3. 聴いた番組
-    if let p = await s.content(forType: JournalingSuggestion.Podcast.self).first {
-      return join([p.episode, p.show])
+    for p in await s.content(forType: JournalingSuggestion.Podcast.self) {
+      lines.append(join([p.episode, p.show]))
     }
     // 4. その他のメディア
-    if let g = await s.content(forType: JournalingSuggestion.GenericMedia.self).first {
-      return join([g.title, g.artist])
+    for g in await s.content(forType: JournalingSuggestion.GenericMedia.self) {
+      lines.append(join([g.title, g.artist]))
     }
     // 5. 行った場所。**名前だけ。座標は取らない**
-    if let l = await s.content(forType: JournalingSuggestion.Location.self).first {
-      return join([l.place, l.city])
+    for l in await s.content(forType: JournalingSuggestion.Location.self) {
+      lines.append(join([l.place, l.city]))
     }
+
+    let kept = lines
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty }
+
     // 何も取れなければ分類の名前。**空を返すよりはいい**
-    return s.title
+    guard !kept.isEmpty else { return s.title }
+    return kept.joined(separator: "\n")
   }
 
   /// 空でないものだけを繋ぐ。「曲名 — アーティスト」の形

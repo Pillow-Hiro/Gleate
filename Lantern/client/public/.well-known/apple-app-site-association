@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["42P5VK92HG.com.pillowhiro.lantern"],
+        "components": [
+          {
+            "/": "/reset*",
+            "comment": "パスワードの再設定。メールのリンクからアプリで開く"
+          },
+          {
+            "/": "/login*",
+            "comment": "確認メールの着地。アプリが入っていればアプリで開く"
+          }
+        ]
+      }
+    ]
+  }
+}
