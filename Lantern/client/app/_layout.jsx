@@ -246,6 +246,20 @@ function RootNavigator() {
     return <BootScreen />
   }
 
+  // **振り替えが済むまで本画面を出さない**（2026-09-05・作者から
+  // 「ログイン前の画面に骨組みが見えて、体験が残念」）。
+  //
+  // 認証ガードは `useEffect` なので、**描いたあとに走る。**
+  // まだ入っていない人には、`(tabs)` が1フレーム描かれてから
+  // `/login` へ振り替わっていた——タブバーと空の枠だけが見える、
+  // あの一瞬がそれ。
+  //
+  // 行き先が決まるまでは起動画面のまま待つ。`BootScreen` は
+  // OS の起動画面と見分けがつかないので、**間に何も挟まらない。**
+  if (!session && !AUTH_SCREENS.has(segments[0])) {
+    return <BootScreen />
+  }
+
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'auto'} />
