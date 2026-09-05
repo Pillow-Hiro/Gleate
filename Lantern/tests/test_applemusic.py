@@ -243,3 +243,97 @@ class Test曲を探す:
         self._reply(monkeypatch, payload={"results": None})
         assert applemusic.search("月") == []
 
+
+class TestAppleが受け付けるか:
+    """`applemusic.verify`。**署名が通ることと、受け付けられることは別。**
+
+    鍵が MusicKit 用に作られていない、Media ID が紐付いていない——
+    どちらでも JWT は作れてしまう。落ちるのは Apple に出したとき。
+    """
+
+    def _status(self, monkeypatch, code, capture=None):
+        class Res:
+            status_code = code
+
+        def fake_get(url, **kwargs):
+            if capture is not None:
+                capture["url"] = url
+                capture.update(kwargs)
+            return Res()
+
+        monkeypatch.setattr(applemusic.requests, "get", fake_get)
+
+    def test_鍵が無ければunset(self):
+        assert applemusic.verify() == "unset"
+
+    def test_読めない鍵ならbad_key(self, monkeypatch):
+        monkeypatch.setenv("APPLE_MUSIC_KEY_ID", KEY_ID)
+        monkeypatch.setenv("APPLE_MUSIC_TEAM_ID", TEAM_ID)
+        monkeypatch.setenv(
+            "APPLE_MUSIC_KEY",
+            "-----BEGIN PRIVATE KEY-----\nこわれている\n-----END PRIVATE KEY-----",
+        )
+        assert applemusic.verify() == "bad_key"
+
+    def test_受け付けられたらok(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._status(monkeypatch, 200)
+        assert applemusic.verify(now=1_000_000) == "ok"
+
+    # **これが見たかったもの。** 鍵は作れたが Apple が認めていない
+    def test_断られたらrejected(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        for code in (401, 403):
+            applemusic._reset_for_tests()
+            self._status(monkeypatch, code)
+            assert applemusic.verify(now=1_000_000) == "rejected"
+
+    def test_それ以外はerror(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        self._status(monkeypatch, 500)
+        assert applemusic.verify(now=1_000_000) == "error"
+
+    def test_通信が落ちても落ちない(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+
+        def boom(*a, **k):
+            raise TimeoutError("届かない")
+
+        monkeypatch.setattr(applemusic.requests, "get", boom)
+        assert applemusic.verify(now=1_000_000) == "error"
+
+    # **利用者の言葉を送らない。** 叩くのはいちばん小さいもの
+    def test_言葉を送らない(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        seen = {}
+        self._status(monkeypatch, 200, capture=seen)
+        applemusic.verify(now=1_000_000)
+        assert "storefronts" in seen["url"]
+        assert "params" not in seen
+
+    # 確認のたびに Apple を叩かない
+    def test_少しのあいだ覚える(self, monkeypatch, keypair):
+        pem, _ = keypair
+        _configure(monkeypatch, pem)
+        calls = {"n": 0}
+
+        class Res:
+            status_code = 200
+
+        def counting(*a, **k):
+            calls["n"] += 1
+            return Res()
+
+        monkeypatch.setattr(applemusic.requests, "get", counting)
+        applemusic.verify(now=1_000_000)
+        applemusic.verify(now=1_000_000 + 60)
+        assert calls["n"] == 1
+        # 覚えが切れたら聞き直す
+        applemusic.verify(now=1_000_000 + applemusic.VERIFY_TTL + 1)
+        assert calls["n"] == 2
+

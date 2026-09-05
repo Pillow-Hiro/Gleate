@@ -174,8 +174,70 @@ def search(term, storefront="jp", limit=8):
     return out
 
 
+# ── Apple が受け付けるか ──────────────────────────────────────
+#
+# **署名が通ることと、Apple が受け付けることは別**（2026-09-05）。
+#
+# 鍵が MusicKit 用に作られていない、Media ID が紐付いていない——
+# どちらでも JWT は作れてしまう。**落ちるのは Apple に出したとき。**
+# ビルドの前にそこを見たい。
+#
+# 叩くのはいちばん小さいもの（国の情報）。**利用者の言葉を送らない。**
+# 結果は少しのあいだ覚える。確認のたびに Apple を叩かない。
+
+VERIFY_URL = "https://api.music.apple.com/v1/storefronts/jp"
+VERIFY_TTL = 10 * 60
+
+_verified = None
+_verified_at = 0
+
+
+def verify(now=None):
+    """Apple が受け付けるか。`ok` / `rejected` / `error` / `bad_key` / `unset`。
+
+    **値は返さない。** 返すのは状態を表す語だけ。
+    """
+    global _verified, _verified_at
+
+    if not is_enabled():
+        return "unset"
+    token = developer_token(now)
+    if not token:
+        return "bad_key"
+
+    at = int(now if now is not None else time.time())
+    if _verified and at - _verified_at < VERIFY_TTL:
+        return _verified
+
+    try:
+        res = requests.get(
+            VERIFY_URL,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=SEARCH_TIMEOUT,
+        )
+        if res.status_code == 200:
+            state = "ok"
+        elif res.status_code in (401, 403):
+            # **鍵は作れたが、Apple が認めていない。**
+            # MusicKit を有効にしていない鍵か、Media ID が紐付いていない
+            state = "rejected"
+            print(f"[AppleMusic] Apple が受け付けなかった: HTTP {res.status_code}")
+        else:
+            state = "error"
+            print(f"[AppleMusic] 確認に失敗: HTTP {res.status_code}")
+    except Exception as e:
+        print(f"[AppleMusic] 確認に失敗: {type(e).__name__}: {e}")
+        return "error"
+
+    _verified = state
+    _verified_at = at
+    return state
+
+
 def _reset_for_tests():
     """検査のあいだだけ覚えを捨てる。**本番から呼ばない**"""
-    global _cached, _cached_until
+    global _cached, _cached_until, _verified, _verified_at
     _cached = None
     _cached_until = 0
+    _verified = None
+    _verified_at = 0

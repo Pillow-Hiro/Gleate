@@ -409,9 +409,11 @@ def debug_version():
     #
     # 実際に署名させて確かめる。鍵が壊れていれば `None` が返る——
     # 「変数はあるが PEM が読めない」を、ここで見分けられる。
-    apple_music = "ok" if applemusic.developer_token() else (
-        "bad_key" if applemusic.is_enabled() else "unset"
-    )
+    # **Apple に出して確かめる**（2026-09-05）。署名が通ることと、
+    # Apple が受け付けることは別——鍵が MusicKit 用でない、Media ID が
+    # 紐付いていない、どちらでも JWT は作れてしまう。
+    # 結果は10分覚えるので、確認のたびに Apple を叩かない
+    apple_music = applemusic.verify()
 
     return jsonify({
         "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
