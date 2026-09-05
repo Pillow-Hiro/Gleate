@@ -844,9 +844,18 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
 `GET /api/debug/version` が、どのリダイレクトURIで動いているかを返す。
 値そのものは出さない。設定ミスの検出用。
 
-## 9月のビルドに入れるもの（2026-09-05 時点）
+## 9月のビルドに入れるもの（2026-09-05・**ビルドは通った**）
 
-作者の指示・保留になっているもの。**OTA では届かないものだけ**をここに置く。
+作者の指示・保留になっていたもの。**OTA では届かないものだけ**を置いていた。
+
+**下は全部入って、ビルドが通った。**残るのは提出だけ。
+以下は「何が入っているか」と「何を学んだか」の記録として残す。
+
+### 出回るまでのあいだ、OTA は安全（2026-09-05）
+
+`SUGGESTIONS_READY = true` を配ってしまう心配は要らない。
+`runtimeVersion` は指紋方式なので、**いまの作業ツリーから出す OTA は
+新しいビルドにしか当たらない。**ビルド22 は指紋が違うので届かない。
 
 - **言語表示を `ja` に**（App Store の表示が英語のまま）
 - **Journaling Suggestions を開ける**（2026-09-05・作者が「今回入れる」）
@@ -860,8 +869,11 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
   - 仕様は `REQUIREMENTS.md` F1 に書いた
   - **State of Mind を書いた**（2026-09-05・作者が「入れていい。憲法を
     書き換えていい」）。憲法（`CLAUDE.md`「気分について」）も仕様も書き換え済み。
-    - **名前は当てで書いたが、通った**（ビルド #23）。落ちたのは別の所で、
-      `StateOfMind` の `state.valence` は型検査を抜けている
+    - **当てで書いた名前は合っていた。**`state.valence` で正しい。
+      ビルドが通ったことで確定した（それまでは状況証拠だった）
+    - **確かめる手立てが無いまま書いて、当たった。**次に同じことを
+      するときは運が良かっただけと考えること。**通ったのは、
+      落ちてもいいように囲っておいたから**でもある
     - 落ちてもいいように、**`moods(from:)` と呼び出しの1行に閉じてある。**
       消せば他は全部動く（`JournalingSuggestionsModule.swift`）
     - 出すのは**心地よさの度合いだけ**（`valence`、-1〜1 を5段）。
@@ -874,9 +886,17 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
     - 候補に心の状態が入るのは **iOS 18 から。**`if #available(iOS 18.0, *)`
       で囲ってある（この struct 全体は 17.2 から動く）
     - `import HealthKit` を足した（`HKStateOfMind` の型がそちらにある）。
-      **`HKHealthStore` は呼ばない・許可も求めない**ので Health の権利は
-      要らないはずだが、**アップロードの検証がここで文句を言う目はある。**
-      言われたら `NSHealthShareUsageDescription` を足す
+      podspec の `weak_frameworks` にも足すこと——**自動リンクに任せると
+      strong で入る。iPad には iOS 17 まで HealthKit が無い**ので、
+      `supportsTablet` を立てているこのアプリは iPadOS 15〜16 で
+      **起動した瞬間に落ちる。**JournalingSuggestions とまったく同じ
+      落ち方で、同じ註釈がすぐ上に書いてあった
+    - `NSHealthShareUsageDescription` は**あえて足していない。**
+      `HKHealthStore` を呼ばないので要らないはず。使わない機能を
+      「できることにして」おかない、という前例がこのリポジトリにある
+      （`plugins/withoutPushEntitlement.js` の註釈）。
+      **アップロードの検証が求めてきたら足す**——Info.plist なので
+      ビルドし直しになる。**そこはまだ通っていない**
   - 運動・連絡先は**入れない**（作者の判断）
 - **Universal Links**（2026-09-05・Team ID をもらって設定済み）
   - `app.json` に `associatedDomains`、`client/public/.well-known/` に
@@ -887,9 +907,9 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
     を**中継サーバー経由で取りに来る。**`Content-Type` は問われないが、
     **リダイレクトは追わない。**出せているか確認すること
 - **Apple Music の連携**（2026-09-05・作者の指示）
-  - **サーバー側は用意済み**（`modules/applemusic.py` /
+  - **サーバー側は用意済み・鍵も入っている**（`modules/applemusic.py` /
     `GET /api/apple-music/token`）。Team ID `42P5VK92HG`、
-    Key ID `BL55RD3DBN`。**秘密鍵（`.p8`）だけが未設定**
+    Key ID `BL55RD3DBN`
   - Render と `.env` に入れる環境変数は3つ
     - `APPLE_MUSIC_KEY_ID` … `BL55RD3DBN`
     - `APPLE_MUSIC_TEAM_ID` … `42P5VK92HG`
