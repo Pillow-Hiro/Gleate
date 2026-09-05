@@ -29,6 +29,13 @@ import { useThemeContext } from '../lib/theme'
 // `app.json` の `expo-splash-screen` と同じ値。**揃えること。**
 const LIGHT_BG = '#faf9f7'
 const DARK_BG = '#1c1c1e'
+// **`app.json` の `imageWidth` と同じ数**。この画面は OS の起動画面と
+// 見分けがつかないことが役目なので、片方だけ変えない。
+//
+// 絵そのものも同じファイル（`assets/splash-icon.png`）。
+// **2026-09-05 まで Expo の既定のプレースホルダ**（方眼に同心円）が
+// 入ったままだった——作者が3度「骨組みが見える」と言っていたのはこれ。
+// アイコンの灯りから、白を透かして作り直した。
 const ICON_WIDTH = 160
 
 // これだけ待っても終わらないときに息を始める。
