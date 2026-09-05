@@ -33,7 +33,7 @@ export default function Write() {
   const router = useRouter()
   const keyboardHeight = useKeyboardHeight()
   // **一時的**（2026-09-06）。列が出ない理由を見るため。次の配信で消す
-  const toolbarField = useToolbarState()
+  const bar = useToolbarState()
   const formRef = useRef(null)
   const [saving, setSaving] = useState(false)
 
@@ -119,7 +119,7 @@ export default function Write() {
             下りた状態の値（欄:無 高さ:0）しか見えなかった。
             **診断したいものと同じ間違いをした。**上の帯なら常に見える */}
         <Text className="text-label-sm text-outline">
-          {`欄:${toolbarField ? '有' : '無'} 高:${Math.round(keyboardHeight)}`}
+          {`欄:${bar.field ? '有' : '無'} 文脈:${bar.ready ? '有' : '無'} 録:${bar.calls} 高:${Math.round(keyboardHeight)}`}
         </Text>
         <Pressable
           onPress={save}

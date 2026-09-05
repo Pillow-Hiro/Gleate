@@ -39,7 +39,14 @@ import Optional from './Optional'
 // （下の `minHeight`）。片方だけ変えても食い違わない。
 export const TOOLBAR_HEIGHT = 52
 
-const ToolbarContext = createContext({ register: () => {}, release: () => {} })
+// **既定は「何もしない」。**文脈が届いていなければ `register()` は
+// 静かに空振りし、例外も警告も出ない。**気づく手立てが無い。**
+// `ready` を持たせて、届いているかどうかを言えるようにした（2026-09-06）
+const ToolbarContext = createContext({
+  register: () => {},
+  release: () => {},
+  ready: false,
+})
 // いま書いている欄。**別に持つ。**
 // `Modal` の中にもう1つ列を置けるようにするため（`RN` の Modal は
 // 画面の一番外より上に出るので、根元に置いた列は隠れる）。
@@ -149,12 +156,16 @@ const CAN_SUGGEST = isSuggestionsAvailable() && Boolean(SuggestionsPickerView)
 // 配信の順は「ビルドが審査を通ってから」（`HANDOFF.md`）。
 const SUGGESTIONS_READY = true
 
+// **一時的**（2026-09-06）。登録が呼ばれた回数。次の配信で消す
+let calls = 0
+
 export function EditorToolbarProvider({ children }) {
   // いま書いている欄。**1つだけ。** 欄を移ると上書きされる
   const [field, setField] = useState(null)
   const fieldRef = useRef(null)
 
   const register = useCallback((next) => {
+    calls += 1
     fieldRef.current = next
     setField(next)
   }, [])
@@ -167,7 +178,10 @@ export function EditorToolbarProvider({ children }) {
     setField(null)
   }, [])
 
-  const value = useMemo(() => ({ register, release }), [register, release])
+  const value = useMemo(
+    () => ({ register, release, ready: true }),
+    [register, release],
+  )
 
   return (
     <ToolbarContext.Provider value={value}>
@@ -193,7 +207,9 @@ export function EditorToolbarProvider({ children }) {
 //
 // **次の配信で消すこと。**
 export function useToolbarState() {
-  return useContext(FieldContext)
+  const field = useContext(FieldContext)
+  const { ready } = useContext(ToolbarContext)
+  return { field, ready, calls }
 }
 
 // `Modal` の中に置く用。中身は同じ列
