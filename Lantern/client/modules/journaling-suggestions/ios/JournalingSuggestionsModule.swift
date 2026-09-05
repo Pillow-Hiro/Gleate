@@ -10,6 +10,12 @@ import UIKit
 import JournalingSuggestions
 #endif
 
+// 心の状態の型は HealthKit の側にある（`HKStateOfMind`）。
+// **許可は求めない。**「日記の候補」で本人が選んだものだけが渡ってくる
+#if canImport(HealthKit)
+import HealthKit
+#endif
+
 // Apple の Journaling Suggestions（iOS 17.2+）を Lantern から出す。
 //
 // ## 何を受け取るか
@@ -20,16 +26,10 @@ import JournalingSuggestions
 //
 // - **写真・動画・Live Photo** … 取らない。写真は端末の中だけに置くと
 //   決めてある（`REQUIREMENTS.md` F1）。**新しい経路を開けない**
-// - **State of Mind** … **入れてよくなった**（2026-09-05・作者の判断で
-//   憲法を書き換えた）。分類する主体が誰かが線引きになり、
-//   **本人が「ヘルスケア」に残し、本人が選んだもの**なら持ち込める
-//   （`CLAUDE.md`「気分について」）。
-//
-//   **まだ書いていない。**`StateOfMind` の中の名前を確かめる手立てが
-//   書いた側に無く（Xcode が無い）、当てで書くと2つのどちらかになる——
-//   ビルドが落ちるか、`String(describing:)` のような**デバッグ文字列が
-//   利用者の記録に入る。**後者は落ちないぶん質が悪い。
-//   ビルドの回に、コンパイラに聞きながら足すこと（`HANDOFF.md`）。
+// - **State of Mind** … 取る（2026-09-05・作者の判断で憲法を書き換えた）。
+//   分類する主体が誰かが線引きになり、**本人が「ヘルスケア」に残し、
+//   本人が選んだもの**なら持ち込める（`CLAUDE.md`「気分について」）。
+//   出すのは**心地よさの度合いだけ**（下の `mood(from:)`）
 //
 // - **運動・連絡先** … 取らない（2026-09-05・作者の判断）
 // - 場所は**名前だけ。**座標は取らない——一行の文に座標は足さないし、
@@ -207,6 +207,8 @@ private struct LanternSuggestionsPicker: View {
     for l in await s.content(forType: JournalingSuggestion.Location.self) {
       lines.append(join([l.place, l.city]))
     }
+    // 6. 心の状態。**本人が残し、本人が選んだものだけ**（冒頭の節）
+    lines.append(contentsOf: await moods(from: s))
 
     let kept = lines
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -215,6 +217,46 @@ private struct LanternSuggestionsPicker: View {
     // 何も取れなければ分類の名前。**空を返すよりはいい**
     guard !kept.isEmpty else { return s.title }
     return kept.joined(separator: "\n")
+  }
+
+  /// 心の状態を、**心地よさの度合いだけ**の日本語にする。
+  ///
+  /// ## ここが落ちたら、この関数と上の1行を消せば全部動く
+  ///
+  /// 書いた側に Xcode が無く、`StateOfMind` の中の名前を通していない
+  /// （2026-09-05）。**ビルドの記録が正解を教えてくれる。**
+  ///
+  /// ## なぜ度合いだけなのか
+  ///
+  /// `HKStateOfMind` にはラベル（喜び・穏やかさ…）も入っているが、
+  /// **名前を1つ書き間違えるたびに落ちる**うえ、日本語に直す表がこちらの
+  /// 解釈になる。度合いなら数（-1〜1）で、**訳す余地が無い。**
+  ///
+  /// 言葉は「ヘルスケア」に合わせた。**こちらで新しい言い方を作らない。**
+  static func moods(from s: JournalingSuggestion) async -> [String] {
+    var out: [String] = []
+    #if canImport(HealthKit)
+    // 心の状態が候補に入るようになったのは iOS 18。
+    // **この囲いが無いと 17.2 の端末で落ちる**——この struct 全体は
+    // 17.2 から動くことになっている（上の `@available`）
+    if #available(iOS 18.0, *) {
+      for m in await s.content(forType: JournalingSuggestion.StateOfMind.self) {
+        out.append("気分: " + mood(from: m.state.valence))
+      }
+    }
+    #endif
+    return out
+  }
+
+  /// -1〜1 を5段に分ける。境目は「ヘルスケア」の目盛りに合わせた
+  static func mood(from valence: Double) -> String {
+    switch valence {
+    case ..<(-0.6): return "とても不快"
+    case ..<(-0.2): return "不快"
+    case ..<0.2: return "ふつう"
+    case ..<0.6: return "快適"
+    default: return "とても快適"
+    }
   }
 
   /// 空でないものだけを繋ぐ。「曲名 — アーティスト」の形
