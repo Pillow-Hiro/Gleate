@@ -371,13 +371,10 @@ export default function Journal() {
             </View>
 
             {/* ログ一覧 */}
-            {loading ? (
-              <View className="gap-3">
-                {[1, 2, 3].map((i) => (
-                  <View key={i} className="h-12 bg-surface-low rounded" />
-                ))}
-              </View>
-            ) : logs.length === 0 ? (
+            {/* **骨組みを出さない**（2026-09-05）。灰色の棒3本をやめた。
+                控えから先に出るので、2回目からは待ちがほぼ無い
+                （`app/(tabs)/home.jsx` に同じ判断） */}
+            {loading ? null : logs.length === 0 ? (
               <View className="items-center py-16">
                 <Text className="text-3xl mb-4 opacity-40 text-on-surface">◇</Text>
                 <Text className="text-body text-on-surface-variant">まだ記録がありません。</Text>

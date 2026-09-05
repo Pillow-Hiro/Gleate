@@ -213,13 +213,17 @@ export default function Home() {
             AIは使わない（`WeeklyDiscovery`）。 */}
         {!loading && logs.length > 0 ? <WeeklyDiscovery logs={logs} /> : null}
 
-        {loading ? (
-          <View className="gap-3">
-            {[1, 2, 3].map((i) => (
-              <View key={i} className="h-16 bg-surface-low rounded-lg" />
-            ))}
-          </View>
-        ) : logs.length === 0 ? (
+        {/* **骨組みを出さない**（2026-09-05・作者から「骨組みが見える」）。
+            灰色の棒を3本置いていた。**あれが「骨組み」の正体。**
+
+            記録は控えから先に出る（`lib/logsCache.js`）ので、2回目からは
+            待ちがほぼ無い。初回だけ何も無い間ができるが、**空いている方が
+            嘘の枠より正直。**書く場所（`app/(tabs)/index.jsx`）は
+            2026-09-04 に同じ理由で外してある。
+
+            読み込み中は何も出さない——`logs` が空なら下の「まだ記録が
+            ありません」に落ちるが、それは**読み終えてから**にする。 */}
+        {loading ? null : logs.length === 0 ? (
           <View className="items-center py-16">
             <Text className="text-3xl mb-4 opacity-40 text-on-surface">◇</Text>
             <Text className="text-body-md text-on-surface-variant">まだ記録がありません。</Text>
