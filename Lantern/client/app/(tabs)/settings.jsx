@@ -9,6 +9,7 @@ import { supabase, authFetch } from '../../lib/supabase'
 import { forgetLogs, loadLogs } from '../../lib/logsCache'
 import { forgetAllLights } from '../../lib/lightBuffer'
 import { forgetAll as forgetLinks } from '../../lib/linkStore'
+import { forgetAll as forgetSuggests } from '../../lib/suggestStore'
 import { exportLogs } from '../../lib/exportLogs'
 import { useThemeContext } from '../../lib/theme'
 import { THEME_LABELS, THEME_MODES } from '../../lib/themeMode'
@@ -191,6 +192,7 @@ export default function Settings() {
     forgetAllLights()
     // 添えたリンクも**前の人のものを次の人に見せない**（`lib/linkStore.js`）
     forgetLinks()
+    forgetSuggests()
     await supabase.auth.signOut()
     // onAuthStateChange が session=null を検知し、認証ガードがLoginへ振り替える
   }

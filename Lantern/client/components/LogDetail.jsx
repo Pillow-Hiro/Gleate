@@ -9,6 +9,10 @@ import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 import AttachRow, { LinkList } from './AttachRow'
 import { ensureLoaded as loadLinks, removeAll as removeLinksAll } from '../lib/linkStore'
+import {
+  ensureLoaded as loadSuggests,
+  removeAll as removeSuggestsAll,
+} from '../lib/suggestStore'
 import FileList from './FileList'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 
@@ -44,7 +48,9 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
   const [musicTick, setMusicTick] = useState(0)
   useEffect(() => {
     let cancelled = false
-    loadLinks().then(() => {
+    // **両方そろってから描き直す。**片方だけだと、もう一方は
+    // 覚えが空のまま一度描かれて出てこない
+    Promise.all([loadLinks(), loadSuggests()]).then(() => {
       if (!cancelled) setMusicTick((t) => t + 1)
     })
     return () => { cancelled = true }
@@ -72,6 +78,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       await authFetch(`/api/logs/by-id/${log.id}`, { method: 'DELETE' })
       // 添えたものも一緒に消す。**記録が無くなれば持ち主が居ない**
       removeLinksAll(log.id)
+      removeSuggestsAll(log.id)
       if (onDelete) onDelete(log.id, log.date)
     } catch (e) {
       console.warn(`[Journal] ${log.date} の削除に失敗`, e)

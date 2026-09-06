@@ -71,7 +71,20 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
     } catch (e) {}
   }
 
-  ed.addEventListener('input', function () { sendHtml(); sendState(); });
+  // **消し切ったら、問いを戻す**（2026-09-06・作者の報告
+  // 「文字を消すと、プレースホルダーが表示されない」）。
+  //
+  // 1文字打って消すと、中身は空に見えても br や空の div が残る。
+  // 上の CSS は :empty を見ているので、**残っているあいだ問いは出ない。**
+  // 消し方（lanternClear）は同じことを知っていたが、
+  // **手で消したときには誰も見ていなかった。**
+  //
+  // 焦点は動かさない。innerHTML を空にするだけならカーソルは欄に残る。
+  function tidy() {
+    if (!ed.textContent.trim() && ed.innerHTML !== '') ed.innerHTML = '';
+  }
+
+  ed.addEventListener('input', function () { tidy(); sendHtml(); sendState(); });
   ed.addEventListener('keyup', sendState);
   ed.addEventListener('mouseup', sendState);
   ed.addEventListener('focus', function () { post({ type: 'focus' }); });

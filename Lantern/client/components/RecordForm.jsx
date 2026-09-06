@@ -1,10 +1,17 @@
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
+import { useCallback, forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
 import Text from './Text'
 import WebEditor from './WebEditor'
 import FileList from './FileList'
+import SuggestCards from './SuggestCards'
+import {
+  add as addSuggest,
+  ensureLoaded as loadSuggests,
+  list as listSuggests,
+  remove as removeSuggest,
+} from '../lib/suggestStore'
 import { list as listFiles, save as saveFile } from '../lib/fileStore'
 import { useThemeContext } from '../lib/theme'
 import { authFetch } from '../lib/supabase'
@@ -63,7 +70,7 @@ function CalendarIcon({ color = '#847563' }) {
 // **道具はキーボードの上にしか置かない**（2026-08-15・作者の判断）。
 // この面は「いま書いているのは自分だ」と列に登録するだけ
 // （`components/EditorToolbar.jsx`）。
-function Body({ value, onChange, placeholder, rows, onPhoto, onFile, editorRef }) {
+function Body({ value, onChange, placeholder, rows, onPhoto, onFile, onSuggest, editorRef }) {
   // 書いている最中かどうか。**書いている面だけが列に登録する**
   const [editing, setEditing] = useState(false)
   // いま効いている装飾。**面が知らせてくる。**
@@ -85,14 +92,17 @@ function Body({ value, onChange, placeholder, rows, onPhoto, onFile, editorRef }
       onPhoto,
       onFile,
       active,
-      // **「日記の候補」で選ばれた1行を差し込む口。**
-      // 中身は WebView が持っているので `value` を書き換えても
-      // 画面には出ない。命令で入れる。
-      onSuggest: (text) => editorRef.current?.insertText(text),
+      // **「日記の候補」で選ばれたものを受ける口。**
+      //
+      // 本文へは差し込まない（2026-09-06・作者の指示）。
+      // 以前は `insertText` で紙に書き込んでいたが、
+      // **書く場所に自分の言葉でないものが混ざる。**
+      // いまは紙の上のカードになる（`lib/suggestStore.js`）。
+      onSuggest,
     })
     return () => release(owner)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, owner, active])
+  }, [editing, owner, active, onSuggest])
 
   return (
     <WebEditor
@@ -239,6 +249,49 @@ const RecordForm = forwardRef(function RecordForm(
   // 新しく書くときはまだ id が無いので**預かっておき、残せた時点で置く。**
   const [files, setFiles] = useState(() => (editing?.id ? listFiles('', editing.id) : []))
   const [pendingFiles, setPendingFiles] = useState([])
+
+  // 「日記の候補」から選んだもの。**本文には差し込まない**（2026-09-06）。
+  // 書く場所に自分の言葉でないものが混ざらないよう、紙の上に置く
+  // （`lib/suggestStore.js`）。まだ id が無いときは預かる
+  const [suggests, setSuggests] = useState(() => listSuggests(editing?.id))
+  const [pendingSuggests, setPendingSuggests] = useState([])
+
+  // **全画面から直に開くこともある**（`app/write.jsx`）。記録の窓を
+  // 通らないと覚えが読まれていないので、ここでも読む。
+  // 一度読めば以後は覚えから返る（`lib/suggestStore.js`）
+  useEffect(() => {
+    let cancelled = false
+    loadSuggests().then(() => {
+      if (!cancelled && editing?.id) setSuggests(listSuggests(editing.id))
+    })
+    return () => { cancelled = true }
+  }, [editing?.id])
+
+  // **同じ関数を渡し続ける。**毎回作り直すと、列への登録が
+  // 描画のたびに外れて付き直し、**止まらなくなる**
+  // （`components/EditorToolbar.jsx` の登録は口を見比べている）
+  const takeSuggest = useCallback(
+    (text) => {
+      const body = String(text || '').trim()
+      if (!body) return
+      if (editing?.id) {
+        addSuggest(editing.id, body)
+        setSuggests(listSuggests(editing.id))
+        return
+      }
+      setPendingSuggests((prev) => (prev.includes(body) ? prev : [...prev, body]))
+    },
+    [editing?.id],
+  )
+
+  function dropSuggest(text) {
+    if (editing?.id) {
+      removeSuggest(editing.id, text)
+      setSuggests(listSuggests(editing.id))
+      return
+    }
+    setPendingSuggests((prev) => prev.filter((t) => t !== text))
+  }
   function refreshFiles() {
     if (editing?.id) setFiles(listFiles('', editing.id))
   }
@@ -344,6 +397,11 @@ const RecordForm = forwardRef(function RecordForm(
         }
         setPendingFiles([])
       }
+      // **預かっていた候補も置く**（写真とファイルと同じ扱い）
+      if (pendingSuggests.length && data.id) {
+        for (const t of pendingSuggests) addSuggest(data.id, t)
+        setPendingSuggests([])
+      }
 
       // **控えが古くなった。**これを言わないと、記録タブへ移っても
       // 15秒は前の一覧が出る（`lib/logsCache.js` の `invalidateLogs`）。
@@ -400,36 +458,14 @@ const RecordForm = forwardRef(function RecordForm(
         <Text className="font-label text-label-md text-outline">{timeLabel}</Text>
       </View>
 
-      {/* **書く欄はひとつだけ**（2026-09-04）。よかったこと・困ったこと・
-          次にやることの欄は消した。理由は上の状態のところに書いてある。
-
-          問いはプレースホルダとして中に出す。欄の上に別行で置くと
-          「読むもの」が増えるが、中に出せば書き始める場所と問いが
-          同じ位置になる。書き始めれば自然に消える。
-
-          今日の記録のときだけ差し替える。過去の日を編集するときに
-          今日の問いを出しても合わない。
-          問いが取れなかったときは元の固定文に戻る。 */}
-      <Body
-        editorRef={bodyRef}
-        value={form.created}
-        onChange={(v) => setForm((f) => ({ ...f, created: v }))}
-        rows={bodyRows}
-        // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
-        onPhoto={pickPhoto}
-        onFile={pickFile}
-        // **`？` を使わない**（2026-08-18）。答えを求めない問いは `。` で
-        // 終える。`？` は答えを迫る形で、原則3「問いには正解を求めない。
-        // ユーザーが答えなくてもいい」に反する。差し込まれる方の問い
-        // （`modules/questions/data.py` 全50問）はもともと全部 `。` で、
-        // **ここだけが違う声で聞いていた。**
-        placeholder={
-          question && isToday
-            ? question
-            : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
-        }
+      {/* **紙の上に置く**（2026-09-06・作者の指示）。
+          添えたものは書く場所の上にまとめる——写真・ファイル・候補。
+          **書く場所に、自分の言葉でないものを混ぜない**
+          （`components/SuggestCards.jsx`）。 */}
+      <SuggestCards
+        items={editing?.id ? suggests.map((s) => s.text) : pendingSuggests}
+        onRemove={dropSuggest}
       />
-
       {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ）。
           まだ置いていないものは、消し方をこちらが持つ（`FileList`） */}
       <FileList
@@ -449,6 +485,36 @@ const RecordForm = forwardRef(function RecordForm(
         disabled={loading}
         previewOnly
         onReady={(pick) => { pickRef.current = pick }}
+      />
+      {/* **書く欄はひとつだけ**（2026-09-04）。よかったこと・困ったこと・
+          次にやることの欄は消した。理由は上の状態のところに書いてある。
+
+          問いはプレースホルダとして中に出す。欄の上に別行で置くと
+          「読むもの」が増えるが、中に出せば書き始める場所と問いが
+          同じ位置になる。書き始めれば自然に消える。
+
+          今日の記録のときだけ差し替える。過去の日を編集するときに
+          今日の問いを出しても合わない。
+          問いが取れなかったときは元の固定文に戻る。 */}
+      <Body
+        editorRef={bodyRef}
+        value={form.created}
+        onChange={(v) => setForm((f) => ({ ...f, created: v }))}
+        rows={bodyRows}
+        // 写真とファイルの入口はキーボードの上の列に入る（`EditorToolbar`）
+        onPhoto={pickPhoto}
+        onFile={pickFile}
+        onSuggest={takeSuggest}
+        // **`？` を使わない**（2026-08-18）。答えを求めない問いは `。` で
+        // 終える。`？` は答えを迫る形で、原則3「問いには正解を求めない。
+        // ユーザーが答えなくてもいい」に反する。差し込まれる方の問い
+        // （`modules/questions/data.py` 全50問）はもともと全部 `。` で、
+        // **ここだけが違う声で聞いていた。**
+        placeholder={
+          question && isToday
+            ? question
+            : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
+        }
       />
 
       {/* **全画面のときはボタンを外に出す**（2026-09-03）。
