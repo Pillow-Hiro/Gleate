@@ -126,6 +126,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
+| `Sheet.jsx` | AttachRow | 下から出る面。**つまみで上へ引き上げられる**（探した結果が並ぶと丈が足りない） |
 | `SuggestCards.jsx` | RecordForm | 「日記の候補」で選んだものを**紙の上に置く。**本文には差し込まない——書く場所に自分の言葉でないものを混ぜない |
 | `Optional.jsx` | EditorToolbar | 添え物を囲う。**中で落ちても外は生き残る**——飾りのせいで書く道具が消えないように |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
@@ -180,6 +181,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `attachLink.js` | Spotify / Apple Music / YouTube と**知らない場所**のリンクを読み解く。**題名を取りに行かない** | `attachLink.test.js` |
 | `linkStore.js` | 添えたリンク。**端末の中だけ**（AsyncStorage・記録ごと） | — |
 | `buildStamp.js` | いま動いているのが同梱か配信か、配信ならいつのものか。**直っていないのか届いていないのかを区別する** | `buildStamp.test.js` |
+| `suggestCard.js` | 候補の一行をカードに読み解く。**言えることしか言わない**——曲と場所は同じ形で来るので見分けない | `suggestCard.test.js` |
 | `suggestStore.js` | 選んだ候補。**端末の中だけ**（AsyncStorage・記録ごと） | — |
 | `musicSearch.js` | Apple Music で曲を探す言葉の組み立てと読み解き。**押して初めて送る**（打つたびに送らない） | `musicSearch.test.js` |
 | `wordDrift.js` | **語を数えて月で引き算する。**形態素解析は入れず、漢字とカタカナの連なりを拾う | `wordDrift.test.js` |

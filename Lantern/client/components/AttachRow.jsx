@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import { ActivityIndicator, Linking, Modal, Pressable, TextInput, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
+import Sheet from './Sheet'
 import { add as addLink, list as listLinks, recentSounds, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
 import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
@@ -213,10 +214,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         <Text className="text-label-md text-on-surface-variant">添える</Text>
       </Pressable>
 
-      <Modal visible={open} animationType="fade" transparent onRequestClose={() => setOpen(false)}>
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setOpen(false)}>
-          <Pressable className="bg-surface rounded-t-2xl px-5 pt-5 pb-8" onPress={() => {}}>
-            <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
+      {/* **上へ引き上げられる**（`components/Sheet.jsx`）。つまみを掴んで動かす */}
+      <Sheet visible={open} onClose={() => setOpen(false)}>
             <Choice Icon={Photo} label="写真" onPress={() => pick(onPhoto)} />
             <Choice Icon={Clip} label="ファイル" onPress={() => pick(onFile)} />
             <Choice
@@ -232,9 +231,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               isLast
               onPress={() => pick(openSeek)}
             />
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </Sheet>
 
       {/* リンク。**貼るだけ。** Spotify・Apple Music・YouTube と、
           知らない場所も受ける（`lib/attachLink.js`）。
@@ -292,20 +289,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
-      <Modal
-        visible={seeking}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setSeeking(false)}
-      >
-        {/* 下から出る面ほどキーボードに食われる。**同じ理由で測る。**
-            下りたら 32 に戻るので、**下げても隙間が空かない** */}
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setSeeking(false)}>
-          <Pressable
-            className="bg-surface rounded-t-2xl px-5 pt-4 gap-4"
-            style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 32 }}
-            onPress={() => {}}
-          >
+      <Sheet visible={seeking} onClose={() => setSeeking(false)}>
+          <View className="gap-4">
             {/* **閉じるを上にも置く。**下は結果とキーボードで埋まるので、
                 指がいちばん届きにくい所に唯一の出口があった */}
             <View className="flex-row items-center">
@@ -356,8 +341,10 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 <ActivityIndicator color={INK} />
               </View>
             ) : songs.length > 0 ? (
-              // **高さを決める。**結果が多いと面が画面を越える
-              <ScrollView className="max-h-72" keyboardShouldPersistTaps="handled">
+              // 面ごと流れるので、ここでは高さを決めない
+              // （`components/Sheet.jsx` が持つ）。**入れ子にすると
+              // どちらが動くのか分からなくなる**
+              <View>
                 {songs.map((song, i) => (
                   <Pressable
                     key={song.url}
@@ -376,7 +363,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                     ) : null}
                   </Pressable>
                 ))}
-              </ScrollView>
+              </View>
             ) : offline ? (
               <Text className="text-label-md text-error py-2">
                 いまは探せません。リンクを貼るほうは使えます。
@@ -407,10 +394,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 ))}
               </View>
             ) : null}
-
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </View>
+      </Sheet>
     </>
   )
 }
