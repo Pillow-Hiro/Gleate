@@ -63,6 +63,13 @@ const WebEditor = forwardRef(function WebEditor(
     insertText(text) {
       webRef.current?.injectJavaScript(`window.lanternInsert(${JSON.stringify(text)}); true;`)
     },
+    // **問いを差し替える**（2026-09-06）。中身と同じで、渡し直しでは
+    // 届かない。カードが載っているあいだは空にする（`RecordForm`）
+    setPlaceholder(text) {
+      webRef.current?.injectJavaScript(
+        `window.lanternPlaceholder(${JSON.stringify(text)}); true;`,
+      )
+    },
     // **外から空にする**（2026-09-03）。差し込むのと同じ理由で、
     // `value` を空にしても中身は消えない。
     //

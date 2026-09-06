@@ -253,8 +253,27 @@ const RecordForm = forwardRef(function RecordForm(
   // 「日記の候補」から選んだもの。**本文には差し込まない**（2026-09-06）。
   // 書く場所に自分の言葉でないものが混ざらないよう、紙の上に置く
   // （`lib/suggestStore.js`）。まだ id が無いときは預かる
+  // 問いの字。**カードの有無で出し入れするので、1か所に持つ**
+  const placeholderText =
+    question && isToday
+      ? question
+      : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
+
   const [suggests, setSuggests] = useState(() => listSuggests(editing?.id))
   const [pendingSuggests, setPendingSuggests] = useState([])
+
+  // **カードが載ったら問いを出さない**（2026-09-06・作者の指示）。
+  //
+  // 問いは書きはじめの手がかり。**手がかりが2つ並ぶと、どちらを
+  // 見ればいいのか分からなくなる。**カードの方が具体的なので、
+  // そちらがあるあいだは引っ込む。
+  //
+  // 渡し直しでは届かない（中身は最初の1回しか渡していない）ので命令で
+  const cardCount = (editing?.id ? suggests.length : pendingSuggests.length)
+    + files.length + pendingFiles.length + (photoUrl ? 1 : 0)
+  useEffect(() => {
+    bodyRef.current?.setPlaceholder(cardCount > 0 ? '' : placeholderText)
+  }, [cardCount, placeholderText])
 
   // **全画面から直に開くこともある**（`app/write.jsx`）。記録の窓を
   // 通らないと覚えが読まれていないので、ここでも読む。
@@ -510,11 +529,7 @@ const RecordForm = forwardRef(function RecordForm(
         // ユーザーが答えなくてもいい」に反する。差し込まれる方の問い
         // （`modules/questions/data.py` 全50問）はもともと全部 `。` で、
         // **ここだけが違う声で聞いていた。**
-        placeholder={
-          question && isToday
-            ? question
-            : `${isToday ? '今日' : 'この日'}どんなことをしましたか。`
-        }
+        placeholder={placeholderText}
       />
 
       {/* **全画面のときはボタンを外に出す**（2026-09-03）。

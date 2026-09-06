@@ -157,6 +157,15 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
   // **問いのプレースホルダが戻らない**（上の CSS）。
   //
   // 焦点は当てない。書き終えた直後なので、キーボードは閉じてよい。
+  // **問いを差し替える**（2026-09-06・作者の指示
+  // 「カードが載ったら、プレースホルダーを表示しないように」）。
+  //
+  // 中身は最初の1回しか渡していないので、あとから変えるには命令が要る。
+  // 空を渡せば問いは出ない（上の CSS は data-ph を読んでいる）。
+  window.lanternPlaceholder = function (text) {
+    ed.setAttribute('data-ph', text == null ? '' : String(text));
+  };
+
   window.lanternClear = function () {
     ed.innerHTML = '';
     sendHtml();
