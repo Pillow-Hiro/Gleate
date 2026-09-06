@@ -141,28 +141,8 @@ public class JournalingPickerView: ExpoView {
     render()
   }
 
-  /// いちばん近い画面の持ち主を、応答の鎖をたどって探す。
-  ///
-  /// **RN の内部に頼らない。**`reactViewController()` を使えば1行だが、
-  /// 手元で通せない（Xcode が無い）。UIKit だけで書けば、
-  /// **落ちるとしても意味の分かる落ち方**になる。
-  private func nearestViewController() -> UIViewController? {
-    var responder: UIResponder? = self
-    while let next = responder?.next {
-      if let controller = next as? UIViewController { return controller }
-      responder = next
-    }
-    return nil
-  }
-
   private func render() {
-    // **外すときも作法どおりに。**足すのと対にしないと、
-    // 親の側に抜け殻が残る
-    if let previous = host {
-      previous.willMove(toParent: nil)
-      previous.view.removeFromSuperview()
-      previous.removeFromParent()
-    }
+    host?.view.removeFromSuperview()
     host = nil
 
     #if canImport(JournalingSuggestions)
@@ -177,28 +157,7 @@ public class JournalingPickerView: ExpoView {
     let controller = UIHostingController(rootView: root)
     controller.view.backgroundColor = .clear
     controller.view.frame = bounds
-
-    // **子として登録する**（2026-09-06・作者の報告
-    // 「✨で項目を選んだあと、文字やキーボードを入力できない」）。
-    //
-    // それまでは `view` だけを足し、**コントローラを登録していなかった。**
-    // UIKit の決まりに反する（`addChild` と対で使うもの）。
-    //
-    // 親のいないコントローラから Apple のシートを出すと、
-    // **閉じたあとも「何かが出ている」状態が残る。**
-    // その状態では応答の鎖が変わらず、**焦点が動かない**
-    // ——打てない、キーボードが出ない。
-    //
-    // **手元で確かめられていない**（Xcode が無い）。症状と決まり違反は
-    // 噛み合っているが、**直ったと言えるのは実機で打ててから。**
-    if let parent = nearestViewController() {
-      parent.addChild(controller)
-      addSubview(controller.view)
-      controller.didMove(toParent: parent)
-    } else {
-      // 見つからなくても描くだけは描く。**入口を消さない**
-      addSubview(controller.view)
-    }
+    addSubview(controller.view)
     host = controller
     #endif
   }

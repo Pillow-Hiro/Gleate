@@ -70,7 +70,7 @@ function CalendarIcon({ color = '#847563' }) {
 // **道具はキーボードの上にしか置かない**（2026-08-15・作者の判断）。
 // この面は「いま書いているのは自分だ」と列に登録するだけ
 // （`components/EditorToolbar.jsx`）。
-function Body({ value, onChange, placeholder, rows, onPhoto, onFile, onSuggest, editorRef }) {
+function Body({ value, onChange, placeholder, rows, onPhoto, onFile, onSuggest, editorRef, epoch }) {
   // 書いている最中かどうか。**書いている面だけが列に登録する**
   const [editing, setEditing] = useState(false)
   // いま効いている装飾。**面が知らせてくる。**
@@ -106,6 +106,17 @@ function Body({ value, onChange, placeholder, rows, onPhoto, onFile, onSuggest, 
 
   return (
     <WebEditor
+      // **選んだあとに作り直す**（2026-09-06・作者の報告
+      // 「✨で項目を選んだあと、文字やキーボードを入力できない」）。
+      //
+      // 原因は特定できていない。分かっているのは作者が確かめた事実だけ
+      // ——**開き直せば打てる。**だから作り直す。
+      //
+      // 中身は失わない。`value` は `change` の合図で最新に保たれており、
+      // 生まれ直した面はそれを初めの中身として受け取る。
+      //
+      // **これは当て木で、直しではない。**根が分かったら外すこと。
+      key={epoch}
       ref={editorRef}
       value={value}
       onChange={onChange}
@@ -262,6 +273,9 @@ const RecordForm = forwardRef(function RecordForm(
   const [suggests, setSuggests] = useState(() => listSuggests(editing?.id))
   const [pendingSuggests, setPendingSuggests] = useState([])
 
+  // 書く面を作り直す回数。**上の当て木**（`Body` の `key`）
+  const [epoch, setEpoch] = useState(0)
+
   // **カードが載ったら問いを出さない**（2026-09-06・作者の指示）。
   //
   // 問いは書きはじめの手がかり。**手がかりが2つ並ぶと、どちらを
@@ -296,9 +310,11 @@ const RecordForm = forwardRef(function RecordForm(
       if (editing?.id) {
         addSuggest(editing.id, body)
         setSuggests(listSuggests(editing.id))
-        return
+      } else {
+        setPendingSuggests((prev) => (prev.includes(body) ? prev : [...prev, body]))
       }
-      setPendingSuggests((prev) => (prev.includes(body) ? prev : [...prev, body]))
+      // **作り直す。**開き直せば打てる、という事実に合わせる
+      setEpoch((n) => n + 1)
     },
     [editing?.id],
   )
@@ -524,12 +540,15 @@ const RecordForm = forwardRef(function RecordForm(
         onPhoto={pickPhoto}
         onFile={pickFile}
         onSuggest={takeSuggest}
+        epoch={epoch}
         // **`？` を使わない**（2026-08-18）。答えを求めない問いは `。` で
         // 終える。`？` は答えを迫る形で、原則3「問いには正解を求めない。
         // ユーザーが答えなくてもいい」に反する。差し込まれる方の問い
         // （`modules/questions/data.py` 全50問）はもともと全部 `。` で、
         // **ここだけが違う声で聞いていた。**
-        placeholder={placeholderText}
+        // **生まれ直したときも正しく出す。**命令の口だけに頼ると、
+        // 作り直した面には元の問いが入ってしまう
+        placeholder={cardCount > 0 ? '' : placeholderText}
       />
 
       {/* **全画面のときはボタンを外に出す**（2026-09-03）。
