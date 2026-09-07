@@ -141,8 +141,28 @@ public class JournalingPickerView: ExpoView {
     render()
   }
 
+  /// いちばん近い画面の持ち主を、応答の鎖をたどって探す。
+  ///
+  /// **RN の内部に頼らない。**`reactViewController()` を使えば1行だが、
+  /// 手元で通せない（Xcode が無い）。UIKit だけで書けば、
+  /// **落ちるとしても意味の分かる落ち方**になる。
+  private func nearestViewController() -> UIViewController? {
+    var responder: UIResponder? = self
+    while let next = responder?.next {
+      if let controller = next as? UIViewController { return controller }
+      responder = next
+    }
+    return nil
+  }
+
   private func render() {
-    host?.view.removeFromSuperview()
+    // **外すときも作法どおりに。**足すのと対にしないと、
+    // 親の側に抜け殻が残る
+    if let previous = host {
+      previous.willMove(toParent: nil)
+      previous.view.removeFromSuperview()
+      previous.removeFromParent()
+    }
     host = nil
 
     #if canImport(JournalingSuggestions)
@@ -151,15 +171,61 @@ public class JournalingPickerView: ExpoView {
       title: title,
       icon: icon,
       tint: LanternSuggestionsPicker.color(fromHex: tint)
-    ) { [weak self] text in
-      self?.onSelect(["title": text])
+    ) { [weak self] text, items in
+      self?.onSelect(["title": text, "items": items])
     }
     let controller = UIHostingController(rootView: root)
     controller.view.backgroundColor = .clear
     controller.view.frame = bounds
+
     addSubview(controller.view)
     host = controller
+    // 画面に入ったあとなら、ここで繋ぐ。まだなら `didMoveToWindow` が繋ぐ
+    attachHost()
     #endif
+  }
+
+  /// **コントローラを子として登録する**（2026-09-06・作者の報告
+  /// 「✨で項目を選んだあと、文字やキーボードを入力できない」）。
+  ///
+  /// それまでは `view` だけを足し、**コントローラを登録していなかった。**
+  /// UIKit の決まりに反する（`addChild` と対で使うもの）。
+  ///
+  /// ## `render()` の中で繋いではいけない
+  ///
+  /// 最初にそう書いて、**読み直して気づいた。**`render()` は `init` から
+  /// 呼ばれる。**その時点でこの部品はまだ画面に入っていない**ので、
+  /// 応答の鎖をたどっても持ち主は見つからない（`next` が nil）。
+  /// つまり `addChild` は一度も実行されず、**何も変わらないまま
+  /// ビルドを1枠使うところだった。**
+  ///
+  /// ## これは報告された不具合の原因ではない
+  ///
+  /// 作者が確かめた——「開き直せば打てる」。アプリ全体の応答が
+  /// 固まっているなら開き直しても直らない。**噛み合わない。**
+  /// 当て木は JS の側にある（`RecordForm` の `epoch`）。
+  ///
+  /// **それでも決まり違反は違反**なので直す。
+  private func attachHost() {
+    guard let controller = host,
+          controller.parent == nil,
+          window != nil,
+          let parent = nearestViewController() else { return }
+    parent.addChild(controller)
+    controller.didMove(toParent: parent)
+  }
+
+  /// **画面に入った・出た**。入ったときに繋ぐ（`attachHost`）。
+  /// 出たときは外す——親の側に抜け殻を残さない
+  public override func didMoveToWindow() {
+    super.didMoveToWindow()
+    if window == nil {
+      guard let controller = host, controller.parent != nil else { return }
+      controller.willMove(toParent: nil)
+      controller.removeFromParent()
+      return
+    }
+    attachHost()
   }
 
   public override func layoutSubviews() {
@@ -174,7 +240,7 @@ private struct LanternSuggestionsPicker: View {
   let title: String
   let icon: String
   let tint: Color?
-  let onSelect: (String) -> Void
+  let onSelect: (String, [[String: String]]) -> Void
 
   var body: some View {
     JournalingSuggestionsPicker {
@@ -187,8 +253,12 @@ private struct LanternSuggestionsPicker: View {
       }
     } onCompletion: { suggestion in
       let text = await Self.text(from: suggestion)
+      let items = await Self.items(from: suggestion)
       guard !text.isEmpty else { return }
-      await MainActor.run { onSelect(text) }
+      // **両方渡す。**種類の付いた方を画面が使い、読めなければ
+      // 繋いだ文字列に戻る（`components/EditorToolbar.jsx`）。
+      // 片方だけにすると、どちらかが欠けたとき何も入らない
+      await MainActor.run { onSelect(text, items) }
     }
     .accessibilityLabel(Text(title))
   }
@@ -234,6 +304,69 @@ private struct LanternSuggestionsPicker: View {
     // 何も取れなければ分類の名前。**空を返すよりはいい**
     guard !kept.isEmpty else { return s.title }
     return kept.joined(separator: "\n")
+  }
+
+  /// 種類を付けて渡す（2026-09-07・作者の指示「カードの解釈を Apple の
+  /// 『ジャーナル』のように」）。
+  ///
+  /// ## なぜ要ったか
+  ///
+  /// `text(from:)` は取れたものを**改行で繋いだ1本の文字列**にして渡す。
+  /// **中では種類ごとに分かれているのに、渡す時点で潰していた。**
+  ///
+  /// 受け取る側は形から推し量るしかなかった（`lib/suggestCard.js`）。
+  /// 「A — B」は曲にも番組にも場所にもなるので、**見分けられない。**
+  /// 音符を出しておいて場所だった、では嘘になるので出せなかった。
+  ///
+  /// ## 新しい名前を一つも使っていない
+  ///
+  /// ここで読むのは**すべて `text(from:)` が既に読んでいるもの。**
+  /// ビルド26 が通っている名前だけを組み替えている。
+  /// **確かめられない名前を増やさない**——ビルドを2回落としたので。
+  ///
+  /// 絵（アルバムの絵）は**入れていない。**`Song` の中に在るかどうかを
+  /// 確かめる手立てが無く、当てで書けばまた落ちる。
+  /// 絵を出すのは、名前を確かめられる回に回す（`HANDOFF.md`）。
+  static func items(from s: JournalingSuggestion) async -> [[String: String]] {
+    var out: [[String: String]] = []
+
+    if #available(iOS 18.0, *) {
+      for r in await s.content(forType: JournalingSuggestion.Reflection.self) {
+        if let it = item("ask", r.prompt, nil) { out.append(it) }
+      }
+    }
+    for m in await s.content(forType: JournalingSuggestion.Song.self) {
+      if let it = item("song", m.song, m.artist) { out.append(it) }
+    }
+    for p in await s.content(forType: JournalingSuggestion.Podcast.self) {
+      if let it = item("podcast", p.episode, p.show) { out.append(it) }
+    }
+    if #available(iOS 18.0, *) {
+      for g in await s.content(forType: JournalingSuggestion.GenericMedia.self) {
+        if let it = item("media", g.title, g.artist) { out.append(it) }
+      }
+    }
+    for l in await s.content(forType: JournalingSuggestion.Location.self) {
+      if let it = item("place", l.place, l.city) { out.append(it) }
+    }
+    for m in await moods(from: s) {
+      if let it = item("mood", m, nil) { out.append(it) }
+    }
+    return out
+  }
+
+  /// 1枚ぶん。**題名も添え字も空なら作らない。**
+  ///
+  /// 引数を `String?` で取るのは、Apple 側が省略可能な項目を
+  /// 持っているため（`join` が `[String?]` を取っているのと同じ理由）。
+  private static func item(_ kind: String, _ title: String?,
+                           _ sub: String?) -> [String: String]? {
+    let t = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    let u = (sub ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    if t.isEmpty && u.isEmpty { return nil }
+    // 題名が空なら、添え字を題名に繰り上げる。**空の見出しを作らない**
+    if t.isEmpty { return ["kind": kind, "title": u, "sub": ""] }
+    return ["kind": kind, "title": t, "sub": u]
   }
 
   /// 心の状態を、**心地よさの度合いだけ**の日本語にする。

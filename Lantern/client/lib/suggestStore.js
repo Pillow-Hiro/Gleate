@@ -70,7 +70,7 @@ export function list(id) {
  *
  * 戻り値は足せたかどうか。
  */
-export function add(id, text) {
+export function add(id, text, kind, sub) {
   const body = String(text == null ? '' : text).trim()
   if (!id || !body) return false
   if (!cache) cache = {}
@@ -78,7 +78,13 @@ export function add(id, text) {
   const current = cache[id] || []
   if (current.some((e) => e.text === body)) return true
 
-  cache[id] = [...current, { text: body }]
+  // **種類は Swift が付けてくる**（2026-09-07）。無ければ持たない
+  // ——形から推し量るのは受け取る側の仕事（`lib/suggestCard.js`）
+  const entry = { text: body }
+  if (kind) entry.kind = kind
+  if (sub) entry.sub = sub
+
+  cache[id] = [...current, entry]
   persist()
   return true
 }

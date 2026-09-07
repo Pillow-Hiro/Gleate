@@ -65,3 +65,42 @@ describe('溜めてあるものを並べる', () => {
     expect(readCards([{ text: '' }, null])).toEqual([])
   })
 })
+
+describe('Swift が種類を付けてきたとき', () => {
+  // **推し量らない。**言えるようになったので言う
+  it('付いた種類をそのまま使う', () => {
+    const out = readCards([{ text: '渋谷', kind: 'place', sub: '東京' }])
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe(CARD.place)
+    expect(out[0].title).toBe('渋谷')
+    expect(out[0].sub).toBe('東京')
+  })
+
+  it('曲と場所を取り違えない', () => {
+    const out = readCards([
+      { text: 'Creep', kind: 'song', sub: 'レディオヘッド' },
+      { text: '渋谷', kind: 'place', sub: '東京' },
+    ])
+    expect(out.map((c) => c.kind)).toEqual([CARD.song, CARD.place])
+  })
+
+  // **知らない名前は嘘を言わない側に倒す**
+  it('知らない種類は item にする', () => {
+    const out = readCards([{ text: 'なにか', kind: 'まだ無い種類', sub: '' }])
+    expect(out[0].kind).toBe(CARD.item)
+  })
+
+  // 古いビルド・古い覚え
+  it('種類が無ければ形から推し量る', () => {
+    const out = readCards([{ text: 'Creep — レディオヘッド' }])
+    expect(out[0].kind).toBe(CARD.item)
+    expect(out[0].title).toBe('Creep')
+    expect(out[0].sub).toBe('レディオヘッド')
+  })
+
+  it('種類が付いていれば改行では割らない', () => {
+    // 付いてくるものは1件1枚。**割ると題名が壊れる**
+    const out = readCards([{ text: '一行目\n二行目', kind: 'ask' }])
+    expect(out).toHaveLength(1)
+  })
+})

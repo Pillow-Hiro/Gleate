@@ -44,12 +44,61 @@ function Ask({ color }) {
   )
 }
 
+function Note({ color }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path d="M9 18V5l11-2v13" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+      <Circle cx="6" cy="18" r="3" stroke={color} strokeWidth="1.7" />
+      <Circle cx="17" cy="16" r="3" stroke={color} strokeWidth="1.7" />
+    </Svg>
+  )
+}
+
+function Pin({ color }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 21c4-4.6 6-7.8 6-10.4A6 6 0 006 10.6C6 13.2 8 16.4 12 21z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <Circle cx="12" cy="10.4" r="2.1" stroke={color} strokeWidth="1.7" />
+    </Svg>
+  )
+}
+
+function Heart({ color }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 20s-7-4.4-7-9.2A4 4 0 0112 8.6 4 4 0 0119 10.8C19 15.6 12 20 12 20z"
+        stroke={color}
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
 function Dot({ color }) {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="4.2" stroke={color} strokeWidth="1.6" />
     </Svg>
   )
+}
+
+// **Swift が種類を言ってくるので、記号を分けられる**（2026-09-07）。
+// 言えなかったころは丸ひとつだった——**音符を出しておいて場所だった、
+// では嘘になる**ので出せなかった。
+const SIGNS = {
+  [CARD.ask]: Ask,
+  [CARD.song]: Note,
+  [CARD.podcast]: Note,
+  [CARD.media]: Note,
+  [CARD.place]: Pin,
+  [CARD.mood]: Heart,
 }
 
 const INK = '#847563'
@@ -66,7 +115,11 @@ export default function SuggestCards({ items, onRemove }) {
           className="flex-row items-start gap-2.5 bg-surface-low border border-border rounded-xl px-3.5 py-3"
         >
           <View className="pt-0.5">
-            {card.kind === CARD.ask ? <Ask color={INK} /> : <Dot color={INK} />}
+            {(() => {
+              // **知らない種類は丸。**嘘を言わない側に倒す
+              const Sign = SIGNS[card.kind] || Dot
+              return <Sign color={INK} />
+            })()}
           </View>
           <View className="flex-1">
             {/* **題名が主。**Apple の並びに合わせた */}

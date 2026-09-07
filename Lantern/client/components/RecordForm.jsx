@@ -304,14 +304,32 @@ const RecordForm = forwardRef(function RecordForm(
   // 描画のたびに外れて付き直し、**止まらなくなる**
   // （`components/EditorToolbar.jsx` の登録は口を見比べている）
   const takeSuggest = useCallback(
-    (text) => {
-      const body = String(text || '').trim()
-      if (!body) return
+    (picked) => {
+      // **種類の付いた並びか、繋いだ1本の文字列か。**
+      // Swift は両方渡してくる（`JournalingSuggestionsModule.swift`）
+      const items = Array.isArray(picked)
+        ? picked
+        : String(picked || '')
+            .split('\n')
+            .map((t) => ({ title: t.trim(), sub: '', kind: '' }))
+            .filter((it) => it.title)
+      if (items.length === 0) return
+
       if (editing?.id) {
-        addSuggest(editing.id, body)
+        for (const it of items) {
+          addSuggest(editing.id, it.title, it.kind, it.sub)
+        }
         setSuggests(listSuggests(editing.id))
       } else {
-        setPendingSuggests((prev) => (prev.includes(body) ? prev : [...prev, body]))
+        setPendingSuggests((prev) => {
+          const next = [...prev]
+          for (const it of items) {
+            if (!next.some((e) => e.text === it.title)) {
+              next.push({ text: it.title, kind: it.kind || '', sub: it.sub || '' })
+            }
+          }
+          return next
+        })
       }
       // **作り直す。**開き直せば打てる、という事実に合わせる
       setEpoch((n) => n + 1)
@@ -325,7 +343,7 @@ const RecordForm = forwardRef(function RecordForm(
       setSuggests(listSuggests(editing.id))
       return
     }
-    setPendingSuggests((prev) => prev.filter((t) => t !== text))
+    setPendingSuggests((prev) => prev.filter((e) => e.text !== text))
   }
   function refreshFiles() {
     if (editing?.id) setFiles(listFiles('', editing.id))
@@ -434,7 +452,9 @@ const RecordForm = forwardRef(function RecordForm(
       }
       // **預かっていた候補も置く**（写真とファイルと同じ扱い）
       if (pendingSuggests.length && data.id) {
-        for (const t of pendingSuggests) addSuggest(data.id, t)
+        for (const it of pendingSuggests) {
+          addSuggest(data.id, it.text, it.kind, it.sub)
+        }
         setPendingSuggests([])
       }
 
@@ -498,7 +518,7 @@ const RecordForm = forwardRef(function RecordForm(
           **書く場所に、自分の言葉でないものを混ぜない**
           （`components/SuggestCards.jsx`）。 */}
       <SuggestCards
-        items={editing?.id ? suggests.map((s) => s.text) : pendingSuggests}
+        items={editing?.id ? suggests : pendingSuggests}
         onRemove={dropSuggest}
       />
       {/* 添えたファイル。**サーバーへは送らない**（端末の中だけ）。

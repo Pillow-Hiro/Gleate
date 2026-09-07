@@ -358,8 +358,16 @@ function ToolbarBar({ field }) {
               icon="sparkles"
               tint={INK}
               onSelect={(e) => {
+                // **種類の付いた方を先に読む**（2026-09-07）。
+                // 読めなければ繋いだ文字列に戻る——Swift が両方渡している。
+                // 片方だけにすると、欠けたときに何も入らない
+                const items = e?.nativeEvent?.items
                 const line = String(e?.nativeEvent?.title || '').trim()
-                if (line) field.onSuggest(line)
+                if (Array.isArray(items) && items.length > 0) {
+                  field.onSuggest(items)
+                } else if (line) {
+                  field.onSuggest(line)
+                }
               }}
             />
           </Optional>
