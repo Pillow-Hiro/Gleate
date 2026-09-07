@@ -9,8 +9,11 @@ import { remove as removePhoto, save as savePhoto } from '../lib/photoStore'
 import PhotoPicker from './PhotoPicker'
 import AttachRow, { LinkList } from './AttachRow'
 import { ensureLoaded as loadLinks, removeAll as removeLinksAll } from '../lib/linkStore'
+import SuggestCards from './SuggestCards'
 import {
   ensureLoaded as loadSuggests,
+  list as listSuggests,
+  remove as removeSuggest,
   removeAll as removeSuggestsAll,
 } from '../lib/suggestStore'
 import FileList from './FileList'
@@ -117,8 +120,23 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
         ) : null
       )}
 
-      {/* 添えたもの。**中身は端末の中だけ**（写真・ファイル・音楽）。
+      {/* 添えたもの。**中身は端末の中だけ**（写真・ファイル・音楽・候補）。
           入口は下の「＋ 添える」ひとつにまとめてある（`AttachRow`） */}
+
+      {/* 「日記の候補」で選んだもの（2026-09-07・作者の報告
+          「カードをいれても記録として残らない」）。
+          **覚えてはいた。出していなかっただけ**——`suggestStore` に
+          入っているのに、この画面が読んでいなかった。
+          書く面にしか出しておらず、**保存した先で消えたように見えた。** */}
+      <SuggestCards
+        items={listSuggests(log.id)}
+        onRemove={(text) => {
+          removeSuggest(log.id, text)
+          setMusicTick((t) => t + 1)
+        }}
+        key={`s${musicTick}`}
+      />
+
       <FileList files={files} onChange={refreshFiles} />
       <LinkList id={log.id} onChange={() => setMusicTick((t) => t + 1)} key={musicTick} />
 
