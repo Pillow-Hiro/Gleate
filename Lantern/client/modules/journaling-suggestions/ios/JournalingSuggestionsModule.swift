@@ -172,6 +172,10 @@ public class JournalingPickerView: ExpoView {
       icon: icon,
       tint: LanternSuggestionsPicker.color(fromHex: tint)
     ) { [weak self] text, items in
+      // **型を変えない。**いままで通っているのは `[String: String]` で、
+      // 並びを直に入れると `[String: Any]` になる。`EventDispatcher` が
+      // 受けるはずだが、**「はずだ」で2回落としている**（ビルド24・25）。
+      // 中身は JSON の文字列にして渡し、**payload の型は据え置く。**
       self?.onSelect(["title": text, "items": items])
     }
     let controller = UIHostingController(rootView: root)
@@ -240,7 +244,7 @@ private struct LanternSuggestionsPicker: View {
   let title: String
   let icon: String
   let tint: Color?
-  let onSelect: (String, [[String: String]]) -> Void
+  let onSelect: (String, String) -> Void
 
   var body: some View {
     JournalingSuggestionsPicker {
@@ -253,7 +257,7 @@ private struct LanternSuggestionsPicker: View {
       }
     } onCompletion: { suggestion in
       let text = await Self.text(from: suggestion)
-      let items = await Self.items(from: suggestion)
+      let items = await Self.itemsJSON(from: suggestion)
       guard !text.isEmpty else { return }
       // **両方渡す。**種類の付いた方を画面が使い、読めなければ
       // 繋いだ文字列に戻る（`components/EditorToolbar.jsx`）。
@@ -353,6 +357,27 @@ private struct LanternSuggestionsPicker: View {
       if let it = item("mood", m, nil) { out.append(it) }
     }
     return out
+  }
+
+  /// 種類の付いた並びを、**JSON の文字列**にして返す。
+  ///
+  /// ## なぜ文字列にするのか
+  ///
+  /// 並びを直に渡すと、催しの payload が `[String: Any]` になる。
+  /// `EventDispatcher` は受けるはずだが、**「はずだ」で2回落としている。**
+  /// 文字列なら `[String: String]` のままで、**いま通っている型と同じ。**
+  ///
+  /// 使うのは `JSONSerialization` だけ——Foundation の当たり前の道具で、
+  /// **確かめられない名前を増やしていない。**
+  ///
+  /// 読めなければ空の文字列。画面は繋いだ文字列の方に戻る
+  /// （`components/EditorToolbar.jsx`）。**片方が欠けても止まらない。**
+  static func itemsJSON(from s: JournalingSuggestion) async -> String {
+    let list = await items(from: s)
+    guard !list.isEmpty else { return "" }
+    guard let data = try? JSONSerialization.data(withJSONObject: list),
+          let text = String(data: data, encoding: .utf8) else { return "" }
+    return text
   }
 
   /// 1枚ぶん。**題名も添え字も空なら作らない。**

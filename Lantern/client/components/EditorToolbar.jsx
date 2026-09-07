@@ -360,9 +360,19 @@ function ToolbarBar({ field }) {
               onSelect={(e) => {
                 // **種類の付いた方を先に読む**（2026-09-07）。
                 // 読めなければ繋いだ文字列に戻る——Swift が両方渡している。
-                // 片方だけにすると、欠けたときに何も入らない
-                const items = e?.nativeEvent?.items
+                // 片方だけにすると、欠けたときに何も入らない。
+                //
+                // `items` は JSON の文字列。**催しの payload の型を
+                // 変えないため**（`JournalingSuggestionsModule.swift`）
                 const line = String(e?.nativeEvent?.title || '').trim()
+                let items = null
+                try {
+                  const raw = e?.nativeEvent?.items
+                  if (raw) items = JSON.parse(raw)
+                } catch (err) {
+                  // **読めなくても止めない。**繋いだ文字列の方に戻る
+                  console.warn('[日記の候補] 種類を読めなかった', err)
+                }
                 if (Array.isArray(items) && items.length > 0) {
                   field.onSuggest(items)
                 } else if (line) {
