@@ -239,16 +239,22 @@ class TestVersionConsistency:
     def _parts(self, v):
         return tuple(int(x) for x in v.split("."))
 
-    def test_出した版数より上がっている(self):
+    def test_公開されている版数より上がっている(self):
+        """閉じるのは**公開された**版数であって、提出しただけの版数ではない。
+
+        同じ版数で build number を上げて出し直すのは普通のこと
+        （1.1.0 はビルド26 と 27 の2回出している）。**「提出した版数」を
+        見ていたら、正しい出し直しを止めてしまう**（2026-09-07 に直した）。
+        """
         out = self._submitted()["version"]
         now = self._release_version()
         assert self._parts(now) > self._parts(out), (
-            f"版数 {now} は既に出した {out} を超えていない。"
+            f"版数 {now} は公開中の {out} を超えていない。"
             "**一度公開した版数には、もう積めない**（ITMS-90062）。"
             "`client/app.json` と `client/constants.js` の両方を上げること"
         )
 
-    def test_出した版数の記録が読める(self):
+    def test_公開版数の記録が読める(self):
         # 形が壊れると上の検査が黙って通る。**それがいちばん困る**
         rec = self._submitted()
         assert re.fullmatch(r"\d+\.\d+\.\d+", rec["version"]),             f"submitted.json の版数の形が違う: {rec['version']}"
