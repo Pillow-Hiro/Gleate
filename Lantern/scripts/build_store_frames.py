@@ -96,6 +96,7 @@ def build(shot_path, caption, size, out_path, *, shot_w, shot_top,
 
     # --- 実物 ---
     shot = Image.open(os.path.join(SHOTS, shot_path)).convert('RGB')
+    shot = hide_status_bar(shot)
     sw = shot_w
     sh = round(shot.size[1] * sw / shot.size[0])
     shot = shot.resize((sw, sh), Image.LANCZOS)
@@ -111,9 +112,47 @@ def build(shot_path, caption, size, out_path, *, shot_w, shot_top,
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, sw - 1, sh - 1], radius=radius, fill=255)
     canvas.paste(shot, (x0, y0), mask)
 
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    canvas.convert('RGB').save(out_path, 'PNG')
+    # **`screenshots/` の下に置く**（2026-09-07）。
+    # 相対パスのままだと**実行した場所に散らばる**——リポジトリ直下に
+    # `store_framed/` ができ、`screenshots/store_framed/` は古いままだった。
+    # 消したはずの status bar が消えていないように見えたのはこれが原因
+    full = os.path.join(SHOTS, out_path)
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    canvas.convert('RGB').save(full, 'PNG')
     print(f'  {os.path.basename(out_path):14s} {W}x{H}  帯{len(lines)}行  写真{sw}x{sh}')
+
+
+def hide_status_bar(im, ratio=0.062):
+    """端末の時計と電池を消す（2026-09-07・作者の指摘）。
+
+    **「App Store の写真が使いたくなるような感じではない」**——
+    時刻が `1:39`、おやすみモードの印、残り少ない電池がそのまま
+    載っていた。撮った人の事情が写っていると、店頭の写真にならない。
+
+    ## 塗り潰す。描き直さない
+
+    `9:41` を描く手もあるが、**嘘の時計を描くより、無い方が正直。**
+    status bar の無い写真は App Store に普通にある。
+
+    ## 色は画像から取る
+
+    直書きしない。**帯のすぐ下**の左右端から拾って中央値にする。
+    左右端を見るのは、真ん中には中身が来ることがあるため。
+    こうしておけば、明るいテーマでも暗いテーマでも付いてくる。
+
+    `ratio` は画面の高さに対する帯の割合。iPhone は約 6.2%
+    （54pt × 3 ÷ 2622）。**端末が変わっても大きく外れない。**
+    """
+    w, h = im.size
+    band = int(h * ratio)
+    if band < 4:
+        return im
+    y = min(band + 6, h - 1)
+    picks = [im.getpixel((x, y)) for x in (4, 12, w - 13, w - 5)]
+    fill = tuple(sorted(c[i] for c in picks)[len(picks) // 2] for i in range(3))
+    out = im.copy()
+    ImageDraw.Draw(out).rectangle([0, 0, w, band], fill=fill)
+    return out
 
 
 CAPTIONS = [

@@ -142,8 +142,26 @@ def render(path, canvas, bg, color, ratio=MARK_RATIO, mode="RGB",
             draw_core(d, big, ratio)
         im = im.resize((canvas, canvas), Image.LANCZOS)
     else:
-        # 透明の上に。**にじみは地が要る**ので、ここでは敷かない
+        # 透明の上に。**にじみは半透明の琥珀として焼く。**
+        #
+        # 暗い地（`#1C1C1E`）の上に重ねると、RGB で描いたときと
+        # **同じ絵になる**——どちらも同じ割合で琥珀を混ぜているため。
+        # 起動画面がアイコンと揃うのはこのため（2026-09-07・作者の指示）。
         im = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+        if halo > 0:
+            mask = Image.new("L", (big, big), 0)
+            md = ImageDraw.Draw(mask)
+            r = big * HALO_RADIUS
+            c = big / 2
+            md.ellipse([c - r, c - r, c + r, c + r], fill=255)
+            mask = mask.filter(ImageFilter.GaussianBlur(r * 0.60))
+            mask = mask.point(lambda v: int(v * halo))
+            im = Image.merge("RGBA", (
+                Image.new("L", (big, big), AMBER[0]),
+                Image.new("L", (big, big), AMBER[1]),
+                Image.new("L", (big, big), AMBER[2]),
+                mask,
+            ))
         d = ImageDraw.Draw(im)
         draw_mark(d, big, color + (255,), ratio)
         if core:
@@ -186,11 +204,15 @@ def main():
     out.append(render(os.path.join(ASSETS, "android-icon-monochrome.png"),
                       1024, None, WHITE, ratio=0.42, mode="RGBA"))
 
-    # 起動画面の絵。**にじみも芯も無い、しるしだけ。**
-    # 明るい地（#faf9f7）と暗い地（#1c1c1e）の両方に出るので、
-    # **どちらでも読める形にしておく**（`app.json` の splash）
+    # 起動画面の絵。**アイコンと同じにする**（2026-09-07・作者の指示）。
+    #
+    # にじみを半透明で焼く。`app.json` の地を明暗とも `#1C1C1E` に
+    # したので、**重ねるとアイコンと同じ絵になる。**
+    # 明るい地に出していたときは、にじみを敷けなかった
+    # ——光は暗さがあって初めて光になる。
     out.append(render(os.path.join(ASSETS, "splash-icon.png"),
-                      1024, None, AMBER, ratio=0.52, mode="RGBA"))
+                      1024, None, AMBER, ratio=0.52, mode="RGBA",
+                      halo=HALO_STRENGTH, core=True))
 
     for p in out:
         print(f"生成: {os.path.relpath(p, ROOT)}")
