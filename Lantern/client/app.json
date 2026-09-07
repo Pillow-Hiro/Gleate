@@ -22,7 +22,7 @@
     "android": {
       "package": "com.pillowhiro.lantern",
       "adaptiveIcon": {
-        "backgroundColor": "#181F2F",
+        "backgroundColor": "#1C1C1E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

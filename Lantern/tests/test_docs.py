@@ -555,15 +555,31 @@ class TestIcons:
         w, h, _ = self._png_header("android-icon-foreground.png")
         assert (w, h) == (1024, 1024), f"前景が {w}x{h}"
 
-    def test_Androidの背景色が雛形のままでない(self):
-        import json
+    def test_Androidの背景色が画像の地と揃っている(self):
+        """`app.json` の単色と、背景画像の地が同じか。
 
-        color = json.loads(read("client", "app.json"))["expo"]["android"]["adaptiveIcon"][
-            "backgroundColor"]
+        前景の画像と背景の単色が食い違うと、**マスクの縁で色が割れる。**
+
+        **色を直書きしない**（2026-09-07）。以前は `#181F2F` と
+        書いてあり、アイコンを作り直したときに**検査の方が古くなった。**
+        画像から読めば、次に変えても勝手に付いてくる。
+        """
+        import json
+        from PIL import Image
+
+        color = json.loads(read("client", "app.json"))["expo"]["android"][
+            "adaptiveIcon"]["backgroundColor"]
         assert color.upper() != "#E6F4FE", "Expo の雛形の水色が残っている"
-        # 2026-08-07 に作者が用意した画像に差し替えた。地は紺 #181F2F。
-        # 前景の画像と背景の単色が食い違うと、マスクの縁で色が割れる
-        assert color.upper() == "#181F2F", f"アイコン画像の地の色と違う: {color}"
+
+        path = os.path.join(ROOT, "client", "assets", "android-icon-background.png")
+        im = Image.open(path).convert("RGB")
+        # **四隅を見る。**中心はにじみで明るいので地ではない
+        corner = im.getpixel((4, 4))
+        want = "#%02X%02X%02X" % corner
+        assert color.upper() == want, (
+            f"`app.json` の {color} と背景画像の地 {want} が食い違う。"
+            "マスクの縁で色が割れる"
+        )
 
 
 class TestDocRoles:

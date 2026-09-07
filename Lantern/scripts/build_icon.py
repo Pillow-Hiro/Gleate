@@ -11,10 +11,37 @@
     太さ       stroke = size * 0.07（先は丸）
     本数       8本（45度ごと）
 
+## 地は暗い。**光は暗さがあって初めて光になる**（2026-09-07）
+
+それまでは白で全面だった。作者から Apple の明るさ調整の記号を
+見せられ、**ホーム画面でシステムの操作に見える**と分かった。
+形は自分で描いたもの（下の式）で複製ではないが、**似ていることは
+それ自体が問題**——名前は Lantern なのに、灯りに見えない。
+
+同カテゴリ174件を取り直して並べた（`PROGRESS.md` 2026-09-07）。
+
+- 地が明るいもの 144 / 暗いもの 30
+- **明るい地＋橙〜黄は 54 件**。いまの居場所は混んでいた
+- 暗い地はほぼ瞑想アプリで、**どれも青紫。暖色の一点は空いていた**
+
+**形は変えない。**アプリの中のしるしと揃えてある（2026-08-20）。
+変えたのは3つだけ。
+
+1. 地を墨（`#1C1C1E`）に
+2. しるしの下に**にじみ**を敷く
+3. 中心の丸だけ**白く抜く**——これが効く。平らな記号ではなく
+   **光源に見える。**Apple の記号は平らなので、ここが分かれ目
+
+にじみは控えめにした。強くすると地まで明るくなり、**暗さが失われる。**
+暗くないと、光っていることに意味が出ない。
+
+**白い地では光沢は出せない。**試した（G案）が、いまのものと
+区別がつかなかった。
+
 ## iOS の角丸を描かない
 
 iOS は自分で角丸に切り抜く。角丸を描いた画像を渡すと**二重に丸まり**、
-四隅に地の色が残る。**正方形のまま、白で全面**を渡す。
+四隅に地の色が残る。**正方形のまま、墨で全面**を渡す。
 
 ## 余白
 
@@ -26,13 +53,19 @@ import math
 import os
 import sys
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "client", "assets")
 
 AMBER = (251, 176, 59)          # #FBB03B。`tailwind.config.js` の灯り色
 WHITE = (255, 255, 255)
+INK = (28, 28, 30)              # #1C1C1E。暗いテーマの地と同じ
+CORE = (255, 238, 202)          # 芯の白。**ここだけ抜くと光源に見える**
+
+# にじみ。**控えめに。**強くすると地まで明るくなり、暗さが失われる
+HALO_STRENGTH = 0.30
+HALO_RADIUS = 0.26
 
 # しるしが canvas に占める割合。**角で光条が切れない大きさ**
 MARK_RATIO = 0.62
@@ -61,17 +94,62 @@ def draw_mark(draw, canvas, color, ratio=MARK_RATIO):
             draw.ellipse([x - half, y - half, x + half, y + half], fill=color)
 
 
-def render(path, canvas, bg, color, ratio=MARK_RATIO, mode="RGB"):
-    """4倍で描いてから縮める（**縁を滑らかにする**）。"""
+def draw_halo(im, canvas, strength=HALO_STRENGTH, radius=HALO_RADIUS):
+    """しるしの下に敷く空気。**光源ではなく、まわりを描く。**
+
+    ぼかした円を面いっぱいの琥珀と合成する。
+    `strength` は濃さ、`radius` は canvas に対する半径。
+    """
+    if strength <= 0:
+        return im
+    mask = Image.new("L", (canvas, canvas), 0)
+    d = ImageDraw.Draw(mask)
+    r = canvas * radius
+    c = canvas / 2
+    d.ellipse([c - r, c - r, c + r, c + r], fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(r * 0.60))
+    mask = mask.point(lambda v: int(v * strength))
+    return Image.composite(Image.new("RGB", (canvas, canvas), AMBER), im, mask)
+
+
+def draw_core(draw, canvas, ratio=MARK_RATIO):
+    """中心の丸だけ白く抜く。**これが平らな記号との分かれ目。**
+
+    大きさは中心の丸（`size * 0.18`）の半分ほど。
+    大きくすると輪になり、灯りではなく的に見える。
+    """
+    c = canvas / 2
+    r = canvas * ratio * 0.18 * 0.52
+    draw.ellipse([c - r, c - r, c + r, c + r], fill=CORE)
+
+
+def render(path, canvas, bg, color, ratio=MARK_RATIO, mode="RGB",
+           halo=0.0, core=False):
+    """4倍で描いてから縮める（**縁を滑らかにする**）。
+
+    `halo` はにじみの濃さ、`core` は芯を白く抜くかどうか。
+    **どちらも暗い地でしか意味を持たない**（白の上では見えない）。
+    """
     scale = 4
     big = canvas * scale
-    im = Image.new("RGBA", (big, big), (0, 0, 0, 0) if bg is None else bg + (255,))
-    draw_mark(ImageDraw.Draw(im), big, color + (255,), ratio)
-    im = im.resize((canvas, canvas), Image.LANCZOS)
+
     if mode == "RGB":
-        flat = Image.new("RGB", (canvas, canvas), bg or WHITE)
-        flat.paste(im, mask=im.split()[3])
-        im = flat
+        im = Image.new("RGB", (big, big), bg or WHITE)
+        im = draw_halo(im, big, strength=halo)
+        d = ImageDraw.Draw(im)
+        draw_mark(d, big, color, ratio)
+        if core:
+            draw_core(d, big, ratio)
+        im = im.resize((canvas, canvas), Image.LANCZOS)
+    else:
+        # 透明の上に。**にじみは地が要る**ので、ここでは敷かない
+        im = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        draw_mark(d, big, color + (255,), ratio)
+        if core:
+            draw_core(d, big, ratio)
+        im = im.resize((canvas, canvas), Image.LANCZOS)
+
     im.save(path)
     return path
 
@@ -80,21 +158,39 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
     out = []
 
-    # iOS と既定。**白で全面・角丸なし・透明なし**
-    out.append(render(os.path.join(ASSETS, "icon.png"), 1024, WHITE, AMBER))
+    # iOS と既定。**墨で全面・角丸なし・透明なし**
+    out.append(render(os.path.join(ASSETS, "icon.png"), 1024, INK, AMBER,
+                      halo=HALO_STRENGTH, core=True))
 
     # Web の favicon
-    out.append(render(os.path.join(ASSETS, "favicon.png"), 256, WHITE, AMBER))
+    out.append(render(os.path.join(ASSETS, "favicon.png"), 256, INK, AMBER,
+                      halo=HALO_STRENGTH, core=True))
 
     # Android の前景。**透明の上に置き、安全域に収める。**
     # 外側 1/3 は端末の形（丸・角丸・しずく）で切られるので、
-    # しるしを 0.62 → 0.42 に縮める
+    # しるしを 0.62 → 0.42 に縮める。
+    # **にじみは背景の側が持つ**（下）——前景は端末に切られるため、
+    # にじみを乗せると切り口で途切れる
     out.append(render(os.path.join(ASSETS, "android-icon-foreground.png"),
-                      1024, None, AMBER, ratio=0.42, mode="RGBA"))
+                      1024, None, AMBER, ratio=0.42, mode="RGBA", core=True))
 
-    # Android の単色。**白のしるしを透明の上に。** 端末が色を付ける
+    # Android の背景。**墨とにじみだけ。**しるしは前景が持つ
+    bg = Image.new("RGB", (1024, 1024), INK)
+    bg = draw_halo(bg, 1024, strength=HALO_STRENGTH, radius=HALO_RADIUS * 0.68)
+    bg_path = os.path.join(ASSETS, "android-icon-background.png")
+    bg.save(bg_path)
+    out.append(bg_path)
+
+    # Android の単色。**白のしるしを透明の上に。** 端末が色を付ける。
+    # 芯は抜かない——単色なので、抜くと穴になる
     out.append(render(os.path.join(ASSETS, "android-icon-monochrome.png"),
                       1024, None, WHITE, ratio=0.42, mode="RGBA"))
+
+    # 起動画面の絵。**にじみも芯も無い、しるしだけ。**
+    # 明るい地（#faf9f7）と暗い地（#1c1c1e）の両方に出るので、
+    # **どちらでも読める形にしておく**（`app.json` の splash）
+    out.append(render(os.path.join(ASSETS, "splash-icon.png"),
+                      1024, None, AMBER, ratio=0.52, mode="RGBA"))
 
     for p in out:
         print(f"生成: {os.path.relpath(p, ROOT)}")
