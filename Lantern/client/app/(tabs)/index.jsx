@@ -278,7 +278,14 @@ export default function Home() {
                   人物が白く飛び、光が黒い輪になった。
                   **作者が描き直したものが正しい。**
 
-                  比は 1376:768（元の絵のまま）。`cover` で幅に合わせる */}
+                  **高さを直に決める**（2026-09-09・作者から「写真の
+                  サイズが大きすぎる」）。`aspectRatio` で比から高さを
+                  出させたら効かず、**画面の大半を絵が占めた。**
+                  幅は端末で変わるが、**高さは変わってほしくない**
+                  ——問いより絵が大きい面にはしない。
+
+                  168 は案（`lantern_3`）の比から。あちらは画面の
+                  およそ2割で、この端末では 170pt ほどになる */}
               <Image
                 source={
                   isDark
@@ -286,8 +293,7 @@ export default function Home() {
                     : require('../../assets/prompt-day.jpg')
                 }
                 accessibilityLabel="灯りを提げて歩く人"
-                className="w-full"
-                style={{ aspectRatio: 1376 / 768 }}
+                style={{ width: '100%', height: 168 }}
                 resizeMode="cover"
               />
 
