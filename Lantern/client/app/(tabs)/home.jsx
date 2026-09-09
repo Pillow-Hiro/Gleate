@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Image, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import WriteButton from '../../components/WriteButton'
 import { attach as attachPhotos } from '../../lib/photoStore'
+import { useThemeContext } from '../../lib/theme'
 import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -50,6 +51,8 @@ import * as notify from '../../lib/notify'
 const RECENT_LIMIT = 3
 
 export default function Home() {
+  // 絵をテーマで入れ替える（問いのカード）
+  const { isDark } = useThemeContext()
   const tabInset = useTabBarInset()
   const router = useRouter()
   const [logs, setLogs] = useState([])
@@ -212,19 +215,55 @@ export default function Home() {
                 それまでは「書く」タブへ送っていたが、書く場所が
                 全画面に移ったので、そこで**もう一度押させる**ことになる。
                 問いも一緒に連れていく（欄のプレースホルダになる）。 */}
-            <Pressable
-              onPress={() => router.push({ pathname: '/write', params: { question } })}
-              accessibilityLabel={`${question} について書く`}
-              // **書くタブの問いと同じ姿に**（2026-09-09・Stitch の案）。
-              // 同じ役目のものが2つの画面で違って見えていた。
-              // 縁は薄く、影で浮かせ、**問いを太く**する
-              className="bg-surface-lowest border border-border rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-70"
-            >
-              <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
-                {question}
-              </Text>
-              <Text className="text-label-md text-primary">これについて書く ›</Text>
-            </Pressable>
+            {/* **案 `lantern_2` の姿に**（2026-09-09・作者の指示）。
+                絵・太い問い・2つの行き先。書くタブの問いと同じ組み立て。
+
+                **塗りは増やさない。**`CLAUDE.md`「1画面に灯り色を
+                2箇所以上置かない。灯りは1つだから灯りである」——
+                この画面で琥珀に塗るのは今日の灯りだけ、という状態を保つ。
+                だから下の2つは**縁と字だけ**で、面は塗らない。
+                案では「ノートを開いて応える」が琥珀に塗られていたが、
+                そこは変えた。
+
+                案の「Day 48」「灯火の連続」は入れない——同じく
+                `CLAUDE.md` が禁じている（Streak を煽る演出）。 */}
+            <View className="bg-surface-lowest border border-border rounded-lg overflow-hidden shadow-bloom">
+              <Image
+                source={
+                  isDark
+                    ? require('../../assets/prompt-night.jpg')
+                    : require('../../assets/prompt-day.jpg')
+                }
+                accessibilityLabel="灯りを提げて歩く人"
+                style={{ width: '100%', height: 150 }}
+                resizeMode="cover"
+              />
+              <View className="px-5 py-5 gap-4">
+                <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
+                  {question}
+                </Text>
+                {/* 2つの行き先。**書くか、1行で置くか。**
+                    案と同じ並びだが、どちらも面は塗らない（上の註釈） */}
+                <View className="flex-row gap-2.5">
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/write', params: { question } })}
+                    accessibilityLabel={`${question} について書く`}
+                    className="flex-1 border border-lantern-glow rounded-full py-2.5 items-center active:opacity-70"
+                  >
+                    <Text className="font-strong text-label-md text-primary">
+                      これについて書く
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => router.push('/')}
+                    accessibilityLabel="1行で置く"
+                    className="border border-outline-variant rounded-full px-4 py-2.5 items-center active:opacity-70"
+                  >
+                    <Text className="text-label-md text-on-surface-variant">1行で置く</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
           </View>
         ) : null}
 
