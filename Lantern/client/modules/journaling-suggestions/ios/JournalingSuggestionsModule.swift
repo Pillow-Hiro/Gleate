@@ -340,21 +340,27 @@ private struct LanternSuggestionsPicker: View {
       }
     }
     for m in await s.content(forType: JournalingSuggestion.Song.self) {
-      if let it = item("song", m.song, m.artist) { out.append(it) }
+      if let it = item("song", m.song, m.artist, m.artwork) { out.append(it) }
     }
     for p in await s.content(forType: JournalingSuggestion.Podcast.self) {
-      if let it = item("podcast", p.episode, p.show) { out.append(it) }
+      if let it = item("podcast", p.episode, p.show, p.artwork) { out.append(it) }
     }
     if #available(iOS 18.0, *) {
       for g in await s.content(forType: JournalingSuggestion.GenericMedia.self) {
-        if let it = item("media", g.title, g.artist) { out.append(it) }
+        if let it = item("media", g.title, g.artist, g.appIcon) { out.append(it) }
       }
     }
     for l in await s.content(forType: JournalingSuggestion.Location.self) {
       if let it = item("place", l.place, l.city) { out.append(it) }
     }
-    for m in await moods(from: s) {
-      if let it = item("mood", m, nil) { out.append(it) }
+    // 心の状態。**絵も一緒に取る**ので `moods` とは別に読む
+    // （あちらは `text(from:)` が使っている）
+    if #available(iOS 18.0, *) {
+      for m in await s.content(forType: JournalingSuggestion.StateOfMind.self) {
+        if let it = item("mood", mood(from: m.state.valence), nil, m.icon) {
+          out.append(it)
+        }
+      }
     }
     return out
   }
@@ -385,13 +391,18 @@ private struct LanternSuggestionsPicker: View {
   /// 引数を `String?` で取るのは、Apple 側が省略可能な項目を
   /// 持っているため（`join` が `[String?]` を取っているのと同じ理由）。
   private static func item(_ kind: String, _ title: String?,
-                           _ sub: String?) -> [String: String]? {
+                           _ sub: String?, _ art: URL? = nil) -> [String: String]? {
     let t = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     let u = (sub ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     if t.isEmpty && u.isEmpty { return nil }
     // 題名が空なら、添え字を題名に繰り上げる。**空の見出しを作らない**
-    if t.isEmpty { return ["kind": kind, "title": u, "sub": ""] }
-    return ["kind": kind, "title": t, "sub": u]
+    var out: [String: String] = t.isEmpty
+      ? ["kind": kind, "title": u, "sub": ""]
+      : ["kind": kind, "title": t, "sub": u]
+    // 絵。**端末の中のファイル**（`file://`）で、Apple が既に置いている。
+    // 取りに行かない——外へ「何を聴いたか」を知らせずに絵が出せる
+    if let art = art { out["art"] = art.absoluteString }
+    return out
   }
 
   /// 心の状態を、**心地よさの度合いだけ**の日本語にする。

@@ -17,7 +17,10 @@ export default function AppHeader({ right }) {
   return (
     <View className="flex-row items-center justify-between px-5 h-11">
       <View className="flex-row items-center gap-2">
-        <LanternMark size={18} />
+        {/* **アイコンと同じ見た目に**（2026-09-09・作者の指示）。
+            小さな暗い板に載る（`LanternMark` の `tile`）ので、
+            18 だと中のしるしが 11 になって潰れる。板のぶん少し大きく */}
+        <LanternMark size={22} />
         <Text className="font-latin text-body-md text-on-surface">Lantern</Text>
       </View>
       {right ?? null}

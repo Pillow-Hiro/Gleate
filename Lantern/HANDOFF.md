@@ -891,6 +891,41 @@ AIに渡すときだけ平文を都度送る（保存はしない）。
 - [ ] 実機でしか見えないもの（起動画面・候補・心の状態・Universal Links）
       は **TestFlight で見る。**審査に出す前に1回
 
+### 次のビルドに入れるもの（2026-09-09）
+
+- **候補の絵**（`JournalingSuggestionsModule.swift`）
+  - 一度「絵は出せない」と書いた。**間違いだった。**Apple Music に
+    取りに行く必要は無く、**Apple が端末の中にファイルを置いている**
+  - 名前は Apple の資料で確かめた（`developer.apple.com` の
+    `.../tutorials/data/documentation/journalingsuggestions/...json`。
+    **画面は JS で描かれるので、裏のデータを直に読む**）
+
+    | 型 | 絵 | 版 |
+    |---|---|---|
+    | `Song` | `artwork: URL?` | 17.2+ |
+    | `Podcast` | `artwork: URL?` | 17.2+ |
+    | `GenericMedia` | `appIcon: URL?` | 18.0+ |
+    | `StateOfMind` | `icon: URL?` | 18.0+ |
+
+  - **当てずっぽうではない。**ビルドを2回落としたあと、
+    **資料で確かめる道が使えると分かった**のがこの回の収穫
+  - 道だけ覚えて中身は持たない。**いつか消えることがある**ので、
+    読めなければ記号に戻す（`SuggestCards` の `Art`）
+- **左上のしるしを暗い板に**（`LanternMark`）。アイコンと同じ見た目に。
+  ログインと案内は**板を敷かない**（白い丸が既に板の役をしている）
+
+### 純正のカード部品は無い（2026-09-09・調べた）
+
+作者「カードを Apple 純正のコンポーネントにしたい」。
+
+公開されているのは `JournalingSuggestionsPicker`（選ぶための面）と
+`JournalingSuggestion`、`JournalingSuggestionAsset`、
+`JournalingSuggestionPresentationToken`、`JournalingSuggestionsConfiguration`
+だけ。**選んだものを見せる部品は無い**——Apple の「ジャーナル」は
+非公開の UI で組んである。
+
+**自分で組むしかない。**ただし絵が手に入るので、見た目は近づけられる。
+
 ### ビルド27（2026-09-07・**Swift が通った**）
 
 | | |

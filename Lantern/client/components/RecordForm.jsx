@@ -311,13 +311,13 @@ const RecordForm = forwardRef(function RecordForm(
         ? picked
         : String(picked || '')
             .split('\n')
-            .map((t) => ({ title: t.trim(), sub: '', kind: '' }))
+            .map((t) => ({ title: t.trim(), sub: '', kind: '', art: '' }))
             .filter((it) => it.title)
       if (items.length === 0) return
 
       if (editing?.id) {
         for (const it of items) {
-          addSuggest(editing.id, it.title, it.kind, it.sub)
+          addSuggest(editing.id, it.title, it.kind, it.sub, it.art)
         }
         setSuggests(listSuggests(editing.id))
       } else {
@@ -325,7 +325,12 @@ const RecordForm = forwardRef(function RecordForm(
           const next = [...prev]
           for (const it of items) {
             if (!next.some((e) => e.text === it.title)) {
-              next.push({ text: it.title, kind: it.kind || '', sub: it.sub || '' })
+              next.push({
+                text: it.title,
+                kind: it.kind || '',
+                sub: it.sub || '',
+                art: it.art || '',
+              })
             }
           }
           return next
@@ -453,7 +458,7 @@ const RecordForm = forwardRef(function RecordForm(
       // **預かっていた候補も置く**（写真とファイルと同じ扱い）
       if (pendingSuggests.length && data.id) {
         for (const it of pendingSuggests) {
-          addSuggest(data.id, it.text, it.kind, it.sub)
+          addSuggest(data.id, it.text, it.kind, it.sub, it.art)
         }
         setPendingSuggests([])
       }

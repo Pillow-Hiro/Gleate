@@ -70,7 +70,7 @@ export function list(id) {
  *
  * 戻り値は足せたかどうか。
  */
-export function add(id, text, kind, sub) {
+export function add(id, text, kind, sub, art) {
   const body = String(text == null ? '' : text).trim()
   if (!id || !body) return false
   if (!cache) cache = {}
@@ -83,6 +83,10 @@ export function add(id, text, kind, sub) {
   const entry = { text: body }
   if (kind) entry.kind = kind
   if (sub) entry.sub = sub
+  // 絵は**端末の中のファイルへの道**（`file://`）。Apple が置いたもので、
+  // こちらは道だけ覚える。**中身を持たないので、いつか消えることがある**
+  // ——消えていたら記号に戻す（`components/SuggestCards.jsx`）
+  if (art) entry.art = art
 
   cache[id] = [...current, entry]
   persist()

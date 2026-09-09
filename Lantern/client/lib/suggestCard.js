@@ -95,6 +95,7 @@ export function readCards(items) {
     const text = typeof item === 'string' ? item : item.text
     const kind = typeof item === 'string' ? '' : item.kind
     const sub = typeof item === 'string' ? '' : item.sub
+    const art = typeof item === 'string' ? '' : item.art
 
     // **Swift が種類を付けてくれたなら、推し量らない**
     if (kind && KINDS[kind]) {
@@ -104,6 +105,7 @@ export function readCards(items) {
           kind: KINDS[kind],
           title,
           sub: String(sub || '').trim(),
+          art: String(art || ''),
           source: text,
           line: title,
         })

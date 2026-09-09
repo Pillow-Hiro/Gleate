@@ -139,7 +139,10 @@ export default function Login() {
           <View className="bg-surface/95 rounded-lg shadow-bloom px-6 py-8">
             <View className="items-center mb-8">
               <View className="w-16 h-16 rounded-full bg-surface-lowest items-center justify-center shadow-bloom mb-5">
-                <LanternMark size={30} />
+                {/* **ここは板を敷かない。**白い丸が既に板の役をしている
+                    （デザイン案 `0_login`）。二重に敷くと丸の中に
+                    四角が入る */}
+                <LanternMark size={30} tile={false} />
               </View>
               <Text className="font-latin text-display text-on-surface">Lantern</Text>
               {/* **「照らす」のは Lantern ではない。**

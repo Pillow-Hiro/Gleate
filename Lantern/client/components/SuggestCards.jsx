@@ -1,4 +1,5 @@
-import { Pressable, View } from 'react-native'
+import { useState } from 'react'
+import { Image, Pressable, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
 import { CARD, readCards } from '../lib/suggestCard'
@@ -19,10 +20,25 @@ import { CARD, readCards } from '../lib/suggestCard'
 // 作者から画面をもらった。あちらは**題名が主、種類が従。**
 // 題名を大きく、添え字を下に小さく。外す ✕ が右上。
 //
-// **絵は出せない。**Apple Music の絵を出すには取りに行くことになり、
-// 「何を聴いていたか」を外へ知らせる通信を足すことになる
-// （`lib/attachLink.js` の決め）。**出せないものを、出せるふりで
-// 枠だけ描かない。**字だけで、字が読みやすいように組む。
+// ## 絵は Apple が置いている（2026-09-09）
+//
+// 一度は「絵は出せない」と書いた。**間違い。**Apple Music に
+// 取りに行く必要は無く、**`JournalingSuggestion.Song.artwork` が
+// 端末の中のファイルを指している**（`Podcast.artwork`、
+// `GenericMedia.appIcon`、`StateOfMind.icon` も同じ）。
+//
+// **外へ何も聞かずに、Apple と同じ絵が出せる。**
+// 名前は Apple の資料で確かめた——当てずっぽうではない。
+//
+// **道だけ覚えて、中身は持たない。**いつか消えることがあるので、
+// 読めなければ記号に戻す（`Art` の `onError`）。
+//
+// ## 純正の部品は無い
+//
+// 作者から「Apple 純正のコンポーネントにしたい」と言われて調べた。
+// 公開されているのは**選ぶための `JournalingSuggestionsPicker` だけ**で、
+// **選んだものを見せる部品は無い**（Apple の「ジャーナル」は非公開の UI）。
+// だから自分で組む。絵が手に入るので、見た目はかなり近づく。
 //
 // ## 押せるものにしない
 //
@@ -103,6 +119,20 @@ const SIGNS = {
 
 const INK = '#847563'
 
+/// 絵。**読めなければ何も描かない**——枠だけ残ると壊れて見える
+function Art({ uri }) {
+  const [gone, setGone] = useState(false)
+  if (!uri || gone) return null
+  return (
+    <Image
+      source={{ uri }}
+      onError={() => setGone(true)}
+      className="w-12 h-12 rounded-lg bg-surface-high"
+      resizeMode="cover"
+    />
+  )
+}
+
 export default function SuggestCards({ items, onRemove }) {
   const cards = readCards(items)
   if (cards.length === 0) return null
@@ -114,14 +144,20 @@ export default function SuggestCards({ items, onRemove }) {
           key={`${card.source}::${card.line}`}
           className="flex-row items-start gap-2.5 bg-surface-low border border-border rounded-xl px-3.5 py-3"
         >
-          <View className="pt-0.5">
-            {(() => {
-              // **知らない種類は丸。**嘘を言わない側に倒す
-              const Sign = SIGNS[card.kind] || Dot
-              return <Sign color={INK} />
-            })()}
-          </View>
-          <View className="flex-1">
+          {/* **絵があれば絵。**Apple の「ジャーナル」と同じ並び
+              ——絵が左、題名が主、種類は絵が語る */}
+          {card.art ? (
+            <Art uri={card.art} />
+          ) : (
+            <View className="pt-0.5">
+              {(() => {
+                // **知らない種類は丸。**嘘を言わない側に倒す
+                const Sign = SIGNS[card.kind] || Dot
+                return <Sign color={INK} />
+              })()}
+            </View>
+          )}
+          <View className="flex-1 justify-center">
             {/* **題名が主。**Apple の並びに合わせた */}
             <Text className="text-body-md text-on-surface leading-relaxed">
               {card.title}
