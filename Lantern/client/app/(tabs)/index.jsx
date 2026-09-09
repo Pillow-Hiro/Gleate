@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
+import Horizon from '../../components/Horizon'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -50,6 +51,8 @@ export default function Home() {
   const keyboardHeight = useKeyboardHeight()
   const router = useRouter()
   const [question, setQuestion] = useState('')
+  // 帯の幅。**画面の幅に合わせて伸ばす**ので測る（`components/Horizon.jsx`）
+  const [bandWidth, setBandWidth] = useState(0)
   const [logs, setLogs] = useState([])
   const [refreshTick, setRefreshTick] = useState(0)
   // アイデアは 2026-08-08 に「記録」から移した。
@@ -272,6 +275,19 @@ export default function Home() {
                   ここだけが押せる場所だと分かる。 */}
               <Text className="text-label-md text-primary">書きはじめる ›</Text>
             </Pressable>
+          )}
+
+          {/* 地平線と、遠くにひとつの灯り（2026-09-09・作者の指示）。
+              **絵として強くしない**——問いのカードは書き出させるためのもので、
+              その下に見入るものがあると視線がそこで止まる。
+              温度だけを足して、目は止めない（`components/Horizon.jsx`）。
+
+              上限に達している日には出さない。**書けない日に灯りを
+              置いても、慰めにならない。** */}
+          {full ? null : (
+            <View className="items-center" onLayout={(e) => setBandWidth(e.nativeEvent.layout.width)}>
+              {bandWidth > 0 ? <Horizon width={bandWidth} /> : null}
+            </View>
           )}
 
           {/* **今日の記録**（2026-09-04・作者の指示「当日分の記録は
