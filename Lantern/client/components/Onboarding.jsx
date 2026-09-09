@@ -55,9 +55,7 @@ export default function Onboarding({ onDone }) {
           {SLIDES.map((slide) => (
             <View key={slide.key} style={{ width }} className="flex-1 justify-center px-8">
               <View className="w-full max-w-read self-center gap-6">
-                {/* 案内の面は字と同じ流れに置いてある。
-                    **板を敷くと見出しの前に四角が立つ**ので敷かない */}
-                <LanternMark size={34} tile={false} />
+                <LanternMark size={34} />
                 <Text className="font-display text-headline-md text-on-surface leading-relaxed">
                   {slide.title}
                 </Text>

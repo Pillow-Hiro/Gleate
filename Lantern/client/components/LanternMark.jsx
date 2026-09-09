@@ -1,5 +1,5 @@
-import { View } from 'react-native'
 import Svg, { Circle, Line } from 'react-native-svg'
+import { useThemeContext } from '../lib/theme'
 
 // 灯りのしるし。
 //
@@ -8,32 +8,22 @@ import Svg, { Circle, Line } from 'react-native-svg'
 //
 // 中心の丸と8本の線だけ。細かくすると小さい寸法で潰れる。
 //
-// ## 地を暗くする（2026-09-09・作者の指示「画面左上のアイコンも変えて」）
+// ## 板は敷かない（2026-09-09・作者の指示
+// 「左上のしるしは白のとき、黒い板いらないです」）
 //
-// アイコンを暗い地の灯りに変えた（`scripts/build_icon.py`）。
-// **しるしだけ明るい地のままだと、同じものに見えない。**
+// 一度、小さな暗い板に載せた——アイコンを暗い地に変えたので、
+// **しるしだけ明るいままだと同じものに見えない**と考えたため。
+// **画面の上では余計だった。**明るい紙の上に黒い四角がひとつ立つ。
 //
-// **光は暗さがあって初めて光になる。**明るい地の上では、
-// にじみも芯の白抜きも効かない（アイコンを決めるときに試した）。
-// だから**しるしごと小さな暗い板に載せる**——アイコンをそのまま
-// 小さくしたものになる。
+// 代わりに、**暗いテーマのときだけ芯を白く抜く。**
+// そこでは画面そのものが暗い地なので、板を敷かなくても光源に見える
+// ——アイコンと同じ理屈で、板の役は画面がしている。
 //
-// `tile={false}` で昔の形（地なし）にも戻せる。暗い面の上に置くときや、
-// 一色で描きたいときに使う。
-export default function LanternMark({ size = 28, color = '#FBB03B', tile = true }) {
-  if (tile) {
-    // 板の大きさに対してしるしは 0.62——アイコンと同じ比
-    const inner = Math.round(size * 0.62)
-    return (
-      <View
-        className="items-center justify-center rounded-lg"
-        style={{ width: size, height: size, backgroundColor: '#1C1C1E' }}
-      >
-        <Glyph size={inner} color={color} core />
-      </View>
-    )
-  }
-  return <Glyph size={size} color={color} />
+// **明るいテーマでは何もしない。**光は暗さがあって初めて光になるので、
+// 白い紙の上で芯を抜いても濁るだけ。
+export default function LanternMark({ size = 28, color = '#FBB03B' }) {
+  const { isDark } = useThemeContext()
+  return <Glyph size={size} color={color} core={isDark} />
 }
 
 function Glyph({ size, color, core = false }) {
