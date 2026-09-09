@@ -168,13 +168,22 @@ PAD_SHOTS = [
     ('20260822_182358000_iOS.png', '創作の日々に、静かに伴走する。',       '4_login'),
 ]
 
-print('--- iPhone 6.5"  1284x2778 ---')
-for src, cap, name in CAPTIONS:
-    build(src, cap, (1284, 2778), f'store_framed/iphone_6.5/{name}.png',
-          shot_w=1030, shot_top=480, band=(120, 400), font_px=68, radius=56)
+def main():
+    print('--- iPhone 6.5"  1284x2778 ---')
+    for src, cap, name in CAPTIONS:
+        build(src, cap, (1284, 2778), f'store_framed/iphone_6.5/{name}.png',
+              shot_w=1030, shot_top=480, band=(120, 400), font_px=68, radius=56)
 
-for folder, size in [('ipad_12.9', (2048, 2732)), ('ipad_13', (2064, 2752))]:
-    print(f'--- iPad {folder}  {size[0]}x{size[1]} ---')
-    for src, cap, name in PAD_SHOTS:
-        build(src, cap, size, f'store_framed/{folder}/{name}.png',
-              shot_w=1500, shot_top=510, band=(130, 430), font_px=92, radius=48)
+    for folder, size in [('ipad_12.9', (2048, 2732)), ('ipad_13', (2064, 2752))]:
+        print(f'--- iPad {folder}  {size[0]}x{size[1]} ---')
+        for src, cap, name in PAD_SHOTS:
+            build(src, cap, size, f'store_framed/{folder}/{name}.png',
+                  shot_w=1500, shot_top=510, band=(130, 430), font_px=92, radius=48)
+
+
+
+# **取り込んだだけで走らせない**（2026-09-09）。
+# `hide_status_bar` を他から使いたくて import したら、
+# **その場で枠の作り直しが全部走った。**道具は道具として貸せるようにする。
+if __name__ == '__main__':
+    main()
