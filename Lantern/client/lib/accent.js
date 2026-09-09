@@ -203,6 +203,21 @@ export function accentSwatch(id, isDark) {
   return (isDark ? accent.dark : accent.light).glow
 }
 
+/**
+ * 灯り色を**そのまま使える形**で返す（2026-09-09）。
+ *
+ * `accentSwatch` が返すのは `"251 176 59"` という空白区切りの三つ組。
+ * CSS 変数に流し込むための形で、**色として渡すと無効になる。**
+ * `SwatchPicker` は `rgb(${swatch})` と包んでいたが、**包むことを
+ * 知らずに SVG の `stroke` へ直に渡し、記号が消えた**（`Tile`・`Horizon`）。
+ *
+ * 包む側が知っていなければいけない、という作りが間違っていた。
+ * **色が要るところはこちらを呼ぶ。**
+ */
+export function accentColor(id, isDark) {
+  return `rgb(${accentSwatch(id, isDark)})`
+}
+
 // 役目 → `global.css` の変数名。**1つの役目が複数の名前を持つ。**
 //
 // 名前が重なっているのは移行の名残り（`global.css` の表）。

@@ -6,7 +6,7 @@ import { ScreenFade } from '../../components/Motion'
 import WriteButton from '../../components/WriteButton'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { useThemeContext } from '../../lib/theme'
-import { accentSwatch } from '../../lib/accent'
+import { accentColor } from '../../lib/accent'
 import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -57,7 +57,7 @@ export default function Home() {
   // 絵をテーマで入れ替える（問いのカード）
   const { accent, isDark } = useThemeContext()
   // 節の記号に使う灯り色（アクセントに追従）
-  const glow = accentSwatch(accent, isDark)
+  const glow = accentColor(accent, isDark)
   const tabInset = useTabBarInset()
   const router = useRouter()
   const [logs, setLogs] = useState([])
@@ -240,7 +240,7 @@ export default function Home() {
             <Tile
               Icon={Back}
               count={logs.length}
-              title="過去の灯りを振り返る"
+              title="過去の記録"
               sub="記録をたどる"
               onPress={() => router.push('/journal')}
             />

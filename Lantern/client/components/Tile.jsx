@@ -1,8 +1,8 @@
 import { Pressable, View } from 'react-native'
-import Svg, { Circle, Line, Path, Polyline } from 'react-native-svg'
+import Svg, { Circle, Path, Polyline } from 'react-native-svg'
 import Text from './Text'
 import { useThemeContext } from '../lib/theme'
-import { accentSwatch } from '../lib/accent'
+import { accentColor } from '../lib/accent'
 
 // ホームの2枚（2026-09-09・作者の指示「画像のをベースに数字を目立たせる」）。
 //
@@ -16,18 +16,25 @@ import { accentSwatch } from '../lib/accent'
 //
 // 数が無いときは `—`。**0 と「まだ読めていない」を混同させない。**
 
+// 記号は案 `lantern_2` から写した（2026-09-09・作者の指示）。
+// **本＝記録、鉛筆＝置くこと。**あちらの下の帯と「ノートを開いて応える」で
+// 使われているもので、**同じ意味の所に同じ形**が来る。
+
 export function Back({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+        d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
         stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
+        strokeWidth="1.75"
         strokeLinejoin="round"
       />
-      <Path d="M3 3v5h5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <Polyline points="12 7 12 12 15 15" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
     </Svg>
   )
 }
@@ -35,13 +42,13 @@ export function Back({ color }) {
 export function Bulb({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 20h9" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
       <Path
-        d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"
+        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
         stroke={color}
-        strokeWidth="1.8"
+        strokeWidth="1.75"
         strokeLinejoin="round"
       />
-      <Line x1="9" y1="21" x2="15" y2="21" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   )
 }
@@ -66,7 +73,7 @@ export function Clock({ color }) {
 
 export default function Tile({ Icon, count, title, sub, onPress }) {
   const { accent, isDark } = useThemeContext()
-  const glow = accentSwatch(accent, isDark)
+  const glow = accentColor(accent, isDark)
 
   return (
     <Pressable

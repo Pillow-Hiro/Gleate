@@ -29,9 +29,20 @@ import { useThemeContext } from '../lib/theme'
 // **片方を変えたら両方を変えること。**
 const SURFACE = { light: '#FFFFFF', dark: '#121415' }
 
-// 絵の高さ。**問いより大きくしない**（2026-09-09・作者から
-// 「写真のサイズが大きすぎる」と言われた寸法から下げてある）
-const BAND = 150
+// 帯の高さ。案（`lantern_1`）の `h-[130px]` をそのまま。
+//
+// **絵は帯の中だけ。**下の行き先の裏には回らない
+// （2026-09-09・作者から「写真のサイズとか諸々が合ってない」）。
+// 一度、絵を幅78%・高さ150で敷き、**ボタンの裏に人物の顔が
+// 覗いていた。**案では帯とボタンは別の段になっている。
+const BAND = 130
+
+// 絵の幅。案は `w-44`（176px）で、面の幅のおよそ27%。
+// こちらの問いは案より字が大きいので、**少しだけ狭くする**
+const ART_WIDTH = '46%'
+
+// 字の幅。**絵と重ならない所で止める**
+const TEXT_WIDTH = '60%'
 
 export default function PromptCard({ question, onWrite, onIdea }) {
   const { isDark } = useThemeContext()
@@ -39,8 +50,10 @@ export default function PromptCard({ question, onWrite, onIdea }) {
 
   return (
     <View className="bg-surface-lowest border border-border rounded-lg overflow-hidden shadow-bloom">
-      <View style={{ height: BAND }}>
-        {/* 絵。**右に寄せる。**人物が中央に来ると字と重なる */}
+      <View style={{ height: BAND, overflow: 'hidden' }}>
+        {/* 絵。**右に寄せる。**人物が中央に来ると字と重なる。
+            `overflow: 'hidden'` を明示する——RN の既定は `visible` で、
+            **絵が帯からはみ出す** */}
         <Image
           source={
             isDark
@@ -48,7 +61,7 @@ export default function PromptCard({ question, onWrite, onIdea }) {
               : require('../assets/prompt-day.jpg')
           }
           accessibilityLabel="灯りを提げて歩く人"
-          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '78%' }}
+          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: ART_WIDTH }}
           resizeMode="cover"
         />
 
@@ -69,8 +82,14 @@ export default function PromptCard({ question, onWrite, onIdea }) {
         </Svg>
 
         {/* 問い。**絵の上ではなく、溶けた面の上に置く** */}
-        <View className="flex-1 justify-center px-5" style={{ width: '68%' }}>
-          <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
+        <View className="flex-1 justify-center px-5" style={{ width: TEXT_WIDTH }}>
+          {/* 案は `text-xs`。こちらは問いを読ませる面なので大きくするが、
+              **帯からあふれない大きさ**にする（`body-md`）。
+              3行を超えるなら切る——**あふれた字は読めない** */}
+          <Text
+            className="font-strong text-body-md text-on-surface leading-relaxed"
+            numberOfLines={3}
+          >
             {question}
           </Text>
         </View>
@@ -78,7 +97,7 @@ export default function PromptCard({ question, onWrite, onIdea }) {
 
       {/* 2つの行き先。**どちらも面は塗らない**——`CLAUDE.md`
           「1画面に灯り色を2箇所以上置かない」（この画面の塗りは今日の灯り） */}
-      <View className="flex-row gap-2.5 px-5 pb-5 pt-1">
+      <View className="flex-row gap-2.5 px-5 py-4">
         <Pressable
           onPress={onWrite}
           accessibilityLabel={`${question} について書く`}
