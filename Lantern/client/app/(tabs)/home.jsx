@@ -213,9 +213,8 @@ export default function Home() {
             を守る（この画面の琥珀は今日の灯りだけ）。 */}
         {question ? (
           <View>
-            <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">
-              今日の問い
-            </Text>
+            {/* **見出しはカードの中にある**（2026-09-09・案 `lantern_2`）。
+                外にも置くと同じ字が2つ並ぶ */}
             {/* **全画面へ直に行く**（2026-09-03）。
                 それまでは「書く」タブへ送っていたが、書く場所が
                 全画面に移ったので、そこで**もう一度押させる**ことになる。
