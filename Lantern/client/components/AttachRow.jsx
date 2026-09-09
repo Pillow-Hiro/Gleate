@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { ActivityIndicator, Linking, Modal, Pressable, TextInput, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import Sheet from './Sheet'
@@ -289,8 +297,27 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
-      <Sheet visible={seeking} onClose={() => setSeeking(false)}>
-          <View className="gap-4">
+      {/* **真ん中に置く**（2026-09-09・作者の指示
+          「リンクを貼る時みたいに真ん中に入力フィールドを置く」）。
+
+          下から出す面につまみを付けて引き上げられるようにしたが、
+          **効いていなかった**——つまみの `PanResponder` を親の
+          `Pressable` が先に取っていた。作者から「タブの昇降ができない」。
+
+          リンクを貼る面と同じ作りにする。**このアプリで既に動いている形**で、
+          仕組みを増やさない。結果は中で流す（下の `max-h-64`）。 */}
+      <Modal
+        visible={seeking}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setSeeking(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 justify-center px-6"
+          style={{ paddingBottom: keyboardHeight }}
+          onPress={() => setSeeking(false)}
+        >
+          <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
             {/* **閉じるを上にも置く。**下は結果とキーボードで埋まるので、
                 指がいちばん届きにくい所に唯一の出口があった */}
             <View className="flex-row items-center">
@@ -310,7 +337,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             </View>
             {/* **何が外に出るかを書く。**黙って送らない、と決めてある */}
             <Text className="text-label-md text-outline leading-relaxed">
-              曲名か演者を入れて、押すと探します。送るのは打った言葉だけで、
+              曲名かアーティストを入れて、押すと探します。送るのは打った言葉だけで、
               記録の中身は送りません。
             </Text>
 
@@ -318,7 +345,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               <TextInput
                 value={term}
                 onChangeText={setTerm}
-                placeholder="曲名、演者"
+                placeholder="曲名、アーティスト"
                 placeholderTextColor="#8E8478"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -341,10 +368,9 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 <ActivityIndicator color={INK} />
               </View>
             ) : songs.length > 0 ? (
-              // 面ごと流れるので、ここでは高さを決めない
-              // （`components/Sheet.jsx` が持つ）。**入れ子にすると
-              // どちらが動くのか分からなくなる**
-              <View>
+              // **面の中で流す。**真ん中の面は伸びないので、
+              // 結果が多いときはここが動く
+              <ScrollView className="max-h-64" keyboardShouldPersistTaps="handled">
                 {songs.map((song, i) => (
                   <Pressable
                     key={song.url}
@@ -363,7 +389,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                     ) : null}
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
             ) : offline ? (
               <Text className="text-label-md text-error py-2">
                 いまは探せません。リンクを貼るほうは使えます。
@@ -394,8 +420,9 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 ))}
               </View>
             ) : null}
-          </View>
-      </Sheet>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </>
   )
 }

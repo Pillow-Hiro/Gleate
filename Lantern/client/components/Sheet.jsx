@@ -1,76 +1,43 @@
-import { useRef, useState } from 'react'
-import { Modal, PanResponder, Pressable, ScrollView, View } from 'react-native'
+import { Modal, Pressable, ScrollView, View } from 'react-native'
 import { useKeyboardHeight } from '../lib/keyboard'
 
-// 下から出る面。**上へ引き上げられる**（2026-09-06・作者の指示
-// 「Apple musicから探すのタブを上に引っ張りあげられるようにして。
-// 添えるも同様に」）。
+// 下から出る面。
 //
-// ## なぜ要るか
+// ## つまみで引き上げる作りをやめた（2026-09-09）
 //
-// 探した結果が並ぶと、面の丈が足りない。キーボードも出ているので
-// **見える所がさらに狭い。**畳んだままだと2〜3件しか見えない。
+// つまみを掴んで伸ばせるようにしたが、**効いていなかった**——
+// `PanResponder` を親の `Pressable` が先に取っていた。
+// 作者から「タブの昇降ができない」。
 //
-// ## 引き上げ方
+// **動かないつまみを残さない。**触れそうに見えて触れないものは、
+// 無いより悪い。曲を探す面は真ん中へ移した（`AttachRow`）ので、
+// ここに残るのは**添えるものを選ぶ短い一覧だけ。**伸ばす必要が無い。
 //
-// つまみを掴んで動かす。**離した時点で決める**——上へ動かしていれば
-// 伸ばし、下へ動かしていれば縮める。縮み切っていれば閉じる。
-//
-// 途中の丈は作らない。**指に追わせると、指を離した所で半端に止まる。**
-// 二段だけにすれば、どちらの状態かが常にはっきりする。
+// 丈が足りなければ中で流す。
 //
 // ## キーボード
 //
 // 測って自分で空ける（`lib/keyboard.js` の註釈）。
 // `KeyboardAvoidingView` はこの構成では当てにできない。
-const TALL = '88%'
+// 面の丈の上限。**これを超えたら中で流す**
+const MAX = '88%'
 
 export default function Sheet({ visible, onClose, children }) {
   const keyboardHeight = useKeyboardHeight()
-  const [tall, setTall] = useState(false)
-
-  // **掴んだ指の向きだけを見る。**丈は離してから決める
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8,
-      onPanResponderRelease: (_e, g) => {
-        if (g.dy < -40) {
-          setTall(true)
-          return
-        }
-        if (g.dy > 40) {
-          // **伸びていれば縮める。畳んでいれば閉じる。**
-          // 一度の動きで消えると、触っただけのつもりの人が戸惑う
-          setTall((was) => {
-            if (was) return false
-            onClose?.()
-            return false
-          })
-        }
-      },
-    }),
-  ).current
-
-  function close() {
-    setTall(false)
-    onClose?.()
-  }
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={close}>
-      <Pressable className="flex-1 bg-black/50 justify-end" onPress={close}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <Pressable className="flex-1 bg-black/50 justify-end" onPress={onClose}>
         <Pressable
           className="bg-surface rounded-t-2xl"
           style={{
             paddingBottom: keyboardHeight > 0 ? keyboardHeight + 16 : 32,
-            ...(tall ? { height: TALL } : { maxHeight: TALL }),
+            maxHeight: MAX,
           }}
           onPress={() => {}}
         >
-          {/* つまみ。**掴む所を広く取る**——線だけだと当たらない */}
-          <View {...pan.panHandlers} className="items-center pt-3 pb-2">
-            <View className="w-10 h-1 rounded-full bg-outline-variant" />
-          </View>
+          {/* 上の余白。**つまみは置かない**（掴めないものを見せない） */}
+          <View className="pt-5" />
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
