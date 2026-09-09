@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native'
+import { Image, Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
@@ -261,8 +261,30 @@ export default function Home() {
               // 影は `shadow-bloom`（この画面の他のカードと同じ）。
               // **新しい影を足さない**——1つの画面に2種類の浮き方があると、
               // 手前と奥が読めなくなる。
-              className="bg-surface-lowest border border-border rounded-lg px-6 py-7 gap-3 shadow-bloom active:opacity-80"
+              className="bg-surface-lowest border border-border rounded-lg overflow-hidden shadow-bloom active:opacity-80"
             >
+              {/* 灯りを提げて歩く人（2026-09-09・作者が用意した絵）。
+                  Stitch の案 `lantern_3` の構図をそのまま。
+
+                  **暗い絵を白い面の頭に置く。**明るい地に合わせて明るい絵に
+                  しようとしたが、**自動で色を替えると壊れる**——人物と空が
+                  同じ明るさなので、色だけでは分けられない。人物が白く飛び、
+                  光が黒い輪になった。**出せないものは出さない。**
+
+                  そもそも案がそうなっている。**暗い絵が白い紙の上にある**
+                  ——灯りが暗がりにある、というこの絵のままの構図が、
+                  アプリの名前と重なる。
+
+                  比は 1376:768（元の絵のまま）。`cover` で幅に合わせる */}
+              <Image
+                source={require('../../assets/prompt-night.jpg')}
+                accessibilityLabel="灯りを提げて夜を歩く人"
+                className="w-full"
+                style={{ aspectRatio: 1376 / 768 }}
+                resizeMode="cover"
+              />
+
+              <View className="px-6 py-6 gap-3">
               {/* 問いは**太く**（Stitch の案）。それまで本文と同じ細さで、
                   **カードの中でいちばん強いものが問いに見えなかった。**
                   大きさは変えない——19px は「じっくり読むため」の寸法で、
@@ -283,6 +305,7 @@ export default function Home() {
                   山括弧は「この先がある」の記号で、灯り色の字と合わせて
                   ここだけが押せる場所だと分かる。 */}
               <Text className="text-label-md text-primary">書きはじめる ›</Text>
+              </View>
             </Pressable>
           )}
 
