@@ -55,10 +55,16 @@ export default function PromptCard({ question, onWrite, onIdea }) {
             `overflow: 'hidden'` を明示する——RN の既定は `visible` で、
             **絵が帯からはみ出す** */}
         <Image
+          // **枠に合わせて切った絵**（2026-09-09・作者から「絵がまったく
+          // 認識できない」）。元の絵は 1.79:1 の横長で、細い枠に
+          // `cover` で入れると**真ん中の空だけが残り、人物が枠の外**へ出た。
+          //
+          // 枠は およそ 1.2:1。**人物と灯りが入る所を切って**別の絵にした
+          // （`prompt-*-card.jpg`）。書くタブは幅いっぱいなので元の絵のまま
           source={
             isDark
-              ? require('../assets/prompt-night.jpg')
-              : require('../assets/prompt-day.jpg')
+              ? require('../assets/prompt-night-card.jpg')
+              : require('../assets/prompt-day-card.jpg')
           }
           accessibilityLabel="灯りを提げて歩く人"
           style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: ART_WIDTH }}

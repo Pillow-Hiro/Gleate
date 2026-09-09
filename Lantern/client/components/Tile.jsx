@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native'
-import Svg, { Circle, Path, Polyline } from 'react-native-svg'
+import Svg, { Circle, Path, Polyline, Rect } from 'react-native-svg'
 import Text from './Text'
 import { useThemeContext } from '../lib/theme'
 import { accentColor } from '../lib/accent'
@@ -16,25 +16,29 @@ import { accentColor } from '../lib/accent'
 //
 // 数が無いときは `—`。**0 と「まだ読めていない」を混同させない。**
 
-// 記号は案 `lantern_2` から写した（2026-09-09・作者の指示）。
-// **本＝記録、鉛筆＝置くこと。**あちらの下の帯と「ノートを開いて応える」で
-// 使われているもので、**同じ意味の所に同じ形**が来る。
+// 記号は**タブと同じ形**（2026-09-09・作者の指示
+// 「記号の形をタブのアイコンと同じにしてください」）。
+//
+// タブは SF Symbols を native で出している（`app/(tabs)/_layout.jsx`）
+// ——記録が `book.closed`、書くが `pencil`。**同じ絵柄を描き写す。**
+//
+// 一度は案 `lantern_2` の記号を使ったが、**タブの記号と少し違う形**に
+// なっていた。同じ場所を指すものが2つの形を持つと、繋がりが読めない。
 
 export function Back({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
+      {/* `book.closed` — 閉じた本。外枠と、左寄りの背 */}
+      <Rect
+        x="4.5"
+        y="3"
+        width="15"
+        height="18"
+        rx="2.4"
         stroke={color}
         strokeWidth="1.75"
-        strokeLinejoin="round"
       />
-      <Path
-        d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
-        stroke={color}
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
+      <Path d="M8.2 3v18" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
     </Svg>
   )
 }
@@ -42,9 +46,10 @@ export function Back({ color }) {
 export function Bulb({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 20h9" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
+      {/* `pencil` — 斜めの鉛筆。**下の横線は付けない**
+          （あれは `pencil.line` で、タブのものとは別） */}
       <Path
-        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+        d="M4 20l1-4L16.5 4.5a2.12 2.12 0 013 3L8 19l-4 1z"
         stroke={color}
         strokeWidth="1.75"
         strokeLinejoin="round"
