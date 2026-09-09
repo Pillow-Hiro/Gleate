@@ -4,6 +4,7 @@ import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
+import { useThemeContext } from '../../lib/theme'
 import { useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
@@ -44,6 +45,8 @@ function formatDateJa(date) {
 }
 
 export default function Home() {
+  // 絵をテーマで入れ替える（下の問いのカード）
+  const { isDark } = useThemeContext()
   // すりガラスのタブバーは内容の上に浮くので、その分だけ下を空ける
   const tabInset = useTabBarInset()
   // キーボードに隠れないよう、出ている高さを測る
@@ -266,19 +269,23 @@ export default function Home() {
               {/* 灯りを提げて歩く人（2026-09-09・作者が用意した絵）。
                   Stitch の案 `lantern_3` の構図をそのまま。
 
-                  **暗い絵を白い面の頭に置く。**明るい地に合わせて明るい絵に
-                  しようとしたが、**自動で色を替えると壊れる**——人物と空が
-                  同じ明るさなので、色だけでは分けられない。人物が白く飛び、
-                  光が黒い輪になった。**出せないものは出さない。**
+                  **テーマで入れ替える。**明るい紙には明るい版、
+                  暗い紙には夜の版。**同じ構図で、地だけが違う。**
 
-                  そもそも案がそうなっている。**暗い絵が白い紙の上にある**
-                  ——灯りが暗がりにある、というこの絵のままの構図が、
-                  アプリの名前と重なる。
+                  一度は暗い版だけで済ませようとし、機械で色を替えて
+                  明るい版を作ろうとして**壊した**——人物と空が同じ明るさ
+                  （どちらも明度 0.2 前後の紫）で、色だけでは分けられない。
+                  人物が白く飛び、光が黒い輪になった。
+                  **作者が描き直したものが正しい。**
 
                   比は 1376:768（元の絵のまま）。`cover` で幅に合わせる */}
               <Image
-                source={require('../../assets/prompt-night.jpg')}
-                accessibilityLabel="灯りを提げて夜を歩く人"
+                source={
+                  isDark
+                    ? require('../../assets/prompt-night.jpg')
+                    : require('../../assets/prompt-day.jpg')
+                }
+                accessibilityLabel="灯りを提げて歩く人"
                 className="w-full"
                 style={{ aspectRatio: 1376 / 768 }}
                 resizeMode="cover"
