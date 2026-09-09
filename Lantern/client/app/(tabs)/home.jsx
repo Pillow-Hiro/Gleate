@@ -53,6 +53,8 @@ export default function Home() {
   const tabInset = useTabBarInset()
   const router = useRouter()
   const [logs, setLogs] = useState([])
+  // 置いたアイデアの数。**取れなければ null のまま**（上の註釈）
+  const [ideaCount, setIdeaCount] = useState(null)
   const [quote, setQuote] = useState('')
   // 今日の問い。**同じ日は同じ問い**（サーバーが日付から選ぶ）なので、
   // 書く画面が出すものと必ず一致する。渡す必要がない
@@ -83,6 +85,21 @@ export default function Home() {
   // 戻ってくるたびに全面が読み込み中に戻ると、画面が瞬いて
   // 「開き直された」ように見える。取り直しは静かに済ませる。
   const firstLoad = useRef(true)
+
+  // 置いたアイデアの数を取る（2026-09-09）。
+  // **失敗しても黙る。**ホームの他の中身は取れているので、
+  // 数が出ないだけにする（`ideaCount` は null のまま）
+  useEffect(() => {
+    let cancelled = false
+    authFetch('/api/ideas')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data && data.ideas
+        if (!cancelled && Array.isArray(list)) setIdeaCount(list.length)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -198,12 +215,51 @@ export default function Home() {
             <Pressable
               onPress={() => router.push({ pathname: '/write', params: { question } })}
               accessibilityLabel={`${question} について書く`}
-              className="bg-surface-lowest border border-outline-variant rounded-lg px-5 py-4 gap-3 active:opacity-70"
+              // **書くタブの問いと同じ姿に**（2026-09-09・Stitch の案）。
+              // 同じ役目のものが2つの画面で違って見えていた。
+              // 縁は薄く、影で浮かせ、**問いを太く**する
+              className="bg-surface-lowest border border-border rounded-lg px-5 py-5 gap-3 shadow-bloom active:opacity-70"
             >
-              <Text className="text-body-md text-on-surface leading-relaxed">
+              <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
                 {question}
               </Text>
               <Text className="text-label-md text-primary">これについて書く ›</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* 溜まっているもの（2026-09-09・Stitch の案 `lantern_1`）。
+            **数えるのは「これまで」だけ。**続いた日数や今週の達成は
+            出さない——`CLAUDE.md` が禁じている（Streak を煽る演出）。
+            ここにあるのは**振り返る入口**であって、発奮させる的ではない。
+
+            アイデアの数は別に取りに行く。**取れなければ数を出さない**
+            ——ホームを1つの失敗で止めない。 */}
+        {!loading && logs.length > 0 ? (
+          <View className="flex-row gap-3">
+            <Pressable
+              onPress={() => router.push('/journal')}
+              accessibilityLabel="これまでの記録を見る"
+              className="flex-1 bg-surface-lowest border border-border rounded-lg px-4 py-4 shadow-bloom active:opacity-70"
+            >
+              <Text className="font-strong text-headline-md text-on-surface">
+                {logs.length}
+              </Text>
+              <Text className="text-label-md text-on-surface-variant mt-1">
+                これまでの記録
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/')}
+              accessibilityLabel="アイデアを見る"
+              className="flex-1 bg-surface-lowest border border-border rounded-lg px-4 py-4 shadow-bloom active:opacity-70"
+            >
+              <Text className="font-strong text-headline-md text-on-surface">
+                {ideaCount == null ? '—' : ideaCount}
+              </Text>
+              <Text className="text-label-md text-on-surface-variant mt-1">
+                置いたアイデア
+              </Text>
             </Pressable>
           </View>
         ) : null}
