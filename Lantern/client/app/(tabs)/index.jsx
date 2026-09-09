@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
 import { useThemeContext } from '../../lib/theme'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs } from '../../lib/logsCache'
 import { MAX_RECORDS_PER_DAY, calcStreak, isDayFull, logsOfDay, todayStr } from '../../lib/date'
@@ -58,7 +58,19 @@ export default function Home() {
   // アイデアは 2026-08-08 に「記録」から移した。
   // 思いついた瞬間に置くものなので、書く場所にある方が自然。
   // 「記録」は残したものを見る場所であって、置く場所ではなかった。
-  const [writeTab, setWriteTab] = useState('record')
+  // **外から「アイデアを開いて」と言える**（2026-09-09・作者の報告
+  // 「1行で置くはアイデアに直接遷移していない」）。
+  // それまで `/` へ送るだけで、着いた先は必ず「記録」だった。
+  // ホームの「1行で置く」は `?tab=ideas` を付けて呼ぶ
+  const params = useLocalSearchParams()
+  const [writeTab, setWriteTab] = useState(
+    params.tab === 'ideas' ? 'ideas' : 'record',
+  )
+
+  // 押されるたびに開き直す。**同じ画面に居ても切り替わる**
+  useEffect(() => {
+    if (params.tab === 'ideas') setWriteTab('ideas')
+  }, [params.tab])
   // 手がかりの枠を使い切ったときだけ出す（`components/HintPanel.jsx`）
   const [hintPaywall, setHintPaywall] = useState('')
 

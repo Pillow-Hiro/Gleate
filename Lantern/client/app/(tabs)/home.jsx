@@ -255,7 +255,9 @@ export default function Home() {
                     </Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => router.push('/')}
+                    // **アイデアを開いた状態で着く**（2026-09-09）。
+                    // `/` だけだと必ず「記録」側が開いていた
+                    onPress={() => router.push({ pathname: '/', params: { tab: 'ideas' } })}
                     accessibilityLabel="1行で置く"
                     className="border border-outline-variant rounded-full px-4 py-2.5 items-center active:opacity-70"
                   >
@@ -289,7 +291,7 @@ export default function Home() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push('/')}
+              onPress={() => router.push({ pathname: '/', params: { tab: 'ideas' } })}
               accessibilityLabel="アイデアを見る"
               className="flex-1 bg-surface-lowest border border-border rounded-lg px-4 py-4 shadow-bloom active:opacity-70"
             >
