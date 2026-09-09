@@ -1,5 +1,4 @@
 import Svg, { Circle, Line } from 'react-native-svg'
-import { useThemeContext } from '../lib/theme'
 
 // 灯りのしるし。
 //
@@ -15,15 +14,14 @@ import { useThemeContext } from '../lib/theme'
 // **しるしだけ明るいままだと同じものに見えない**と考えたため。
 // **画面の上では余計だった。**明るい紙の上に黒い四角がひとつ立つ。
 //
-// 代わりに、**暗いテーマのときだけ芯を白く抜く。**
-// そこでは画面そのものが暗い地なので、板を敷かなくても光源に見える
-// ——アイコンと同じ理屈で、板の役は画面がしている。
+// 代わりに、**芯を白く抜く。**アイコンと同じ形になる。
 //
-// **明るいテーマでは何もしない。**光は暗さがあって初めて光になるので、
-// 白い紙の上で芯を抜いても濁るだけ。
+// **明暗のどちらでも抜く**（2026-09-09・作者の指示
+// 「白い紙の上でも芯を抜いて」）。一度は暗いときだけにした
+// ——白の上では濁ると考えたため。**そうはならなかった。**
+// 小さく描くと、抜いた芯は「濁り」ではなく「灯心」に見える。
 export default function LanternMark({ size = 28, color = '#FBB03B' }) {
-  const { isDark } = useThemeContext()
-  return <Glyph size={size} color={color} core={isDark} />
+  return <Glyph size={size} color={color} core />
 }
 
 function Glyph({ size, color, core = false }) {

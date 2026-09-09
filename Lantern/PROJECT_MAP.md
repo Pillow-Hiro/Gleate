@@ -126,7 +126,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `SidebarTabBar.jsx` | (tabs)/_layout | 768px以上のサイドバー（192px） |
 | `TabIcons.jsx` | (tabs)/_layout.web / SidebarTabBar | **Web のタブのアイコン**（家／ノート／ペン／格子／歯車）。ネイティブは SF Symbols |
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
-| `Horizon.jsx` | 書く | 地平線と遠くの灯り。**絵として強くしない**——温度だけ足して、目は止めない |
 | `Sheet.jsx` | AttachRow | 下から出る面。**つまみで上へ引き上げられる**（探した結果が並ぶと丈が足りない） |
 | `SuggestCards.jsx` | RecordForm | 「日記の候補」で選んだものを**紙の上に置く。**本文には差し込まない——書く場所に自分の言葉でないものを混ぜない |
 | `Optional.jsx` | EditorToolbar | 添え物を囲う。**中で落ちても外は生き残る**——飾りのせいで書く道具が消えないように |
