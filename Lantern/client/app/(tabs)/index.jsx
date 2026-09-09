@@ -253,9 +253,21 @@ export default function Home() {
               // 「もう少し大きくてもいい」）。この画面でいちばん先に
               // 押してほしいものなので、いちばん大きい面にする。
               // 下に並ぶ記録のカードより背が高ければ、順番は目で分かる
-              className="bg-lantern-glow/5 border border-lantern-glow rounded-lg px-6 py-8 gap-4 active:opacity-80"
+              // **白い面に影**（2026-09-09・Stitch の案 `lantern_3` を参考に）。
+              // 灯り色の地と縁で「押すもの」を示していたが、
+              // **紙の上に置かれた1枚**に見えるほうが、書く場所として自然。
+              // 押せることは下の「書きはじめる ›」が言う。
+              //
+              // 影は `shadow-bloom`（この画面の他のカードと同じ）。
+              // **新しい影を足さない**——1つの画面に2種類の浮き方があると、
+              // 手前と奥が読めなくなる。
+              className="bg-surface-lowest border border-border rounded-lg px-6 py-7 gap-3 shadow-bloom active:opacity-80"
             >
-              <Text className="text-body-lg text-on-surface-variant leading-relaxed">
+              {/* 問いは**太く**（Stitch の案）。それまで本文と同じ細さで、
+                  **カードの中でいちばん強いものが問いに見えなかった。**
+                  大きさは変えない——19px は「じっくり読むため」の寸法で、
+                  問いはじっくり読むもの（`DESIGN.md`） */}
+              <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
                 {question || '今日どんなことをしましたか。'}
               </Text>
               {/* **「書くと、別の記録として残ります」は置かない**
