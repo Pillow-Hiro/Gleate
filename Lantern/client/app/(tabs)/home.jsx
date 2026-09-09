@@ -6,6 +6,7 @@ import { ScreenFade } from '../../components/Motion'
 import WriteButton from '../../components/WriteButton'
 import { attach as attachPhotos } from '../../lib/photoStore'
 import { useThemeContext } from '../../lib/theme'
+import { accentSwatch } from '../../lib/accent'
 import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
 import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
@@ -14,6 +15,8 @@ import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { loadLogs } from '../../lib/logsCache'
 import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
+import PromptCard from '../../components/PromptCard'
+import Tile, { Back, Book, Bulb } from '../../components/Tile'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
 import { dailySample } from '../../lib/sample'
@@ -52,7 +55,9 @@ const RECENT_LIMIT = 3
 
 export default function Home() {
   // 絵をテーマで入れ替える（問いのカード）
-  const { isDark } = useThemeContext()
+  const { accent, isDark } = useThemeContext()
+  // 節の記号に使う灯り色（アクセントに追従）
+  const glow = accentSwatch(accent, isDark)
   const tabInset = useTabBarInset()
   const router = useRouter()
   const [logs, setLogs] = useState([])
@@ -215,57 +220,11 @@ export default function Home() {
                 それまでは「書く」タブへ送っていたが、書く場所が
                 全画面に移ったので、そこで**もう一度押させる**ことになる。
                 問いも一緒に連れていく（欄のプレースホルダになる）。 */}
-            {/* **案 `lantern_2` の姿に**（2026-09-09・作者の指示）。
-                絵・太い問い・2つの行き先。書くタブの問いと同じ組み立て。
-
-                **塗りは増やさない。**`CLAUDE.md`「1画面に灯り色を
-                2箇所以上置かない。灯りは1つだから灯りである」——
-                この画面で琥珀に塗るのは今日の灯りだけ、という状態を保つ。
-                だから下の2つは**縁と字だけ**で、面は塗らない。
-                案では「ノートを開いて応える」が琥珀に塗られていたが、
-                そこは変えた。
-
-                案の「Day 48」「灯火の連続」は入れない——同じく
-                `CLAUDE.md` が禁じている（Streak を煽る演出）。 */}
-            <View className="bg-surface-lowest border border-border rounded-lg overflow-hidden shadow-bloom">
-              <Image
-                source={
-                  isDark
-                    ? require('../../assets/prompt-night.jpg')
-                    : require('../../assets/prompt-day.jpg')
-                }
-                accessibilityLabel="灯りを提げて歩く人"
-                style={{ width: '100%', height: 150 }}
-                resizeMode="cover"
-              />
-              <View className="px-5 py-5 gap-4">
-                <Text className="font-strong text-body-lg text-on-surface leading-relaxed">
-                  {question}
-                </Text>
-                {/* 2つの行き先。**書くか、1行で置くか。**
-                    案と同じ並びだが、どちらも面は塗らない（上の註釈） */}
-                <View className="flex-row gap-2.5">
-                  <Pressable
-                    onPress={() => router.push({ pathname: '/write', params: { question } })}
-                    accessibilityLabel={`${question} について書く`}
-                    className="flex-1 border border-lantern-glow rounded-full py-2.5 items-center active:opacity-70"
-                  >
-                    <Text className="font-strong text-label-md text-primary">
-                      これについて書く
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    // **アイデアを開いた状態で着く**（2026-09-09）。
-                    // `/` だけだと必ず「記録」側が開いていた
-                    onPress={() => router.push({ pathname: '/', params: { tab: 'ideas' } })}
-                    accessibilityLabel="1行で置く"
-                    className="border border-outline-variant rounded-full px-4 py-2.5 items-center active:opacity-70"
-                  >
-                    <Text className="text-label-md text-on-surface-variant">1行で置く</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
+            <PromptCard
+              question={question}
+              onWrite={() => router.push({ pathname: '/write', params: { question } })}
+              onIdea={() => router.push({ pathname: '/', params: { tab: 'ideas' } })}
+            />
           </View>
         ) : null}
 
@@ -278,30 +237,20 @@ export default function Home() {
             ——ホームを1つの失敗で止めない。 */}
         {!loading && logs.length > 0 ? (
           <View className="flex-row gap-3">
-            <Pressable
+            <Tile
+              Icon={Back}
+              count={logs.length}
+              title="過去の灯りを振り返る"
+              sub="記録をたどる"
               onPress={() => router.push('/journal')}
-              accessibilityLabel="これまでの記録を見る"
-              className="flex-1 bg-surface-lowest border border-border rounded-lg px-4 py-4 shadow-bloom active:opacity-70"
-            >
-              <Text className="font-strong text-headline-md text-on-surface">
-                {logs.length}
-              </Text>
-              <Text className="text-label-md text-on-surface-variant mt-1">
-                これまでの記録
-              </Text>
-            </Pressable>
-            <Pressable
+            />
+            <Tile
+              Icon={Bulb}
+              count={ideaCount}
+              title="アイデアの種"
+              sub="1行で置いたもの"
               onPress={() => router.push({ pathname: '/', params: { tab: 'ideas' } })}
-              accessibilityLabel="アイデアを見る"
-              className="flex-1 bg-surface-lowest border border-border rounded-lg px-4 py-4 shadow-bloom active:opacity-70"
-            >
-              <Text className="font-strong text-headline-md text-on-surface">
-                {ideaCount == null ? '—' : ideaCount}
-              </Text>
-              <Text className="text-label-md text-on-surface-variant mt-1">
-                置いたアイデア
-              </Text>
-            </Pressable>
+            />
           </View>
         ) : null}
 
@@ -327,7 +276,28 @@ export default function Home() {
             <Text className="text-label-md text-outline mt-1.5">「書く」から残せます。</Text>
           </View>
         ) : (
-          <View className="gap-4">
+          <View className="gap-2.5">
+            {/* **節として囲う**（2026-09-09・作者の指示
+                「過去の記録を『日替わりの抜粋』セクションとして囲いましょう」）。
+
+                それまでは記録が見出しも無く並んでいた。**なぜここに
+                この3件があるのかが、画面から読めなかった。**
+
+                役割は「過去の自分に偶然もう一度出会う」。日付を種に
+                その日ごとに選び、**開き直しても顔ぶれが変わらない**
+                （`lib/sample.js`）。名前がそれを言えているかは別の話。
+
+                右の英字は案（`lantern_1`）から。**読ませる字ではなく、
+                節の重さを決める字**——見出しを大きくせずに節だと分かる */}
+            <View className="flex-row items-center justify-between px-1 mb-1">
+              <View className="flex-row items-center gap-1.5">
+                <Book color={glow} />
+                <Text className="font-strong text-label-md text-on-surface">
+                  日替わりの抜粋
+                </Text>
+              </View>
+              <Text className="text-label-sm text-outline">Daily Curations</Text>
+            </View>
             {shown.map((log) => (
               <HomeCard key={log.id || log.date} log={log} />
             ))}
