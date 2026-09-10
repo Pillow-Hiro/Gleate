@@ -9,7 +9,7 @@ import { APP_VERSION } from '../constants'
 //
 // 組み込みの tabBarPosition="left" でもサイドバーにはなるが、
 // ロゴ・タグライン・バージョン・テーマ切替を差し込む場所が無く、
-// アクティブ色も既定の青のままで Lantern の配色から外れる。
+// アクティブ色も既定の青のままで Gleate の配色から外れる。
 // そのため描画だけ自前で持つ。項目の状態と遷移は Tabs 側から受け取る。
 //
 // 旧 frontend/src/components/Sidebar.jsx の移植。
@@ -64,7 +64,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
     >
       <View className="px-5 py-6 border-b border-border" style={{ borderBottomWidth: 1 }}>
         <Text className="font-display text-body text-on-surface" style={{ letterSpacing: 3 }}>
-          Lantern
+          Gleate
         </Text>
         <Text className="text-[10px] text-outline mt-1">あなたの道は、あなたが照らす。</Text>
       </View>
@@ -111,7 +111,7 @@ export default function SidebarTabBar({ state, descriptors, navigation }) {
         className="px-4 pb-5 pt-3 border-t border-border flex-row items-center justify-between"
         style={{ borderTopWidth: 1 }}
       >
-        <Text className="text-[10px] text-outline">Lantern {APP_VERSION}</Text>
+        <Text className="text-[10px] text-outline">Gleate {APP_VERSION}</Text>
         <Pressable
           onPress={toggleTheme}
           className="p-1 rounded"

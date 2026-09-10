@@ -63,7 +63,7 @@ export default function WeeklyDiscovery({ logs }) {
     <View>
       <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">今週の発見</Text>
       {/* **砂 → 灰 → 生成り**（2026-08-14 に二度変えた）。
-          砂は「Lanternの言葉」の色で、同じ画面に両方あるとどちらも
+          砂は「Gleateの言葉」の色で、同じ画面に両方あるとどちらも
           AI が書いたものに見えた。**ここは AI を使っていない。**
           灰にしたら「暖色系に」と言われたので、砂より一段濃い生成りにした。
           輪郭も持たせている。塗りの濃さだけで見分けさせない。 */}

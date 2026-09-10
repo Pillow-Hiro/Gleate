@@ -32,11 +32,11 @@ import { findPaper, paperVars } from '../lib/paper'
 // **起動画面が2回出ていた**（2026-08-14・実機）。
 //
 // OS の起動画面（`expo-splash-screen`）が消える → 読み込み中の丸が出る →
-// Lantern の起動画面が出る、という3段になっていた。
+// Gleate の起動画面が出る、という3段になっていた。
 // 目には「スプラッシュ → 別のスプラッシュ」と映る。
 //
 // OS の起動画面を**こちらで消すまで出したままにする。**
-// 判定が終わってから消せば、下から Lantern の起動画面が現れる。
+// 判定が終わってから消せば、下から Gleate の起動画面が現れる。
 // 間に何も挟まらないので、1回に見える。
 NativeSplash.preventAutoHideAsync().catch(() => {})
 
@@ -47,7 +47,7 @@ NativeSplash.preventAutoHideAsync().catch(() => {})
 // error.message は出さない。記録アプリで技術的な文字列を見せても
 // 利用者にできることが増えないため、状態だけを事実として伝える。
 export function ErrorBoundary({ error, retry }) {
-  console.error('[Lantern] 画面の描画に失敗', error)
+  console.error('[Gleate] 画面の描画に失敗', error)
 
   return (
     <View className="flex-1 bg-surface items-center justify-center px-6">

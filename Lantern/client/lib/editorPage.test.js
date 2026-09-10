@@ -38,7 +38,7 @@ describe('editorPage', () => {
   })
 
   // **タグで書かせる。** false にしないと WebKit が
-  // <span style="font-weight:700"> を作り、Lantern はそれを読まない
+  // <span style="font-weight:700"> を作り、Gleate はそれを読まない
   it('styleWithCSS を切っている', () => {
     expect(page()).toContain("execCommand('styleWithCSS', false, false)")
   })

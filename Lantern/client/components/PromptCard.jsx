@@ -27,9 +27,9 @@ import { accentColor } from '../lib/accent'
 // - **説明文を入れない**——案の文は「書き留めてみましょう」で終わる。
 //   「〇〇しましょう」は禁句（同）。**代わりの文を私が作らない**
 // - 見出しは「今日の灯り」ではなく**「今日の問い」**。
-//   Lantern では今日の灯りは別のもの（上の琥珀の面）で、
+//   Gleate では今日の灯りは別のもの（上の琥珀の面）で、
 //   **同じ名前を2つの意味に使わない**
-// - 札は「AIの問い」ではなく**「Lanternの問い」**。
+// - 札は「AIの問い」ではなく**「Gleateの問い」**。
 //   このアプリは自分のことを AI と呼ばない（`CLAUDE.md`）
 
 // 絵の高さ。案の `h-[142px]` をそのまま
@@ -92,7 +92,7 @@ export default function PromptCard({ question, onWrite, onIdea }) {
         {/* 札。**絵の左上**（案のとおり）。灯りの点と字だけ */}
         <View className="absolute top-3 left-3 flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/55 border border-outline-variant">
           <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: glow }} />
-          <Text className="text-label-sm text-white">Lanternの問い</Text>
+          <Text className="text-label-sm text-white">Gleateの問い</Text>
         </View>
       </View>
 
@@ -101,7 +101,7 @@ export default function PromptCard({ question, onWrite, onIdea }) {
         <Text className="text-label-sm text-primary mb-2">今日の問い</Text>
 
         {/* 問い。**太くしない**——案は `font-normal`。
-            17px は Lantern の `body-md` と同じ */}
+            17px は Gleate の `body-md` と同じ */}
         <Text className="text-body-md text-on-surface leading-relaxed mb-4">
           {question}
         </Text>

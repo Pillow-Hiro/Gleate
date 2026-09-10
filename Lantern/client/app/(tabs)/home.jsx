@@ -35,13 +35,13 @@ import * as notify from '../../lib/notify'
 // **その日のうちは同じ顔ぶれ**（`lib/sample.js`）。
 // 開き直すたびに変わると、さっき見た記録が消えたように見える。
 //
-// **出すのは結果だけ**（`HomeCard`）。やったこと・写真・Lanternの言葉。
+// **出すのは結果だけ**（`HomeCard`）。やったこと・写真・Gleateの言葉。
 // 4項目を全部並べると、読み返す画面ではなく点検する画面になる。
 // そのぶん枚数を3枚に絞り、1枚を大きくした。
 //
 // **上に今日の灯りを置く。**
 // デザイン案の Home は「小さなラベル＋大きな一行」で始まる。
-// Lantern でそこに当たるのは今日の灯り。
+// Gleate でそこに当たるのは今日の灯り。
 // 2026-08-12 に実機で「今日の灯りカードがない」と指摘された。
 //
 // **「書く」からは外した。** 同じものを2画面に置くと、
@@ -182,7 +182,7 @@ export default function Home() {
 
             琥珀で塗る。CLAUDE.md の「1画面に灯り色を2箇所以上置かない」は
             守れている — **この画面で琥珀に塗るのはここだけ。**
-            今週の発見は灰、Lanternの言葉は砂。3つとも地の色が違う。 */}
+            今週の発見は灰、Gleateの言葉は砂。3つとも地の色が違う。 */}
         <View>
           <Text className="font-strong text-label-md text-primary mb-2.5">今日の灯り</Text>
           <View className="bg-lantern-glow rounded-lg px-5 py-5 min-h-[88px] justify-center shadow-bloom">

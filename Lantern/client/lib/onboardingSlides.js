@@ -35,7 +35,7 @@ export const SLIDES = [
   },
   {
     key: 'quiet',
-    title: 'Lanternは、評価しません',
+    title: 'Gleateは、評価しません',
     body: '褒めません。励ましません。意味づけもしません。\n\n'
       + 'することは2つだけです。書いたものを並べ直すこと。\n'
       + '変わったところを示すこと。\n\n'

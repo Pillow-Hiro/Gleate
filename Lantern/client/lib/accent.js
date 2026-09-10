@@ -35,7 +35,7 @@
 // | `onInk` | `ink` を地にしたときの字 |
 // | `soft` | 淡い帯（節目・お知らせ） |
 // | `softInk` | その上の字 |
-// | `aiSurface` / `aiInk` | Lantern の言葉 |
+// | `aiSurface` / `aiInk` | Gleate の言葉 |
 // | `discoverySurface` / `discoveryInk` | 今週の発見 |
 export const ACCENTS = [
   {

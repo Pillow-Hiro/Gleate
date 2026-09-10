@@ -36,7 +36,7 @@ export function editorPage({ html, placeholder, color, muted, minHeight, autoFoc
 
   // **タグで書かせる。** これを false にしないと、WebKit は太字を
   // <span style="font-weight:700"> で表現することがある。
-  // Lantern は <b> と <i> しか読まないので、span だと装飾が消える。
+  // Gleate は <b> と <i> しか読まないので、span だと装飾が消える。
   try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
 
   function post(msg) {

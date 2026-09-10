@@ -286,9 +286,9 @@ export default function TwitchPanel() {
             )}
           </View>
 
-          {/* **「AIの観察」から「Lanternが見つけたこと」へ**（2026-08-14）。
+          {/* **「AIの観察」から「Gleateが見つけたこと」へ**（2026-08-14）。
               実機で「AIという単語に拒否反応があるかもしれない」と指摘された。
-              Lantern の AI は**静かな伴走者**であって、
+              Gleate の AI は**静かな伴走者**であって、
               「AI」という肩書きを名乗る理由がない。
               画面の他の場所（今日の灯り・今週の発見）も「AI」とは書いていない。
 
@@ -300,7 +300,7 @@ export default function TwitchPanel() {
               （`modules/ai.py` の【この観察の指針】）。見出しだけが強かった。 */}
           <View>
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="font-strong text-label-md text-primary">Lanternが観察したこと</Text>
+              <Text className="font-strong text-label-md text-primary">Gleateが観察したこと</Text>
               <Pressable
                 onPress={handleInsight}
                 disabled={insightLoading || !streams?.length}

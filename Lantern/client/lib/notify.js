@@ -98,7 +98,7 @@ export async function syncSchedule({ enabled, hour, minute = 0 }, recordedToday)
     await Notifications.scheduleNotificationAsync({
       content: {
         // 題を置かない。iOS はアプリ名を出すので、
-        // 「Lantern」を足すと同じ語が2回並ぶ
+        // 「Gleate」を足すと同じ語が2回並ぶ
         body: notifyBody(Math.floor(at.getTime() / 86400000)),
         sound: null,
       },

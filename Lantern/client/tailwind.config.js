@@ -98,7 +98,7 @@ module.exports = {
         display: ['NotoSansJP_700Bold', 'sans-serif'],
         body: ['NotoSansJP_400Regular', 'sans-serif'],
         strong: ['NotoSansJP_700Bold', 'sans-serif'],
-        // 欧文だけの「Lantern」の綴りに使う
+        // 欧文だけの「Gleate」の綴りに使う
         latin: ['HankenGrotesk_700Bold', 'sans-serif'],
         // ラベル・数字
         label: ['Inter_500Medium', 'sans-serif'],

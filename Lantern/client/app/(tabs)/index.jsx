@@ -407,7 +407,7 @@ export default function Home() {
                 {/* つまみ。どこを掴めば閉じるかの目印 */}
                 <View className="self-center w-10 h-1 rounded-full bg-outline-variant mb-4" />
                 <Paywall
-                  title="Lantern Plus"
+                  title="Gleate Plus"
                   message={hintPaywall}
                   onClose={() => setHintPaywall('')}
                   onPurchased={() => setHintPaywall('')}

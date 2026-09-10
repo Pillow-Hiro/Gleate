@@ -55,14 +55,14 @@ describe('つないでいる場所の表', () => {
 describe('YouTube の読み取り', () => {
   const res = {
     connected: true,
-    channel_name: 'Lantern',
+    channel_name: 'Gleate',
     subscriber_count: 1200,
     total_view_count: 340000,
     video_count: 42,
   }
 
   it('名前を拾う', () => {
-    expect(PLATFORMS[0].nameOf(res)).toBe('Lantern')
+    expect(PLATFORMS[0].nameOf(res)).toBe('Gleate')
   })
 
   it('数字を3つ拾う', () => {

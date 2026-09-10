@@ -143,9 +143,9 @@ export default function Settings() {
   //
   // **売り物の名前で出す**（2026-08-23）。それまで「購読中」だった。
   // 状態の説明であって、何に入っているかが分からない。
-  // ペイウォールにも App Store にも「Lantern Plus」と出るので、
+  // ペイウォールにも App Store にも「Gleate Plus」と出るので、
   // ここだけ別の呼び方にすると、同じものが2つに見える。
-  const planLabel = paid === null ? '' : paid ? 'Lantern Plus' : '無料'
+  const planLabel = paid === null ? '' : paid ? 'Gleate Plus' : '無料'
 
 
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function Settings() {
 
         {/* **外観。** 2026-08-17 に「端末に合わせる」を足して3つになった。
             それまではライト固定で、端末を夜モードにしていても
-            Lantern だけ白いままだった。**記録は夜に書かれることが多い。**
+            Gleate だけ白いままだった。**記録は夜に書かれることが多い。**
 
             一般の中に置かず区画を分けたのは、**行が3つあるため。**
             switch の行に混ぜると、どこまでが1つの設定なのか読めなくなる。 */}
@@ -355,7 +355,7 @@ export default function Settings() {
 
             特定商取引法に基づく表記は**有料で売るなら日本では必須**。
             置き場所として設定のここが一番見つけやすい（2026-08-16）。 */}
-        <Group title="Lanternについて">
+        <Group title="Gleateについて">
           <Row label="利用規約" value="↗" onPress={openTerms} />
           <Row label="プライバシーポリシー" value="↗" onPress={openPrivacy} />
           <Row label="特定商取引法に基づく表記" value="↗" onPress={openTokushoho} />

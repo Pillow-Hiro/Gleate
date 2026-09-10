@@ -90,7 +90,7 @@ export default function Plan() {
               変わると、一瞬だけ嘘をついたことになる** */}
           {paid === null ? null : (
             <Text className="text-body-md text-on-surface-variant">
-              {paid ? 'Lantern Plus を使っています。' : 'いまは無料で使っています。'}
+              {paid ? 'Gleate Plus を使っています。' : 'いまは無料で使っています。'}
             </Text>
           )}
         </View>
@@ -98,7 +98,7 @@ export default function Plan() {
         {/* 無料の人にだけ売り場を出す */}
         {paid === false && canPurchase() ? (
           <Paywall
-            title="Lantern Plus"
+            title="Gleate Plus"
             message="有料プランで開くものです。"
             onClose={back}
             onPurchased={() => {

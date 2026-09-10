@@ -77,7 +77,7 @@ export default function Reset() {
     <AuthScreen>
       <View className="w-full max-w-sm self-center">
         <View className="items-center mb-10">
-          <Text className="font-latin text-display text-on-surface">Lantern</Text>
+          <Text className="font-latin text-display text-on-surface">Gleate</Text>
           <Text className="text-aux text-outline mt-2 tracking-wider">新しいパスワード</Text>
         </View>
 

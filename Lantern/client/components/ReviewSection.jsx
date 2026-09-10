@@ -131,7 +131,7 @@ export default function ReviewSection({ title, type, description }) {
       ) : null}
 
       {/* **「気づきを届けます」と言わない**（2026-08-18）。
-          気づきは利用者のもので、Lantern が届けるのは並べ直した記録まで。
+          気づきは利用者のもので、Gleate が届けるのは並べ直した記録まで。
           AI憲法の中核原則は「①並べる ②差分を出す」までを AI の仕事とし、
           **③意味づけはユーザーだけが行う**と定めている。
           プロンプト側は「観察」で通っていたのに、
@@ -139,7 +139,7 @@ export default function ReviewSection({ title, type, description }) {
       {!loading && restored && patterns === null ? (
         <View className="border border-border border-dashed rounded-lg px-5 py-6 items-center">
           <Text className="text-body text-outline text-center">
-            「振り返る」を押すと、Lanternが記録を並べます。
+            「振り返る」を押すと、Gleateが記録を並べます。
           </Text>
         </View>
       ) : null}

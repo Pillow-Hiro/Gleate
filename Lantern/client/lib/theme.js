@@ -18,7 +18,7 @@ import { DEFAULT_PAPER, normalizePaper } from './paper'
 //     端末に合わせる（既定） / ライト / ダーク
 //
 // それまでは入り切りの2択で、端末を夜モードにしていても
-// Lantern だけ白いままだった。
+// Gleate だけ白いままだった。
 //
 // Web版 App.jsx はテーマを localStorage に持ち、html要素に .dark を付け外ししていた。
 // RNでは NativeWind の colorScheme API に同じ役割を担わせる。

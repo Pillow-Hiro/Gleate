@@ -4,7 +4,7 @@
 // なぜ要るか。**編集は HTML、保存は Markdown**だから。
 //
 // 本物の編集画面（`WebEditor`）は WebView の中の `contenteditable` で、
-// 出てくるのは HTML。一方 Lantern の記録は Markdown で保存してあり、
+// 出てくるのは HTML。一方 Gleate の記録は Markdown で保存してあり、
 // AI に渡す前に記法を剥がす経路（`modules/markdown.py`）もそれ前提。
 //
 // **保存の形は変えない。** 変えると、これまでの記録を全部書き換えることになる。

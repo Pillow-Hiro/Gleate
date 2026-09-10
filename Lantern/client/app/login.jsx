@@ -141,8 +141,8 @@ export default function Login() {
               <View className="w-16 h-16 rounded-full bg-surface-lowest items-center justify-center shadow-bloom mb-5">
                 <LanternMark size={30} />
               </View>
-              <Text className="font-latin text-display text-on-surface">Lantern</Text>
-              {/* **「照らす」のは Lantern ではない。**
+              <Text className="font-latin text-display text-on-surface">Gleate</Text>
+              {/* **「照らす」のは Gleate ではない。**
                   2026-08-06 に「創作の道を照らす、AI伴走者」と置き、
                   食い違いを承知で残すと決めていた。2026-08-18 の言葉の精査で
                   差し戻した。理由は、この一文が起動画面の
@@ -152,7 +152,7 @@ export default function Login() {
 
                   「伴走」は AI 側の自称として残っている
                   （`modules/ai.py` の `LANTERN_IDENTITY` が「静かな伴走者」）。
-                  「AI」と名乗るのはやめた。画面では Lantern で通す。 */}
+                  「AI」と名乗るのはやめた。画面では Gleate で通す。 */}
               <Text className="text-body-md text-on-surface-variant mt-2">創作の日々に、静かに伴走する。</Text>
             </View>
 

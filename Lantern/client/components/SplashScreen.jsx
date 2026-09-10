@@ -258,7 +258,7 @@ export default function SplashScreen({ onClose }) {
 
         <Animated.View style={wordStyle(logoIn, logoOut)}>
           <Text className="font-latin text-display text-white mb-7">
-            Lantern
+            Gleate
           </Text>
         </Animated.View>
 

@@ -12,7 +12,7 @@ const { withEntitlementsPlist } = require('expo/config-plugins')
 // 1. Apple 側でプロビジョニングプロファイルに Push Notifications を足す
 // 2. 権利そのものを外す
 //
-// **2 を選んだ。** Lantern が使うのは端末の中だけで完結する予約で、
+// **2 を選んだ。** Gleate が使うのは端末の中だけで完結する予約で、
 // サーバーから送るプッシュは使わない（`lib/notify.js`）。
 // プッシュトークンを取らないのは、**誰がいつ開いたかをサーバーに
 // 残さない**ための設計上の選択で、あとから変える予定も無い。

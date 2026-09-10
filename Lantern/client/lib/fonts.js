@@ -26,14 +26,14 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold'
 // ## DESIGN.md との違い
 //
 // 仕様は見出しに Hanken Grotesk、本文に Source Sans 3 を指定している。
-// **どちらも和文の字を持たない。** Lantern の画面はほぼ全部日本語なので、
+// **どちらも和文の字を持たない。** Gleate の画面はほぼ全部日本語なので、
 // 本文に指定すると和文だけ端末の既定フォントに落ち、
 // iOS と Android で別の顔になる。
 //
 // そこで**和文は Noto Sans JP に読み替えた。** 仕様が求めている
 // 「幾何学的なサンセリフ・600/700 の見出し・詰め気味の字送り」は、
 // 書体の名前ではなく大きさ・太さ・字送りの側で満たしている。
-// Hanken Grotesk は欧文だけの「Lantern」の綴りに使う。
+// Hanken Grotesk は欧文だけの「Gleate」の綴りに使う。
 //
 // Source Sans 3 は入れていない。**出る場所が無い。**
 // 数字と英字は Inter が受け持つ。

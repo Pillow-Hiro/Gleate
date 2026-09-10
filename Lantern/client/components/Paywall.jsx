@@ -21,7 +21,7 @@ import { trialLabel } from '../lib/trialText'
 // 2026-08-24 まで「5. 利用規約とプライバシーポリシーへの導線／
 // 抜けると差し戻される」と書いてあったが、原文を当たると 3.1.2 に
 // その定めは無い。求めているのは 5.1.1(i) の方で、
-// **アプリ内のどこかで容易に開けること**。設定の「Lanternについて」に
+// **アプリ内のどこかで容易に開けること**。設定の「Gleateについて」に
 // 3つとも置いてある（`lib/openLegal.js`）。
 //
 // ## 煽らない
@@ -119,7 +119,7 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
 
           **2026-08-23 に短くした。** それまでは
           「有料では、同じ輪を月と年の幅で回せます」のように、
-          Lantern の考え方から説き起こしていた。作者から
+          Gleate の考え方から説き起こしていた。作者から
           「わかりにくい。もっと単純な文でいい」と指摘があった。
 
           断られた人がこの画面で知りたいのは1つだけで、
@@ -190,7 +190,7 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
       {/* 復元。**これは残す。**機種変更・再インストールで買い直させない。
 
           規約・プライバシー・特商法へのリンクは 2026-08-24 に外した。
-          **どれも設定の「Lanternについて」にある。**
+          **どれも設定の「Gleateについて」にある。**
           同じ行き先を2か所に置くと、片方だけ直す日が来る。 */}
       <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
         <Pressable onPress={handleRestore} disabled={busy} className="py-1">

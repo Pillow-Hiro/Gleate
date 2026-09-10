@@ -92,7 +92,7 @@ export async function purchase(pkg) {
  *
  * entitlement の名前を定数で持つと、RevenueCat の管理画面で
  * 付け替えたときに黙って false になる。**1つでも有効なら有効**でよい。
- * このアプリが売っているものは1種類（Lantern Plus）しかない。
+ * このアプリが売っているものは1種類（Gleate Plus）しかない。
  */
 function hasActiveEntitlement(info) {
   const active = info?.entitlements?.active
@@ -108,7 +108,7 @@ function hasActiveEntitlement(info) {
  * 2026-08-24 まで `ok` しか返しておらず、`restorePurchases()` が
  * 例外を投げなければ成功として扱っていた。**復元するものが無いときも
  * 例外は飛ばない**（CustomerInfo が返るだけ）ので、無料の人が押すと
- * 「購入を復元しました。」と出て、プランが「Lantern Plus」に変わった。
+ * 「購入を復元しました。」と出て、プランが「Gleate Plus」に変わった。
  * サーバーは無料のままなので、有料機能を開けば 402 が返る——
  * **表示だけが嘘をついていた。**
  *

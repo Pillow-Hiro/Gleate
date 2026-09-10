@@ -9,7 +9,7 @@ import { Breathe } from './Motion'
 // ホームに並べる1枚。
 //
 // **結果だけを見せる**（2026-08-14・作者の指摘）。
-// 出すのは3つ。**日付・やったこと・Lanternの言葉**。写真があれば添える。
+// 出すのは3つ。**日付・やったこと・Gleateの言葉**。写真があれば添える。
 //
 // よかったこと・困ったこと・次にやることは出さない。
 // 眺める場所に4項目を並べると、記録を**読み返す**のではなく
@@ -60,7 +60,7 @@ export default function HomeCard({ log, label, lighting, note, footer }) {
         </Pressable>
       ) : null}
 
-      {/* Lanternの言葉。**AIの声のトークンで出す。**
+      {/* Gleateの言葉。**AIの声のトークンで出す。**
           「LANTERN」の英字キッカーは置かない（CLAUDE.md「やらないこと」）。 */}
       {log.ai_response ? (
         <View className="bg-ai-surface rounded-lg px-4 py-3.5">

@@ -44,7 +44,7 @@ describe('1日ぶん', () => {
     expect(logToMarkdown(null)).toBe(null)
   })
 
-  it('Lantern の言葉は引用にする', () => {
+  it('Gleate の言葉は引用にする', () => {
     // **自分の言葉と混ざらないように**
     const md = logToMarkdown({ ...day, ai_response: '書けた日だった。\n静かでよい。' })
     expect(md).toContain('> 書けた日だった。')
@@ -112,12 +112,12 @@ describe('まとめて1枚', () => {
 
   it('表紙が付く', () => {
     expect(logsToMarkdown(logs, { generatedAt: '2026-08-17' }))
-      .toContain('# Lantern の記録')
+      .toContain('# Gleate の記録')
   })
 
   it('1件も無くても空にしない', () => {
     const md = logsToMarkdown([])
-    expect(md).toContain('# Lantern の記録')
+    expect(md).toContain('# Gleate の記録')
     expect(md).toContain('まだ記録がありません。')
   })
 

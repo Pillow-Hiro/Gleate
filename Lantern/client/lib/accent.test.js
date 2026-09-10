@@ -83,7 +83,7 @@ describe('灯りの色', () => {
     }
   })
 
-  it.each(ACCENTS.map((a) => [a.id, a]))('%s は Lantern の言葉が読める', (_id, accent) => {
+  it.each(ACCENTS.map((a) => [a.id, a]))('%s は Gleate の言葉が読める', (_id, accent) => {
     for (const scheme of ['light', 'dark']) {
       const c = contrast(accent[scheme].aiInk, accent[scheme].aiSurface)
       expect(c, `${accent.id}.${scheme} aiInk/aiSurface = ${c.toFixed(2)}`).toBeGreaterThanOrEqual(4.5)

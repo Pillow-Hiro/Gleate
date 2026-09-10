@@ -5,7 +5,7 @@ import { invalidateLogs } from './logsCache'
 //
 // ## なぜ要るのか（2026-08-27）
 //
-// 作者から「Lanternの回答がすぐに消える」と報告があった。
+// 作者から「Gleateの回答がすぐに消える」と報告があった。
 //
 // 記録を保存すると、親が記録を取り直す。取り直すと `RecordForm` の
 // `key` が変わる——**その日の記録がまだ無い状態から、有る状態へ移る**ため
@@ -40,7 +40,7 @@ import { invalidateLogs } from './logsCache'
 const lights = new Map()
 const waiting = new Set()
 const listeners = new Set()
-// **来なかった理由**（2026-09-04・作者から「Lanternの回答が
+// **来なかった理由**（2026-09-04・作者から「Gleateの回答が
 // 表示されない。回数制限がある？」）。
 //
 // 灯りは十数秒かかるので、**来ないことと遅いことが見分けられない。**

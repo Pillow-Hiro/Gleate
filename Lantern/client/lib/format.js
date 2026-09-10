@@ -25,7 +25,7 @@ export function dayLabel(dateStr) {
 // 相対で出しているのに合わせた。日付の羅列より、
 // **どれが直近なのかが一目で分かる。**
 //
-// 時刻は出さない。Lantern は1日1件で、時刻を保存していない。
+// 時刻は出さない。Gleate は1日1件で、時刻を保存していない。
 export function relativeDayLabel(dateStr, today = todayStr()) {
   if (dateStr === today) return '今日'
   if (dateStr === shiftDays(today, -1)) return '昨日'

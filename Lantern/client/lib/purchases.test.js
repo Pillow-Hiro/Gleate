@@ -20,7 +20,7 @@ const { restore } = await import('./purchases')
 beforeEach(() => restorePurchases.mockReset())
 
 // **2026-08-24 の不具合。** `ok` だけを見ていたため、無料の人が
-// 「購入を復元」を押すとプランが「Lantern Plus」に変わっていた。
+// 「購入を復元」を押すとプランが「Gleate Plus」に変わっていた。
 // サーバーは無料のままなので、有料機能を開けば断られる。
 describe('復元したかどうか', () => {
   it('権利が無ければ active は false。**処理は通っている**', async () => {

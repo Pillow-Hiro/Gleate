@@ -3,7 +3,7 @@ import { TextInput } from 'react-native'
 import Text from './Text'
 import { parseWithMarkers } from '../lib/markdown'
 
-// Lantern の文章欄。**書いている最中に装飾が見える。**
+// Gleate の文章欄。**書いている最中に装飾が見える。**
 //
 // 2026-08-15 まで、入力欄は素の `TextInput` だった。
 // 太字にすると `**強い**` と記号が出るだけで、**効いているのか分からない。**

@@ -17,7 +17,7 @@
 // **空の欄は出さない。** 「やったこと」だけ書いた日に
 // 空の見出しが3つ並ぶと、書けなかった日のように見える。
 //
-// ## Lantern の言葉は引用にする
+// ## Gleate の言葉は引用にする
 //
 // `> ` を付けて、自分が書いた文章と見分けられるようにする。
 // 混ざると、あとで読み返したときに**どれが自分の言葉か分からなくなる。**
@@ -106,7 +106,7 @@ export function logsToMarkdown(logs, { photos, files, generatedAt } = {}) {
 
   // 表紙。**件数は出すが、多い少ないは言わない**
   const when = generatedAt || new Date().toISOString().slice(0, 10)
-  const header = `# Lantern の記録\n\n${when} に書き出したもの。`
+  const header = `# Gleate の記録\n\n${when} に書き出したもの。`
 
   if (!body) {
     // 1件も無い。**空のファイルを渡さない**

@@ -81,10 +81,10 @@ describe('紙の色', () => {
 describe('紙と灯りの組み合わせ', () => {
   const combos = PAPERS.flatMap((p) => ACCENTS.map((a) => [`${p.id}+${a.id}`, p, a]))
 
-  // Lantern の言葉は**カードの中**に敷かれる（`HomeCard` / `LogDetail`）。
+  // Gleate の言葉は**カードの中**に敷かれる（`HomeCard` / `LogDetail`）。
   // だから比べる相手は地ではなくカード（`lowest`）。
   // ここが 1.0 に近いと、返事の面が消えて字だけが浮く
-  it.each(combos)('%s は Lantern の面がカードから見分けられる', (_name, paper, accent) => {
+  it.each(combos)('%s は Gleate の面がカードから見分けられる', (_name, paper, accent) => {
     for (const scheme of ['light', 'dark']) {
       const c = contrast(accent[scheme].aiSurface, paper[scheme].lowest)
       expect(c, `${paper.id}+${accent.id}.${scheme} = ${c.toFixed(3)}`).toBeGreaterThanOrEqual(1.04)
