@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { stampOf } from './buildStamp'
+import { describe, expect, it, vi } from 'vitest'
+
+// `buildStamp.js` は `expo-updates` を読む。**それが react-native を引き込む。**
+// vitest はそこを解けず、**この綴じ本ごと落ちていた**（589件は通るのに1本だけ赤）。
+// `vitest.config.mjs` の但し書きどおり、ここで見たいのは `stampOf` という
+// 純粋な関数だけなので、**本物を読ませない。**
+vi.mock('expo-updates', () => ({ isEmbeddedLaunch: false, createdAt: null }))
+
+const { stampOf } = await import('./buildStamp')
 
 describe('配信の日時', () => {
   // **照らし合わせるための形。**「9/6 0:41 の配信です」と言えれば足りる

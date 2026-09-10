@@ -45,6 +45,11 @@ export function buildStamp() {
 
 /** `2026/9/6 0:41` の形。**秒は要らない**——照らし合わせるだけ */
 export function stampOf(date) {
+  // **`new Date(null)` は 1970年1月1日になる。**NaN ではないので下の関門を
+  // すり抜け、`1/1 9:00` という嘘の日時が出ていた。空のものはここで返す。
+  // （2026-09-11。この綴じ本は `expo-updates` を解けずに丸ごと落ちていて、
+  //   **赤いはずの1件が誰にも見えていなかった。**）
+  if (!date) return ''
   const d = date instanceof Date ? date : new Date(date)
   if (Number.isNaN(d.getTime())) return ''
   const mm = d.getMonth() + 1
