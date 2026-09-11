@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, ScrollView, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
+import SwipeRow from './SwipeRow'
 import WebEditor from './WebEditor'
 import { authFetch } from '../lib/supabase'
 import { useThemeContext } from '../lib/theme'
@@ -65,110 +66,44 @@ function CheckCircle({ checked }) {
 // それまでは行を押して開き、中の「削除」を押し、確認をもう一度押す
 // という3手で、**押して開く操作が「使った」と紛らわしかった。**
 //
-// `react-native-gesture-handler` は直接の依存に入れていない
-// （足すと指紋が変わり、配信済みのビルドへ OTA が届かなくなる）。
-const TRASH_WIDTH = 80
-
-function TrashIcon({ color = '#FFFFFF' }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4 7h16M10 4h4M6 7l1 13h10l1-13M10 11v6M14 11v6"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  )
-}
+// ## 仕組みは `SwipeRow` へ移した（2026-09-11）
+//
+// 前に添えた曲にも同じ払いが要ると言われ、**ここの形を写すのではなく
+// 1つにまとめた。**2つ持つと片方だけ直る。
+//
+// ここで三度やり直した経緯（自分で角度を測るのをやめ、行そのものを
+// 横スクロールにして OS に裁かせる）は `SwipeRow.jsx` に移してある。
 
 // 1行。**チェックと文だけ。**
-//
-// 削除は**左に払うとゴミ箱が出る**（iOS の作法）。
-//
-// ## 払う仕組みを作り直した（2026-08-15・三度目）
-//
-// `PanResponder` で「横が縦より動いていたら奪う」と書いていたが、
-// **一覧の縦スクロールに勝てなかった。** 比率を 2倍 → 1.2倍 → 同数と
-// 緩めても、実機では取られ続けた。
-//
-// **判定を自分で書くのをやめた。** 行そのものを横スクロールにすると、
-// 縦と横のどちらの操作なのかは **OS が裁く。**
-// iOS の「メール」も同じ作り（入れ子のスクロール）で、
-// 縦に流れている最中でも横に払える。
-//
-// 自分で角度を測るより、端末が持っている裁定に任せる方が強い。
-//
-// 幅は測って渡す。`onLayout` を待つあいだは行だけを描く
-// （0 のまま横に並べると、ゴミ箱が画面の左端に見えてしまう）。
 function IdeaRow({ idea, onTogglePicked, onDelete, isLast }) {
   const picked = Boolean(idea.picked_at)
-  const [width, setWidth] = useState(0)
-  const scroller = useRef(null)
-
-  function handleDelete() {
-    // 消す前に閉じておく。開いたまま次の行が繰り上がると、
-    // 触っていない行のゴミ箱が出ているように見える
-    scroller.current?.scrollTo({ x: 0, animated: false })
-    onDelete(idea)
-  }
-
-  const row = (
-    <View
-      style={width ? { width } : undefined}
-      className="flex-row items-center gap-3 px-4 py-3 bg-surface-lowest"
-    >
-      <Pressable
-        onPress={() => onTogglePicked(idea)}
-        accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
-        hitSlop={10}
-        className="min-h-touch justify-center"
-      >
-        <CheckCircle checked={picked} />
-      </Pressable>
-
-      <Text
-        className={`flex-1 text-body-md leading-relaxed ${
-          picked ? 'text-outline' : 'text-on-surface'
-        }`}
-        style={picked ? { textDecorationLine: 'line-through' } : undefined}
-      >
-        {idea.text}
-      </Text>
-    </View>
-  )
 
   return (
-    <View className={isLast ? '' : 'border-b border-border'} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      {width === 0 ? (
-        row
-      ) : (
-        <ScrollView
-          ref={scroller}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          // **吸い付く位置は2つだけ。** 閉じているか、開いているか
-          snapToOffsets={[0, TRASH_WIDTH]}
-          snapToEnd={false}
-          decelerationRate="fast"
-          bounces={false}
-          overScrollMode="never"
-          // 行の中のチェックは押せたままにする
-          keyboardShouldPersistTaps="handled"
+    <SwipeRow
+      className={isLast ? '' : 'border-b border-border'}
+      label={`${idea.text} を削除する`}
+      onDelete={() => onDelete(idea)}
+    >
+      <View className="flex-row items-center gap-3 px-4 py-3">
+        <Pressable
+          onPress={() => onTogglePicked(idea)}
+          accessibilityLabel={picked ? '使っていないことにする' : '使ったことにする'}
+          hitSlop={10}
+          className="min-h-touch justify-center"
         >
-          {row}
-          <Pressable
-            onPress={handleDelete}
-            accessibilityLabel={`${idea.text} を削除する`}
-            style={{ width: TRASH_WIDTH }}
-            className="bg-error items-center justify-center"
-          >
-            <TrashIcon />
-          </Pressable>
-        </ScrollView>
-      )}
-    </View>
+          <CheckCircle checked={picked} />
+        </Pressable>
+
+        <Text
+          className={`flex-1 text-body-md leading-relaxed ${
+            picked ? 'text-outline' : 'text-on-surface'
+          }`}
+          style={picked ? { textDecorationLine: 'line-through' } : undefined}
+        >
+          {idea.text}
+        </Text>
+      </View>
+    </SwipeRow>
   )
 }
 

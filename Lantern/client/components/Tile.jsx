@@ -3,6 +3,7 @@ import Svg, { Circle, Path, Polyline, Rect } from 'react-native-svg'
 import Text from './Text'
 import { useThemeContext } from '../lib/theme'
 import { accentColor } from '../lib/accent'
+import Symbol from './Symbol'
 
 // ホームの2枚（2026-09-09・作者の指示「画像のをベースに数字を目立たせる」）。
 //
@@ -16,16 +17,25 @@ import { accentColor } from '../lib/accent'
 //
 // 数が無いときは `—`。**0 と「まだ読めていない」を混同させない。**
 
-// 記号は**タブと同じ形**（2026-09-09・作者の指示
-// 「記号の形をタブのアイコンと同じにしてください」）。
+// 記号は**タブと同じもの**（2026-09-09／2026-09-11・作者の指示
+// 「記号の形をタブのアイコンと同じにしてください」「記録タブの
+// アイコンに合わせてください」）。
+//
+// ## 描き写すのをやめた（2026-09-11）
 //
 // タブは SF Symbols を native で出している（`app/(tabs)/_layout.jsx`）
-// ——記録が `book.closed`、書くが `pencil`。**同じ絵柄を描き写す。**
+// ——記録が `book.closed`、書くが `pencil`。ここまでは**同じ絵柄を
+// SVG で描き写していた。**
 //
-// 一度は案 `lantern_2` の記号を使ったが、**タブの記号と少し違う形**に
-// なっていた。同じ場所を指すものが2つの形を持つと、繋がりが読めない。
+// **同じ指示が二度出た。**描き写しでは合っていない、ということ。
+// `expo-symbols` で本物を出すようにした（`components/Symbol.jsx`）。
+// iOS 以外では、これまでの SVG がそのまま落ち先になる。
 
 export function Back({ color }) {
+  return <Symbol name="book.closed" size={20} color={color} fallback={<BackDrawn color={color} />} />
+}
+
+function BackDrawn({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
       {/* `book.closed` — 閉じた本。外枠と、左寄りの背 */}
@@ -44,6 +54,10 @@ export function Back({ color }) {
 }
 
 export function Bulb({ color }) {
+  return <Symbol name="pencil" size={20} color={color} fallback={<BulbDrawn color={color} />} />
+}
+
+function BulbDrawn({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
       {/* `pencil` — 斜めの鉛筆。**下の横線は付けない**
@@ -58,7 +72,14 @@ export function Bulb({ color }) {
   )
 }
 
+// 日替わりの抜粋の見出し。**これも記録タブと同じもの**
+// （2026-09-11・作者の指示）。開いた本を描いていたが、指しているのは
+// 同じ「記録」なので、形が違うと繋がりが読めない。
 export function Book({ color }) {
+  return <Symbol name="book.closed" size={16} color={color} fallback={<BookDrawn color={color} />} />
+}
+
+function BookDrawn({ color }) {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
       <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color} strokeWidth="1.75" strokeLinejoin="round" />

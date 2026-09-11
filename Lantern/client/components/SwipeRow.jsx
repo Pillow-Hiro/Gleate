@@ -1,123 +1,101 @@
-import { useRef } from 'react'
-import { Animated, PanResponder, Pressable, View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Pressable, ScrollView, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 
-// 横に払うとゴミ箱が出る行（2026-09-11・作者の指示
-// 「横にフリックしたらゴミ箱が出る表示で」）。
+// 横に払うとゴミ箱が出る行。
 //
-// ## `react-native-gesture-handler` を使わない
+// ## 自分で判定を書いて、また外した（2026-09-11）
 //
-// 入ってはいる（`expo-router` 経由でビルド29 に autolink 済み）。
-// だが **`GestureHandlerRootView` がこのアプリのどこにも無い。**
-// 根を探したが `expo-router` も `@react-navigation` も置いていない。
-// 無いまま `Swipeable` を使うと、**動かないのに何の合図も出ない。**
+// はじめ `PanResponder` で「横が縦より動いていたら奪う」と書いた。
+// **このアプリは同じことを 2026-08-15 に三度やって捨てている**
+// （`IdeasPanel.jsx` の註釈）。比率を 2倍 → 1.2倍 → 同数と緩めても、
+// 実機では一覧の縦スクロールに取られ続けた、と記録が残っていた。
 //
-// 同じ形の失敗を一度している——`Sheet.jsx` のつまみは
-// `PanResponder` を親の `Pressable` に取られて、**触れるのに効かない
-// つまみ**として残っていた。**動かないものを置かない。**
+// **書く前に読めば分かったこと。**採るべきは、そのとき辿り着いた形。
 //
-// ここでは `PanResponder` を**行の親**に置く。子の `Pressable` より
-// 先に動きを見られるので、横に払えば親が取れる。
-// （`Sheet` が失敗したのは、**親が `Pressable` で子が responder** という
-// 逆の並びだったため。）
+//     行そのものを横スクロールにして、縦か横かは **OS に裁かせる。**
 //
-// ## 縦に流れるのを邪魔しない
+// iOS の「メール」も同じ作り（入れ子のスクロール）で、縦に流れている
+// 最中でも横に払える。自分で角度を測るより端末の裁定のほうが強い。
 //
-// 一覧は縦に流れる。`onMoveShouldSetPanResponder` で
-// **横の動きが縦より明らかに大きいときだけ**取る。
-// 8px 動くまでは何も取らない——押しただけで動き出さないように。
+// ## ここに1つだけ置く
 //
-// ## 開いたままにする
+// アイデアの一覧（`IdeasPanel`）と、前に添えた曲（`AttachRow`）で
+// 同じものを使う。**2つ持つと、片方だけ直る。**
 //
-// 半分を越えたら開いたまま留める。押し間違いで消えないよう、
-// **ゴミ箱をもう一度押すまで消さない。**
+// 幅は測って渡す。`onLayout` を待つあいだは行だけを描く
+// （0 のまま横に並べると、ゴミ箱が画面の左端に見えてしまう）。
 
-// ゴミ箱が見える幅
-const REVEAL = 76
+// ゴミ箱の面の幅
+const TRASH_WIDTH = 80
 
-// ここを越えたら開く
-const SNAP = REVEAL / 2
-
-function Trash({ color }) {
+/** 削除の記号。**アイデアを消すときと同じもの**（作者の指示） */
+export function TrashIcon({ color = '#FFFFFF' }) {
   return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M4 7h16" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M9 7V5.5A1.5 1.5 0 0110.5 4h3A1.5 1.5 0 0115 5.5V7"
+        d="M4 7h16M10 4h4M6 7l1 13h10l1-13M10 11v6M14 11v6"
         stroke={color}
         strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M6 7l.8 12.1A2 2 0 008.8 21h6.4a2 2 0 002-1.9L18 7"
-        stroke={color}
-        strokeWidth="1.8"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </Svg>
   )
 }
 
-export default function SwipeRow({ onDelete, label, children, className = '' }) {
-  const x = useRef(new Animated.Value(0)).current
-  const opened = useRef(false)
+export default function SwipeRow({
+  onDelete,
+  label,
+  className = '',
+  rowClassName = 'bg-surface-lowest',
+  children,
+}) {
+  const [width, setWidth] = useState(0)
+  const scroller = useRef(null)
 
-  function slide(to) {
-    opened.current = to !== 0
-    Animated.spring(x, {
-      toValue: to,
-      useNativeDriver: true,
-      bounciness: 0,
-      speed: 18,
-    }).start()
+  function handleDelete() {
+    // 消す前に閉じておく。開いたまま次の行が繰り上がると、
+    // **触っていない行のゴミ箱が出ているように見える**
+    scroller.current?.scrollTo({ x: 0, animated: false })
+    onDelete()
   }
 
-  const pan = useRef(
-    PanResponder.create({
-      // **押しただけでは取らない。**8px 動いて、かつ横が縦より大きいとき
-      onMoveShouldSetPanResponder: (_e, g) =>
-        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderMove: (_e, g) => {
-        const base = opened.current ? -REVEAL : 0
-        // 右へは戻る以上に行かせない。左は REVEAL で止める
-        x.setValue(Math.min(0, Math.max(-REVEAL, base + g.dx)))
-      },
-      onPanResponderRelease: (_e, g) => {
-        const base = opened.current ? -REVEAL : 0
-        slide(base + g.dx < -SNAP ? -REVEAL : 0)
-      },
-      onPanResponderTerminate: () => slide(opened.current ? -REVEAL : 0),
-    }),
-  ).current
+  const row = (
+    <View style={width ? { width } : undefined} className={rowClassName}>
+      {children}
+    </View>
+  )
 
   return (
-    <View className={`overflow-hidden ${className}`}>
-      {/* ゴミ箱。**行の下に敷いておき、行がどくと見える** */}
-      <View
-        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: REVEAL }}
-        className="items-center justify-center"
-      >
-        <Pressable
-          onPress={() => {
-            slide(0)
-            onDelete()
-          }}
-          accessibilityLabel={label}
-          hitSlop={8}
-          className="w-11 h-11 items-center justify-center rounded-full active:opacity-60"
+    <View className={className} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {width === 0 ? (
+        row
+      ) : (
+        <ScrollView
+          ref={scroller}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          // **吸い付く位置は2つだけ。** 閉じているか、開いているか
+          snapToOffsets={[0, TRASH_WIDTH]}
+          snapToEnd={false}
+          decelerationRate="fast"
+          bounces={false}
+          overScrollMode="never"
+          // 行の中の押せるものは押せたままにする
+          keyboardShouldPersistTaps="handled"
         >
-          <Trash color="rgb(186 26 26)" />
-        </Pressable>
-      </View>
-
-      {/* **地を塗る。**塗らないとゴミ箱が行の下から透ける */}
-      <Animated.View
-        style={{ transform: [{ translateX: x }] }}
-        className="bg-surface"
-        {...pan.panHandlers}
-      >
-        {children}
-      </Animated.View>
+          {row}
+          <Pressable
+            onPress={handleDelete}
+            accessibilityLabel={label}
+            style={{ width: TRASH_WIDTH }}
+            className="bg-error items-center justify-center"
+          >
+            <TrashIcon />
+          </Pressable>
+        </ScrollView>
+      )}
     </View>
   )
 }

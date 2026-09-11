@@ -211,7 +211,9 @@ class TestNativeOnlyModulesAreLoadedLazily:
     # 読み込んだだけでネイティブを要求するパッケージ。
     # 増やすときは「トップレベルで requireNativeModule / requireNativeViewManager
     # を呼んでいるか」を確認してから足す。
-    NATIVE_ON_IMPORT = ["expo-glass-effect"]
+    # `expo-symbols` も同じ（`requireNativeViewManager('SymbolModule')` を
+    # 読み込んだ時点で呼ぶ）。2026-09-11 に足した。
+    NATIVE_ON_IMPORT = ["expo-glass-effect", "expo-symbols"]
 
     def _jsx_files(self):
         out = []

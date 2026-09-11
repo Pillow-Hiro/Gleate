@@ -415,6 +415,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                   <SwipeRow
                     key={item.url}
                     label={`${item.label || item.url} を候補から消す`}
+                    rowClassName="bg-surface"
+                    className={i === recent.length - 1 ? '' : 'border-b border-border'}
                     onDelete={() => {
                       hideSound(item.url)
                       setRecent(recentSounds(4))
@@ -422,9 +424,7 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                   >
                     <Pressable
                       onPress={() => take({ url: item.url, title: item.label, artist: '' })}
-                      className={`py-3 min-h-touch justify-center active:opacity-70 ${
-                        i === recent.length - 1 ? '' : 'border-b border-border'
-                      }`}
+                      className="px-1 py-3 min-h-touch justify-center active:opacity-70"
                     >
                       <Text className="text-body-md text-on-surface" numberOfLines={1}>
                         {item.label || item.url}
