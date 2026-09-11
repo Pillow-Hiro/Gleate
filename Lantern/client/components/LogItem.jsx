@@ -34,7 +34,7 @@ const EXPAND = {
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
 }
 
-export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isLast }) {
+export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite }) {
   const [open, setOpen] = useState(false)
   const { accent, isDark } = useThemeContext()
   // 山形の向きと、中身の濃さ
@@ -69,40 +69,38 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
   const body = stripMarkdown(SNAPSHOT_ORDER.map((k) => log[k]).find(Boolean) || '')
 
   return (
-    // 区切り線は行の下に置き、カードの左右の余白の分だけ内側に入る。
-    // DESIGN.md の「Dividers should have horizontal insets」。
-    // **最後の行には引かない。** カードの縁と二重になる。
+    // 1件で1枚のカード（2026-09-11・作者が案 B を選んだ）。
     //
-    // ## 開いた行は持ち上げる（2026-09-11・作者の指示）
+    // ## 厚い輪郭と、底の段
     //
-    // 作者から「**開いてるときにどの記録と連結しているかが判別しにくい**」。
-    // 原因は間隔ではなく**重さ**だった——開いた行が閉じた行と同じ姿で、
-    // 返事が上下どちらの記録のものか形から読めない。
+    // 作者から「記録同士の間隔が近いし、**開いてるときにどの記録と
+    // 連結しているかが判別しにくい**」。原因は間隔ではなく**重さ**——
+    // 開いた行が閉じた行と同じ姿で、返事がどちらのものか形から読めない。
     //
-    // 開いている間だけ、区切り線をやめて**自分の輪郭と影を持つ。**
-    // 上下に間を空け、月のカードから抜け出て見えるようにする。
+    // 囲いの中の区切り線をやめ、**1件ずつが輪郭を持つ。**
+    // 底だけ厚いのは Duolingo の作法で、**面が物理的に厚く見える。**
     //
-    // `-mx-4` と `px-4` が対になっているのは、**開いても字が横へ
-    // ずれないようにする**ため。月のカードの余白ぶん外へ出て、
-    // 同じだけ内へ戻す。
+    // 開いている間は輪郭が灯り色になる。**開く行は同時にひとつだけ**
+    // なので、`CLAUDE.md`「1画面に灯り色を2箇所以上置かない」に触れない。
     //
-    // ## 影は `shadow-bloom` のまま
+    // ## 影は敷かない
     //
-    // 案ではもっと深い影を当てていたが、`CLAUDE.md` が
-    // **`shadow-bloom` を上限**と決めている。持ち上げているのは
-    // 灯り色の輪郭と、上下の間。
+    // 厚みは輪郭と段で出ているので、`shadow-bloom` を重ねると
+    // **同じことを二度言う。**`CLAUDE.md` は影を上限付きで許しているが、
+    // 要らないところに敷けとは言っていない。
     //
-    // 灯り色を使うが「1画面に灯り色を2箇所以上置かない」には触れない
-    // ——**開く行は同時にひとつだけ**で、この画面に他の琥珀は無い。
+    // ## 太さは `style` で渡す
+    //
+    // `border-b-[5px]` のような直値は、NativeWind が解けなかったときに
+    // **黙って消える**（打ち間違えた色が消えるのと同じ）。
+    // 太さは RN の `style` で確実に効かせ、色だけクラスに任せる。
     <View
-      className={
-        open
-          ? '-mx-4 my-2.5 px-4 py-0.5 bg-surface-lowest rounded-lg shadow-bloom'
-          : isLast
-            ? ''
-            : 'border-b border-border'
-      }
-      style={open ? { borderWidth: 1.5, borderColor: accentColor(accent, isDark) } : null}
+      className={`bg-surface-lowest rounded-lg px-4 ${open ? '' : 'border-outline-variant'}`}
+      style={{
+        borderWidth: 2,
+        borderBottomWidth: 5,
+        ...(open ? { borderColor: accentColor(accent, isDark) } : null),
+      }}
     >
       <Pressable onPress={toggle} className="py-3.5 gap-1">
         <View className="flex-row items-center justify-between gap-3">
