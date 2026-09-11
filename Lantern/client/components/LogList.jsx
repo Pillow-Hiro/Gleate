@@ -26,20 +26,12 @@ import { groupByMonth, monthLabel } from '../lib/format'
 // 白い地に白いカードで、段差が `#F9F9FB` と `#FFFFFF` の差しか無く、
 // **どこからどこまでが1か月なのかが見えていなかった。**
 //
-// 足したのは3つ。月の見出しの**灯りの点**、カードの**輪郭**、影。
+// 足したのは3つ。
 //
-// ## 月のカードをやめた（2026-08-14 の逆を行く・2026-09-11）
-//
-// 作者から「**記録同士の間隔が近いし、開いてるときにどの記録と
-// 連結しているかが判別しにくい**」。案を4つ出し、作者が
-// Duolingo 風（1件1カード・厚い輪郭・底の段）を選んだ。
-//
-// **2026-08-14 に足した輪郭と影は、1枚ずつのカードへ移した。**
-// あのとき困っていたのは「白い地に白いカードで境目が無い」ことで、
-// **いまは1件ずつが 2px の輪郭と底の段を持つので、境目は前より濃い。**
-//
-// ただし**月のまとまりを支えるのは見出しだけになった。**
-// ここが弱るようなら、月と月の間をもっと空ける（`gap-stack-lg`）。
+// 1. 月の見出しに**灯りの点**を添える。月の始まりが目で拾える
+// 2. カードに**輪郭**を付ける。地の差だけに頼らない
+// 3. 影（`shadow-bloom`）を敷く。DESIGN.md は Tonal Layers を基本とするが、
+//    **上限として `shadow-bloom` を許している**（CLAUDE.md）
 export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, limit }) {
   const shown = limit ? logs.slice(0, limit) : logs
   const groups = groupByMonth(shown)
@@ -58,15 +50,15 @@ export default function LogList({ logs, onDelete, onUpdate, onToggleFavorite, li
               </Text>
               <View className="flex-1 h-[1px] bg-border" />
             </View>
-            {/* **間で分ける。**囲いはもう無い（上の節） */}
-            <View className="gap-2.5">
-              {items.map((log) => (
+            <View className="bg-surface-lowest border border-border rounded-lg px-4 shadow-bloom">
+              {items.map((log, i) => (
                 <LogItem
                   key={log.id || log.date}
                   log={log}
                   onDelete={onDelete}
                   onUpdate={onUpdate}
                   onToggleFavorite={onToggleFavorite}
+                  isLast={i === items.length - 1}
                 />
               ))}
             </View>

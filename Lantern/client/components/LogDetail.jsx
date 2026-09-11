@@ -158,6 +158,22 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       {/* **押せる形にする**（2026-09-05・作者の指示
           「編集と削除を押しやすいボタンに。ただ、大きいのはNG」）。
 
+          ## 隣と当たりが重なっていた（2026-09-11）
+
+          `gap-2`（8px）の隣り合わせに、両方 `hitSlop={10}` を付けていた。
+          **当たりが左右に10px ずつ出るので、12px ぶん重なる。**
+          重なった所は後から描いたほうが取るので、
+
+              「編集」の右端  →  「削除」が反応する
+              「やめる」の右端 →  「削除する」が反応する
+
+          **逃げるためのボタンで消える。**`LogItem` の星と山形で同じ形が
+          見つかり、そちらを直すときにここも出てきた。
+
+          `hitSlop` は**左右で別に渡す。**隣り合う2つが同じだけ外へ
+          広がると、間がどれだけあっても必ずぶつかる。
+          内側へ出すのは 4px ずつ（合わせて 8px ＝ `gap-2`）。
+
           字だけだと、押せるのかどうかが分からない。輪郭を付けて
           押す場所を示す。**大きさは字のまま**——`hitSlop` で
           指の当たる範囲だけ広げるので、見た目は増えない。 */}
@@ -167,7 +183,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
             <Text className="text-aux text-outline flex-1">削除しますか？</Text>
             <Pressable
               onPress={() => setConfirmDelete(false)}
-              hitSlop={10}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 4 }}
               className="border border-outline-variant rounded-full px-3 py-1.5 active:opacity-70"
             >
               <Text className="text-label-md text-outline">やめる</Text>
@@ -175,7 +191,7 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
             <Pressable
               onPress={handleDelete}
               disabled={deleting}
-              hitSlop={10}
+              hitSlop={{ top: 10, bottom: 10, left: 4, right: 10 }}
               className="border border-error rounded-full px-3 py-1.5 active:opacity-70 disabled:opacity-50"
             >
               <Text className="text-label-md text-error">{deleting ? '削除中...' : '削除する'}</Text>
@@ -195,14 +211,14 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
                 なる。書く場所を2つに分けない（`app/write.jsx`）。 */}
             <Pressable
               onPress={() => router.push({ pathname: '/write', params: { id: log.id } })}
-              hitSlop={10}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 4 }}
               className="border border-outline-variant rounded-full px-3 py-1.5 active:opacity-70"
             >
               <Text className="text-label-md text-on-surface-variant">編集</Text>
             </Pressable>
             <Pressable
               onPress={() => setConfirmDelete(true)}
-              hitSlop={10}
+              hitSlop={{ top: 10, bottom: 10, left: 4, right: 10 }}
               className="border border-outline-variant rounded-full px-3 py-1.5 active:opacity-70"
             >
               <Text className="text-label-md text-error">削除</Text>

@@ -376,7 +376,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               <GlassPressable
                 onPress={seek}
                 disabled={!term.trim() || busy}
-                hitSlop={8}
+                // 左は広げない。**同じ丸の中の入力欄に食い込む**
+                hitSlop={{ top: 8, bottom: 8, left: 0, right: 8 }}
                 className="rounded-full px-4 py-2 min-h-touch justify-center disabled:opacity-50"
               >
                 <Text className="font-strong text-label-md text-on-lantern">探す</Text>
