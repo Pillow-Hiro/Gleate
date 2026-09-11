@@ -128,11 +128,13 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Text.jsx` | 全画面 | **本文フォントの既定を持つ Text。`react-native` の Text を直接使わない** |
 | `PromptCard.jsx` | ホーム | 今日の問い。**絵は背面**（右に置いて左へ溶かす）＋2つの行き先 |
 | `Tile.jsx` | ホーム | 過去の灯り／アイデアの種。**数を目立たせる** |
-| `Sheet.jsx` | AttachRow | 下から出る面。**つまみで上へ引き上げられる**（探した結果が並ぶと丈が足りない） |
+| `Sheet.jsx` | AttachRow | 下から出る面。**つまみは無い**（親の `Pressable` が responder を先に取るので効かなかった）。丈が足りなければ中で流す |
 | `SuggestCards.jsx` | RecordForm | 「日記の候補」で選んだものを**紙の上に置く。**本文には差し込まない——書く場所に自分の言葉でないものを混ぜない |
 | `Optional.jsx` | EditorToolbar | 添え物を囲う。**中で落ちても外は生き残る**——飾りのせいで書く道具が消えないように |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
+| `MarginNote.jsx` | HomeCard / LogDetail / ReviewSection / WeeklyDiscovery / Twitch / YouTube | 余白の書き込み。**色の付いた箱をやめた**——機械の言葉だけを色面に入れるのは AI のアプリの形で、配色を変えても構図が残る |
+| `GlassPanel.jsx` | ホーム（今日の灯り） | 硝子の面（Liquid Glass）。**iOS 26 未満は一色塗りに落ちる。**影を消さないため切るのは内側だけ |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
@@ -147,7 +149,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `ViewsChart.jsx` | YouTubePanel | 再生回数の推移 |
 | `WeeklyDiscovery.jsx` | ホーム | 今週の発見。**AIを使わない**ので地は灰（砂はLanternの言葉の色） |
 | `MonthPicker.jsx` | 記録 | 一覧を月で区切る。**既定は当月・記録がある月だけ出す** |
-| `HomeCard.jsx` | ホーム / (tabs)/index | 結果だけの1枚。やったこと・写真・Lanternの言葉。「書く」では時刻を出し、灯り待ちは息をする |
+| `HomeCard.jsx` | ホーム / (tabs)/index | 結果だけの1枚。やったこと・写真・Gleateの言葉。「書く」では時刻を出し、灯り待ちは息をする |
 | `TimeDial.jsx` | 設定 | 通知の時刻。**hh:mm をダイヤルで回す**（端末の部品は使わない） |
 | `AppHeader.jsx` | 全タブ | 画面の上端。**Lantern の綴りを左上に置く** |
 | `AccountMark.jsx` | 設定 / マイページ | アカウントの印。画像があれば画像、無ければ**アドレスから決まる印**。色は灯りの色から取る |

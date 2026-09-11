@@ -3,6 +3,7 @@ import { Image, Pressable, View } from 'react-native'
 import Text from './Text'
 import RichText from './RichText'
 import PhotoLightbox from './PhotoLightbox'
+import MarginNote from './MarginNote'
 import { relativeDayLabel } from '../lib/format'
 import { Breathe } from './Motion'
 
@@ -60,29 +61,30 @@ export default function HomeCard({ log, label, lighting, note, footer }) {
         </Pressable>
       ) : null}
 
-      {/* Gleateの言葉。**AIの声のトークンで出す。**
+      {/* Gleateの言葉。**余白の書き込みとして出す**（2026-09-11）。
+          砂色の面をやめた理由は `MarginNote.jsx` の冒頭。
           「LANTERN」の英字キッカーは置かない（CLAUDE.md「やらないこと」）。 */}
       {log.ai_response ? (
-        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
-          <Text className="text-body-md text-ai-ink leading-relaxed">{log.ai_response}</Text>
-        </View>
+        <MarginNote>
+          <Text className="text-body-md text-on-surface-variant leading-relaxed">{log.ai_response}</Text>
+        </MarginNote>
       ) : note ? (
         // **来ない理由を出す**（2026-09-04）。灯りは十数秒かかるので、
         // 何も出さないと**来ないのか遅いのかが分からない**
-        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+        <MarginNote>
           <Text className="text-label-md text-on-surface-variant leading-relaxed">{note}</Text>
-        </View>
+        </MarginNote>
       ) : lighting ? (
         // **記録はもう残っている。**待っているのは灯りだけなので、
         // 「保存中」とは書かない。書いた人を不安にさせない。
         //
         // 息をさせる（2026-09-04・作者の指示）。十数秒かかるので、
         // **止まった字は壊れた字と見分けがつかない**（`Motion.jsx`）
-        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+        <MarginNote>
           <Breathe>
             <Text className="text-label-md text-on-surface-variant">灯りをともしています。</Text>
           </Breathe>
-        </View>
+        </MarginNote>
       ) : null}
 
       {footer}

@@ -1,5 +1,6 @@
 import { View } from 'react-native'
 import Text from './Text'
+import MarginNote from './MarginNote'
 import { localDateStr } from '../lib/date'
 
 // Web版 Home.jsx の「今週の発見」を移植したもの。AIは使わない。
@@ -67,17 +68,17 @@ export default function WeeklyDiscovery({ logs }) {
           AI が書いたものに見えた。**ここは AI を使っていない。**
           灰にしたら「暖色系に」と言われたので、砂より一段濃い生成りにした。
           輪郭も持たせている。塗りの濃さだけで見分けさせない。 */}
-      <View className="bg-discovery-surface border border-outline-variant rounded-lg px-5 py-4">
+      <MarginNote>
         {observations === null ? (
-          <Text className="text-body-md text-discovery-ink">今週の記録がまだありません。</Text>
+          <Text className="text-body-md text-on-surface-variant">今週の記録がまだありません。</Text>
         ) : (
           <View className="gap-2">
             {observations.map((obs, i) => (
-              <Text key={i} className="text-body-md text-discovery-ink leading-relaxed">{obs}</Text>
+              <Text key={i} className="text-body-md text-on-surface-variant leading-relaxed">{obs}</Text>
             ))}
           </View>
         )}
-      </View>
+      </MarginNote>
     </View>
   )
 }

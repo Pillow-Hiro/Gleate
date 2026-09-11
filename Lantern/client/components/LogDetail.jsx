@@ -10,6 +10,7 @@ import PhotoPicker from './PhotoPicker'
 import AttachRow, { LinkList } from './AttachRow'
 import { ensureLoaded as loadLinks, removeAll as removeLinksAll } from '../lib/linkStore'
 import SuggestCards from './SuggestCards'
+import MarginNote from './MarginNote'
 import {
   ensureLoaded as loadSuggests,
   list as listSuggests,
@@ -150,10 +151,9 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
       />
 
       {log.ai_response ? (
-        <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-1.5 mt-3">
-          <Text className="text-[10px] tracking-[2px] text-ai-ink">LANTERN</Text>
-          <Text className="text-body text-primary leading-relaxed">{log.ai_response}</Text>
-        </View>
+        <MarginNote className="mt-3">
+          <Text className="text-body text-on-surface-variant leading-relaxed">{log.ai_response}</Text>
+        </MarginNote>
       ) : null}
 
       {/* **押せる形にする**（2026-09-05・作者の指示

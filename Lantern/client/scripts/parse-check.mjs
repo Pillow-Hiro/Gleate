@@ -192,6 +192,14 @@ const NOT_COLORS = new Set([
   'solid', 'dashed', 'dotted', 'double', 'none', 'hidden',
 ])
 
+// 辺と太さは**くっついて出る**（2026-09-11）。`border-l-2` は
+// `l-2` という1つの名前として拾われるので、辺だけ・太さだけを
+// 並べた上の一覧では当たらない。**色でないものを色だと言ってしまう。**
+//
+// `MarginNote` で左に線を引いたときに出た。`border-b-2` でも同じ。
+// 辺1文字＋太さ、という形を**まとめて色ではないとみなす。**
+const EDGE_WIDTH = /^[btlrxy]-(0|2|4|8)$/
+
 const CLASS = /(?:^|[\s"'`{])(bg|text|border)-(\[[^\]]+\]|[a-z][a-z0-9-]*?)(?:\/\d+)?(?=[\s"'`}]|$)/gm
 const unknown = []
 
@@ -202,7 +210,7 @@ for (const file of files) {
     const name = m[2]
     // `text-[11px]` のような直値は見ない。設定の外なので照らす先が無い
     if (name.startsWith('[')) continue
-    if (COLORS.has(name) || NOT_COLORS.has(name)) continue
+    if (COLORS.has(name) || NOT_COLORS.has(name) || EDGE_WIDTH.test(name)) continue
     const key = `${m[1]}-${name}`
     if (seen.has(key)) continue
     seen.add(key)

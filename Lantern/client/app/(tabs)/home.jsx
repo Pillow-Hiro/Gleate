@@ -16,6 +16,7 @@ import { loadLogs } from '../../lib/logsCache'
 import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
 import PromptCard from '../../components/PromptCard'
+import GlassPanel from '../../components/GlassPanel'
 import Tile, { Back, Book, Bulb } from '../../components/Tile'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
@@ -182,10 +183,22 @@ export default function Home() {
 
             琥珀で塗る。CLAUDE.md の「1画面に灯り色を2箇所以上置かない」は
             守れている — **この画面で琥珀に塗るのはここだけ。**
-            今週の発見は灰、Gleateの言葉は砂。3つとも地の色が違う。 */}
+            **2026-09-11 に硝子にした**（作者の指示「今日の灯りに liquid
+            glass を反映できたりする？」）。塗りが硝子に替わっただけで、
+            **琥珀はここだけ**という状態は変わらない。iOS 26 未満では
+            今までの一色塗りに落ちる（`GlassPanel.jsx`）。
+
+            今週の発見と Gleate の言葉は、同じ日に**色の付いた面をやめて
+            余白の線にした**（`MarginNote.jsx`）。3つを地の色で見分ける
+            作りではなくなったが、**琥珀に塗るのがここだけなのは前より
+            はっきりした。** */}
         <View>
           <Text className="font-strong text-label-md text-primary mb-2.5">今日の灯り</Text>
-          <View className="bg-lantern-glow rounded-lg px-5 py-5 min-h-[88px] justify-center shadow-bloom">
+          <GlassPanel
+            fill={accentColor(accent, isDark)}
+            radius={16}
+            className="rounded-lg px-5 py-5 min-h-[88px] justify-center shadow-bloom"
+          >
             {loading ? (
               <View className="w-40 h-4 bg-on-lantern/10 rounded-full" />
             ) : (
@@ -193,7 +206,7 @@ export default function Home() {
                 {quote || '今日の記録が、ここに残る。'}
               </Text>
             )}
-          </View>
+          </GlassPanel>
         </View>
 
         {/* **今日の問い。** 2026-08-20 に「書く」から持ち上げた。
