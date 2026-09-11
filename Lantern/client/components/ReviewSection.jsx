@@ -5,15 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authFetch } from '../lib/supabase'
 import { paywallMessage, readMaybePaywall } from '../lib/plan'
 import Paywall from './Paywall'
-import MarginNote from './MarginNote'
 import { formatAge } from '../lib/format'
 
 export function PatternCard({ observation, question }) {
   return (
-    <MarginNote className="gap-2.5">
-      <Text className="text-body text-on-surface-variant leading-relaxed">{observation}</Text>
-      <Text className="text-body text-outline italic leading-relaxed">{question}</Text>
-    </MarginNote>
+    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
+      <Text className="text-body text-on-surface leading-relaxed">{observation}</Text>
+      <Text className="text-body text-on-surface-variant italic leading-relaxed">{question}</Text>
+    </View>
   )
 }
 

@@ -65,9 +65,9 @@ export default function HomeCard({ log, label, lighting, note, footer }) {
           砂色の面をやめた理由は `MarginNote.jsx` の冒頭。
           「LANTERN」の英字キッカーは置かない（CLAUDE.md「やらないこと」）。 */}
       {log.ai_response ? (
-        <MarginNote>
-          <Text className="text-body-md text-on-surface-variant leading-relaxed">{log.ai_response}</Text>
-        </MarginNote>
+        <View className="bg-ai-surface rounded-lg px-4 py-3.5">
+          <Text className="text-body-md text-ai-ink leading-relaxed">{log.ai_response}</Text>
+        </View>
       ) : note ? (
         // **来ない理由を出す**（2026-09-04）。灯りは十数秒かかるので、
         // 何も出さないと**来ないのか遅いのかが分からない**

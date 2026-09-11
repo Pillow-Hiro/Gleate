@@ -133,8 +133,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Optional.jsx` | EditorToolbar | 添え物を囲う。**中で落ちても外は生き残る**——飾りのせいで書く道具が消えないように |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
-| `MarginNote.jsx` | HomeCard / LogDetail / ReviewSection / WeeklyDiscovery / Twitch / YouTube | 余白の書き込み。**色の付いた箱をやめた**——機械の言葉だけを色面に入れるのは AI のアプリの形で、配色を変えても構図が残る |
-| `GlassPanel.jsx` | ホーム（今日の灯り） | 硝子の面（Liquid Glass）。**iOS 26 未満は一色塗りに落ちる。**影を消さないため切るのは内側だけ |
+| `MarginNote.jsx` | HomeCard（灯り待ち・来ない理由）/ WeeklyDiscovery | 余白の書き込み。**回答そのものは砂色の面に戻した**（2026-09-11・作者から「前の方が分かりやすい」）。ここに残るのは回答ではないもの |
+| `GlassPanel.jsx` | 今日の灯り / WriteButton / PromptCard | 硝子の面（Liquid Glass）。**琥珀の一色塗りをやめた3箇所。** iOS 26 未満は一色塗りに落ちる。影を消さないため切るのは内側だけ |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |

@@ -3,6 +3,7 @@ import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg'
 import Text from './Text'
 import { useThemeContext } from '../lib/theme'
 import { accentColor } from '../lib/accent'
+import { GlassFill, isGlassOn } from './GlassPanel'
 
 // 今日の問い（2026-09-09・作者の指示「Lantern_2の画像のようにして」）。
 //
@@ -106,13 +107,22 @@ export default function PromptCard({ question, onWrite, onIdea }) {
           {question}
         </Text>
 
-        {/* 行き先。案は角丸の四角で、**左が塗り、右が縁だけ** */}
+        {/* 行き先。案は角丸の四角で、**左が塗り、右が縁だけ**
+
+            左の塗りを**硝子にした**（2026-09-11・作者の指示「琥珀一色の
+            箇所をどうにかしよう」）。今日の灯りとペンの丸と同じ扱い。
+            **出せない端末では今までどおり琥珀に塗る。**
+
+            角丸は `rounded`＝8px（`tailwind.config.js`）。硝子を切る値は
+            クラス名から読めないので数で渡す。 */}
         <View className="flex-row items-center gap-3">
           <Pressable
             onPress={onWrite}
             accessibilityLabel={`${question} について書く`}
-            className="flex-1 flex-row items-center justify-center gap-2 px-4 py-2.5 rounded bg-lantern-glow active:opacity-80"
+            style={isGlassOn() ? null : { backgroundColor: glow }}
+            className="flex-1 flex-row items-center justify-center gap-2 px-4 py-2.5 rounded active:opacity-80"
           >
+            <GlassFill fill={glow} radius={8} interactive />
             <Pencil color="#1D1D1F" />
             <Text className="font-strong text-label-md text-on-lantern">
               これについて書く

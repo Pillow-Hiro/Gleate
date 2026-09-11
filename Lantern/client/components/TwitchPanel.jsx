@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Image, Linking, Pressable, View } from 'react-native'
 import Text from './Text'
-import MarginNote from './MarginNote'
 import { authFetch } from '../lib/supabase'
 import { startConnect, readConnectResult, clearConnectResult } from '../lib/twitchConnect'
 
@@ -314,17 +313,17 @@ export default function TwitchPanel() {
             </View>
 
             {insightLoading ? (
-              <MarginNote className="gap-2">
-                <View className="h-3 bg-on-surface/10 rounded-full w-full" />
-                <View className="h-3 bg-on-surface/10 rounded-full w-4/5" />
-                <View className="h-3 bg-on-surface/10 rounded-full w-2/3" />
-              </MarginNote>
+              <View className="bg-ai-surface rounded-lg px-5 py-4 gap-2">
+                <View className="h-3 bg-ai-ink/15 rounded-full w-full" />
+                <View className="h-3 bg-ai-ink/15 rounded-full w-4/5" />
+                <View className="h-3 bg-ai-ink/15 rounded-full w-2/3" />
+              </View>
             ) : null}
 
             {!insightLoading && insight ? (
-              <MarginNote>
-                <Text className="text-body-md leading-relaxed text-on-surface-variant">{insight}</Text>
-              </MarginNote>
+              <View className="bg-ai-surface rounded-lg px-5 py-4">
+                <Text className="text-body-md leading-relaxed text-ai-ink">{insight}</Text>
+              </View>
             ) : null}
           </View>
 

@@ -2,6 +2,9 @@ import { Pressable } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { useRouter } from 'expo-router'
 import { useTabBarInset } from '../lib/tabBar'
+import { GlassFill, isGlassOn } from './GlassPanel'
+import { useThemeContext } from '../lib/theme'
+import { accentColor } from '../lib/accent'
 
 // 右下の書くボタン。**ペンだけ**（2026-09-03・作者の指示）。
 //
@@ -23,6 +26,18 @@ import { useTabBarInset } from '../lib/tabBar'
 //
 // すりガラスのタブバーは内容の上に重なるので、その高さぶん持ち上げる
 // （`lib/tabBar.js`）。
+//
+// 持ち上げる量は **8px**（2026-09-11・作者の指示「もう少しだけ下に
+// ずらせる？」）。16 から半分にした。`tabInset` がタブバーの丈なので、
+// **0 にしなければ重ならない。**8 は指1本ぶんの余白として残す。
+//
+// ## 琥珀の一色塗りをやめた（2026-09-11）
+//
+// 作者から「今日の灯り、これについて書く、ペンボタンとかの琥珀一色の
+// 箇所をどうにかしよう」。今日の灯りと同じ硝子にした。
+// **出せない端末では今までどおり琥珀に塗る**（`GlassPanel.jsx`）。
+//
+// 押せるものなので `interactive` を渡す。指に反応して歪む。
 //
 // ## 問いを連れていく
 //
@@ -49,6 +64,8 @@ function PencilIcon() {
 export default function WriteButton({ question = '', date = '' }) {
   const router = useRouter()
   const tabInset = useTabBarInset()
+  const { accent, isDark } = useThemeContext()
+  const glow = accentColor(accent, isDark)
 
   function open() {
     // **空の値は渡さない。** `undefined` を渡すと文字列 "undefined" になる
@@ -62,9 +79,13 @@ export default function WriteButton({ question = '', date = '' }) {
     <Pressable
       onPress={open}
       accessibilityLabel="記録を書く"
-      style={{ position: 'absolute', right: 20, bottom: tabInset + 16, width: 56, height: 56 }}
-      className="bg-lantern-glow rounded-full items-center justify-center shadow-bloom active:opacity-80"
+      style={[
+        { position: 'absolute', right: 20, bottom: tabInset + 8, width: 56, height: 56 },
+        isGlassOn() ? null : { backgroundColor: glow },
+      ]}
+      className="rounded-full items-center justify-center shadow-bloom active:opacity-80"
     >
+      <GlassFill fill={glow} radius={28} interactive />
       <PencilIcon />
     </Pressable>
   )

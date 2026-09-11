@@ -55,6 +55,13 @@ import { StyleSheet, View } from 'react-native'
 // 角丸の値は呼ぶ側から数で渡す——`rounded-lg` は 16px
 // （`tailwind.config.js`）。**クラス名からは読み取れないので数で渡す。**
 
+// ## 敷くだけの形も出す
+//
+// 押せるもの（ペンの丸・「これについて書く」）は `Pressable` なので、
+// 面ごと差し替えられない。**硝子の1枚だけを敷けるように**分けてある
+// （`GlassFill`）。呼ぶ側は `isGlassOn()` を見て、硝子が出ないときだけ
+// 自分で琥珀に塗る。
+
 // `null` は「まだ見ていない」、`false` は「使えない」
 let mod = null
 
@@ -70,32 +77,44 @@ function glass() {
   return mod
 }
 
-export default function GlassPanel({ fill, radius = 16, className = '', style, children }) {
+/** 硝子が出せる端末か。**出せないときは呼ぶ側が琥珀に塗る** */
+export function isGlassOn() {
+  return glass() !== false
+}
+
+/**
+ * 硝子の1枚。**親いっぱいに敷く**ので、親が丈と角丸を持つこと。
+ * 出せない端末では `null`——親の `backgroundColor` がそのまま見える。
+ *
+ * `interactive` は押せるものに渡す。指に反応して歪む
+ * （Apple の作法。押せないものに付けると触れそうに見えてしまう）。
+ */
+export function GlassFill({ fill, radius = 16, interactive = false }) {
   const m = glass()
-
-  if (!m) {
-    return (
-      <View className={className} style={[{ backgroundColor: fill }, style]}>
-        {children}
-      </View>
-    )
-  }
-
+  if (!m) return null
   const { GlassView } = m
+  return (
+    <View
+      style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
+      pointerEvents="none"
+    >
+      <GlassView
+        style={StyleSheet.absoluteFill}
+        glassEffectStyle="regular"
+        glassColorScheme="light"
+        tintColor={fill}
+        isInteractive={interactive}
+      />
+    </View>
+  )
+}
+
+export default function GlassPanel({ fill, radius = 16, className = '', style, children }) {
+  const on = isGlassOn()
 
   return (
-    <View className={className} style={style}>
-      <View
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
-        pointerEvents="none"
-      >
-        <GlassView
-          style={StyleSheet.absoluteFill}
-          glassEffectStyle="regular"
-          glassColorScheme="light"
-          tintColor={fill}
-        />
-      </View>
+    <View className={className} style={[on ? null : { backgroundColor: fill }, style]}>
+      <GlassFill fill={fill} radius={radius} />
       {children}
     </View>
   )
