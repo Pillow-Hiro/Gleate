@@ -88,6 +88,58 @@ function BookDrawn({ color }) {
   )
 }
 
+// 節の見出しに添える2つ（2026-09-11・作者の指示
+// 「今日の灯り、今週の発見にもそれぞれアイコンをつけてください」）。
+//
+// **どちらもタブには無い記号。**タブと同じ名前を使えるものは
+// そちらに揃えるが（`Back` `Bulb` `Book`）、この2つは画面の中にしか
+// 無い節なので、意味の近い SF Symbols を選んだ。
+//
+// - 今日の灯り … `lightbulb`。**灯りそのもの。**
+//   このアプリで閃きを指すのは「アイデアの種」で、そちらは `pencil`。
+//   役目が被らないので取り違えられない
+// - 今週の発見 … `magnifyingglass`。**近くで見る、という意味だけ。**
+//   `sparkles` は機械が書いたものの記号として広まっていて、
+//   ここは AI を使っていない（`WeeklyDiscovery.jsx`）ので使わない。
+//   `eye` も避けた——**見られている側の記号**に見える
+
+export function Lamp({ color, size = 16 }) {
+  return (
+    <Symbol
+      name="lightbulb"
+      size={size}
+      color={color}
+      fallback={
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.4.9 1 .9 1.7V18h5.2v-2.4c0-.7.3-1.3.9-1.7A6 6 0 0012 3z"
+            stroke={color}
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      }
+    />
+  )
+}
+
+export function Lens({ color, size = 16 }) {
+  return (
+    <Symbol
+      name="magnifyingglass"
+      size={size}
+      color={color}
+      fallback={
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="11" cy="11" r="7" stroke={color} strokeWidth="1.9" />
+          <Path d="M16.2 16.2L21 21" stroke={color} strokeWidth="1.9" strokeLinecap="round" />
+        </Svg>
+      }
+    />
+  )
+}
+
 export function Clock({ color }) {
   return (
     <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">

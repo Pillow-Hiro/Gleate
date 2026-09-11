@@ -1,6 +1,9 @@
 import { View } from 'react-native'
 import Text from './Text'
 import { localDateStr } from '../lib/date'
+import { Lens } from './Tile'
+import { useThemeContext } from '../lib/theme'
+import { accentColor } from '../lib/accent'
 
 // Web版 Home.jsx の「今週の発見」を移植したもの。AIは使わない。
 // 観察文の生成規則・文言は変更していない。
@@ -56,12 +59,20 @@ export function buildObservations(logs) {
 }
 
 export default function WeeklyDiscovery({ logs }) {
+  // **早い return より前に呼ぶ。**フックは毎回同じ数だけ呼ばれること
+  const { accent, isDark } = useThemeContext()
   if (logs.length === 0) return null
+  const glow = accentColor(accent, isDark)
   const observations = buildObservations(logs)
 
   return (
     <View>
-      <Text className="font-strong text-label-md text-on-surface-variant mb-2.5">今週の発見</Text>
+      {/* 記号を添える（2026-09-11・作者の指示）。
+          **日替わりの抜粋と同じ並べ方**——記号・間・字 */}
+      <View className="flex-row items-center gap-1.5 mb-2.5">
+        <Lens color={glow} />
+        <Text className="font-strong text-label-md text-on-surface-variant">今週の発見</Text>
+      </View>
       {/* **砂 → 灰 → 生成り**（2026-08-14 に二度変えた）。
           砂は「Gleateの言葉」の色で、同じ画面に両方あるとどちらも
           AI が書いたものに見えた。**ここは AI を使っていない。**

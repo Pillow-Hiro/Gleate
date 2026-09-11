@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, View } from 'react-native'
 import Text from './Text'
+import { GlassFill, isGlassOn } from './GlassPanel'
+import { useThemeContext } from '../lib/theme'
+import { accentColor } from '../lib/accent'
 
 // 「記録」と「アイデア」の切り替え。
 //
@@ -58,6 +61,8 @@ const PAD = 4
 
 export default function WriteTabs({ value, onChange }) {
   const index = value === 'ideas' ? 1 : 0
+  const { accent, isDark } = useThemeContext()
+  const glow = accentColor(accent, isDark)
   const [trackW, setTrackW] = useState(0)
   const slide = useRef(new Animated.Value(index)).current
 
@@ -120,9 +125,17 @@ export default function WriteTabs({ value, onChange }) {
         {/* 滑る帯。**押される面ではない。**下に敷いてあるだけで、
             触るのは上の Pressable。幅を測るまでは描かない */}
         {pillW > 0 ? (
+          // **硝子にした**（2026-09-11・作者の指示「記録とアイデアの
+          // タブ移動を liquid glass にしたい」）。今日の灯り・ペンの丸・
+          // 「これについて書く」と同じ扱い。
+          //
+          // 角丸は大きな数を渡す。**丈を測っていないので半分が出せない**
+          // が、iOS は丈の半分を超えた値を丸く詰めてくれる。
+          //
+          // iOS 26 未満では今までどおり琥珀に塗る（`GlassPanel.jsx`）。
           <Animated.View
             pointerEvents="none"
-            className="bg-lantern-glow rounded-full"
+            className="rounded-full"
             style={{
               position: 'absolute',
               left: PAD,
@@ -130,8 +143,11 @@ export default function WriteTabs({ value, onChange }) {
               bottom: PAD,
               width: pillW,
               transform: [{ translateX: move }, { scaleX: stretch }, { scaleY: squash }],
+              ...(isGlassOn() ? null : { backgroundColor: glow }),
             }}
-          />
+          >
+            <GlassFill fill={glow} radius={999} />
+          </Animated.View>
         ) : null}
 
         {TABS.map(({ id, label }, i) => (

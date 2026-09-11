@@ -17,7 +17,7 @@ import AppHeader from '../../components/AppHeader'
 import HomeCard from '../../components/HomeCard'
 import PromptCard from '../../components/PromptCard'
 import GlassPanel from '../../components/GlassPanel'
-import Tile, { Back, Book, Bulb } from '../../components/Tile'
+import Tile, { Back, Book, Bulb, Lamp } from '../../components/Tile'
 import { greetingFor } from '../../lib/greeting'
 import { todayStr } from '../../lib/date'
 import { dailySample } from '../../lib/sample'
@@ -193,7 +193,12 @@ export default function Home() {
             作りではなくなったが、**琥珀に塗るのがここだけなのは前より
             はっきりした。** */}
         <View>
-          <Text className="font-strong text-label-md text-primary mb-2.5">今日の灯り</Text>
+          {/* 記号を添える（2026-09-11・作者の指示）。
+              **日替わりの抜粋と同じ並べ方**——記号・間・字 */}
+          <View className="flex-row items-center gap-1.5 mb-2.5">
+            <Lamp color={glow} />
+            <Text className="font-strong text-label-md text-primary">今日の灯り</Text>
+          </View>
           <GlassPanel
             fill={accentColor(accent, isDark)}
             radius={16}
