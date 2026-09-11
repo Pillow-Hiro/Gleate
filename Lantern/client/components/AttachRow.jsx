@@ -11,7 +11,8 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import Sheet from './Sheet'
-import { add as addLink, list as listLinks, recentSounds, remove as removeLink } from '../lib/linkStore'
+import SwipeRow from './SwipeRow'
+import { add as addLink, hideSound, list as listLinks, recentSounds, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
 import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
 import { useKeyboardHeight } from '../lib/keyboard'
@@ -404,19 +405,32 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               // 名前で嘘をつかない——これは「最近聴いた曲」ではなく、
               // **この人が前に添えたもの。**端末の中だけを見ている
               <View>
-                <Text className="text-label-sm text-outline mb-1">前に添えた曲</Text>
+                <Text className="text-label-sm text-outline mb-1">
+                  前に添えた曲（横に払うと消せます）
+                </Text>
                 {recent.map((item, i) => (
-                  <Pressable
+                  // **横に払うとゴミ箱**（2026-09-11・作者の指示）。
+                  // 消すのは候補から伏せるだけで、**元の記録は触らない**
+                  // （`lib/linkStore.js` の `hideSound`）
+                  <SwipeRow
                     key={item.url}
-                    onPress={() => take({ url: item.url, title: item.label, artist: '' })}
-                    className={`py-3 min-h-touch justify-center active:opacity-70 ${
-                      i === recent.length - 1 ? '' : 'border-b border-border'
-                    }`}
+                    label={`${item.label || item.url} を候補から消す`}
+                    onDelete={() => {
+                      hideSound(item.url)
+                      setRecent(recentSounds(4))
+                    }}
                   >
-                    <Text className="text-body-md text-on-surface" numberOfLines={1}>
-                      {item.label || item.url}
-                    </Text>
-                  </Pressable>
+                    <Pressable
+                      onPress={() => take({ url: item.url, title: item.label, artist: '' })}
+                      className={`py-3 min-h-touch justify-center active:opacity-70 ${
+                        i === recent.length - 1 ? '' : 'border-b border-border'
+                      }`}
+                    >
+                      <Text className="text-body-md text-on-surface" numberOfLines={1}>
+                        {item.label || item.url}
+                      </Text>
+                    </Pressable>
+                  </SwipeRow>
                 ))}
               </View>
             ) : null}

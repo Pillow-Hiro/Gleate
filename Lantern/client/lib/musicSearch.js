@@ -116,7 +116,11 @@ export function songLabel(song) {
  * **記録ごとの並びを後ろから見る**ので、だいたい新しい順にしかならない。
  * 持っていない精度を、持っているふりで出さない。
  */
-export function recentFrom(groups, limit = 4) {
+/*
+ * `skip` は**伏せたものを外す口**（2026-09-11）。渡さなければ今までどおり。
+ * 外したぶんは次のものが繰り上がるので、**一覧が歯抜けにならない。**
+ */
+export function recentFrom(groups, limit = 4, skip) {
   const out = []
   const seen = new Set()
   const all = Array.isArray(groups) ? groups : []
@@ -128,6 +132,7 @@ export function recentFrom(groups, limit = 4) {
       const url = String(item.url || '').trim()
       if (!url || seen.has(url)) continue
       seen.add(url)
+      if (typeof skip === 'function' && skip(url)) continue
       out.push({ url, label: String(item.label || '').trim() })
       if (out.length >= limit) return out
     }

@@ -3,7 +3,7 @@ import { Image, Modal, Pressable, RefreshControl, ScrollView, View } from 'react
 import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
-import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
+import { BOTTOM_GAP, WRITE_BUTTON_CLEARANCE, useTabBarInset } from '../../lib/tabBar'
 import { useThemeContext } from '../../lib/theme'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { authFetch } from '../../lib/supabase'
@@ -201,7 +201,7 @@ export default function Home() {
         contentContainerClassName="px-5 pt-6 gap-8 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? keyboardHeight + KEYBOARD_GAP : 0),
+            tabInset + BOTTOM_GAP + WRITE_BUTTON_CLEARANCE + (keyboardHeight > 0 ? keyboardHeight + KEYBOARD_GAP : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

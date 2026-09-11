@@ -9,7 +9,7 @@ import { useThemeContext } from '../../lib/theme'
 import { accentColor } from '../../lib/accent'
 import { isDayFull } from '../../lib/date'
 import { useRouter } from 'expo-router'
-import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
+import { BOTTOM_GAP, WRITE_BUTTON_CLEARANCE, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
 import { loadLogs } from '../../lib/logsCache'
@@ -170,7 +170,7 @@ export default function Home() {
       <AppHeader />
       <ScrollView
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
-        contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP }}
+        contentContainerStyle={{ paddingBottom: tabInset + BOTTOM_GAP + WRITE_BUTTON_CLEARANCE }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View>
@@ -308,7 +308,6 @@ export default function Home() {
                   日替わりの抜粋
                 </Text>
               </View>
-              <Text className="text-label-sm text-outline">Daily Curations</Text>
             </View>
             {shown.map((log) => (
               <HomeCard key={log.id || log.date} log={log} />

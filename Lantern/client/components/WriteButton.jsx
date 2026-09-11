@@ -27,9 +27,18 @@ import { accentColor } from '../lib/accent'
 // すりガラスのタブバーは内容の上に重なるので、その高さぶん持ち上げる
 // （`lib/tabBar.js`）。
 //
-// 持ち上げる量は **8px**（2026-09-11・作者の指示「もう少しだけ下に
-// ずらせる？」）。16 から半分にした。`tabInset` がタブバーの丈なので、
-// **0 にしなければ重ならない。**8 は指1本ぶんの余白として残す。
+// 持ち上げる量は **2px**（2026-09-11・作者の指示を2回受けて 16 → 8 → 2）。
+// `tabInset` はタブバーの丈そのものなので、**これを割ると
+// すりガラスの下に潜る。**2 が下限で、ここから先は動かせない。
+//
+// ## 下げるだけでは直らなかった
+//
+// 作者から「**削除ボタンが押せないです**」。丸はここから 56px ぶん
+// 立ち上がるので、**中身の下余白が 8px しか無ければ最後の行は必ず
+// 丸の下に入る。**記録の詳細では、そこに「編集」と「削除」が並んでいた。
+//
+// 動かせるのは 6px。**足りないぶんは中身の側を下げる**
+// （`lib/tabBar.js` の `WRITE_BUTTON_CLEARANCE`）。
 //
 // ## 琥珀の一色塗りをやめた（2026-09-11）
 //
@@ -80,7 +89,7 @@ export default function WriteButton({ question = '', date = '' }) {
       onPress={open}
       accessibilityLabel="記録を書く"
       style={[
-        { position: 'absolute', right: 20, bottom: tabInset + 8, width: 56, height: 56 },
+        { position: 'absolute', right: 20, bottom: tabInset + 2, width: 56, height: 56 },
         isGlassOn() ? null : { backgroundColor: glow },
       ]}
       className="rounded-full items-center justify-center shadow-bloom active:opacity-80"

@@ -5,7 +5,7 @@ import Text from '../../components/Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ScreenFade } from '../../components/Motion'
 import UnderlineTabs from '../../components/UnderlineTabs'
-import { BOTTOM_GAP, useTabBarInset } from '../../lib/tabBar'
+import { BOTTOM_GAP, WRITE_BUTTON_CLEARANCE, useTabBarInset } from '../../lib/tabBar'
 import { authFetch } from '../../lib/supabase'
 import { loadLogs, replaceLogs } from '../../lib/logsCache'
 import { useRefreshOnFocus, usePullToRefresh } from '../../lib/refreshOnFocus'
@@ -234,7 +234,7 @@ export default function Journal() {
         contentContainerClassName="px-5 pt-6 gap-6 w-full max-w-read self-center"
         contentContainerStyle={{
           paddingBottom:
-            tabInset + BOTTOM_GAP + (keyboardHeight > 0 ? keyboardHeight + 120 : 0),
+            tabInset + BOTTOM_GAP + WRITE_BUTTON_CLEARANCE + (keyboardHeight > 0 ? keyboardHeight + 120 : 0),
         }}
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"

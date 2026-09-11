@@ -32,22 +32,40 @@ import { recentFrom } from './musicSearch'
 
 const KEY = 'lantern.music_v1'
 
+// **「前に添えた曲」から伏せたもの**（2026-09-11・作者の指示
+// 「添えるで前に添えた曲を消せるようにしたいです」）。
+//
+// ## 元の記録は消さない
+//
+// あの一覧は、**過去の記録に添いているものを集めて作っている**
+// （`recentSounds`）。そこから消すことを「元を消す」にすると、
+// **どの日の記録が変わったのか画面から分からないまま中身が減る。**
+//
+// なので消すのは**候補に出す／出さない**だけ。記録は触らない。
+// 伏せた曲をもう一度添えれば、また出るようになる。
+const HIDDEN_KEY = 'lantern.music_hidden_v1'
+
 // id → [{ url, service, serviceLabel, kind, title, label }]
 let cache = null
 let loading = null
+// 伏せた曲の鍵（`linkKey`）の集まり
+let hidden = null
 
 /** 最初の一回だけ読む。**以後は覚えから返す** */
 export function ensureLoaded() {
   if (cache) return Promise.resolve()
   if (!loading) {
-    loading = AsyncStorage.getItem(KEY)
-      .then((raw) => {
-        cache = raw ? JSON.parse(raw) : {}
+    loading = AsyncStorage.multiGet([KEY, HIDDEN_KEY])
+      .then((pairs) => {
+        const got = Object.fromEntries(pairs)
+        cache = got[KEY] ? JSON.parse(got[KEY]) : {}
+        hidden = new Set(got[HIDDEN_KEY] ? JSON.parse(got[HIDDEN_KEY]) : [])
       })
       .catch((e) => {
         // 読めなくても記録は読める。**空として進む**
         console.warn('[リンク] 読み込みに失敗', e)
         cache = {}
+        hidden = new Set()
       })
       .finally(() => {
         loading = null
@@ -76,7 +94,22 @@ export function list(id) {
  */
 export function recentSounds(limit) {
   if (!cache) return []
-  return recentFrom(Object.values(cache), limit)
+  // **伏せたものを外してから数える。**外したぶん、次のものが繰り上がる
+  const skip = hidden || new Set()
+  return recentFrom(Object.values(cache), limit, (url) => skip.has(linkKey(url)))
+}
+
+/**
+ * 「前に添えた曲」から伏せる。**記録からは消さない**（冒頭の節）。
+ *
+ * 鍵で覚える（`?si=` のような付き物を無視するため）。
+ */
+export function hideSound(url) {
+  if (!hidden) hidden = new Set()
+  hidden.add(linkKey(url))
+  AsyncStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden])).catch((e) => {
+    console.warn('[リンク] 伏せたものの保存に失敗', e)
+  })
 }
 
 /**

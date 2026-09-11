@@ -149,6 +149,22 @@ describe('前に添えた曲', () => {
     expect(out).toHaveLength(3)
   })
 
+  // 横に払って消したものを、次から出さない（2026-09-11）
+  it('伏せたものは出さない', () => {
+    const out = recentFrom([[s('a', 'A'), s('b', 'B')]], 4, (url) => url === 'b')
+    expect(out.map((x) => x.url)).toEqual(['a'])
+  })
+
+  // **外したぶんは繰り上がる。**歯抜けの一覧にしない
+  it('伏せたぶん、次のものが繰り上がる', () => {
+    const groups = [[s('a'), s('b'), s('c')]]
+    expect(recentFrom(groups, 2, (url) => url === 'c').map((x) => x.url)).toEqual(['b', 'a'])
+  })
+
+  it('渡さなければ今までどおり', () => {
+    expect(recentFrom([[s('a'), s('b')]], 4)).toHaveLength(2)
+  })
+
   it('何も無ければ空', () => {
     expect(recentFrom([], 4)).toEqual([])
     expect(recentFrom(null, 4)).toEqual([])
