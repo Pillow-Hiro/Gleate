@@ -37,32 +37,23 @@ const EXPAND = {
 export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isLast }) {
   const [open, setOpen] = useState(false)
   const { accent, isDark } = useThemeContext()
-  // 山形の向きと、中身の濃さ
-  const turn = useRef(new Animated.Value(0)).current
+  // 中身の濃さ
   const fade = useRef(new Animated.Value(0)).current
 
   function toggle() {
     const next = !open
     LayoutAnimation.configureNext(EXPAND)
     setOpen(next)
-    Animated.parallel([
-      Animated.timing(turn, {
-        toValue: next ? 1 : 0,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(fade, {
-        toValue: next ? 1 : 0,
-        // **開くときは少し待つ**（2026-08-15）。
-        // 高さが伸びるより先に文字が出ると、動きと中身が別々に見えた。
-        // 閉じるときは待たない。中身が残ったまま畳むとちらつく
-        delay: next ? 120 : 0,
-        duration: next ? 260 : 100,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start()
+    Animated.timing(fade, {
+      toValue: next ? 1 : 0,
+      // **開くときは少し待つ**（2026-08-15）。
+      // 高さが伸びるより先に文字が出ると、動きと中身が別々に見えた。
+      // 閉じるときは待たない。中身が残ったまま畳むとちらつく
+      delay: next ? 120 : 0,
+      duration: next ? 260 : 100,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start()
   }
   // **抜粋では記法を外す。** `**` が残ると、装飾ではなく文字として読まれる。
   // 抜粋は2行しか出ないので、太字にしても区別が付かない
@@ -109,63 +100,36 @@ export default function LogItem({ log, onDelete, onUpdate, onToggleFavorite, isL
           <Text className="font-label text-label-md text-outline">
             {relativeDayLabel(log.date)}
           </Text>
-          {/* ## 星が山形を食っていた（2026-09-11・作者の指摘
-              「お気に入りマークの右に開閉マークがあります。
-                ちゃんと機能していないので修正して」）
+          {/* ## 山形をやめた（2026-09-11・作者の指示「開閉マークいらないね」）
 
-              星は 44px の箱に `hitSlop={12}` を足していた。**触れる範囲が
-              左右に12px ずつ広がる。**間は `gap-3` の 12px しか無いので、
-              **星の当たりが間を全部食い、山形の左半分に重なっていた。**
+              その前に、**星の当たりが山形を食っている**のを直したところ
+              （星は 44px ＋ `hitSlop={12}` で、間の `gap-3` 12px を
+              丸ごと越えていた）、記号そのものが要らないと判断された。
 
-              山形の側には押せる仕掛けが無く、親の行の `Pressable` 頼み。
-              つまり**山形を狙った指は、たいてい星に取られる。**
+              **開いているかどうかは、もう形で分かる。**開いた行は月の
+              カードから抜け出し、灯り色の輪郭を持つ（下の註釈）。
+              **同じことを二度言う記号は置かない。**
 
-              直したのは2つ。
+              行ぜんたいが押せるので、開く道も無くならない。
 
-              1. 山形に**自分の 44px と `onPress={toggle}`** を持たせる
-              2. `hitSlop` を**左右で別にする。**隣り合う2つが同じだけ
-                 外へ広がると、間がどれだけあっても必ずぶつかる */}
-          <View className="flex-row items-center">
-            {/* お気に入り。**数を出さない。**
-                多い/少ないを評価しないため（CLAUDE.md）。
-                押せる範囲は 44px 以上（HIG）。 */}
-            {onToggleFavorite ? (
-              <Pressable
-                onPress={() => onToggleFavorite(log)}
-                accessibilityLabel={log.favorite ? 'お気に入りを外す' : 'お気に入りに入れる'}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 0 }}
-                className="min-w-touch min-h-touch items-center justify-center"
-              >
-                <Text className={log.favorite ? 'text-lantern-glow' : 'text-outline'}>
-                  {log.favorite ? '★' : '☆'}
-                </Text>
-              </Pressable>
-            ) : null}
-            {/* 山形は回す。**字を差し替えない。**
-                差し替えると、開く動きと無関係に一瞬で変わる */}
+              なお、この直しで見つかった「隣り合う `hitSlop` の重なり」は
+              `LogDetail` の編集・削除でも起きていた。**そちらは直してある。** */}
+          {onToggleFavorite ? (
+            // お気に入り。**数を出さない。**
+            // 多い/少ないを評価しないため（CLAUDE.md）。
+            // 押せる範囲は 44px 以上（HIG）。**隣はもう居ない**ので
+            // 左右に分ける必要は無い
             <Pressable
-              onPress={toggle}
-              accessibilityLabel={open ? 'この記録を閉じる' : 'この記録を開く'}
-              accessibilityState={{ expanded: open }}
-              hitSlop={{ top: 12, bottom: 12, left: 0, right: 12 }}
-              className="min-w-touch min-h-touch items-center justify-center"
+              onPress={() => onToggleFavorite(log)}
+              accessibilityLabel={log.favorite ? 'お気に入りを外す' : 'お気に入りに入れる'}
+              hitSlop={12}
+              className="min-w-touch min-h-touch items-end justify-center"
             >
-              <Animated.View
-                style={{
-                  transform: [
-                    {
-                      rotate: turn.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0deg', '180deg'],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <Text className="text-outline text-label-md">⌄</Text>
-              </Animated.View>
+              <Text className={log.favorite ? 'text-lantern-glow' : 'text-outline'}>
+                {log.favorite ? '★' : '☆'}
+              </Text>
             </Pressable>
-          </View>
+          ) : null}
         </View>
 
         <View className="flex-row items-start gap-2.5">
