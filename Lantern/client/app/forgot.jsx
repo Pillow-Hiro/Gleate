@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GlassPressable from '../components/GlassPressable'
 import { Pressable, View } from 'react-native'
 import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
@@ -118,15 +119,15 @@ export default function Forgot() {
 
             {error ? <Text className="text-label-md text-error">{error}</Text> : null}
 
-            <Pressable
+            <GlassPressable
               onPress={send}
               disabled={loading}
-              className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+              className="rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
             >
               <Text className="font-strong text-body text-on-lantern">
                 {loading ? '送信中...' : '再設定のメールを送る'}
               </Text>
-            </Pressable>
+            </GlassPressable>
 
             <Pressable onPress={back} className="items-center pt-2">
               <Text className="text-label-md text-outline">ログインに戻る</Text>

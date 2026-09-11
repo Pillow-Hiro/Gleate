@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Pressable, View } from 'react-native'
 import Text from './Text'
 import FormShell from './FormShell'
@@ -118,15 +119,15 @@ export default function AuthForm({
       ) : null}
       {notice ? <Text className="text-label-md text-ai-ink">{notice}</Text> : null}
 
-      <Pressable
+      <GlassPressable
         onPress={handleSubmit}
         disabled={loading}
-        className="bg-lantern-glow rounded-full py-4 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+        className="rounded-full py-4 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
       >
         <Text className="font-strong text-body-md text-on-lantern">
           {loading ? '処理中...' : submitLabel}
         </Text>
-      </Pressable>
+      </GlassPressable>
 
       {children}
     </FormShell>

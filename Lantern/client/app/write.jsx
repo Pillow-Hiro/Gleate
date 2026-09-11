@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import GlassPressable from '../components/GlassPressable'
 import { Dimensions, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -112,15 +113,15 @@ export default function Write() {
         >
           <Text className="text-body-md text-outline">✕</Text>
         </Pressable>
-        <Pressable
+        <GlassPressable
           onPress={save}
           disabled={saving}
-          className="bg-lantern-glow rounded-full px-5 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+          className="rounded-full px-5 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
         >
           <Text className="font-strong text-label-md text-on-lantern">
             {saving ? '保存中...' : editing ? '直す' : '記録する'}
           </Text>
-        </Pressable>
+        </GlassPressable>
       </View>
 
       <ScrollView

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import GlassPressable from '../components/GlassPressable'
 import { Pressable, View } from 'react-native'
 import AuthScreen from '../components/AuthScreen'
 import { useRouter } from 'expo-router'
@@ -90,12 +91,12 @@ export default function Reset() {
                 ここへ来られた時点で復帰用のセッションが出来ており、
                 入り直す必要が無い。ログイン画面へ送っても、
                 認証ガードがすぐ本画面へ振り替えるだけだった */}
-            <Pressable
+            <GlassPressable
               onPress={() => router.replace('/')}
-              className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80"
+              className="rounded-full py-3 min-h-touch justify-center items-center active:opacity-80"
             >
-              <Text className="font-strong text-body text-on-lantern">Lanternへ</Text>
-            </Pressable>
+              <Text className="font-strong text-body text-on-lantern">Gleateへ</Text>
+            </GlassPressable>
           </View>
         ) : ready === false ? (
           <View className="gap-4">
@@ -141,15 +142,15 @@ export default function Reset() {
 
             {error ? <Text className="text-label-md text-error">{error}</Text> : null}
 
-            <Pressable
+            <GlassPressable
               onPress={submit}
               disabled={loading || ready !== true}
-              className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+              className="rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
             >
               <Text className="font-strong text-body text-on-lantern">
                 {loading ? '変更中...' : ready === null ? '確認中...' : '変更する'}
               </Text>
-            </Pressable>
+            </GlassPressable>
           </FormShell>
         )}
       </View>

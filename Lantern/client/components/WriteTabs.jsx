@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, View } from 'react-native'
 import Text from './Text'
 import { GlassFill, isGlassOn } from './GlassPanel'
-import { useThemeContext } from '../lib/theme'
-import { accentColor } from '../lib/accent'
 
 // 「記録」と「アイデア」の切り替え。
 //
@@ -59,12 +57,42 @@ const TABS = [
 // 外側の余白。`p-1` と同じ値。**帯の幅を出すのに要る**ので定数で持つ
 const PAD = 4
 
+// 帯の色。**琥珀ではない**（2026-09-11・動画のとおり）。
+//
+// Apple Music の帯は無色の薄い灰で、選んでいる側だけが一段濃い。
+// このアプリも琥珀をやめた——`CLAUDE.md`「1画面に灯り色を2箇所以上
+// 置かない」に対しても、書くタブの琥珀が保存ボタンだけになって都合がいい。
+//
+// `GlassFill` は `glassColorScheme="light"` で固定なので、
+// **暗いテーマでも帯は明るいまま。**上に載る黒い字が読める。
+const TINT = 'rgba(120, 120, 128, 0.20)'
+
+// 硝子が出せない端末で塗る色。**硝子とだいたい同じ濃さに見えるもの**
+const TINT_FLAT = 'rgba(120, 120, 128, 0.16)'
+
 export default function WriteTabs({ value, onChange }) {
   const index = value === 'ideas' ? 1 : 0
-  const { accent, isDark } = useThemeContext()
-  const glow = accentColor(accent, isDark)
   const [trackW, setTrackW] = useState(0)
   const slide = useRef(new Animated.Value(index)).current
+
+  // 帯の**左右の端を別々に持つ**（2026-09-11・作者の指示
+  // 「移動するとき、添付動画のようにしてほしい」）。
+  //
+  // ## `scaleX` では出せない動きだった
+  //
+  // 動画（Apple Music・iOS 26）を1/30秒ずつ見た。帯は**進む側の端が
+  // 先に走り、後ろの端が遅れて追いつく。**途中では帯が track の
+  // ほぼ全幅まで伸びている。
+  //
+  // `scaleX` は**中心から対称に**伸びるので、この形にならない。
+  // 左右の端をそれぞれ動かし、**進む向きの端だけ速くする。**
+  //
+  // 端の位置は `left` と `width`。**どちらも native driver に載らない**
+  // ので、この2つだけ JS 側で動かす。0.4秒の短い動きで、動かすのは
+  // 小さな面ひとつなので、それで足りる。
+  const edgeL = useRef(new Animated.Value(0)).current
+  const edgeR = useRef(new Animated.Value(0)).current
+  const placed = useRef(false)
 
   // 説明の1行。**帯より少し遅れて入れ替える。**
   // 先に消してから差し替えるので、字が重ならない
@@ -81,6 +109,40 @@ export default function WriteTabs({ value, onChange }) {
     }).start()
   }, [index, slide])
 
+  const pillW = trackW > 0 ? (trackW - PAD * 2) / 2 : 0
+
+  useEffect(() => {
+    if (!pillW) return
+    const toL = index * pillW
+    const toR = toL + pillW
+
+    // 幅を測った直後は**動かさずに置く。**開いた瞬間に伸びない
+    if (!placed.current) {
+      placed.current = true
+      edgeL.setValue(toL)
+      edgeR.setValue(toR)
+      return
+    }
+
+    // **進む向きの端が先**。右へ行くなら右端、左へ行くなら左端
+    const lead = index === 1 ? edgeR : edgeL
+    const trail = index === 1 ? edgeL : edgeR
+    Animated.parallel([
+      Animated.spring(lead, {
+        toValue: index === 1 ? toR : toL,
+        useNativeDriver: false,
+        friction: 9,
+        tension: 150,
+      }),
+      Animated.spring(trail, {
+        toValue: index === 1 ? toL : toR,
+        useNativeDriver: false,
+        friction: 11,
+        tension: 60,
+      }),
+    ]).start()
+  }, [index, pillW, edgeL, edgeR])
+
   useEffect(() => {
     // 最初の描画では消さない（開いた瞬間に言葉が瞬く）
     if (first.current) {
@@ -96,29 +158,18 @@ export default function WriteTabs({ value, onChange }) {
     )
   }, [index, fade])
 
-  const pillW = trackW > 0 ? (trackW - PAD * 2) / 2 : 0
-
-  // 行きすぎをそのまま使う。**跳ねはここから出る**
-  const move = slide.interpolate({ inputRange: [0, 1], outputRange: [0, pillW] })
   // 動いている途中だけ伸び縮みする。端では 1 に戻す
-  const stretch = slide.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.1, 1],
-    extrapolate: 'clamp',
-  })
-  const squash = slide.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 0.9, 1],
-    extrapolate: 'clamp',
-  })
   // 字の濃さ。行きすぎで 1 を超えないよう留める
   const t = slide.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' })
   const off = slide.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: 'clamp' })
 
   return (
     <View className="gap-2.5">
+      {/* 地は**ほぼ白に近い硝子**（動画のとおり）。灰色で塗っていたのを
+          やめ、影で浮かせる。帯が無色になったので、**塗りで沈んだ地に
+          無色の帯**では見分けがつかない */}
       <View
-        className="flex-row bg-surface-low rounded-full"
+        className="flex-row bg-surface-lowest border border-border rounded-full shadow-bloom"
         style={{ padding: PAD }}
         onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
       >
@@ -138,15 +189,14 @@ export default function WriteTabs({ value, onChange }) {
             className="rounded-full"
             style={{
               position: 'absolute',
-              left: PAD,
               top: PAD,
               bottom: PAD,
-              width: pillW,
-              transform: [{ translateX: move }, { scaleX: stretch }, { scaleY: squash }],
-              ...(isGlassOn() ? null : { backgroundColor: glow }),
+              left: Animated.add(edgeL, PAD),
+              width: Animated.subtract(edgeR, edgeL),
+              ...(isGlassOn() ? null : { backgroundColor: TINT_FLAT }),
             }}
           >
-            <GlassFill fill={glow} radius={999} />
+            <GlassFill fill={TINT} radius={999} />
           </Animated.View>
         ) : null}
 
@@ -161,7 +211,7 @@ export default function WriteTabs({ value, onChange }) {
             {/* 選んでいる字と選んでいない字を**重ねて置き、濃さで入れ替える。**
                 色を直に動かすと、明るい地と暗い地で別の指定が要る */}
             <Animated.View style={{ opacity: i === 0 ? off : t }}>
-              <Text className="font-strong text-body-md text-on-lantern">{label}</Text>
+              <Text className="font-strong text-body-md text-on-surface">{label}</Text>
             </Animated.View>
             <Animated.View
               style={{

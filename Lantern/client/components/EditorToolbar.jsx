@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Animated, Keyboard, Platform, Pressable, ScrollView, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
@@ -328,17 +329,19 @@ function ToolbarBar({ field }) {
         {buttons.map(({ id, label, Icon, onPress }) => {
           const on = Boolean(active[id])
           return (
-            <Pressable
+            <GlassPressable
               key={id}
+              active={on}
+              radius={8}
               onPress={onPress}
               accessibilityLabel={label}
               accessibilityState={{ selected: on }}
               className={`min-w-touch min-h-touch items-center justify-center rounded ${
-                on ? 'bg-lantern-glow' : 'active:bg-surface-high'
+                on ? '' : 'active:bg-surface-high'
               }`}
             >
               <Icon color={on ? '#1D1D1F' : INK} />
-            </Pressable>
+            </GlassPressable>
           )
         })}
 

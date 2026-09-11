@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Pressable, View } from 'react-native'
 import Svg, { Circle, Path } from 'react-native-svg'
 import Text from './Text'
@@ -199,13 +200,13 @@ export default function IdeasPanel() {
           minHeight={76}
           placeholder="思いついたこと"
         />
-        <Pressable
+        <GlassPressable
           onPress={handleAdd}
           disabled={!text.trim() || saving}
-          className="self-end bg-lantern-glow rounded-full px-5 min-h-touch justify-center disabled:opacity-40 active:opacity-80"
+          className="self-end rounded-full px-5 min-h-touch justify-center disabled:opacity-40 active:opacity-80"
         >
           <Text className="font-strong text-label-md text-on-lantern">置く</Text>
-        </Pressable>
+        </GlassPressable>
       </View>
 
       {ideas === null ? (

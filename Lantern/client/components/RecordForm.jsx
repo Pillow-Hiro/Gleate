@@ -1,4 +1,5 @@
 import { useCallback, forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Pressable, View } from 'react-native'
 import Svg, { Path, Rect } from 'react-native-svg'
 import * as DocumentPicker from 'expo-document-picker'
@@ -580,15 +581,15 @@ const RecordForm = forwardRef(function RecordForm(
           欄が画面いっぱいなので、下に置くと画面の外へ出てしまう。
           全画面では上の帯に置き、押すと保存して閉じる（`app/write.jsx`）。 */}
       {hideSaveButton ? null : (
-        <Pressable
+        <GlassPressable
           onPress={handleSave}
           disabled={loading}
-          className="bg-lantern-glow rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
+          className="rounded-full py-3 min-h-touch justify-center items-center active:opacity-80 disabled:opacity-50"
         >
           <Text className="font-strong text-body-md text-on-lantern">
             {loading ? '保存中...' : '記録する'}
           </Text>
-        </Pressable>
+        </GlassPressable>
       )}
 
       {slow ? (

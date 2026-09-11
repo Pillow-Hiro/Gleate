@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Pressable, TextInput, View } from 'react-native'
 import Text from './Text'
 
@@ -61,15 +62,15 @@ export default function HintCard({ kind, text, saving, onAnswer, onClose }) {
             >
               <Text className="text-label-md text-outline">閉じる</Text>
             </Pressable>
-            <Pressable
+            <GlassPressable
               onPress={submit}
               disabled={saving || !answer.trim()}
-              className="bg-lantern-glow rounded-full px-4 min-h-touch justify-center disabled:opacity-50"
+              className="rounded-full px-4 min-h-touch justify-center disabled:opacity-50"
             >
               <Text className="font-strong text-label-md text-on-lantern">
                 {saving ? '残しています...' : '残す'}
               </Text>
-            </Pressable>
+            </GlassPressable>
           </View>
         </>
       ) : saved ? (

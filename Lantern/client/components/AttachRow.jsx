@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GlassPressable from './GlassPressable'
 import {
   ActivityIndicator,
   Linking,
@@ -12,6 +13,8 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import Text from './Text'
 import Sheet from './Sheet'
 import SwipeRow from './SwipeRow'
+import GlassPanel from './GlassPanel'
+import { Lens } from './Tile'
 import { add as addLink, hideSound, list as listLinks, recentSounds, remove as removeLink } from '../lib/linkStore'
 import { KINDS } from '../lib/attachLink'
 import { parseSongs, searchPath, songLabel } from '../lib/musicSearch'
@@ -256,8 +259,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             当てにできない（`lib/keyboard.js` の註釈）。
             **一度そちらで書いて、決定に反していた。** */}
         <Pressable
-          className="flex-1 bg-black/50 justify-center px-6"
-          style={{ paddingBottom: keyboardHeight }}
+          className="flex-1 bg-black/50 justify-end px-3"
+          style={{ paddingBottom: keyboardHeight + 10 }}
           onPress={() => setAsking(false)}
         >
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
@@ -265,16 +268,25 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             <Text className="text-label-md text-outline leading-relaxed">
               曲でも動画でも記事でも。共有リンクをそのまま貼ってください。
             </Text>
-            <TextInput
-              value={url}
-              onChangeText={(v) => { setUrl(v); setBad(false) }}
-              placeholder="https://..."
-              placeholderTextColor="#8E8478"
-              autoCapitalize="none"
-              autoCorrect={false}
-              multiline
-              className="bg-surface-low rounded px-3 py-3 min-h-touch font-body text-body-md text-on-surface"
-            />
+            {/* **曲を探す窓と同じ丸い硝子**（2026-09-11）。
+                並んで出る2つの窓が別の形をしていると、同じ「添える」の
+                中なのに別の場所に見える */}
+            <GlassPanel
+              fill="rgba(120, 120, 128, 0.16)"
+              radius={999}
+              className="rounded-full px-4 py-1.5"
+            >
+              <TextInput
+                value={url}
+                onChangeText={(v) => { setUrl(v); setBad(false) }}
+                placeholder="https://..."
+                placeholderTextColor="#8E8478"
+                autoCapitalize="none"
+                autoCorrect={false}
+                multiline
+                className="min-h-touch font-body text-body-md text-on-surface"
+              />
+            </GlassPanel>
             {bad ? (
               <Text className="text-label-md text-error">
                 リンクが見つかりませんでした。
@@ -284,29 +296,31 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               <Pressable onPress={() => setAsking(false)} hitSlop={8} className="py-1">
                 <Text className="text-label-md text-outline">やめる</Text>
               </Pressable>
-              <Pressable
+              <GlassPressable
                 onPress={submit}
                 disabled={!url.trim()}
                 hitSlop={8}
-                className="bg-lantern-glow rounded-full px-4 py-2 disabled:opacity-50"
+                className="rounded-full px-4 py-2 disabled:opacity-50"
               >
                 <Text className="font-strong text-label-md text-on-lantern">添える</Text>
-              </Pressable>
+              </GlassPressable>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
-      {/* **真ん中に置く**（2026-09-09・作者の指示
-          「リンクを貼る時みたいに真ん中に入力フィールドを置く」）。
+      {/* ## 真ん中から下へ戻した（2026-09-11）
+          作者の指示「添える、曲を添えるの入力窓の動きも添付動画のように
+          してください」。動画は Apple Music（iOS 26）で、**探す窓は
+          キーボードのすぐ上に立つ丸い硝子。**
 
-          下から出す面につまみを付けて引き上げられるようにしたが、
-          **効いていなかった**——つまみの `PanResponder` を親の
-          `Pressable` が先に取っていた。作者から「タブの昇降ができない」。
+          2026-09-09 に真ん中へ置いたのは、下から出す面のつまみが
+          効かなかったため（`Sheet.jsx`）。**あのときの困りごとは
+          「引き上げられない」で、置き場所そのものではなかった。**
+          伸ばす必要が無い作りにすれば、下でよい。
 
-          リンクを貼る面と同じ作りにする。**このアプリで既に動いている形**で、
-          仕組みを増やさない。結果は中で流す（下の `max-h-64`）。 */}
+          結果は中で流す（下の `max-h-64`）。 */}
       <Modal
         visible={seeking}
         animationType="fade"
@@ -314,8 +328,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         onRequestClose={() => setSeeking(false)}
       >
         <Pressable
-          className="flex-1 bg-black/50 justify-center px-6"
-          style={{ paddingBottom: keyboardHeight }}
+          className="flex-1 bg-black/50 justify-end px-3"
+          style={{ paddingBottom: keyboardHeight + 10 }}
           onPress={() => setSeeking(false)}
         >
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
@@ -342,7 +356,14 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
               記録の中身は送りません。
             </Text>
 
-            <View className="flex-row items-center gap-2">
+            {/* **丸い硝子の窓**（動画のとおり）。虫めがねと欄と「探す」を
+                ひとつの丸に収める。角の四角い欄をやめたのはそのため */}
+            <GlassPanel
+              fill="rgba(120, 120, 128, 0.16)"
+              radius={999}
+              className="flex-row items-center gap-2 rounded-full pl-4 pr-1.5 py-1.5"
+            >
+              <Lens color={INK} size={16} />
               <TextInput
                 value={term}
                 onChangeText={setTerm}
@@ -352,17 +373,17 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
                 autoCorrect={false}
                 returnKeyType="search"
                 onSubmitEditing={seek}
-                className="flex-1 bg-surface-low rounded px-3 py-3 min-h-touch font-body text-body-md text-on-surface"
+                className="flex-1 min-h-touch font-body text-body-md text-on-surface"
               />
-              <Pressable
+              <GlassPressable
                 onPress={seek}
                 disabled={!term.trim() || busy}
                 hitSlop={8}
-                className="bg-lantern-glow rounded-full px-4 py-2 min-h-touch justify-center disabled:opacity-50"
+                className="rounded-full px-4 py-2 min-h-touch justify-center disabled:opacity-50"
               >
                 <Text className="font-strong text-label-md text-on-lantern">探す</Text>
-              </Pressable>
-            </View>
+              </GlassPressable>
+            </GlassPanel>
 
             {busy ? (
               <View className="py-6 items-center">

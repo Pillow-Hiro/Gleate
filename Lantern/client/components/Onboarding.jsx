@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { Dimensions, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Text from './Text'
@@ -80,14 +81,14 @@ export default function Onboarding({ onDone }) {
             ))}
           </View>
 
-          <Pressable
+          <GlassPressable
             onPress={() => (isLast(index) ? onDone() : go(nextIndex(index)))}
-            className="bg-lantern-glow rounded-full py-4 items-center active:opacity-80"
+            className="rounded-full py-4 items-center active:opacity-80"
           >
             <Text className="font-strong text-body-md text-on-lantern">
               {isLast(index) ? SLIDES[SLIDES.length - 1].action : '次へ'}
             </Text>
-          </Pressable>
+          </GlassPressable>
         </View>
       </SafeAreaView>
     </View>

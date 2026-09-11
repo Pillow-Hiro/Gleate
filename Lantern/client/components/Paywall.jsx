@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import GlassPressable from './GlassPressable'
 import { ActivityIndicator, Pressable, View } from 'react-native'
 import Text from './Text'
 import { isAvailable, loadOfferings, purchase, restore } from '../lib/purchases'
@@ -155,11 +156,11 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
       ) : (
         <View className="gap-2">
           {packages.map((pkg) => (
-            <Pressable
+            <GlassPressable
               key={pkg.id}
               onPress={() => handleBuy(pkg)}
               disabled={busy}
-              className="bg-lantern-glow rounded-full py-3.5 px-6 items-center active:opacity-80"
+              className="rounded-full py-3.5 px-6 items-center active:opacity-80"
             >
               <Text className="font-strong text-body-md text-on-lantern">
                 {periodOf(pkg)}　{pkg.price}
@@ -170,7 +171,7 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
               {trialLabel(pkg.intro) ? (
                 <Text className="text-label-sm text-on-lantern">{trialLabel(pkg.intro)}</Text>
               ) : null}
-            </Pressable>
+            </GlassPressable>
           ))}
         </View>
       )}

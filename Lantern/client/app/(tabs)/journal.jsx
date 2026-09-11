@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import GlassPressable from '../../components/GlassPressable'
 import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Text from '../../components/Text'
@@ -291,11 +292,12 @@ export default function Journal() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View className="flex-row gap-2">
                   {chips.map(({ id, label }) => (
-                    <Pressable
+                    <GlassPressable
                       key={id}
+                      active={filter === id}
                       onPress={() => setFilter(id)}
                       className={`rounded-full px-3.5 py-1.5 ${
-                        filter === id ? 'bg-lantern-glow' : 'bg-surface-low'
+                        filter === id ? '' : 'bg-surface-low'
                       }`}
                     >
                       <Text
@@ -305,7 +307,7 @@ export default function Journal() {
                       >
                         {label}
                       </Text>
-                    </Pressable>
+                    </GlassPressable>
                   ))}
                 </View>
               </ScrollView>

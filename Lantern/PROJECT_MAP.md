@@ -136,7 +136,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Symbol.jsx` | Tile（過去の記録・アイデアの種・日替わりの抜粋・今日の灯り・今週の発見） | SF Symbols を**本物のまま**出す。描き写しでは合わず、同じ指示が二度出たため。iOS 以外は渡された SVG に落ちる |
 | `SwipeRow.jsx` | IdeasPanel / AttachRow（前に添えた曲） | 横に払うとゴミ箱が出る行。**角度を自分で測らない**——行を横スクロールにして縦か横かは OS に裁かせる（`IdeasPanel` が三度やり直して辿り着いた形） |
 | `MarginNote.jsx` | HomeCard（灯り待ち・来ない理由）/ WeeklyDiscovery | 余白の書き込み。**回答そのものは砂色の面に戻した**（2026-09-11・作者から「前の方が分かりやすい」）。ここに残るのは回答ではないもの |
-| `GlassPanel.jsx` | 今日の灯り / WriteButton / PromptCard / WriteTabs | 硝子の面（Liquid Glass）。**琥珀の一色塗りをやめた4箇所。** iOS 26 未満は一色塗りに落ちる。影を消さないため切るのは内側だけ |
+| `GlassPressable.jsx` | 認証4画面 / 保存 / 課金 / 手がかり / アイデア / 添える / 絞り込み / 装飾 | 琥珀で塗っていた押せるものを硝子に。**16箇所を1つにまとめた**——1つずつ書き換えると消し忘れが出るが、Tailwind は知らないクラスを黙って無視するので気づけない |
+| `GlassPanel.jsx` | 今日の灯り / WriteButton / PromptCard / WriteTabs / AttachRow の入力窓 | 硝子の面（Liquid Glass）。**琥珀の一色塗りをやめた4箇所。** iOS 26 未満は一色塗りに落ちる。影を消さないため切るのは内側だけ |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
