@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, View } from 'react-native'
 import Text from './Text'
 import { GlassFill, isGlassOn } from './GlassPanel'
+import { useThemeContext } from '../lib/theme'
+import { accentColor } from '../lib/accent'
 
 // 「記録」と「アイデア」の切り替え。
 //
@@ -57,21 +59,16 @@ const TABS = [
 // 外側の余白。`p-1` と同じ値。**帯の幅を出すのに要る**ので定数で持つ
 const PAD = 4
 
-// 帯の色。**琥珀ではない**（2026-09-11・動画のとおり）。
+// 帯は**琥珀のまま**（2026-09-11・作者の指示「色だけは戻して」）。
 //
-// Apple Music の帯は無色の薄い灰で、選んでいる側だけが一段濃い。
-// このアプリも琥珀をやめた——`CLAUDE.md`「1画面に灯り色を2箇所以上
-// 置かない」に対しても、書くタブの琥珀が保存ボタンだけになって都合がいい。
-//
-// `GlassFill` は `glassColorScheme="light"` で固定なので、
-// **暗いテーマでも帯は明るいまま。**上に載る黒い字が読める。
-const TINT = 'rgba(120, 120, 128, 0.20)'
-
-// 硝子が出せない端末で塗る色。**硝子とだいたい同じ濃さに見えるもの**
-const TINT_FLAT = 'rgba(120, 120, 128, 0.16)'
+// 一度、動画（Apple Music）に合わせて無色にした。**動かし方は
+// そちらが正しかったが、色までは求められていなかった。**
+// 動きだけ残して色は戻す。
 
 export default function WriteTabs({ value, onChange }) {
   const index = value === 'ideas' ? 1 : 0
+  const { accent, isDark } = useThemeContext()
+  const glow = accentColor(accent, isDark)
   const [trackW, setTrackW] = useState(0)
   const slide = useRef(new Animated.Value(index)).current
 
@@ -165,11 +162,8 @@ export default function WriteTabs({ value, onChange }) {
 
   return (
     <View className="gap-2.5">
-      {/* 地は**ほぼ白に近い硝子**（動画のとおり）。灰色で塗っていたのを
-          やめ、影で浮かせる。帯が無色になったので、**塗りで沈んだ地に
-          無色の帯**では見分けがつかない */}
       <View
-        className="flex-row bg-surface-lowest border border-border rounded-full shadow-bloom"
+        className="flex-row bg-surface-low rounded-full"
         style={{ padding: PAD }}
         onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
       >
@@ -193,10 +187,10 @@ export default function WriteTabs({ value, onChange }) {
               bottom: PAD,
               left: Animated.add(edgeL, PAD),
               width: Animated.subtract(edgeR, edgeL),
-              ...(isGlassOn() ? null : { backgroundColor: TINT_FLAT }),
+              ...(isGlassOn() ? null : { backgroundColor: glow }),
             }}
           >
-            <GlassFill fill={TINT} radius={999} />
+            <GlassFill fill={glow} radius={999} />
           </Animated.View>
         ) : null}
 
@@ -211,7 +205,7 @@ export default function WriteTabs({ value, onChange }) {
             {/* 選んでいる字と選んでいない字を**重ねて置き、濃さで入れ替える。**
                 色を直に動かすと、明るい地と暗い地で別の指定が要る */}
             <Animated.View style={{ opacity: i === 0 ? off : t }}>
-              <Text className="font-strong text-body-md text-on-surface">{label}</Text>
+              <Text className="font-strong text-body-md text-on-lantern">{label}</Text>
             </Animated.View>
             <Animated.View
               style={{

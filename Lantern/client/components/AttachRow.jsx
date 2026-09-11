@@ -259,8 +259,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
             当てにできない（`lib/keyboard.js` の註釈）。
             **一度そちらで書いて、決定に反していた。** */}
         <Pressable
-          className="flex-1 bg-black/50 justify-end px-3"
-          style={{ paddingBottom: keyboardHeight + 10 }}
+          className="flex-1 bg-black/50 justify-center px-6"
+          style={{ paddingBottom: keyboardHeight }}
           onPress={() => setAsking(false)}
         >
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
@@ -310,15 +310,13 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
       </Modal>
 
       {/* Apple Music で探す。**押して初めて出る**（冒頭の節） */}
-      {/* ## 真ん中から下へ戻した（2026-09-11）
-          作者の指示「添える、曲を添えるの入力窓の動きも添付動画のように
-          してください」。動画は Apple Music（iOS 26）で、**探す窓は
-          キーボードのすぐ上に立つ丸い硝子。**
+      {/* **真ん中に置く**（2026-09-09／2026-09-11・作者の指示
+          「リンクを貼る時みたいに真ん中に入力フィールドを置く」
+          「曲を添えるの入力フィールドも真ん中に戻す」）。
 
-          2026-09-09 に真ん中へ置いたのは、下から出す面のつまみが
-          効かなかったため（`Sheet.jsx`）。**あのときの困りごとは
-          「引き上げられない」で、置き場所そのものではなかった。**
-          伸ばす必要が無い作りにすれば、下でよい。
+          一度、動画に合わせてキーボードの上へ下ろした。**窓の形
+          （丸い硝子）はそのまま残し、置き場所だけ戻している。**
+          **二度同じ所へ置き直した。次に動かす前に、ここを読むこと。**
 
           結果は中で流す（下の `max-h-64`）。 */}
       <Modal
@@ -328,8 +326,8 @@ export default function AttachRow({ id, onPhoto, onFile, onChange }) {
         onRequestClose={() => setSeeking(false)}
       >
         <Pressable
-          className="flex-1 bg-black/50 justify-end px-3"
-          style={{ paddingBottom: keyboardHeight + 10 }}
+          className="flex-1 bg-black/50 justify-center px-6"
+          style={{ paddingBottom: keyboardHeight }}
           onPress={() => setSeeking(false)}
         >
           <Pressable className="bg-surface rounded-2xl px-5 py-5 gap-4" onPress={() => {}}>
