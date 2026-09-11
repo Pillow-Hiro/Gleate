@@ -614,7 +614,7 @@ class TestAboutPage:
     """
 
     def _built(self):
-        return _legal_module().render(read("ABOUT.md"), "Lantern について")
+        return _legal_module().render(read("ABOUT.md"), "Gleate について")
 
     def test_生成物が最新である(self):
         current = read("client", "public", "about.html")
@@ -624,9 +624,17 @@ class TestAboutPage:
         )
 
     def test_アプリ名が本文に出ている(self):
-        # OAuth 同意画面のアプリ名と一致していないと検証に落ちる
+        """OAuth 同意画面のアプリ名と一致していないと検証に落ちる。
+
+        **これはリポジトリの外を見ている検査。**照らす先は Google Cloud
+        Console の OAuth 同意画面に入れたアプリ名で、ここからは読めない。
+
+        2026-09-12 に `Lantern` から `Gleate` へ変えた。**同意画面の側も
+        変えること。**片方だけ変えると、YouTube 連携のブランディング検証に
+        落ちる（2026-08-23 に一度落ちている）。
+        """
         page = read("client", "public", "about.html")
-        assert "Lantern" in page
+        assert "Gleate" in page
 
     def test_何をするアプリかが書いてある(self):
         # 「目的が説明されていない」で落ちた指摘への備え

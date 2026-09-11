@@ -114,3 +114,35 @@ export function monthDrift(logs, month, { min = 2, limit = 8 } = {}) {
 
   return { month, previous: prev, appeared: pick(now, before), left: pick(before, now), kept }
 }
+
+/**
+ * **1つの節にまとめる**（2026-09-12・作者の指示「3にしてから2を採用」）。
+ *
+ * それまで「頻出キーワード」（記録タブ・Claude・有料）と
+ * 「言葉の移り変わり」（分析タブ・端末の中・無料）が別々にあった。
+ * どちらも語の粒を並べて記録の検索へ飛ばすので、**同じ顔で2つ**あった。
+ *
+ * ## 有料のほうが不正確だった
+ *
+ * 頻出キーワードは出現回数まで Claude に数えさせていた。
+ * **言語モデルは数を数えられない。**画面に出ていた回数は、数えた結果
+ * ではなくそれらしい数だった。こちらは `Map` で数えるので必ず合う。
+ *
+ * ## 出すもの
+ *
+ * - `top`  … 今月よく書いている語。**先月に無かったものへ `isNew`**
+ * - `left` … 先月まで出ていて、今月は無い語
+ *
+ * 断面（いま何について書いているか）と差分（何が入れ替わったか）が、
+ * **同じ並びの中で読める。**
+ */
+export function topWords(logs, month, { min = 2, limit = 12 } = {}) {
+  const { appeared, left, kept } = monthDrift(logs, month, { min, limit })
+  const top = [
+    ...appeared.map((w) => ({ ...w, isNew: true })),
+    ...kept.map((w) => ({ ...w, isNew: false })),
+  ]
+    .sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))
+    .slice(0, limit)
+  return { top, left }
+}

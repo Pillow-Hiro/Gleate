@@ -26,8 +26,8 @@
 
 | プラン | 価格（税込） |
 |---|---|
-| Lantern Plus 月額 | 800円 |
-| Lantern Plus 年額 | 8,000円 |
+| Gleate Plus 月額 | 800円 |
+| Gleate Plus 年額 | 8,000円 |
 
 価格は本アプリ内およびApp Storeの購入画面に表示されます。
 

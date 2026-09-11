@@ -104,7 +104,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱**（行が横スクロール。方向の裁定は OS に任せる） |
-| `KeywordSection.jsx` | Journal | 頻出語。感情分類はしない。**押すとその語で絞った一覧へ** |
 | `LogDetail.jsx` | LogItem | 記録の詳細と削除。削除は赤。**直すのは `/write?id=`**（全画面。書く場所を2つに分けない）。読む側は4項目とも出る |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
@@ -133,6 +132,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `Optional.jsx` | EditorToolbar | 添え物を囲う。**中で落ちても外は生き残る**——飾りのせいで書く道具が消えないように |
 | `Onboarding.jsx` | _layout | 初回だけ出る案内。**3枚めくって終わり**（起動画面のあと・ログイン済みのみ） |
 | `BootScreen.jsx` | _layout | 判定が済むまでの画面。**OS の起動画面と見分けがつかないこと**（地の色と絵は `app.json` の `expo-splash-screen` と対）。待ちが伸びたときだけ灯りが息をする |
+| `WordsSection.jsx` | 記録タブ | よく書いている言葉。**頻出キーワードと言葉の移り変わりを1つにした**——断面の中に差分の印を乗せる。Claude をやめて端末の中で数えるので、**回数が必ず合う** |
 | `Symbol.jsx` | Tile（過去の記録・アイデアの種・日替わりの抜粋・今日の灯り・今週の発見） | SF Symbols を**本物のまま**出す。描き写しでは合わず、同じ指示が二度出たため。iOS 以外は渡された SVG に落ちる |
 | `SwipeRow.jsx` | IdeasPanel / AttachRow（前に添えた曲） | 横に払うとゴミ箱が出る行。**角度を自分で測らない**——行を横スクロールにして縦か横かは OS に裁かせる（`IdeasPanel` が三度やり直して辿り着いた形） |
 | `MarginNote.jsx` | HomeCard（灯り待ち・来ない理由）/ WeeklyDiscovery | 余白の書き込み。**回答そのものは砂色の面に戻した**（2026-09-11・作者から「前の方が分かりやすい」）。ここに残るのは回答ではないもの |
@@ -142,7 +142,6 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
 | `AttachRow.jsx` | LogDetail | **「＋ 添える」**。写真・ファイル・リンクをひとつの入口から。リンクは貼るだけ（`LinkList` も持つ） |
-| `WordDrift.jsx` | 分析 | **言葉の移り変わり。**今月から出てきた語／先月まで出ていた語。AI も有料の枠も使わない |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |
 | `TimelineSection.jsx` | Journal | 過去との対話 |
 | `TwitchPanel.jsx` | Dashboard | 配信一覧が主・フォロワー数が従 |

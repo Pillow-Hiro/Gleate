@@ -20,7 +20,7 @@ import LogList from '../../components/LogList'
 import WriteButton from '../../components/WriteButton'
 import ReviewSection from '../../components/ReviewSection'
 import TimelineSection from '../../components/TimelineSection'
-import KeywordSection from '../../components/KeywordSection'
+import WordsSection from '../../components/WordsSection'
 import { useKeyboardHeight } from '../../lib/keyboard'
 import MonthPicker, { monthsOf } from '../../components/MonthPicker'
 
@@ -409,7 +409,7 @@ export default function Journal() {
             <ReviewSection title="今週の振り返り" type="weekly" description="過去7日間の活動から" />
             <ReviewSection title="今月の振り返り" type="monthly" description="今月の活動から" />
             <TimelineSection logs={logs} />
-            <KeywordSection />
+            <WordsSection logs={logs} />
           </View>
         )}
       </ScrollView>

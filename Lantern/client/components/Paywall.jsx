@@ -133,13 +133,14 @@ export default function Paywall({ title = '記録を並べ直す', message, onCl
         <View className="gap-1">
           <Text className="font-strong text-label-md text-on-surface">無料で使えるもの</Text>
           <Text className="text-body-md text-on-surface-variant leading-relaxed">
-            記録・写真・検索・書き出し・今日の灯り・今週の発見
+            記録・写真・検索・書き出し・今日の灯り・今週の発見・
+            よく書いている言葉
           </Text>
         </View>
         <View className="gap-1">
           <Text className="font-strong text-label-md text-on-surface">有料で開くもの</Text>
           <Text className="text-body-md text-on-surface-variant leading-relaxed">
-            月ごとの振り返り・過去との対話・頻出キーワード・
+            月ごとの振り返り・過去との対話・
             YouTube と Twitch の読み解き
           </Text>
         </View>

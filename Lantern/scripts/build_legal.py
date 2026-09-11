@@ -59,7 +59,7 @@ DOCS = [
     # 出る」「アプリの目的が説明されていない」で落ちた。`/` は Expo Web の
     # ログイン画面なので、説明を置く場所が無かった。
     # App Store のサポートURL もここを指す。
-    ("ABOUT.md", "about.html", "Lantern について"),
+    ("ABOUT.md", "about.html", "Gleate について"),
     ("PRIVACY.md", "privacy.html", "プライバシーポリシー"),
     ("TERMS.md", "terms.html", "利用規約"),
     ("TOKUSHOHO.md", "tokushoho.html", "特定商取引法に基づく表記"),
@@ -186,7 +186,7 @@ def render(md, title="プライバシーポリシー"):
         '<html lang="ja">\n<head>\n'
         '<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-        f"<title>{html.escape(title)} — Lantern</title>\n"
+        f"<title>{html.escape(title)} — Gleate</title>\n"
         f"<style>{STYLE}</style>\n"
         "</head>\n<body>\n"
         f"{to_html(md)}\n"

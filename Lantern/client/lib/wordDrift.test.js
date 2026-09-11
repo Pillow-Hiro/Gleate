@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countWords, extractWords, monthDrift, previousMonth } from './wordDrift'
+import { countWords, extractWords, monthDrift, previousMonth, topWords } from './wordDrift'
 
 describe('語の切り出し', () => {
   // 助詞と活用は平仮名に寄るので、平仮名だけの連なりを捨てると
@@ -139,5 +139,49 @@ describe('月の移り変わり', () => {
       { date: '2026-09-02', created: '台本 収録 編集 配信 準備' },
     ]
     expect(monthDrift(many, '2026-09', { limit: 2 }).appeared).toHaveLength(2)
+  })
+})
+
+describe('よく書いている言葉（1つにまとめたもの）', () => {
+  const log = (date, text) => ({ date, created: text })
+
+  it('今月の語を回数の多い順に出す', () => {
+    const logs = [
+      log('2026-09-01', '配信 配信 制作'),
+      log('2026-09-02', '配信 制作'),
+    ]
+    const { top } = topWords(logs, '2026-09')
+    expect(top.map((w) => w.word)).toEqual(['配信', '制作'])
+    expect(top[0].count).toBe(3)
+  })
+
+  // **これが「まとめた」ということ。**断面の中に差分の印が乗る
+  it('先月に無かった語へ印を付ける', () => {
+    const logs = [
+      log('2026-08-01', '制作 制作'),
+      log('2026-09-01', '配信 配信 制作 制作'),
+    ]
+    const { top } = topWords(logs, '2026-09')
+    const by = Object.fromEntries(top.map((w) => [w.word, w.isNew]))
+    expect(by['配信']).toBe(true)
+    expect(by['制作']).toBe(false)
+  })
+
+  it('先月まで出ていた語は別に出す', () => {
+    const logs = [
+      log('2026-08-01', '締切 締切'),
+      log('2026-09-01', '配信 配信'),
+    ]
+    const { top, left } = topWords(logs, '2026-09')
+    expect(top.map((w) => w.word)).toEqual(['配信'])
+    expect(left.map((w) => w.word)).toEqual(['締切'])
+  })
+
+  // **数は数えた結果。**Claude に数えさせていたときは合っていなかった
+  it('回数がぴったり合う', () => {
+    const logs = [log('2026-09-01', '制作 制作 制作 配信 配信')]
+    const { top } = topWords(logs, '2026-09')
+    expect(top.find((w) => w.word === '制作').count).toBe(3)
+    expect(top.find((w) => w.word === '配信').count).toBe(2)
   })
 })
