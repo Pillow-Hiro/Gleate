@@ -497,17 +497,22 @@ class TestStack:
                 f"--timeout {m.group(3)}") in self._stack()
 
     def test_使っているモデルが一致する(self):
-        """**模型の名前は `_MODEL` に1つだけ。**
+        """**模型の名前は定数に集める。**書いた名前は STACK.md にも出す。
 
         2026-08-18 に `model="claude-sonnet-4-6"` を各呼び出しに
         直書きするのをやめ、定数にまとめた。ここもそれを読む。
         直書きが戻ってきたときも拾えるよう、両方の形を見る。
+
+        2026-09-13 に**2つになった**（作者の指示「有料だけ Opus 5、
+        今日の灯りは Sonnet 5」）。毎日呼ばれるものと、月に1回の
+        ものを同じ模型にする理由が無い。**両方とも記録に出す。**
+        どちらをどこで使うかは `tests/test_ai_models.py`。
         """
         import re as _re
 
         src = read("modules", "ai.py")
         models = set(_re.findall(r'model="([^"]+)"', src))
-        models |= set(_re.findall(r'^_MODEL\s*=\s*"([^"]+)"', src, _re.M))
+        models |= set(_re.findall(r'^_MODEL[A-Z_]*\s*=\s*"([^"]+)"', src, _re.M))
         assert models, "modules/ai.py にモデル指定が無い"
         for model in models:
             assert model in self._stack(), f"STACK.md のモデル名が {model} と食い違う"

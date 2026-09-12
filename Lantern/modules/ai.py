@@ -3,10 +3,23 @@ import time
 import anthropic
 from modules.logs import get_current_weekly_goal, get_current_monthly_goal
 
-# 使う模型。**変えるのはここだけ。**
-# `claude-sonnet-4-6`（$3 / $15 per MTok）。1回およそ1.7円。
+# 使う模型（2026-09-13・作者の指示「有料だけ Opus 5、今日の灯りは Sonnet 5」）。
+#
+# ## 2つ持つ
+#
+# 無料側は**毎日呼ばれる**。今日の灯り・記録の応答・手がかり。
+# 有料側は**月に1回か、押したときだけ**。過去との対話、月次の振り返り、
+# 繋いだ場所の読み解き。
+#
+# 呼ばれる回数が二桁違うので、同じ模型にする理由が無い。
+# **深く見てほしい所にだけ重いものを置く。**
+#
+# 分け方の正は `main.py` の `@require_paid` と、月次だけを有料にしている
+# `reviews` の判定。**「週次の振り返り」は無料**なので、ここでも既定側。
+#
 # 1日に何回まで呼べるかは `modules/plan.py` が持つ。
-_MODEL = "claude-sonnet-4-6"
+_MODEL_DEFAULT = "claude-sonnet-5"
+_MODEL_DEEP = "claude-opus-5"
 
 _TIMEOUT_SECONDS = 10
 # **画面では「AI」と名乗らない**（2026-08-18）。
@@ -99,16 +112,23 @@ LANTERN_MESSAGES = [
 # **失敗しても投げない。** `None` を返すか、待ちすぎたときだけ
 # `_TIMEOUT_MESSAGE` を返す。呼ぶ側は `if result:` で受けて、
 # その場に合った断りを返す。
-def call_claude(system_prompt, user_message, max_tokens=300):
+def call_claude(system_prompt, user_message, max_tokens=300, model=None):
+    """`model` を渡さなければ既定側（無料の毎日のもの）。
+
+    **有料の入口だけが `_MODEL_DEEP` を渡す。**どれが有料かは
+    `main.py` の `@require_paid` が正で、`tests/test_ai_models.py` が
+    その対応を見張る。
+    """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return None
     client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
     start = time.time()
-    print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')}")
+    chosen = model or _MODEL_DEFAULT
+    print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')} / {chosen}")
     try:
         message = client.messages.create(
-            model=_MODEL,
+            model=chosen,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
@@ -542,7 +562,7 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
         f"【数えた事実】\n{_facts_text(period_logs, 30)}\n\n"
         "上記の記録から観察を返してください。"
     )
-    result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600)
+    result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600, model=_MODEL_DEEP)
     return _parse_patterns_json(result)
 
 
@@ -572,7 +592,7 @@ def generate_channel_insight(videos):
     )
 
     user_message = f"動画一覧：\n{videos_text}\nこのチャンネルの創作の傾向・変化・特徴を観察してください。"
-    result = call_claude(system_prompt, user_message, max_tokens=400)
+    result = call_claude(system_prompt, user_message, max_tokens=400, model=_MODEL_DEEP)
     if result:
         return result.strip()
     # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
@@ -621,7 +641,7 @@ def generate_stream_insight(streams):
     )
 
     user_message = f"配信一覧：\n{streams_text}\nこの活動の傾向・変化・特徴を観察してください。"
-    result = call_claude(system_prompt, user_message, max_tokens=400)
+    result = call_claude(system_prompt, user_message, max_tokens=400, model=_MODEL_DEEP)
     if result:
         return result.strip()
     # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
@@ -656,7 +676,7 @@ JSONのみで返す。前置き不要。Markdownなし。
 
 過去と現在を観察して、評価せず静かに言語化してください。"""
 
-    raw = call_claude(system_prompt, user_message, max_tokens=200)
+    raw = call_claude(system_prompt, user_message, max_tokens=200, model=_MODEL_DEEP)
     if not raw:
         return {"observation": "記録が積み重なっています。", "question": "今、何を感じますか。"}
 
@@ -729,7 +749,7 @@ def generate_video_insight(video, logs):
 動画のタイトルや投稿日から観察できることを短く言語化してください。
 記録がないことには触れないでください。"""
 
-    result = call_claude(system_prompt, user_message, max_tokens=250)
+    result = call_claude(system_prompt, user_message, max_tokens=250, model=_MODEL_DEEP)
     if result:
         return result.strip()
     # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
