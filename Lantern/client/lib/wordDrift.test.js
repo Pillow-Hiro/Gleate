@@ -37,11 +37,21 @@ describe('語の切り出し', () => {
 describe('countWords', () => {
   it('4項目ぜんぶから数える', () => {
     const counts = countWords([
-      { created: '配信', enjoyable: '配信', struggled: '編集', next: '準備' },
+      { created: '配信', enjoyable: '編集', struggled: '準備', next: '告知' },
     ])
+    expect([...counts.keys()].sort()).toEqual(['準備', '告知', '配信', '編集'].sort())
+  })
+
+  // 作者から「**1個の記録に何度もカウントしている例もあった**」
+  // （2026-09-13）。数えるのは打った回数ではなく、**出てきた記録の数**
+  it('1件の記録に何度出ても1つ', () => {
+    const counts = countWords([{ created: '配信 配信 配信', enjoyable: '配信' }])
+    expect(counts.get('配信')).toBe(1)
+  })
+
+  it('別の記録に出たぶんは足される', () => {
+    const counts = countWords([{ created: '配信 配信' }, { created: '配信' }])
     expect(counts.get('配信')).toBe(2)
-    expect(counts.get('編集')).toBe(1)
-    expect(counts.get('準備')).toBe(1)
   })
 
   it('空の記録でも落ちない', () => {
@@ -98,10 +108,11 @@ describe('月の移り変わり', () => {
     expect(appeared.map((w) => w.word)).not.toContain('誤変換')
   })
 
-  it('回数の多い順に並ぶ', () => {
+  it('件数の多い順に並ぶ', () => {
     const many = [
-      { date: '2026-09-01', created: '台本 台本 収録' },
+      { date: '2026-09-01', created: '台本 収録' },
       { date: '2026-09-02', created: '台本 収録' },
+      { date: '2026-09-03', created: '台本' },
     ]
     expect(monthDrift(many, '2026-09').appeared.map((w) => w.word)).toEqual(['台本', '収録'])
   })
@@ -118,7 +129,8 @@ describe('月の移り変わり', () => {
 
   it('先月が無ければ、今月のものは全部「出てきた」', () => {
     const only = [
-      { date: '2026-09-01', created: '台本 台本' },
+      { date: '2026-09-01', created: '台本' },
+      { date: '2026-09-02', created: '台本' },
     ]
     const { appeared, left } = monthDrift(only, '2026-09')
     expect(appeared.map((w) => w.word)).toEqual(['台本'])
@@ -145,10 +157,11 @@ describe('月の移り変わり', () => {
 describe('よく書いている言葉（1つにまとめたもの）', () => {
   const log = (date, text) => ({ date, created: text })
 
-  it('今月の語を回数の多い順に出す', () => {
+  it('今月の語を件数の多い順に出す', () => {
     const logs = [
-      log('2026-09-01', '配信 配信 制作'),
+      log('2026-09-01', '配信 制作'),
       log('2026-09-02', '配信 制作'),
+      log('2026-09-03', '配信'),
     ]
     const { top } = topWords(logs, '2026-09')
     expect(top.map((w) => w.word)).toEqual(['配信', '制作'])
@@ -158,8 +171,10 @@ describe('よく書いている言葉（1つにまとめたもの）', () => {
   // **これが「まとめた」ということ。**断面の中に差分の印が乗る
   it('先月に無かった語へ印を付ける', () => {
     const logs = [
-      log('2026-08-01', '制作 制作'),
-      log('2026-09-01', '配信 配信 制作 制作'),
+      log('2026-08-01', '制作'),
+      log('2026-08-02', '制作'),
+      log('2026-09-01', '配信 制作'),
+      log('2026-09-02', '配信 制作'),
     ]
     const { top } = topWords(logs, '2026-09')
     const by = Object.fromEntries(top.map((w) => [w.word, w.isNew]))
@@ -169,8 +184,10 @@ describe('よく書いている言葉（1つにまとめたもの）', () => {
 
   it('先月まで出ていた語は別に出す', () => {
     const logs = [
-      log('2026-08-01', '締切 締切'),
-      log('2026-09-01', '配信 配信'),
+      log('2026-08-01', '締切'),
+      log('2026-08-02', '締切'),
+      log('2026-09-01', '配信'),
+      log('2026-09-02', '配信'),
     ]
     const { top, left } = topWords(logs, '2026-09')
     expect(top.map((w) => w.word)).toEqual(['配信'])
@@ -178,10 +195,21 @@ describe('よく書いている言葉（1つにまとめたもの）', () => {
   })
 
   // **数は数えた結果。**Claude に数えさせていたときは合っていなかった
-  it('回数がぴったり合う', () => {
-    const logs = [log('2026-09-01', '制作 制作 制作 配信 配信')]
+  it('件数がぴったり合う', () => {
+    const logs = [
+      log('2026-09-01', '制作 制作 制作 配信'),
+      log('2026-09-02', '制作 配信'),
+      log('2026-09-03', '制作'),
+    ]
     const { top } = topWords(logs, '2026-09')
     expect(top.find((w) => w.word === '制作').count).toBe(3)
     expect(top.find((w) => w.word === '配信').count).toBe(2)
+  })
+
+  // **1日に何度も書いた語が、何か月も続く語と同じ顔にならない**
+  it('1件で繰り返しただけの語は、下限に届かない', () => {
+    const logs = [log('2026-09-01', '衝動 衝動 衝動 衝動')]
+    const { top } = topWords(logs, '2026-09')
+    expect(top.map((w) => w.word)).toEqual([])
   })
 })

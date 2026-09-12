@@ -39,7 +39,8 @@ const COMMON = new Set([
   '結果', '以上', '以下', '最近', '午前', '午後', '本日',
 ])
 
-/** 文章から語を拾う。**同じ語は1文につき何度出ても1つ**とは数えない */
+/** 文章から語を拾う。**同じ語が何度出ても、そのまま並べて返す。**
+    まとめるのは数える側（`countWords`）——拾う所と数える所を混ぜない */
 export function extractWords(text) {
   const src = String(text || '')
   const out = []
@@ -55,14 +56,34 @@ export function extractWords(text) {
   return out
 }
 
-/** 記録の束から、語 → 回数 */
+/**
+ * 記録の束から、語 → **その語が出てきた記録の数**。
+ *
+ * ## 打った回数ではなく、件数で数える（2026-09-13）
+ *
+ * 作者から「1個の記録に何度もカウントしている例もあった」。
+ *
+ * それまでは出てくるたびに1つ足していた。**壊れていたのは数字の
+ * 見た目だけではない。**
+ *
+ * 下限は `min = 2`。これは「**繰り返し出てくる語だけ出す**」という
+ * つもりの線だった。ところが回数で数えると、**1件の記録に同じ語を
+ * 2回書けば通る。**その日いちど強く書いただけの語が、
+ * 何か月も続いている語と同じ顔で並んでいた。
+ *
+ * 件数なら、`min = 2` は「**2件以上の記録に出てきた**」になる。
+ * 線の意味と、線の効きが一致する。
+ *
+ * 長い記録が短い記録より重くならない、という副作用もある。
+ */
 export function countWords(logs) {
   const counts = new Map()
   for (const log of logs || []) {
     const text = [log?.created, log?.enjoyable, log?.struggled, log?.next]
       .filter(Boolean)
       .join(' ')
-    for (const word of extractWords(text)) {
+    // **1件につき1つ。**同じ記録の中で何度出ても足さない
+    for (const word of new Set(extractWords(text))) {
       counts.set(word, (counts.get(word) || 0) + 1)
     }
   }
@@ -88,10 +109,10 @@ function ofMonth(logs, month) {
  * - `left`     … 先月まで出ていて、今月には無い語
  * - `kept`     … どちらの月にもある語
  *
- * **1回だけの語は出さない。** 打ち間違いや固有名詞が1つ混ざるたびに
- * 「出てきた言葉」に並ぶと、移り変わりが読めなくなる。
+ * **1件の記録にしか出てこない語は出さない。** 打ち間違いや固有名詞が
+ * 1つ混ざるたびに「出てきた言葉」に並ぶと、移り変わりが読めなくなる。
  *
- * 並びは回数の多い順。同数なら語順で決める——**日によって並びが
+ * 並びは件数の多い順。同数なら語順で決める——**日によって並びが
  * 変わると、同じものを見ている感じがしない。**
  */
 export function monthDrift(logs, month, { min = 2, limit = 8 } = {}) {
