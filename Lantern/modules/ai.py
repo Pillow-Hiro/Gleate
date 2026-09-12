@@ -112,6 +112,33 @@ LANTERN_MESSAGES = [
 # **失敗しても投げない。** `None` を返すか、待ちすぎたときだけ
 # `_TIMEOUT_MESSAGE` を返す。呼ぶ側は `if result:` で受けて、
 # その場に合った断りを返す。
+def _first_text(message):
+    """返ってきた中から、**最初の文字ブロック**を取る。
+
+    ## `content[0].text` を決め打ちしていた（2026-09-13）
+
+    模型を Opus 5 に替えた日、有料の5つが全部**静かに定型文へ落ちた。**
+
+        'ThinkingBlock' object has no attribute 'text'
+
+    返事の先頭が考えごとのブロックで、`.text` を持っていない。
+    例外は握りつぶされ `None` になり、呼ぶ側は断りを返す——
+    **動くので気づけない。**画面には「まだ並べられるほどの記録が
+    ありません」と出ていた。
+
+    その日、模型名が通ることは確かめていた。**返ってきたものを
+    読めるかは確かめていなかった。**`max_tokens=5` で叩いて
+    `usage` だけ見ていたので、この行を通っていない。
+
+    形の決め打ちをやめる。文字のブロックを探して返す。
+    """
+    for block in getattr(message, "content", None) or []:
+        text = getattr(block, "text", None)
+        if text:
+            return text
+    return None
+
+
 def call_claude(system_prompt, user_message, max_tokens=300, model=None):
     """`model` を渡さなければ既定側（無料の毎日のもの）。
 
@@ -134,7 +161,7 @@ def call_claude(system_prompt, user_message, max_tokens=300, model=None):
             messages=[{"role": "user", "content": user_message}],
         )
         print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
-        return message.content[0].text
+        return _first_text(message)
     except anthropic.APITimeoutError:
         print(f"[AI] タイムアウト: {time.time() - start:.2f}秒経過")
         return _TIMEOUT_MESSAGE
@@ -393,6 +420,27 @@ def _parse_patterns_json(raw):
     return '{"patterns": []}'
 
 
+def _drop_blank_questions(raw):
+    """空の問いを落とす（2026-09-13）。
+
+    「観察が事実を置くだけで足りるときは、問いを省いてよい」と許した
+    ところ、鍵を消すのではなく `"question": ""` が返ってきた。
+    画面は中身を見ずに描くので、**空の行が空いたまま残る。**
+
+    **プロンプトで頼んだことを、受け取る側でも確かめる。**
+    """
+    import json as _json
+
+    try:
+        data = _json.loads(raw)
+    except (_json.JSONDecodeError, TypeError):
+        return raw
+    for p in data.get("patterns", []) or []:
+        if isinstance(p, dict) and not str(p.get("question") or "").strip():
+            p.pop("question", None)
+    return _json.dumps(data, ensure_ascii=False)
+
+
 # 週と月で別のプロンプトを持つ（2026-09-13・作者との壁打ち）。
 #
 # ## 同じものを使っていた
@@ -422,6 +470,14 @@ _COUNTING_RULE = """【数について】
 数は【数えた事実】に書いてあるものだけを使う。自分で数えない。
 そこに無い数には触れない。記録した時刻は渡されていないので、
 時間帯や曜日の傾向には触れない。
+
+【触れないこと】
+記録がなかった日・空いた期間・記録の少なさには触れない。
+**無いことを言うと、書けと押す形になる。**
+言えることが少ない日は、少ないまま1つだけ返す。
+
+項目名（やったこと・よかったこと・困ったこと・次にやること）を
+主語にしない。どの記録にも当てはまる文は、その人の記録ではない。
 
 観察が事実を置くだけで足りるときは、問いを省いてよい。"""
 
@@ -494,7 +550,7 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_WEEKLY_SYSTEM, user_message, max_tokens=600)
-    return _parse_patterns_json(result)
+    return _drop_blank_questions(_parse_patterns_json(result))
 
 
 _DAILY_QUOTE_SYSTEM = lantern_prompt(
@@ -563,7 +619,7 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600, model=_MODEL_DEEP)
-    return _parse_patterns_json(result)
+    return _drop_blank_questions(_parse_patterns_json(result))
 
 
 def generate_channel_insight(videos):
