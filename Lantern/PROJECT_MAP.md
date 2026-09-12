@@ -252,6 +252,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `crypto.py` | 記録の本文を AES-256-GCM で包む。**鍵が無ければ素通し**。復号に失敗したら投げる（空を返すと上書きで消える） | `test_crypto.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
 | `hintusage.py` | 手がかりを使った回数。**通算**（1日あたりではない）。**表が無ければ素通し** | `test_hint.py` |
+| `facts.py` | ai | 記録から**数えた事実**だけを取り出す。有料の振り返りは数もモデルに数えさせていて、**渡していない時刻について「夜に3日」と言わせていた。**数えるのはコード、言葉にするのはモデル |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |
 | `questions/` | 問いの資産50問。**AIを使わない** | `test_questions.py` |

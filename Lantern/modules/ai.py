@@ -10,13 +10,18 @@ _MODEL = "claude-sonnet-4-6"
 
 _TIMEOUT_SECONDS = 10
 # **画面では「AI」と名乗らない**（2026-08-18）。
-# 他の場所は全部 Lantern を主語にしている（Lanternが観察したこと・
-# Lanternに聞く）のに、ここだけ「AIの応答」と書いていた。
+# 他の場所は全部 Gleate を主語にしている（Gleateが観察したこと・
+# Gleateに聞く）のに、ここだけ「AIの応答」と書いていた。
+#
+# **改名が届いていなかった**（2026-09-13）。2026-09-10 の改名は
+# `client/` しか通しておらず、モデルは自分を Lantern と名乗り続けていた。
+# 識別子（`LANTERN_IDENTITY` など）は据え置く——`lantern-glow` を
+# 残したのと同じ理由で、外から見えない名前は動かさない。
 # 「静かな伴走者」という設定は、名乗り方が混ざると薄くなる。
-_TIMEOUT_MESSAGE = "Lanternの応答に時間がかかっています。少し待ってから、もう一度押せます。"
+_TIMEOUT_MESSAGE = "Gleateの応答に時間がかかっています。少し待ってから、もう一度押せます。"
 
 # ── AI憲法（全プロンプトの基盤） ────────────────────────────────
-LANTERN_IDENTITY = """あなたはLanternというアプリの「静かな伴走者」です。
+LANTERN_IDENTITY = """あなたはGleateというアプリの「静かな伴走者」です。
 
 【絶対原則】
 - ユーザーの代わりに考えない・決めない・行動しない
@@ -302,7 +307,27 @@ def _fmt_logs(logs):
             text += f"（よかったこと: {_plain(log, 'enjoyable')}）"
         if log.get("struggled"):
             text += f"（困ったこと: {_plain(log, 'struggled')}）"
+        # **「次にやること」が抜けていた**（2026-09-13）。
+        # 中身があるかの判定には数えているのに、本文には足していなかった。
+        # それだけ書いた日は `2026-08-01: ` という空行になり、
+        # スキップが防ぐはずだったものがそのまま通っていた。
+        #
+        # そして抽出観点には「やったことの変化・継続」がある。
+        # **見せていないものについて傾向を訊いていた。**
+        if log.get("next"):
+            text += f"（次にやること: {_plain(log, 'next')}）"
     return text
+
+
+def _facts_text(logs, span_days):
+    """数えた事実を、モデルに渡す1つの塊にする（`modules/facts.py`）。
+
+    **ここに無い数には触れさせない。**プロンプト側で1つだけ約束している
+    （`_COUNTING_RULE`）。数えるのはコード、言葉にするのはモデル。
+    """
+    from modules import facts as _facts
+
+    return _facts.as_text(_facts.period_facts(logs, span_days))
 
 
 def _shape(raw):
@@ -348,19 +373,88 @@ def _parse_patterns_json(raw):
     return '{"patterns": []}'
 
 
-_PATTERNS_SYSTEM = lantern_prompt(
+# 週と月で別のプロンプトを持つ（2026-09-13・作者との壁打ち）。
+#
+# ## 同じものを使っていた
+#
+# それまで `get_weekly_review` と `get_monthly_review` が1つを共有して
+# いた。抽出観点も3つとも同じ。**月次は「長い週次」になっていた。**
+# 1か月でしか見えないもの——続いた話題、途中で消えた話題、書いてから
+# あとで現れたもの——を1つも頼んでいなかった。
+#
+# ## 時間帯を扱わせない
+#
+# 旧い抽出観点の筆頭は「記録した時間帯の傾向」で、例は
+# 「今週、夜に書いた記録が3日ありました」だった。
+# **`_fmt_logs` は時刻を渡していない。**知りようのないことを頼み、
+# 断定した言い方の見本まで見せていた。
+#
+# しかも同じ観察を、無料の「今週の発見」が `saved_at` を実際に見て
+# 出している（`client/components/WeeklyDiscovery.jsx`）。
+# **無料のほうが正確で、速くて、ただだった。**持ち場を分ける。
+#
+# ## 数はモデルに数えさせない
+#
+# 数えた事実を `modules/facts.py` が付けて渡す。モデルがやるのは
+# **どれを言うかと、どう問うか**だけ。数が合わなくなる道を塞ぐ。
+
+_COUNTING_RULE = """【数について】
+数は【数えた事実】に書いてあるものだけを使う。自分で数えない。
+そこに無い数には触れない。記録した時刻は渡されていないので、
+時間帯や曜日の傾向には触れない。
+
+観察が事実を置くだけで足りるときは、問いを省いてよい。"""
+
+
+_WEEKLY_SYSTEM = lantern_prompt(
     "この観察の指針",
-    """記録から最大3つのパターンを抽出し、各パターンに短い観察と問いを添えてください。
+    """この一週間の記録を読み、最大3つの観察を返してください。
+見るのは書かれた中身です。同じところで立ち止まっていること、
+書き方が変わったこと、同じ語が続いていること。
+
+3つは互いに違う話にする。似た観察が2つ並ぶなら、1つだけ返す。
 
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
 
-{"patterns": [{"observation": "今週、夜に書いた記録が3日ありました。", "question": "あなたにとって夜の創作はどんな時間ですか。"}]}
+{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）"}]}
 
-【抽出観点】
-- 記録した時間帯の傾向
-- よかったこと・困ったことの傾向
-- やったことの変化・継続
+【良い例】
+{"observation": "「音が合わない」が、3日の記録と21日の記録に出ています。", "question": "同じところで立ち止まるとき、何が起きているのでしょう。"}
+
+【悪い例】
+{"observation": "今週は夜に書いた記録が3日ありました。", "question": "夜はどんな時間ですか。"}
+
+"""
+    + _COUNTING_RULE
+    + """
+
+記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。""",
+)
+
+
+_MONTHLY_SYSTEM = lantern_prompt(
+    "この観察の指針",
+    """この一か月の記録を読み、最大3つの観察を返してください。
+見るのは**週をまたいで初めて見えること**です。月のはじめから終わりまで
+続いている話題、途中から見えなくなった話題、いちど離れて戻ってきた話題。
+
+一週間を見れば分かることは返さない。3つは互いに違う話にする。
+
+【出力形式】
+必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
+
+{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）"}]}
+
+【良い例】
+{"observation": "「台本」は月のはじめから終わりまで記録に出ていて、「告知」は中ほどで見えなくなっています。", "question": "見えなくなったほうを、いまどこに置いていますか。"}
+
+【悪い例】
+{"observation": "今月もよく書けていて、続けられています。", "question": "来月は何をしますか。"}
+
+"""
+    + _COUNTING_RULE
+    + """
 
 記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。""",
 )
@@ -374,8 +468,12 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     if last_week_logs:
         logs_text += f"\n\n先週のログ（変化の参考）:{_fmt_logs(last_week_logs)}"
 
-    user_message = f"週の記録：\n{logs_text}\n\n上記の記録からパターンを抽出してください。"
-    result = call_claude(_PATTERNS_SYSTEM, user_message, max_tokens=600)
+    user_message = (
+        f"週の記録：\n{logs_text}\n\n"
+        f"【数えた事実】\n{_facts_text(period_logs, 7)}\n\n"
+        "上記の記録から観察を返してください。"
+    )
+    result = call_claude(_WEEKLY_SYSTEM, user_message, max_tokens=600)
     return _parse_patterns_json(result)
 
 
@@ -439,8 +537,12 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     if last_month_logs:
         logs_text += f"\n\n先月のログ（変化の参考）:{_fmt_logs(last_month_logs)}"
 
-    user_message = f"今月の記録：\n{logs_text}\n\n上記の記録からパターンを抽出してください。"
-    result = call_claude(_PATTERNS_SYSTEM, user_message, max_tokens=600)
+    user_message = (
+        f"今月の記録：\n{logs_text}\n\n"
+        f"【数えた事実】\n{_facts_text(period_logs, 30)}\n\n"
+        "上記の記録から観察を返してください。"
+    )
+    result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600)
     return _parse_patterns_json(result)
 
 
