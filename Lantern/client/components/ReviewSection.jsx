@@ -7,11 +7,63 @@ import { paywallMessage, readMaybePaywall } from '../lib/plan'
 import Paywall from './Paywall'
 import { formatAge } from '../lib/format'
 
+// 振り返りの出し方（2026-09-13・作者の指示「分かりやすく表示したい」→ B案）。
+//
+// ## 何が読みにくかったか
+//
+// 観察と問いが**同じ大きさ**で、斜体と色しか違わなかった。そして
+// 砂色の箱が3つ積むので、**3つあることも、どこで切れるかも**分からない。
+//
+// さらに 2026-09-13 に「問いを省いてよい」と許したところ、
+// **無いときに空の行と余白だけが残っていた**（`<Text>{undefined}</Text>`）。
+//
+// ## 直した形
+//
+// 紙は1枚。中を細い線で分け、**番号で3つあることを示す。**
+// 問いは**余白の線**に出す——灯り待ちや今週の発見で使っている
+// `MarginNote` と同じ形で、「余白に置かれたもの」として揃う。
+//
+// 地の色は砂のまま（作者の指示「色はそのまま」）。
+//
+// ## 2つに分けてある理由
+//
+// `PatternCard` は**過去との対話**（`TimelineSection`）も使っていて、
+// あちらは1件だけ出す。紙を1枚にする話は複数あるときだけなので、
+// **1件用と一覧用を分ける。**片方の都合でもう片方を壊さない。
+
+/** 問い。**余白の線に出す。**無ければ何も描かない */
+function Question({ text }) {
+  if (!text || !String(text).trim()) return null
+  return (
+    // 片側だけの線に角丸は付けない（`MarginNote.jsx`）
+    <View className="border-l-2 border-outline-variant pl-3 mt-2.5">
+      <Text className="text-body text-on-surface-variant leading-relaxed">{text}</Text>
+    </View>
+  )
+}
+
+/** 1件だけ出す形。**過去との対話が使う** */
 export function PatternCard({ observation, question }) {
   return (
-    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
+    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4">
       <Text className="text-body text-on-surface leading-relaxed">{observation}</Text>
-      <Text className="text-body text-on-surface-variant italic leading-relaxed">{question}</Text>
+      <Question text={question} />
+    </View>
+  )
+}
+
+/** 複数を1枚の紙に並べる形。**週次・月次の振り返りが使う** */
+export function PatternSheet({ patterns }) {
+  return (
+    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4">
+      {patterns.map((p, i) => (
+        <View key={i}>
+          {i > 0 ? <View className="h-[1px] bg-ai-ink/15 my-3.5" /> : null}
+          <Text className="text-label-sm text-outline mb-1">{i + 1}</Text>
+          <Text className="text-body text-on-surface leading-relaxed">{p.observation}</Text>
+          <Question text={p.question} />
+        </View>
+      ))}
     </View>
   )
 }
@@ -122,11 +174,9 @@ export default function ReviewSection({ title, type, description }) {
       ) : null}
 
       {!loading && hasPatterns ? (
-        <View className="gap-3">
+        <View className="gap-2">
           {generatedAt ? <Text className="text-[10px] text-outline">{formatAge(generatedAt)}</Text> : null}
-          {patterns.map((p, i) => (
-            <PatternCard key={i} observation={p.observation} question={p.question} />
-          ))}
+          <PatternSheet patterns={patterns} />
         </View>
       ) : null}
 
