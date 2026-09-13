@@ -12,6 +12,7 @@ import pytest
 from modules.ai import (
     _MONTHLY_SYSTEM,
     _WEEKLY_SYSTEM,
+    _attach_fact,
     _drop_blank_questions,
     _first_pattern,
     _fmt_logs,
@@ -166,3 +167,41 @@ class TestDropBlankQuestions:
     def test_中身のある問いは残す(self):
         raw = json.dumps({"patterns": [{"observation": "a", "question": "q。"}]}, ensure_ascii=False)
         assert json.loads(_drop_blank_questions(raw))["patterns"][0]["question"] == "q。"
+
+
+class TestAttachFact:
+    """観察が使った事実を、サーバーが数えたものに差し替える（2026-09-13）。
+
+    **文の中の日付は信用しない。**モデルは事実を渡されても、文の中で
+    置き場所を間違えることがある。
+    """
+
+    FACTS = {"items": [{"id": "F1", "kind": "repeated_struggle", "word": "配色",
+                        "count": 2, "dates": ["2026-09-01", "2026-09-05"]}]}
+
+    def test_番号を数えた事実に差し替える(self):
+        raw = json.dumps({"patterns": [{"observation": "a", "fact": "F1"}]})
+        got = json.loads(_attach_fact(raw, self.FACTS))["patterns"][0]["fact"]
+        assert got["word"] == "配色"
+        assert got["dates"] == ["2026-09-01", "2026-09-05"]
+
+    def test_知らない番号は捨てる(self):
+        raw = json.dumps({"patterns": [{"observation": "a", "fact": "F7"}]})
+        assert "fact" not in json.loads(_attach_fact(raw, self.FACTS))["patterns"][0]
+
+    # **モデルが事実そのものを書いてきても信用しない。**日付を作れてしまう
+    def test_番号でない形は信用しない(self):
+        raw = json.dumps({"patterns": [{"observation": "a",
+                                        "fact": {"id": "F1", "dates": ["2099-01-01"]}}]})
+        assert "fact" not in json.loads(_attach_fact(raw, self.FACTS))["patterns"][0]
+
+    def test_事実を使わない観察はそのまま(self):
+        raw = json.dumps({"patterns": [{"observation": "a"}]})
+        assert json.loads(_attach_fact(raw, self.FACTS)) == {"patterns": [{"observation": "a"}]}
+
+    def test_読めないものは触らない(self):
+        assert _attach_fact("not json", self.FACTS) == "not json"
+
+    @pytest.mark.parametrize("prompt", [_WEEKLY_SYSTEM, _MONTHLY_SYSTEM])
+    def test_プロンプトが使った事実の番号を頼んでいる(self, prompt):
+        assert '"fact"' in prompt

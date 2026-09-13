@@ -12,6 +12,7 @@
 """
 from modules.facts import (
     as_text,
+    find_item,
     next_then_done,
     period_facts,
     repeated_struggles,
@@ -151,3 +152,46 @@ class TestTimeOfDayIsNotThere:
         text = as_text(period_facts(logs, 7))
         assert "夜" not in text
         assert "時" not in text
+
+
+class TestItems:
+    """**指せる事実に番号を振る**（2026-09-13）。
+
+    観察に「どの事実に立っているか」を番号で返させ、語・日付・件数は
+    サーバーが数えたものから付ける。深掘りはこの事実を広げる。
+    """
+
+    def _logs(self):
+        return [
+            log("2026-09-01", struggled="配色で迷う", nxt="収録する"),
+            log("2026-09-05", struggled="配色を直す", created="収録した"),
+        ]
+
+    def test_指せる事実に番号が付く(self):
+        items = period_facts(self._logs(), 7)["items"]
+        assert [i["id"] for i in items] == ["F1", "F2"]
+        assert (items[0]["kind"], items[0]["word"]) == ("repeated_struggle", "配色")
+        assert (items[1]["kind"], items[1]["word"]) == ("next_then_done", "収録")
+
+    def test_どちらの事実も日付を持つ(self):
+        items = period_facts(self._logs(), 7)["items"]
+        assert items[0]["dates"] == ["2026-09-01", "2026-09-05"]
+        assert items[1]["dates"] == ["2026-09-01", "2026-09-05"]
+
+    def test_文に番号が出る(self):
+        text = as_text(period_facts(self._logs(), 7))
+        assert "F1: 「配色」" in text
+        assert "F2: 「収録」" in text
+
+    def test_番号で事実を引ける(self):
+        assert find_item(period_facts(self._logs(), 7), "F2")["word"] == "収録"
+
+    # **作られた番号を通さない**
+    def test_知らない番号は引けない(self):
+        facts = period_facts(self._logs(), 7)
+        assert find_item(facts, "F9") is None
+        assert find_item(facts, None) is None
+        assert find_item(facts, {"id": "F1"}) is None
+
+    def test_指せる事実が無ければ番号も無い(self):
+        assert period_facts([log("2026-09-01", created="台本")], 7)["items"] == []

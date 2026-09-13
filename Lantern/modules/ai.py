@@ -366,17 +366,6 @@ def _fmt_logs(logs):
     return text
 
 
-def _facts_text(logs, span_days):
-    """数えた事実を、モデルに渡す1つの塊にする（`modules/facts.py`）。
-
-    **ここに無い数には触れさせない。**プロンプト側で1つだけ約束している
-    （`_COUNTING_RULE`）。数えるのはコード、言葉にするのはモデル。
-    """
-    from modules import facts as _facts
-
-    return _facts.as_text(_facts.period_facts(logs, span_days))
-
-
 def _shape(raw):
     """AI出力の形だけを返す。**本文はログに出さない。**
 
@@ -459,6 +448,34 @@ def _first_pattern(raw):
     return _json.dumps(data, ensure_ascii=False)
 
 
+def _attach_fact(raw, facts):
+    """観察が使った事実を、**サーバーが数えたもの**に差し替える（2026-09-13）。
+
+    モデルに返させるのは番号だけ。語・日付・件数は、ここで数えた事実から付ける。
+    **文の中の日付は信用しない**——事実を渡しても、文の中で置き場所を
+    間違えることがある（月次が「その間の9月11日」と書いた。11日は期間の最後だった）。
+
+    深掘りは、この事実を広げる。**知らない番号は捨てる。**作られた番号を
+    事実として画面に出さない。番号でない形（事実そのものを書いてきた等）も信用しない。
+    """
+    import json as _json
+    from modules import facts as _facts
+
+    try:
+        data = _json.loads(raw)
+    except (_json.JSONDecodeError, TypeError):
+        return raw
+    for p in data.get("patterns", []) or []:
+        if not isinstance(p, dict):
+            continue
+        item = _facts.find_item(facts, p.get("fact"))
+        if item:
+            p["fact"] = item
+        else:
+            p.pop("fact", None)
+    return _json.dumps(data, ensure_ascii=False)
+
+
 # 週と月で別のプロンプトを持つ（2026-09-13・作者との壁打ち）。
 #
 # ## 同じものを使っていた
@@ -510,7 +527,12 @@ _COUNTING_RULE = """【数について】
 項目名（やったこと・よかったこと・困ったこと・次にやること）を
 主語にしない。どの記録にも当てはまる文は、その人の記録ではない。
 
-観察が事実を置くだけで足りるときは、問いを省いてよい。"""
+観察が事実を置くだけで足りるときは、問いを省いてよい。
+
+【使った事実】
+観察が【数えた事実】のどれかに立っているなら、その番号（F1 など）を "fact" に入れる。
+番号は【数えた事実】に書いてあるものだけを使い、作らない。
+どの事実にも立たない観察なら "fact" は入れない。"""
 
 
 _WEEKLY_SYSTEM = lantern_prompt(
@@ -524,10 +546,10 @@ _WEEKLY_SYSTEM = lantern_prompt(
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
 
-{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）"}]}
+{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）", "fact": "使った事実の番号（省略可）"}]}
 
 【良い例】
-{"observation": "「音が合わない」が、3日の記録と21日の記録に出ています。", "question": "同じところで立ち止まるとき、何が起きているのでしょう。"}
+{"observation": "「音が合わない」が、3日の記録と21日の記録に出ています。", "question": "同じところで立ち止まるとき、何が起きているのでしょう。", "fact": "F1"}
 
 【悪い例】
 {"observation": "今週は夜に書いた記録が3日ありました。", "question": "夜はどんな時間ですか。"}
@@ -552,7 +574,7 @@ _MONTHLY_SYSTEM = lantern_prompt(
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
 
-{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）"}]}
+{"patterns": [{"observation": "観察（1〜2文）", "question": "答えを求めない問い（1文・省略可）", "fact": "使った事実の番号（省略可）"}]}
 
 【良い例】
 {"observation": "「台本」は月のはじめから終わりまで記録に出ていて、「告知」は中ほどで見えなくなっています。", "question": "見えなくなったほうを、いまどこに置いていますか。"}
@@ -576,13 +598,19 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     if last_week_logs:
         logs_text += f"\n\n先週のログ（変化の参考）:{_fmt_logs(last_week_logs)}"
 
+    from modules import facts as _facts
+
+    # **数えた事実は1回だけ数え、渡すのにも差し替えるのにも使う**
+    facts = _facts.period_facts(period_logs, 7)
     user_message = (
         f"週の記録：\n{logs_text}\n\n"
-        f"【数えた事実】\n{_facts_text(period_logs, 7)}\n\n"
+        f"【数えた事実】\n{_facts.as_text(facts)}\n\n"
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_WEEKLY_SYSTEM, user_message, max_tokens=600)
-    return _first_pattern(_drop_blank_questions(_parse_patterns_json(result)))
+    return _attach_fact(
+        _first_pattern(_drop_blank_questions(_parse_patterns_json(result))), facts
+    )
 
 
 _DAILY_QUOTE_SYSTEM = lantern_prompt(
@@ -645,13 +673,19 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     if last_month_logs:
         logs_text += f"\n\n先月のログ（変化の参考）:{_fmt_logs(last_month_logs)}"
 
+    from modules import facts as _facts
+
+    # **数えた事実は1回だけ数え、渡すのにも差し替えるのにも使う**
+    facts = _facts.period_facts(period_logs, 30)
     user_message = (
         f"今月の記録：\n{logs_text}\n\n"
-        f"【数えた事実】\n{_facts_text(period_logs, 30)}\n\n"
+        f"【数えた事実】\n{_facts.as_text(facts)}\n\n"
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600, model=_MODEL_DEEP)
-    return _first_pattern(_drop_blank_questions(_parse_patterns_json(result)))
+    return _attach_fact(
+        _first_pattern(_drop_blank_questions(_parse_patterns_json(result))), facts
+    )
 
 
 def generate_channel_insight(videos):

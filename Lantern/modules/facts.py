@@ -117,6 +117,38 @@ def next_then_done(logs):
     return out
 
 
+def _items(repeated, done):
+    """**指せる事実**に番号を振る（2026-09-13）。
+
+    観察が「どの事実に立っているか」を番号で返させるため。
+    深掘りは、その番号の事実を広げる。
+
+    日数や件数には番号を振らない——期間の説明であって、
+    観察が立つ足場ではない。
+    """
+    items = []
+    for r in repeated:
+        items.append({"kind": "repeated_struggle", "word": r["word"],
+                      "count": r["count"], "dates": list(r["dates"])})
+    for d in done:
+        items.append({"kind": "next_then_done", "word": d["word"],
+                      "written": d["written"], "appeared": d["appeared"],
+                      "dates": [d["written"], d["appeared"]]})
+    for n, item in enumerate(items, 1):
+        item["id"] = f"F{n}"
+    return items
+
+
+def find_item(facts, fid):
+    """番号から事実を引く。**知らない番号なら None**——作られた番号を通さない"""
+    if not isinstance(fid, str):
+        return None
+    for item in (facts or {}).get("items", []):
+        if item.get("id") == fid:
+            return item
+    return None
+
+
 def period_facts(logs, span_days=None):
     """その期間について、**数えて分かることだけ**を返す。
 
@@ -124,14 +156,17 @@ def period_facts(logs, span_days=None):
     """
     entries = [l for l in (logs or []) if l.get("date")]
     days = sorted({l["date"] for l in entries})
+    repeated = repeated_struggles(entries)
+    done = next_then_done(entries)
     return {
         "entries": len(entries),
         "days": len(days),
         "span_days": span_days,
         "first": days[0] if days else None,
         "last": days[-1] if days else None,
-        "repeated_struggles": repeated_struggles(entries),
-        "next_then_done": next_then_done(entries),
+        "repeated_struggles": repeated,
+        "next_then_done": done,
+        "items": _items(repeated, done),
     }
 
 
@@ -150,14 +185,13 @@ def as_text(facts):
         lines.append(f"記録した日: {facts['days']}日")
     lines.append(f"記録の件数: {facts['entries']}件")
 
-    for item in facts.get("repeated_struggles", []):
-        lines.append(
-            f"「{item['word']}」が困ったことに{item['count']}件の記録で出ています"
-            f"（{'、'.join(item['dates'])}）"
-        )
-    for item in facts.get("next_then_done", []):
-        lines.append(
-            f"「{item['word']}」は{item['written']}の次にやることに書かれ、"
-            f"{item['appeared']}のやったことに出ています"
-        )
+    # **番号を付けて並べる。**観察がどれに立っているかを、番号で返させる
+    for item in facts.get("items", []):
+        if item["kind"] == "repeated_struggle":
+            body = (f"「{item['word']}」が困ったことに{item['count']}件の記録で出ています"
+                    f"（{'、'.join(item['dates'])}）")
+        else:
+            body = (f"「{item['word']}」は{item['written']}の次にやることに書かれ、"
+                    f"{item['appeared']}のやったことに出ています")
+        lines.append(f"{item['id']}: {body}")
     return "\n".join(lines)
