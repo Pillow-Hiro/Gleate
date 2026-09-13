@@ -9,7 +9,14 @@ import json
 
 import pytest
 
-from modules.ai import _parse_patterns_json, _fmt_logs
+from modules.ai import (
+    _MONTHLY_SYSTEM,
+    _WEEKLY_SYSTEM,
+    _drop_blank_questions,
+    _first_pattern,
+    _fmt_logs,
+    _parse_patterns_json,
+)
 
 
 FALLBACK = '{"patterns": []}'
@@ -124,3 +131,38 @@ class TestFmtLogsSkipsEmpty:
         # 写真はAIに渡さない方針。写真の有無で判定を変えない
         logs = [{"date": "2026-08-01", "created": "", "photo_path": "u/x.jpg"}]
         assert _fmt_logs(logs) == ""
+
+
+class TestOneObservation:
+    """観察は1つ（2026-09-13・作者の判断）。
+
+    それまで「最大3つ」だったが、3の理由は記録に無く、違う話を3つ
+    求めると埋め草が出た。**受け取る側でも1つに切る。**
+    """
+
+    def test_二つ目以降を捨てる(self):
+        raw = json.dumps({"patterns": [{"observation": "a"}, {"observation": "b"}, {"observation": "c"}]})
+        assert json.loads(_first_pattern(raw)) == {"patterns": [{"observation": "a"}]}
+
+    def test_空はそのまま(self):
+        assert json.loads(_first_pattern('{"patterns": []}')) == {"patterns": []}
+
+    def test_読めないものは触らない(self):
+        assert _first_pattern("not json") == "not json"
+
+    @pytest.mark.parametrize("prompt", [_WEEKLY_SYSTEM, _MONTHLY_SYSTEM])
+    def test_プロンプトが3つを頼んでいない(self, prompt):
+        assert "最大3" not in prompt
+        assert "1つだけ" in prompt
+
+
+class TestDropBlankQuestions:
+    """「問いを省いてよい」と許すと、鍵を消さず空文字で返ってくる。"""
+
+    def test_空の問いは鍵ごと落とす(self):
+        raw = json.dumps({"patterns": [{"observation": "a", "question": ""}]}, ensure_ascii=False)
+        assert json.loads(_drop_blank_questions(raw)) == {"patterns": [{"observation": "a"}]}
+
+    def test_中身のある問いは残す(self):
+        raw = json.dumps({"patterns": [{"observation": "a", "question": "q。"}]}, ensure_ascii=False)
+        assert json.loads(_drop_blank_questions(raw))["patterns"][0]["question"] == "q。"

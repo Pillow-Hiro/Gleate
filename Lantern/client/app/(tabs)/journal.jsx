@@ -38,7 +38,7 @@ export default function Journal() {
   const keyboardHeight = useKeyboardHeight()
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
-  // 頻出キーワードから飛んでくると `?q=` が付く。その語で絞った状態で開く
+  // 「よく書いている言葉」から飛んでくると `?q=` が付く。その語で絞った状態で開く
   const params = useLocalSearchParams()
   const [search, setSearch] = useState(typeof params.q === 'string' ? params.q : '')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -77,7 +77,7 @@ export default function Journal() {
     return () => { cancelled = true }
   }, [tick])
 
-  // 頻出キーワードから来たとき。
+  // 「よく書いている言葉」から来たとき。
   // **同じ画面への遷移なので、状態は自分で合わせる。**
   // `q` を読むだけでは、振り返りタブを開いたまま検索だけ変わって
   // 何も起きていないように見える。記録タブへ戻す。

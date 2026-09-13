@@ -19,7 +19,7 @@ import { formatAge } from '../lib/format'
 //
 // ## 直した形
 //
-// 紙は1枚。中を細い線で分ける。
+// 紙は1枚。
 // 問いは**余白の線**に出す——灯り待ちや今週の発見で使っている
 // `MarginNote` と同じ形で、「余白に置かれたもの」として揃う。
 //
@@ -35,11 +35,14 @@ import { formatAge } from '../lib/format'
 // 順位や手順に読める。観察に上下は無い。区切りの線だけで、
 // 複数あることは分かる。
 //
-// ## 2つに分けてある理由
+// ## 観察が1つになった（2026-09-13・作者の判断）
 //
-// `PatternCard` は**過去との対話**（`TimelineSection`）も使っていて、
-// あちらは1件だけ出す。紙を1枚にする話は複数あるときだけなので、
-// **1件用と一覧用を分ける。**片方の都合でもう片方を壊さない。
+// 振り返りも観察を1つしか返さなくなったので、複数を1枚に並べる
+// 一覧用の形は要らなくなった。**過去との対話と同じ `PatternCard`**
+// で出す。
+//
+// 端末に残っている古い振り返り（観察3つの頃のもの）もあるので、
+// **ここでも先頭の1つだけ出す。**サーバーで切っていても、控えは切れていない。
 
 /** 問い。**余白の線に出す。**無ければ何も描かない */
 function Question({ text }) {
@@ -52,27 +55,12 @@ function Question({ text }) {
   )
 }
 
-/** 1件だけ出す形。**過去との対話が使う** */
+/** 観察を1つ出す形。**振り返りと過去との対話が使う** */
 export function PatternCard({ observation, question }) {
   return (
     <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4">
       <Text className="text-body text-on-surface leading-relaxed">{observation}</Text>
       <Question text={question} />
-    </View>
-  )
-}
-
-/** 複数を1枚の紙に並べる形。**週次・月次の振り返りが使う** */
-export function PatternSheet({ patterns }) {
-  return (
-    <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4">
-      {patterns.map((p, i) => (
-        <View key={i}>
-          {i > 0 ? <View className="h-[1px] bg-ai-ink/15 my-3.5" /> : null}
-          <Text className="text-body text-on-surface leading-relaxed">{p.observation}</Text>
-          <Question text={p.question} />
-        </View>
-      ))}
     </View>
   )
 }
@@ -185,7 +173,7 @@ export default function ReviewSection({ title, type, description }) {
       {!loading && hasPatterns ? (
         <View className="gap-2">
           {generatedAt ? <Text className="text-[10px] text-outline">{formatAge(generatedAt)}</Text> : null}
-          <PatternSheet patterns={patterns} />
+          <PatternCard observation={patterns[0].observation} question={patterns[0].question} />
         </View>
       ) : null}
 

@@ -441,6 +441,24 @@ def _drop_blank_questions(raw):
     return _json.dumps(data, ensure_ascii=False)
 
 
+def _first_pattern(raw):
+    """観察を**1つに切る**（2026-09-13）。
+
+    プロンプトで「1つだけ」と頼んでいるが、**受け取る側でも確かめる**
+    （`_drop_blank_questions` と同じ考え方）。2つ目以降は捨てる。
+    """
+    import json as _json
+
+    try:
+        data = _json.loads(raw)
+    except (_json.JSONDecodeError, TypeError):
+        return raw
+    patterns = data.get("patterns")
+    if isinstance(patterns, list):
+        data["patterns"] = patterns[:1]
+    return _json.dumps(data, ensure_ascii=False)
+
+
 # 週と月で別のプロンプトを持つ（2026-09-13・作者との壁打ち）。
 #
 # ## 同じものを使っていた
@@ -466,6 +484,19 @@ def _drop_blank_questions(raw):
 # 数えた事実を `modules/facts.py` が付けて渡す。モデルがやるのは
 # **どれを言うかと、どう問うか**だけ。数が合わなくなる道を塞ぐ。
 
+# ## 観察は1つ（2026-09-13・作者の判断）
+#
+# それまで「最大3つ」。**3という数の理由は記録に残っていなかった。**
+# `REVIEW_v0.5.md` の提案にそう書かれ、そのまま残っていただけ。
+# しかも提案の見本は2つとも今の憲法に反する——時刻を渡していない
+# 「夜に3日」と、「？」で未来の行動へ誘う問い。
+#
+# 違う話を3つ求めると埋め草が出る。1週間の記録に、互いに違う
+# 確かな観察が3つあることはまず無い。そして問いが3つ並ぶと、
+# **考えることを3つ課される**画面になる。静かな伴走と逆を向く。
+#
+# 受け取る側でも1つに切る（`_first_pattern`）。
+
 _COUNTING_RULE = """【数について】
 数は【数えた事実】に書いてあるものだけを使う。自分で数えない。
 そこに無い数には触れない。記録した時刻は渡されていないので、
@@ -484,11 +515,11 @@ _COUNTING_RULE = """【数について】
 
 _WEEKLY_SYSTEM = lantern_prompt(
     "この観察の指針",
-    """この一週間の記録を読み、最大3つの観察を返してください。
+    """この一週間の記録を読み、観察を1つだけ返してください。
 見るのは書かれた中身です。同じところで立ち止まっていること、
 書き方が変わったこと、同じ語が続いていること。
 
-3つは互いに違う話にする。似た観察が2つ並ぶなら、1つだけ返す。
+言えることがいくつあっても、いちばん確かなものを1つだけ選ぶ。
 
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
@@ -505,17 +536,18 @@ _WEEKLY_SYSTEM = lantern_prompt(
     + _COUNTING_RULE
     + """
 
-記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。""",
+patterns には1つだけ入れる。記録が0件の場合は {"patterns": []} を返す。""",
 )
 
 
 _MONTHLY_SYSTEM = lantern_prompt(
     "この観察の指針",
-    """この一か月の記録を読み、最大3つの観察を返してください。
+    """この一か月の記録を読み、観察を1つだけ返してください。
 見るのは**週をまたいで初めて見えること**です。月のはじめから終わりまで
 続いている話題、途中から見えなくなった話題、いちど離れて戻ってきた話題。
 
-一週間を見れば分かることは返さない。3つは互いに違う話にする。
+一週間を見れば分かることは返さない。言えることがいくつあっても、
+いちばん確かなものを1つだけ選ぶ。
 
 【出力形式】
 必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
@@ -532,7 +564,7 @@ _MONTHLY_SYSTEM = lantern_prompt(
     + _COUNTING_RULE
     + """
 
-記録が少ない場合は1つだけ返す。記録が0件の場合は {"patterns": []} を返す。""",
+patterns には1つだけ入れる。記録が0件の場合は {"patterns": []} を返す。""",
 )
 
 
@@ -550,7 +582,7 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_WEEKLY_SYSTEM, user_message, max_tokens=600)
-    return _drop_blank_questions(_parse_patterns_json(result))
+    return _first_pattern(_drop_blank_questions(_parse_patterns_json(result)))
 
 
 _DAILY_QUOTE_SYSTEM = lantern_prompt(
@@ -619,7 +651,7 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
         "上記の記録から観察を返してください。"
     )
     result = call_claude(_MONTHLY_SYSTEM, user_message, max_tokens=600, model=_MODEL_DEEP)
-    return _drop_blank_questions(_parse_patterns_json(result))
+    return _first_pattern(_drop_blank_questions(_parse_patterns_json(result)))
 
 
 def generate_channel_insight(videos):
