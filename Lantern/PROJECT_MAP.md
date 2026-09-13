@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。42ルール / 40パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。43ルール / 41パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -63,6 +63,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `reset.jsx` | `/reset` | 新しいパスワードを決める。**メールのリンクから開かれる** |
 | `account.jsx` | `/account` | **マイページ**（2026-09-04 に「アカウント」から改称）。設定から1枚めくる。灯りの色・紙の色・**削除はここにある** |
 | `plan.jsx` | `/plan` | プラン。設定の「現在のプラン」から1枚めくる。**購入と復元はここにある** |
+| `deepen.jsx` | `/deepen` | **深掘りの全画面**（上から被さる）。振り返りの控えから先頭の観察を読み、3か月分の記録に戻して深める。閉じると結果はカードの下に残る。有料 |
 | `write.jsx` | `/write` | **記録を書く全画面**（上から被さる）。`?id=` で直す、`?date=` で過去の日。「記録する」は上の帯。保存すると閉じ、灯りは戻った先に出る |
 | `insights.jsx` | `/insights` | `/journal` へのリダイレクト（旧URL用） |
 
@@ -135,6 +136,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `WordsSection.jsx` | 記録タブ | よく書いている言葉。**頻出キーワードと言葉の移り変わりを1つにした**——断面の中に差分の印を乗せる。Claude をやめて端末の中で数えるので、**回数が必ず合う** |
 | `Symbol.jsx` | Tile（過去の記録・アイデアの種・日替わりの抜粋・今日の灯り・今週の発見） | SF Symbols を**本物のまま**出す。描き写しでは合わず、同じ指示が二度出たため。iOS 以外は渡された SVG に落ちる |
 | `SwipeRow.jsx` | IdeasPanel / AttachRow（前に添えた曲） | 横に払うとゴミ箱が出る行。**角度を自分で測らない**——行を横スクロールにして縦か横かは OS に裁かせる（`IdeasPanel` が三度やり直して辿り着いた形） |
+| `DeepenResult.jsx` | deepen / ReviewSection | 深掘りの結果。**同じ話として読んだ記録（本人の文）と、Gleateの見立てを別の段に置く。**全画面とカードの下で同じものを出す |
 | `MarginNote.jsx` | HomeCard（灯り待ち・来ない理由）/ WeeklyDiscovery | 余白の書き込み。**回答そのものは砂色の面に戻した**（2026-09-11・作者から「前の方が分かりやすい」）。ここに残るのは回答ではないもの |
 | `GlassPressable.jsx` | 認証4画面 / 保存 / 課金 / 手がかり / アイデア / 添える / 絞り込み / 装飾 | 琥珀で塗っていた押せるものを硝子に。**16箇所を1つにまとめた**——1つずつ書き換えると消し忘れが出るが、Tailwind は知らないクラスを黙って無視するので気づけない |
 | `GlassPanel.jsx` | 今日の灯り / WriteButton / PromptCard / WriteTabs / AttachRow の入力窓 | 硝子の面（Liquid Glass）。**琥珀の一色塗りをやめた4箇所。** iOS 26 未満は一色塗りに落ちる。影を消さないため切るのは内側だけ |
@@ -252,6 +254,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `crypto.py` | 記録の本文を AES-256-GCM で包む。**鍵が無ければ素通し**。復号に失敗したら投げる（空を返すと上書きで消える） | `test_crypto.py` |
 | `ratelimit.py` | AI を呼ぶ回数の1日あたりの上限。**表が無ければ素通し** | — |
 | `hintusage.py` | 手がかりを使った回数。**通算**（1日あたりではない）。**表が無ければ素通し** | `test_hint.py` |
+| `deepen.py` | ai / main | 深掘り。**語ではなく記録で読ませ**、返ってきた日付と引用を実在する記録に照らして通す。見立ては出した記録に立つものだけ、多くて2つ |
 | `facts.py` | ai | 記録から**数えた事実**だけを取り出す。有料の振り返りは数もモデルに数えさせていて、**渡していない時刻について「夜に3日」と言わせていた。**数えるのはコード、言葉にするのはモデル |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |

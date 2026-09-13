@@ -22,6 +22,10 @@ _MODEL_DEFAULT = "claude-sonnet-5"
 _MODEL_DEEP = "claude-opus-5"
 
 _TIMEOUT_SECONDS = 10
+
+# 深掘りだけの待ち時間。**3か月分を読み、見立てまで書く**ので長くかかる。
+# gunicorn の `--timeout 60`（`Procfile`）より短く保つこと
+_DEEP_TIMEOUT_SECONDS = 40
 # **画面では「AI」と名乗らない**（2026-08-18）。
 # 他の場所は全部 Gleate を主語にしている（Gleateが観察したこと・
 # Gleateに聞く）のに、ここだけ「AIの応答」と書いていた。
@@ -139,17 +143,20 @@ def _first_text(message):
     return None
 
 
-def call_claude(system_prompt, user_message, max_tokens=300, model=None):
+def call_claude(system_prompt, user_message, max_tokens=300, model=None, timeout=None):
     """`model` を渡さなければ既定側（無料の毎日のもの）。
 
     **有料の入口だけが `_MODEL_DEEP` を渡す。**どれが有料かは
     `main.py` の `@require_paid` が正で、`tests/test_ai_models.py` が
     その対応を見張る。
+
+    `timeout` を渡さなければ `_TIMEOUT_SECONDS`。**3か月分を読む深掘りだけ延ばす**
+    （`generate_deepen`）。
     """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return None
-    client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
+    client = anthropic.Anthropic(api_key=api_key, timeout=timeout or _TIMEOUT_SECONDS)
     start = time.time()
     chosen = model or _MODEL_DEFAULT
     print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')} / {chosen}")
@@ -686,6 +693,93 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     return _attach_fact(
         _first_pattern(_drop_blank_questions(_parse_patterns_json(result))), facts
     )
+
+
+# 深掘り（2026-09-13・作者との壁打ち）。**有料・Opus 5。**
+#
+# ひとつの観察を、この3か月の記録に戻して深める。この場所でだけ
+# Gleate の見立て（解釈の候補）を置いてよい（`CLAUDE.md`）。
+#
+# **語ではなく記録で読む。**語の一致を足場にすると、同じ話の記録が落ち、
+# 違う話の記録が混ざり、語から本人の書いていない話ができる
+# （作者「単語だけで推測するの？全くの見当外れになって、危険じゃない？」）。
+#
+# 返ってきた日付と引用は `modules/deepen.py` が実在する記録に照らして通す。
+_DEEPEN_SYSTEM = lantern_prompt(
+    "この深掘りの指針",
+    """ひとつの観察を、この3か月の記録に戻して深めます。
+**この場所でだけ、見立て（解釈の候補）を置いてよい。**
+決めつけない。「つまり〜です」「〜な人です」と言わず、「〜かもしれません」と候補として置く。
+
+【読み方】
+- 観察と同じ話をしている記録を探す。**語が同じかどうかではなく、書かれた文で判断する。**
+- 同じ語でも違う話なら含めない。違う言い方でも同じ話なら含める。
+- 本人が書いていないことを、書いてあったことのように言わない。
+- **書かれていないことを、無かったことのように言わない。**「その日は音に触れていない」とは言えない——書いていないだけかもしれない。
+- 同じ話に見える記録が無ければ、found を false にして、何も作らない。
+
+【返すもの】
+- records … 同じ話として読んだ記録。日付と、その記録の中の文をそのまま抜き出した quote。多くて8件
+- readings … 見立ての候補。多くて2つ。1つに決めない。dates に、その見立ての根拠にした記録の日付を入れる
+- question … 見立てを受けて深めた問い。1文。答えを迫らない。「。」で終える
+
+評価しない・褒めない・励まさない。行動を勧めない（「〇〇しましょう」「〜してみては」を使わない）。
+箇条書きの報告口調にしない。
+
+【出力形式】
+必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
+{"found": true, "records": [{"date": "2026-09-02", "quote": "記録の中の文をそのまま"}], "readings": [{"text": "見立て（1〜2文）", "dates": ["2026-09-02"]}], "question": "深めた問い"}
+
+【良い例】
+{"found": true, "records": [{"date": "2026-09-02", "quote": "音響の調整が難しい"}, {"date": "2026-09-11", "quote": "音響の調整にまた手間取った"}], "readings": [{"text": "2日も11日も、音そのものより、合わせる手間のほうに言葉が向いているのかもしれません。", "dates": ["2026-09-02", "2026-09-11"]}], "question": "合わせようとしていたのは、音そのものだったのでしょうか。"}
+
+【悪い例】
+{"found": true, "records": [], "readings": [{"text": "あなたは完璧主義な傾向があります。", "dates": []}], "question": "次は音響の本を読んでみてはどうですか？"}""",
+)
+
+
+def generate_deepen(observation, question, logs):
+    """観察を3か月分の記録に戻して深める。**画面にそのまま出せる形**を返す。
+
+    読むのはモデル、確かめるのは `modules/deepen.py`。
+    **読めなかったときは None。**「見つからなかった」（found: false）とは分ける。
+    """
+    import json as _json
+    import re as _re
+    from modules import deepen as _deepen
+
+    if not observation or not logs:
+        return _deepen.empty()
+
+    asked = f"（そのとき添えた問い: {question}）\n" if question else ""
+    user_message = (
+        f"【深掘りする観察】\n{observation}\n{asked}\n"
+        f"【この3か月の記録】{_fmt_logs(logs)}\n\n"
+        "上記の記録を読んで返してください。"
+    )
+    raw = call_claude(
+        _DEEPEN_SYSTEM, user_message, max_tokens=1500,
+        model=_MODEL_DEEP, timeout=_DEEP_TIMEOUT_SECONDS,
+    )
+    if not raw or raw == _TIMEOUT_MESSAGE:
+        return None
+
+    text = _re.sub(r'^```(?:json)?\s*', '', raw.strip())
+    text = _re.sub(r'\s*```$', '', text)
+    data = None
+    try:
+        data = _json.loads(text)
+    except _json.JSONDecodeError:
+        m = _re.search(r'\{.*\}', text, _re.DOTALL)
+        if m:
+            try:
+                data = _json.loads(m.group())
+            except _json.JSONDecodeError:
+                data = None
+    if data is None:
+        print(f"[AI] JSON解析に失敗（deepen）。{_shape(raw)}")
+        return None
+    return _deepen.ground(data, logs)
 
 
 def generate_channel_insight(videos):

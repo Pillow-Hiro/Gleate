@@ -29,6 +29,7 @@ DEEP = {
     "generate_channel_insight",    # YouTube チャンネル
     "generate_video_insight",      # YouTube 動画
     "generate_stream_insight",     # Twitch 配信
+    "generate_deepen",             # 深掘り（有料）
 }
 
 

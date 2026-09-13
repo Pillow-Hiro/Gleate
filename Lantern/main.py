@@ -30,6 +30,7 @@ from modules.ai import (
     generate_milestone_reflection,
     generate_keyword_frequency,
     generate_hint, generate_hint_question,
+    generate_deepen,
 )
 from modules.hintusage import has_free_left, record_use
 from functools import wraps
@@ -806,6 +807,37 @@ def generate_review():
     except (_json.JSONDecodeError, AttributeError):
         patterns = []
     return jsonify({"patterns": patterns, "period_label": period_label})
+
+
+# 深掘り（2026-09-13・作者との壁打ち）。**有料。**
+#
+# 振り返りの観察ひとつを、この3か月の記録に戻して深める。
+# **語ではなく記録で読む**（`modules/deepen.py` の冒頭）。
+#
+# 受け取るのは観察の文と問いだけ。**日付や件数は受け取らない**——
+# その人の記録から、ここで読み直す。画面から事実を送らせると作り替えられる。
+#
+# 読めなかったとき（待ちすぎ・形が崩れた）は 503。「見つからなかった」とは
+# 分けて返す。**失敗を「同じ話が無い」に見せない。**
+@app.route("/api/review/deepen", methods=["POST"])
+@require_auth
+@require_paid
+@require_ai_budget
+def deepen_review():
+    from modules.deepen import DEEPEN_DAYS
+
+    data = request.get_json(silent=True) or {}
+    observation = str(data.get("observation") or "").strip()[:400]
+    question = str(data.get("question") or "").strip()[:200] or None
+    if not observation:
+        return jsonify({"error": "observation が要る"}), 400
+
+    since = days_ago_str(DEEPEN_DAYS)
+    logs = [l for l in load_logs(g.user_id) if l.get("date", "") >= since]
+    result = generate_deepen(observation, question, logs)
+    if result is None:
+        return jsonify({"error": "読めなかった"}), 503
+    return jsonify(result)
 
 
 @app.route("/api/daily/quote")

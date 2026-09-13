@@ -304,6 +304,16 @@ function RootNavigator() {
             contentStyle: { backgroundColor: ground },
           }}
         />
+        {/* 深掘り（2026-09-13）。**書く場所と同じく上から被さる全画面。**
+            閉じると結果は振り返りのカードの下に残る（`app/deepen.jsx`） */}
+        <Stack.Screen
+          name="deepen"
+          options={{
+            presentation: 'modal',
+            animation: 'fade',
+            contentStyle: { backgroundColor: ground },
+          }}
+        />
       </Stack>
       {/* 初回の案内。**起動画面のあと、ログイン済みのときだけ。**
           - 起動画面より下に置く（写真と一言を先に見せる）

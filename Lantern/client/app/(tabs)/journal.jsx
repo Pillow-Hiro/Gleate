@@ -94,6 +94,17 @@ export default function Journal() {
     if (params.tab === 'record') setActiveTab('record')
   }, [params.tab])
 
+  // 振り返りの根拠の日付・深掘りの記録から来たとき（2026-09-13）。
+  // **その日の記録を開いた状態にする。**記録タブへ切り替え、暦で選んだのと
+  // 同じ形で下に出す。検索は解く——絞り込んだままだと、その日が隠れる
+  useEffect(() => {
+    const d = typeof params.date === 'string' ? params.date : ''
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return
+    setActiveTab('record')
+    setSearch('')
+    setSelectedDate(d)
+  }, [params.date])
+
   // チップや検索を変えたら月の絞り込みを解く。
   // **ここは「すべて」に戻す。** 検索は月をまたいで探すもので、
   // 当月に固定したままだと、他の月にある記録が0件に見える

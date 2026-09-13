@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Text from './Text'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -6,6 +6,10 @@ import { authFetch } from '../lib/supabase'
 import { paywallMessage, readMaybePaywall } from '../lib/plan'
 import Paywall from './Paywall'
 import { formatAge } from '../lib/format'
+import { useRouter } from 'expo-router'
+import GlassPressable from './GlassPressable'
+import DeepenResult, { shortDate } from './DeepenResult'
+import { useRefreshOnFocus } from '../lib/refreshOnFocus'
 
 // 振り返りの出し方（2026-09-13・作者の指示「分かりやすく表示したい」→ B案）。
 //
@@ -65,6 +69,29 @@ export function PatternCard({ observation, question }) {
   )
 }
 
+/**
+ * 観察が立っている記録の日付（2026-09-13）。**数えた事実から出す**
+ * ——文の中の日付は信用しない（`modules/ai.py` の `_attach_fact`）。
+ * 押すとその日の記録が開く。**無料**。
+ */
+function Evidence({ dates, onOpen }) {
+  if (!dates || dates.length === 0) return null
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {dates.map((d) => (
+        <Pressable
+          key={d}
+          onPress={() => onOpen(d)}
+          accessibilityLabel={`${shortDate(d)}の記録を開く`}
+          className="bg-surface-lowest border border-border rounded-full px-3 py-1 active:opacity-70"
+        >
+          <Text className="text-label-sm text-on-surface-variant">{shortDate(d)}</Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+}
+
 // Web版 Journal.jsx の ReviewSection を移植したもの。
 // localStorage は同期的に初期値を読めたが AsyncStorage は非同期なので、
 // 初期値は null 固定にして useEffect で復元する。
@@ -76,6 +103,26 @@ export default function ReviewSection({ title, type, description }) {
   const [restored, setRestored] = useState(false)
   // 断られたときの一文。**null なら断られていない**
   const [paywall, setPaywall] = useState(null)
+  const router = useRouter()
+
+  // 無料の人にだけ、深掘りが有料だと**先に**書く。押してから知らせない。
+  // 月次はそもそも有料の人しか見ないので、週次のときだけ訊く
+  const [paid, setPaid] = useState(null)
+  useEffect(() => {
+    if (type !== 'weekly') return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch('/api/plan')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setPaid(Boolean(data.paid))
+      } catch (e) {
+        console.warn('[Review] プランの取得に失敗', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [type])
 
   useEffect(() => {
     let cancelled = false
@@ -96,6 +143,26 @@ export default function ReviewSection({ title, type, description }) {
     })()
     return () => { cancelled = true }
   }, [storageKey])
+
+  // **深掘りの全画面から戻ったとき、控えを読み直す**（2026-09-13）。
+  // 深掘りの結果は控えの観察に書き足されるので、ここで拾ってカードの下に出す
+  const reload = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(storageKey)
+      if (!raw) return
+      const stored = JSON.parse(raw)
+      setPatterns(stored?.patterns ?? null)
+      setGeneratedAt(stored?.generatedAt || '')
+    } catch (e) {
+      console.warn('[Review] 振り返りキャッシュの読み直しに失敗', e)
+    }
+  }, [storageKey])
+  useRefreshOnFocus(reload)
+
+  // 根拠の記録を開く。**無料**——自分の記録への道に料金をかけない
+  function openDate(date) {
+    router.navigate({ pathname: '/journal', params: { date } })
+  }
 
   async function generate() {
     setLoading(true)
@@ -174,6 +241,24 @@ export default function ReviewSection({ title, type, description }) {
         <View className="gap-2">
           {generatedAt ? <Text className="text-[10px] text-outline">{formatAge(generatedAt)}</Text> : null}
           <PatternCard observation={patterns[0].observation} question={patterns[0].question} />
+          <Evidence dates={patterns[0].fact?.dates} onOpen={openDate} />
+          {/* 深掘り（2026-09-13）。**押すと全画面、閉じると結果がここに残る**
+              （作者の指示）。一度深掘りしたものは、ボタンの代わりに結果を出す */}
+          {patterns[0].deepen ? (
+            <DeepenResult result={patterns[0].deepen} onOpenRecord={openDate} />
+          ) : (
+            <View className="items-start gap-1 mt-1">
+              <GlassPressable
+                onPress={() => router.push({ pathname: '/deepen', params: { type } })}
+                className="rounded-full px-4 py-2 min-h-touch justify-center"
+              >
+                <Text className="font-strong text-label-md text-on-lantern">深掘りする</Text>
+              </GlassPressable>
+              {type === 'weekly' && paid === false ? (
+                <Text className="text-label-sm text-outline">Gleate Plus で開きます</Text>
+              ) : null}
+            </View>
+          )}
         </View>
       ) : null}
 
