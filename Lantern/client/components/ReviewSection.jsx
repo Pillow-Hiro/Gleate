@@ -19,11 +19,21 @@ import { formatAge } from '../lib/format'
 //
 // ## 直した形
 //
-// 紙は1枚。中を細い線で分け、**番号で3つあることを示す。**
+// 紙は1枚。中を細い線で分ける。
 // 問いは**余白の線**に出す——灯り待ちや今週の発見で使っている
 // `MarginNote` と同じ形で、「余白に置かれたもの」として揃う。
 //
 // 地の色は砂のまま（作者の指示「色はそのまま」）。
+//
+// ## 番号を外した（2026-09-13）
+//
+// 観察に 1・2・3 と通し番号を振っていた。3つあることが分かるように、
+// という狙いだったが、作者から「**1と2という番号が割り振られている
+// けどナニコレ？**」。
+//
+// **何の番号か説明が要る印は、印として働いていない。**しかも番号は
+// 順位や手順に読める。観察に上下は無い。区切りの線だけで、
+// 複数あることは分かる。
 //
 // ## 2つに分けてある理由
 //
@@ -59,7 +69,6 @@ export function PatternSheet({ patterns }) {
       {patterns.map((p, i) => (
         <View key={i}>
           {i > 0 ? <View className="h-[1px] bg-ai-ink/15 my-3.5" /> : null}
-          <Text className="text-label-sm text-outline mb-1">{i + 1}</Text>
           <Text className="text-body text-on-surface leading-relaxed">{p.observation}</Text>
           <Question text={p.question} />
         </View>
