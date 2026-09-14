@@ -8,6 +8,16 @@ static/
 # git worktree の実体（node_modules と別チェックアウトを含むため追跡しない）
 .claude/worktrees/
 
+# 物差しの出力。**作者の記録の本文を含む**のでリポジトリに入れない（scripts/eval_weekly.py）。
+# 入れるのは cases.json（いつ押したかの日付だけ）
+.claude/hillclimb/*/baseline/
+.claude/hillclimb/*/v[0-9]*/
+.claude/hillclimb/*/blind*
+.claude/hillclimb/*/picks.json
+.claude/hillclimb/*/report.html
+.claude/hillclimb/*/state.json
+.claude/hillclimb/*/trajectory/
+
 # Windows の `> nul` リダイレクトで生成されるゴミファイル
 nul
 .superpowers/

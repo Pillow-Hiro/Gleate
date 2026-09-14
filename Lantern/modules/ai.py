@@ -143,7 +143,16 @@ def _first_text(message):
     return None
 
 
-def call_claude(system_prompt, user_message, max_tokens=300, model=None, timeout=None):
+# 物差し（`scripts/eval_weekly.py`）が、**返ってきたものをそのまま受け取る口**（2026-09-14）。
+# 模型の名前・使った量・止まった理由を1件ずつ残すため。**本番では常に None。**
+#
+# 文字だけを返す作りは変えない（呼ぶ側は `if result:` で受ける）。
+# 横に聞き耳を1つ立てるだけにする。
+RESPONSE_HOOK = None
+
+
+def call_claude(system_prompt, user_message, max_tokens=300, model=None, timeout=None,
+                schema=None, effort=None):
     """`model` を渡さなければ既定側（無料の毎日のもの）。
 
     **有料の入口だけが `_MODEL_DEEP` を渡す。**どれが有料かは
@@ -152,6 +161,10 @@ def call_claude(system_prompt, user_message, max_tokens=300, model=None, timeout
 
     `timeout` を渡さなければ `_TIMEOUT_SECONDS`。**3か月分を読む深掘りだけ延ばす**
     （`generate_deepen`）。
+
+    `schema` を渡すと、**その形の JSON だけが返る**（構造化出力・2026-09-14）。
+    「JSONだけを返せ」と頼んで受け取る側で直す作りは、引用符ひとつで壊れる。
+    `effort` は考える深さ（low / medium / high）。渡さなければ API の既定。
     """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -160,14 +173,23 @@ def call_claude(system_prompt, user_message, max_tokens=300, model=None, timeout
     start = time.time()
     chosen = model or _MODEL_DEFAULT
     print(f"[AI] リクエスト開始: {time.strftime('%H:%M:%S')} / {chosen}")
+    output_config = {}
+    if schema:
+        output_config["format"] = {"type": "json_schema", "schema": schema}
+    if effort:
+        output_config["effort"] = effort
+    extra = {"output_config": output_config} if output_config else {}
     try:
         message = client.messages.create(
             model=chosen,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
+            **extra,
         )
         print(f"[AI] リクエスト完了: {time.time() - start:.2f}秒")
+        if RESPONSE_HOOK:
+            RESPONSE_HOOK(system_prompt, user_message, message)
         return _first_text(message)
     except anthropic.APITimeoutError:
         print(f"[AI] タイムアウト: {time.time() - start:.2f}秒経過")
@@ -618,6 +640,164 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     return _attach_fact(
         _first_pattern(_drop_blank_questions(_parse_patterns_json(result))), facts
     )
+
+
+# 今週の振り返りを、**決まった手順で読む**版（2026-09-14・作者との壁打ち）。
+#
+# 手順と、なぜそうしたかは `modules/reader.py`。ここにはモデルに渡すものだけを置く。
+# いまの `get_weekly_review` と作者の記録で伏せて比べてから入れ替える
+# （`scripts/eval_weekly.py`）。
+#
+# **2回呼ぶ**（つなぐ・確かめる）。1回ごとの待ち時間を gunicorn の 60 秒の半分以下に保つ
+_READER_TIMEOUT_SECONDS = 25
+
+_WEEKLY_READ_SYSTEM = lantern_prompt(
+    "この観察の指針",
+    """今週の記録と、その前の週の記録を渡します。記録には番号が付いています（W は今週、P はその前の週）。
+この中から、**2つ以上の記録を並べて初めて見えること**を、観察の候補として返してください。
+
+【読み方】
+- 語が同じかどうかではなく、書かれた文で読む。同じ語でも違う話なら並べない。違う言い方でも同じ話なら並べる。
+- 今週の記録を少なくとも1つ使う。
+- 1つの記録の言い換えや、記録の要約は候補にしない。
+- 並べる（同じ話が続いている）か、差分を出す（同じ話の中で、書き方や向きが変わった）までにする。意味づけしない。
+- 書かれていないことを、無かったことのように言わない。
+- 動作を確かめるための記録（「テスト」とだけ書いたものなど）は使わない。
+- 並べて言えることが無ければ、candidates を空にする。**無理に作らない。**黙るのも Gleate の返し方です。
+
+【返すもの】
+candidates … 候補。多くて3つ。確かなものから並べる。
+- observation … 観察（1〜2文）。日付を書くときは「9月4日」の形で、使った記録の日付だけを書く。
+- question … 答えを求めない問い（1文・「。」で終える）。観察を置くだけで足りるなら空にする。
+- records … 使った記録。ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
+
+【良い例】
+{"candidates": [{"observation": "9月2日の台本の記録にも、9月5日の収録の記録にも、声の出し方のことが書かれています。", "question": "声の出し方の、どこで迷うのでしょう。", "records": [{"ref": "P1", "quote": "声の出し方が決まらない"}, {"ref": "W1", "quote": "収録で声の出し方に迷った"}]}]}
+
+【悪い例】
+{"candidates": [{"observation": "今週と先週で、同じ言葉で書かれています。", "question": "同じ文がもう一度書かれるとき、何が起きているのでしょう。", "records": [{"ref": "W1", "quote": "テスト"}]}]}
+語が重なっただけで、中身を並べていない。
+{"candidates": [{"observation": "今週は台本や収録など、いろいろな作業をしていました。", "question": "", "records": [{"ref": "W1", "quote": "台本を直した"}, {"ref": "W2", "quote": "収録した"}]}]}
+記録を要約しているだけ。""",
+)
+
+_WEEKLY_CHECK_SYSTEM = lantern_prompt(
+    "この確かめの指針",
+    """観察の候補と、その候補が使った記録の全文を渡します。**候補を書いたのは別の読み手です。**甘く読まないでください。
+候補ごとに、次のどれにも当てはまらないかを確かめます。
+
+- 記録に書かれていないこと（気持ち・理由・結果）を足している
+- 並べた記録が同じ話ではない。語が重なっているだけ
+- 1つの記録の言い換えか、記録の要約になっている
+- 意味づけ・評価・励まし・行動の勧めがある
+- 問いが答えを迫っている
+
+1つでも当てはまれば pass を false にする。迷ったら false。
+reason には、どこで引っかかったかを短く書く。index は【候補0】の数字。""",
+)
+
+# 返す形。**この形の JSON しか返らない**（`call_claude` の `schema`）
+_WEEKLY_READ_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "observation": {"type": "string"},
+                    "question": {"type": "string"},
+                    "records": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {"ref": {"type": "string"}, "quote": {"type": "string"}},
+                            "required": ["ref", "quote"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+                "required": ["observation", "question", "records"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["candidates"],
+    "additionalProperties": False,
+}
+
+_WEEKLY_CHECK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "verdicts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "index": {"type": "integer"},
+                    "pass": {"type": "boolean"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["index", "pass", "reason"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["verdicts"],
+    "additionalProperties": False,
+}
+
+
+def _json_or_none(raw):
+    """構造化出力で返ってきた文字列を読む。**読めなければ None。**"""
+    import json as _json
+
+    if not raw or raw == _TIMEOUT_MESSAGE:
+        return None
+    try:
+        data = _json.loads(raw)
+    except (_json.JSONDecodeError, TypeError):
+        print(f"[AI] JSON解析に失敗（reader）。{_shape(raw)}")
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def read_weekly_review(period_logs, previous_logs=None):
+    """今週の振り返りを、決まった手順で読む（`modules/reader.py`）。
+
+    返すのは `{"patterns": [...]}` の JSON 文字列。**黙るときは空。**
+    **読めなかったときは None。**黙ったこと（空）と分ける——
+    分けないと、呼べなかった週が「言えることが無かった週」に見える。
+    """
+    import json as _json
+    from modules import reader as _reader
+
+    silent = _json.dumps(_reader.to_patterns(None), ensure_ascii=False)
+    entries = _reader.label(period_logs, previous_logs)
+    if not _reader.can_speak(entries):
+        return silent
+
+    found = _json_or_none(call_claude(
+        _WEEKLY_READ_SYSTEM,
+        _reader.as_text(entries) + "\n\n上記の記録から、観察の候補を返してください。",
+        max_tokens=4000, timeout=_READER_TIMEOUT_SECONDS,
+        schema=_WEEKLY_READ_SCHEMA, effort="medium",
+    ))
+    if found is None:
+        return None
+    candidates = _reader.ground(found, entries)
+    if not candidates:
+        return silent
+
+    verdicts = _json_or_none(call_claude(
+        _WEEKLY_CHECK_SYSTEM,
+        _reader.check_text(candidates) + "\n\n候補を確かめてください。",
+        max_tokens=3000, timeout=_READER_TIMEOUT_SECONDS,
+        schema=_WEEKLY_CHECK_SCHEMA, effort="medium",
+    ))
+    if verdicts is None:
+        return None
+    return _json.dumps(_reader.to_patterns(_reader.choose(candidates, verdicts)), ensure_ascii=False)
 
 
 _DAILY_QUOTE_SYSTEM = lantern_prompt(
