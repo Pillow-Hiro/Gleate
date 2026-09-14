@@ -147,6 +147,21 @@ def _dates_match(observation, used):
     return True
 
 
+def _quotes_real(observation, used):
+    """観察の文の中の「」が、**使った記録の文をそのまま写したものか。**
+
+    2026-09-14 の試し。記録には「自分は何が本当にやりたいのかを考えた」とあるのに、
+    観察の文では「本当にやりたいことは何か」と、言い換えをかぎ括弧に入れていた。
+    **かぎ括弧は本人の言葉の印なので、言い換えを入れると作られた引用になる。**
+    """
+    bodies = [_squash(u["body"]) for u in used]
+    for inner in re.findall(r"「([^」]*)」", unicodedata.normalize("NFKC", observation)):
+        q = _squash(inner)
+        if q and not any(q in body for body in bodies):
+            return False
+    return True
+
+
 def ground(raw, entries):
     """モデルの候補を、**記録に照らして通す。**1つでも合わなければ、その候補ごと捨てる。
 
@@ -180,7 +195,7 @@ def ground(raw, entries):
                 used.append(entry)
         if broken or len(used) < 2 or not any(u["this_week"] for u in used):
             continue
-        if not _dates_match(observation, used):
+        if not _dates_match(observation, used) or not _quotes_real(observation, used):
             continue
         # 問いは「。」で終える。**「？」の問いは答えを迫る形なので落とす**（観察は残す）
         question = str(cand.get("question") or "").strip()

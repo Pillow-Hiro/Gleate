@@ -164,6 +164,11 @@ def run(args):
 
     logs = [l for l in load_logs(uid) if not is_test(l)]
     cases = load_cases()
+    if args.ids:
+        # 試しに動かす週を選ぶ。**先頭から取ると7月初めの前の週が無い週ばかりになり**、
+        # 新しい読み手が呼ばずに黙るので、費用も時間も測れない
+        wanted = set(args.ids.split(","))
+        cases = [c for c in cases if c["id"] in wanted]
     if args.limit:
         cases = cases[: args.limit]
     todo = [(c, rep) for c in cases for rep in range(args.reps) if (c["id"], rep) not in done]
@@ -413,6 +418,7 @@ def main():
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="作者の記録で呼ぶ（課金される）")
     r.add_argument("--variant", choices=sorted(VARIANTS), required=True)
+    r.add_argument("--ids", help="呼ぶ週を , 区切りで選ぶ（例: week-2026-09-14,week-2026-08-12）")
     r.add_argument("--limit", type=int, help="先頭から何週だけ呼ぶか（試しに動かすとき）")
     r.add_argument("--reps", type=int, default=1)
     sub.add_parser("blind", help="伏せて並べたページを作る")

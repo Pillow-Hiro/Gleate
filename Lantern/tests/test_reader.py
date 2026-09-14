@@ -105,7 +105,22 @@ class TestGround:
         assert len(got) == 1
 
     def test_かぎ括弧の中は本人の言葉なので日付を見ない(self):
-        got = ground({"candidates": [cand("「3日で終える」とは別に、9月9日と9月11日に声のことがあります。", VOICE)]}, entries())
+        with_days = label([log("w1", "2026-09-09", created="台本は3日で終える", struggled="声の出し方が決まらない"),
+                           WEEK[0]], PREV)
+        got = ground({"candidates": [cand("「3日で終える」とあった9月9日と、9月11日に声のことがあります。", VOICE)]}, with_days)
+        assert len(got) == 1
+
+    # 2026-09-14 の試し。記録の「自分は何が本当にやりたいのかを考えた」を、
+    # 観察の文では「本当にやりたいことは何か」と、言い換えのままかぎ括弧に入れた
+    def test_観察の中のかぎ括弧が記録に無ければ捨てる(self):
+        from modules.ai import _WEEKLY_READ_SYSTEM
+
+        got = ground({"candidates": [cand("9月9日には「声は才能だ」、9月11日には声の出し方のことが書かれています。", VOICE)]}, entries())
+        assert got == []
+        assert "言い換えたものを「」に入れない" in _WEEKLY_READ_SYSTEM
+
+    def test_観察の中のかぎ括弧が記録の文なら通す(self):
+        got = ground({"candidates": [cand("9月9日には「声の出し方が 決まらない」、9月11日には「収録で声の出し方に迷った」と書かれています。", VOICE)]}, entries())
         assert len(got) == 1
 
     def test_答えを迫る問いは落とし観察は残す(self):
@@ -263,3 +278,18 @@ class TestPrompts:
         from modules.ai import _WEEKLY_CHECK_SYSTEM
 
         assert "迷ったら false" in _WEEKLY_CHECK_SYSTEM
+
+    # 2026-09-14 の試し。9月4日と9月9日を並べて置いただけの候補を「意味づけ」と落とし、
+    # 「〜でしょう。」の問いを「答えを迫る」と落とした。**出してよいものを書いていなかった**
+    def test_並べて置くだけなら通すと書いてある(self):
+        from modules.ai import _WEEKLY_CHECK_SYSTEM
+
+        assert "2つを並べて置くだけなら意味づけではない" in _WEEKLY_CHECK_SYSTEM
+        assert "「〜でしょう。」" in _WEEKLY_CHECK_SYSTEM
+
+    # 同じ試しで、配信の準備と要件定義を並べただけの候補を通した
+    def test_別々の話を並べただけの候補は落とす(self):
+        from modules.ai import _WEEKLY_CHECK_SYSTEM, _WEEKLY_READ_SYSTEM
+
+        assert "別々の話を並べただけで、続いていることも変わったことも見えない" in _WEEKLY_CHECK_SYSTEM
+        assert "並べるだけにしない" in _WEEKLY_READ_SYSTEM
