@@ -642,84 +642,93 @@ def get_weekly_review(period_logs, goals, last_week_logs=None):
     )
 
 
-# 今週の振り返りを、**決まった手順で読む**版（2026-09-14・作者との壁打ち）。
+# 今週の振り返りを、**決まった手順で読み、問いを1つ置く**版（2026-09-15・作者との壁打ち）。
 #
 # 手順と、なぜそうしたかは `modules/reader.py`。ここにはモデルに渡すものだけを置く。
-# いまの `get_weekly_review` と作者の記録で伏せて比べてから入れ替える
-# （`scripts/eval_weekly.py`）。
 #
-# **2回呼ぶ**（つなぐ・確かめる）。1回ごとの待ち時間を gunicorn の 60 秒の半分以下に保つ
+# 2026-09-14 の版は観察を並べていた。作者の記録20週で、いまの作りと伏せて比べると
+# **20週すべて「どちらもダメ」**（「知ってることの言い直し」「問いが無い・弱い」
+# 「黙るのもダメ」）。作者の判断で、問いを主役にした。
+#
+# まだ `main.py` にはつないでいない。作者の記録で確かめてから入れ替える
+# （`scripts/eval_weekly.py`）。**つなぐ前に待ち時間を決めること**——作り直すと
+# 最大4回呼ぶので、gunicorn の 60 秒に収まらないことがある。
 _READER_TIMEOUT_SECONDS = 25
+# 1回目の「作る・確かめる」がこれより長くかかったら、作り直さずに黙る。
+# 最初は 15 秒にしていたが、1回目だけで15秒ほどかかり、**作り直しがほぼ起きなかった**
+# （2026-09-15 の試し）。つなぐときは、画面を待たせない形にすること
+_RETRY_BEFORE_SECONDS = 30
 
-_WEEKLY_READ_SYSTEM = lantern_prompt(
-    "この観察の指針",
+_WEEKLY_ASK_SYSTEM = lantern_prompt(
+    "この問いの指針",
     """今週の記録と、その前の週の記録を渡します。記録には番号が付いています（W は今週、P はその前の週）。
-この中から、**2つ以上の記録を並べて初めて見えること**を、観察の候補として返してください。
+今週の記録から、**書いた本人が立ち止まって考えたくなる問い**を作ってください。
 
-【読み方】
-- 語が同じかどうかではなく、書かれた文で読む。同じ語でも違う話なら並べない。違う言い方でも同じ話なら並べる。
-- 今週の記録を少なくとも1つ使う。
-- 1つの記録の言い換えや、記録の要約は候補にしない。
-- 並べる（同じ話が続いている）か、差分を出す（同じ話の中で、書き方や向きが変わった）までにする。意味づけしない。
-- 書かれていないことを、無かったことのように言わない。
-- 別々の話を「9月2日は〇〇、9月5日は△△について書かれています」と並べるだけにしない。並べるのは、同じ話が続いているときか、同じ話の中で書き方や向きが変わったとき。
-- 「どちらも〜に関することです」のように、まとめて言い直す文を足さない。それは意味づけになる。
+【問いの起こし方】
+- 今週の記録に本人が書いた、具体的な言葉から起こす。どの週の誰にでも言える問い（「今週はどんな一週間でしたか。」）にしない。
+- 記録にもう書いてあることを訊かない。「めちゃくちゃ面白い」と書いた人に「どう感じましたか。」と訊かない。
+- 記録が書かずに残しているところに向ける。言い切った言葉の奥、2つの記録のあいだの揺れ、書かれたことのその先。
+- その前の週の記録と並べると問いが深くなるなら、並べてよい。
+- 記録を言い直さない。問いの中で引くのは短い言葉だけ。
+- 答えを迫らない。決めさせない。行動を促さない。評価しない・励まさない・意味を決めつけない。
+- 記録が短くても、1件だけでも、問いは作れる。
 - 動作を確かめるための記録（「テスト」とだけ書いたものなど）は使わない。
-- 並べて言えることが無ければ、candidates を空にする。**無理に作らない。**黙るのも Gleate の返し方です。
 
 【返すもの】
-candidates … 候補。多くて3つ。確かなものから並べる。
-- observation … 観察（1〜2文）。日付を書くときは「9月4日」の形で、使った記録の日付だけを書く。「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。
-- question … 答えを求めない問い（1文・「。」で終える）。観察を置くだけで足りるなら空にする。
-- records … 使った記録。ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
+candidates … 問いの候補を3つ。考えたくなる順に並べる。
+- question … 問い（1文・「。」で終える・「？」を使わない）
+- hint … 問いを考えるときの手がかり（1文・省略可）。見る角度を1つ置くだけにして、答えや意味を言わない。前の週の記録に同じ話があれば、それを指してよい。
+- records … 問いのきっかけにした記録。ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
+
+「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。日付を書くときは「9月4日」の形で、きっかけにした記録の日付だけを書く。記録の番号（W1 など）は、問いにも手がかりにも書かない。
 
 【良い例】
-{"candidates": [{"observation": "9月2日の台本の記録にも、9月5日の収録の記録にも、声の出し方のことが書かれています。", "question": "声の出し方の、どこで迷うのでしょう。", "records": [{"ref": "P1", "quote": "声の出し方が決まらない"}, {"ref": "W1", "quote": "収録で声の出し方に迷った"}]}]}
-{"candidates": [{"observation": "9月2日の記録では「まず台本を仕上げたい」、9月9日の記録では「台本より先に声を決めたい」と書かれています。", "question": "台本と声を、いまどんな順に置いているのでしょう。", "records": [{"ref": "P1", "quote": "まず台本を仕上げたい"}, {"ref": "W1", "quote": "台本より先に声を決めたい"}]}]}
+{"candidates": [{"question": "「声の出し方が決まらない」とき、決めようとしているのは声のどこでしょう。", "hint": "9月2日の記録にも、声の出し方のことが出ています。", "records": [{"ref": "W1", "quote": "声の出し方が決まらない"}, {"ref": "P1", "quote": "声の出し方に迷った"}]}]}
+{"candidates": [{"question": "「もう少し続けたい」の「もう少し」は、どのあたりまでを指しているのでしょう。", "hint": "", "records": [{"ref": "W1", "quote": "もう少し続けたい"}]}]}
 
 【悪い例】
-{"candidates": [{"observation": "今週と先週で、同じ言葉で書かれています。", "question": "同じ文がもう一度書かれるとき、何が起きているのでしょう。", "records": [{"ref": "W1", "quote": "テスト"}]}]}
-語が重なっただけで、中身を並べていない。
-{"candidates": [{"observation": "今週は台本や収録など、いろいろな作業をしていました。", "question": "", "records": [{"ref": "W1", "quote": "台本を直した"}, {"ref": "W2", "quote": "収録した"}]}]}
-記録を要約しているだけ。
-{"candidates": [{"observation": "9月2日の記録では台本について書かれ、9月5日の記録では配色について書かれています。", "question": "", "records": [{"ref": "P1", "quote": "台本を直した"}, {"ref": "W1", "quote": "配色を直した"}]}]}
-別々の話を並べただけで、続いていることも変わったことも見えない。""",
+{"candidates": [{"question": "今週はどんな一週間でしたか。", "hint": "", "records": [{"ref": "W1", "quote": "収録した"}]}]}
+どの週にも言える。記録の言葉から起こしていない。
+{"candidates": [{"question": "台本を直してみて、どう感じましたか。", "hint": "", "records": [{"ref": "W1", "quote": "台本を直した"}]}]}
+書いたことの感想を訊いているだけで、立ち止まる所が無い。
+{"candidates": [{"question": "声の出し方を決めるために、次は何をしますか。", "hint": "練習の時間を増やすと決まりやすくなります。", "records": [{"ref": "W1", "quote": "声の出し方が決まらない"}]}]}
+行動を促し、手がかりが助言になっている。""",
 )
 
-# 確かめる側（2026-09-14 の試しで直した）。
+# 確かめる側。2026-09-14 の試しで、**落とすものだけを書くと、出してよいものまで落とす**
+# と分かった（観察を並べる版で、憲法の①②まで疑った）。出してよいものも書く。
 #
-# 最初は**落とすものだけ**を書いていた。作者の記録3週で試すと、
-# 9月4日「CCNAの取得を目指して邁進したい」と9月9日「その時々で自分の
-# やりたいことは変化してしまう」を並べただけの候補を「意味づけ」と落とし、
-# 「この間に、何があったのでしょう。」を「答えを迫る」と落とした。
-# 逆に、配信の準備と要件定義を「〜について書かれています」と並べただけの候補は通した。
-#
-# **出してよいもの（並べる・差分を出す・「〜でしょう。」の問い）を書いていなかった**ので、
-# 憲法の①②まで疑っていた。
-_WEEKLY_CHECK_SYSTEM = lantern_prompt(
+# 2026-09-15 の試しでは、作る側に「記録が書かずに残しているところに向ける」と頼みながら、
+# 確かめる側には「記録に書かれていないことを、あったことにしている」を落とさせていて、
+# **書かれていないところを訊いた問いを全部落としていた。**記録が1件だけの週は6つとも落ちて黙った。
+# 落とすのは、書かれていないことを言い切る・前提に置くほう。開いて訊く問いは通す。
+_WEEKLY_ASK_CHECK_SYSTEM = lantern_prompt(
     "この確かめの指針",
-    """観察の候補と、その候補が使った記録の全文を渡します。候補を書いたのは別の読み手です。
+    """問いの候補と、そのきっかけにした記録の全文を渡します。候補を書いたのは別の読み手です。
 記録と照らして、候補ごとに確かめてください。
 
 【出してよいもの】
-- 並べる: 同じ話が、別の記録にも続いて書かれていることを示す
-- 差分を出す: 同じ話について、ある記録ではこう、別の記録ではこう書かれている、と2つを並べて置く。**2つを並べて置くだけなら意味づけではない。**「矛盾している」「変わったのは〜だから」と言っていなければ通す
-- 「〜でしょう。」「〜ますか。」で終わる問いは、答えを迫る形ではない（「あなたにとって、夜はどんな時間でしょう。」）
+- 「〜でしょう。」「〜ますか。」で終わる、答えなくてもいい問い（「あなたにとって、夜はどんな時間でしょう。」）
+- 本人の言葉の奥や、2つの記録のあいだに向けた問い
+- 書かれていないところを、前提を置かずに開いて訊く問い（「〜は、残っていたでしょうか。」）。書かれていないところを訊くのは、この問いの役目
+- 見る角度を1つ置くだけの手がかり、前の週の記録を指すだけの手がかり
 
 【落とすもの】
-- 記録に書かれていないこと（気持ち・理由・結果）を足している
-- 並べた記録が同じ話ではない。語が重なっているだけ
-- 別々の話を並べただけで、続いていることも変わったことも見えない
-- 1つの記録の言い換えか、記録の要約になっている
-- 「どちらも〜に関することです」「つまり〜」のように、まとめて意味を言っている。評価・励まし・行動の勧めがある
-- 問いが「？」で終わる、答えを決めさせる、行動を促す
+- 記録にもう答えが書いてあることを訊いている
+- どの週の誰にでも言える。記録の言葉から起こしていない
+- 記録を言い直しているだけ。事実を確かめるだけの問い（「どこで収録しましたか。」）
+- 答えを迫る・決めさせる・行動を促す（「次は何をしますか。」「どうすればいいでしょう。」）
+- 評価・励まし・意味の決めつけがある。問いの形でも「〜なのは、〜だからでしょう。」は決めつけ
+- 手がかりが答えや助言になっている
+- 書かれていないことを、あったこととして言い切っている、または問いの前提に置いている（「いつもの収録と何が違ったのでしょう。」は、違ったことを前提にしている）
 
 落とすものに1つでも当てはまれば pass を false にする。迷ったら false。
-reason には、落としたならどこで引っかかったか、通したなら何が並んで見えるかを短く書く。index は【候補0】の数字。""",
+strength には、書いた本人が立ち止まって考えたくなるかを 1〜3 で付ける（3 がいちばん）。落とした候補にも付ける。
+reason には、落としたならどこで引っかかったか、通したなら何が考えたくなるかを短く書く。index は【候補0】の数字。""",
 )
 
 # 返す形。**この形の JSON しか返らない**（`call_claude` の `schema`）
-_WEEKLY_READ_SCHEMA = {
+_WEEKLY_ASK_SCHEMA = {
     "type": "object",
     "properties": {
         "candidates": {
@@ -727,8 +736,8 @@ _WEEKLY_READ_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "observation": {"type": "string"},
                     "question": {"type": "string"},
+                    "hint": {"type": "string"},
                     "records": {
                         "type": "array",
                         "items": {
@@ -739,7 +748,7 @@ _WEEKLY_READ_SCHEMA = {
                         },
                     },
                 },
-                "required": ["observation", "question", "records"],
+                "required": ["question", "hint", "records"],
                 "additionalProperties": False,
             },
         },
@@ -748,7 +757,7 @@ _WEEKLY_READ_SCHEMA = {
     "additionalProperties": False,
 }
 
-_WEEKLY_CHECK_SCHEMA = {
+_WEEKLY_ASK_CHECK_SCHEMA = {
     "type": "object",
     "properties": {
         "verdicts": {
@@ -758,9 +767,10 @@ _WEEKLY_CHECK_SCHEMA = {
                 "properties": {
                     "index": {"type": "integer"},
                     "pass": {"type": "boolean"},
+                    "strength": {"type": "integer"},
                     "reason": {"type": "string"},
                 },
-                "required": ["index", "pass", "reason"],
+                "required": ["index", "pass", "strength", "reason"],
                 "additionalProperties": False,
             },
         },
@@ -785,41 +795,51 @@ def _json_or_none(raw):
 
 
 def read_weekly_review(period_logs, previous_logs=None):
-    """今週の振り返りを、決まった手順で読む（`modules/reader.py`）。
+    """今週の振り返りを、決まった手順で読み、問いを1つ置く（`modules/reader.py`）。
 
     返すのは `{"patterns": [...]}` の JSON 文字列。**黙るときは空。**
     **読めなかったときは None。**黙ったこと（空）と分ける——
     分けないと、呼べなかった週が「言えることが無かった週」に見える。
     """
     import json as _json
+    import time as _time
     from modules import reader as _reader
 
     silent = _json.dumps(_reader.to_patterns(None), ensure_ascii=False)
     entries = _reader.label(period_logs, previous_logs)
-    if not _reader.can_speak(entries):
+    if not _reader.can_ask(entries):
         return silent
 
-    found = _json_or_none(call_claude(
-        _WEEKLY_READ_SYSTEM,
-        _reader.as_text(entries) + "\n\n上記の記録から、観察の候補を返してください。",
-        max_tokens=4000, timeout=_READER_TIMEOUT_SECONDS,
-        schema=_WEEKLY_READ_SCHEMA, effort="medium",
-    ))
-    if found is None:
-        return None
-    candidates = _reader.ground(found, entries)
-    if not candidates:
-        return silent
-
-    verdicts = _json_or_none(call_claude(
-        _WEEKLY_CHECK_SYSTEM,
-        _reader.check_text(candidates) + "\n\n候補を確かめてください。",
-        max_tokens=3000, timeout=_READER_TIMEOUT_SECONDS,
-        schema=_WEEKLY_CHECK_SCHEMA, effort="medium",
-    ))
-    if verdicts is None:
-        return None
-    return _json.dumps(_reader.to_patterns(_reader.choose(candidates, verdicts)), ensure_ascii=False)
+    started = _time.monotonic()
+    rejected = []
+    for _attempt in range(2):
+        found = _json_or_none(call_claude(
+            _WEEKLY_ASK_SYSTEM,
+            _reader.as_text(entries) + _reader.retry_note(rejected)
+            + "\n\n上記の記録から、問いの候補を返してください。",
+            max_tokens=4000, timeout=_READER_TIMEOUT_SECONDS,
+            schema=_WEEKLY_ASK_SCHEMA, effort="medium",
+        ))
+        if found is None:
+            return None
+        candidates, rejected = _reader.ground(found, entries)
+        if candidates:
+            verdicts = _json_or_none(call_claude(
+                _WEEKLY_ASK_CHECK_SYSTEM,
+                _reader.check_text(candidates) + "\n\n候補を確かめてください。",
+                max_tokens=3000, timeout=_READER_TIMEOUT_SECONDS,
+                schema=_WEEKLY_ASK_CHECK_SCHEMA, effort="medium",
+            ))
+            if verdicts is None:
+                return None
+            chosen = _reader.choose(candidates, verdicts)
+            if chosen:
+                return _json.dumps(_reader.to_patterns(chosen), ensure_ascii=False)
+            rejected = rejected + _reader.rejections(candidates, verdicts)
+        # **黙る前に1回だけ作り直す**（作者「黙るのもダメ」）。長くかかっていたら待たせない
+        if _time.monotonic() - started > _RETRY_BEFORE_SECONDS:
+            break
+    return silent
 
 
 _DAILY_QUOTE_SYSTEM = lantern_prompt(
