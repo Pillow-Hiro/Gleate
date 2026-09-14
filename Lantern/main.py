@@ -41,7 +41,7 @@ from modules.plan import daily_limit, is_paid, paid_required_response, require_p
 from modules import applemusic
 # 日付の判定は必ず timeutil を通す。datetime.now() は Render の UTC を返すため、
 # JST 00:00〜09:00 の9時間だけ日付が1日ずれる。
-from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso
+from modules.timeutil import today_str, today_date, days_ago_str, now_utc_iso, review_windows
 
 app = Flask(__name__)
 CORS(app, origins=[
@@ -780,24 +780,18 @@ def generate_review():
     logs = load_logs(g.user_id)
     goals = load_goals()
 
+    # **期間は `review_windows` の1か所で切る**（2026-09-14）。
+    # ここで今週と先週を別の数え方で切っていて、月曜には先週がまるごと
+    # 今週に入り、同じ記録が2回渡っていた
+    (start, end), (prev_start, prev_end) = review_windows(review_type)
+    period_logs = [l for l in logs if start <= l.get("date", "") <= end]
+    previous_logs = [l for l in logs if prev_start <= l.get("date", "") <= prev_end] or None
+
     if review_type == "weekly":
-        week_ago = days_ago_str(7)
-        period_logs = [l for l in logs if l.get("date", "") >= week_ago]
-        today = today_date()
-        this_monday = today - timedelta(days=today.weekday())
-        last_monday = this_monday - timedelta(days=7)
-        last_sunday = this_monday - timedelta(days=1)
-        last_week_logs = [l for l in logs if last_monday.strftime("%Y-%m-%d") <= l.get("date", "") <= last_sunday.strftime("%Y-%m-%d")]
-        review_json = get_weekly_review(period_logs, goals, last_week_logs=last_week_logs or None)
+        review_json = get_weekly_review(period_logs, goals, last_week_logs=previous_logs)
         period_label = "今週"
     else:
-        month_start = today_date().strftime("%Y-%m-01")
-        period_logs = [l for l in logs if l.get("date", "") >= month_start]
-        today = today_date()
-        last_month_end = today.replace(day=1) - timedelta(days=1)
-        last_month_start = last_month_end.replace(day=1)
-        last_month_logs = [l for l in logs if last_month_start.strftime("%Y-%m-%d") <= l.get("date", "") <= last_month_end.strftime("%Y-%m-%d")]
-        review_json = get_monthly_review(period_logs, goals, last_month_logs=last_month_logs or None)
+        review_json = get_monthly_review(period_logs, goals, last_month_logs=previous_logs)
         period_label = "今月"
 
     import json as _json

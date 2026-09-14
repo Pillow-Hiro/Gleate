@@ -145,6 +145,80 @@ class TestRoutesActuallyUseIt:
         assert seen["log"] is not None, "days_ago_str(1) で昨日を引けていない"
         assert seen["log"]["created"] == "昨日のこと"
 
+    # 2026-09-14。先週の記録が今週の記録に重ねて渡っていた
+    def test_今週の振り返りに先週の記録を重ねて渡さない(self, monkeypatch):
+        from flask import g
+        import main
+
+        monkeypatch.setattr(
+            main, "review_windows",
+            lambda t: (("2026-09-08", "2026-09-14"), ("2026-09-01", "2026-09-07")),
+        )
+        monkeypatch.setattr(main, "spend_ai_budget", lambda uid: True)
+        monkeypatch.setattr(main, "load_goals", lambda: [])
+        monkeypatch.setattr(main, "load_logs", lambda uid: [
+            {"date": "2026-09-07", "created": "先週のこと"},
+            {"date": "2026-09-09", "created": "今週のこと"},
+        ])
+
+        seen = {}
+
+        def _fake_review(period_logs, goals, last_week_logs=None):
+            seen["period"] = [l["date"] for l in period_logs]
+            seen["previous"] = [l["date"] for l in last_week_logs or []]
+            return '{"patterns": []}'
+
+        monkeypatch.setattr(main, "get_weekly_review", _fake_review)
+
+        with main.app.test_request_context(
+            "/api/review/generate", method="POST", json={"type": "weekly"}
+        ):
+            g.user_id = "abc-123"
+            main.generate_review.__wrapped__()
+
+        assert seen == {"period": ["2026-09-09"], "previous": ["2026-09-07"]}
+
+
+class TestReviewWindows:
+    """振り返りの期間と、比べる前の期間（2026-09-14）。
+
+    今週は「7日前から」、先週は「月曜から日曜」と別の数え方で切っていて、
+    **月曜には先週がまるごと今週に入っていた。**
+    """
+
+    @staticmethod
+    def _jst_noon(y, m, d):
+        return datetime(y, m, d, 3, 0, tzinfo=timezone.utc)  # JST 12:00
+
+    def test_作者が見た月曜の窓(self):
+        assert date(2026, 9, 14).weekday() == 0
+        assert timeutil.review_windows("weekly", now=self._jst_noon(2026, 9, 14)) == (
+            ("2026-09-08", "2026-09-14"), ("2026-09-01", "2026-09-07"),
+        )
+
+    @pytest.mark.parametrize("day", range(14, 21))  # 2026-09-14（月）から20日（日）まで
+    def test_どの曜日でも週は重ならず隣り合う(self, day):
+        (start, end), (p_start, p_end) = timeutil.review_windows(
+            "weekly", now=self._jst_noon(2026, 9, day)
+        )
+        s, e, ps, pe = map(date.fromisoformat, (start, end, p_start, p_end))
+        assert (s - pe).days == 1
+        assert (e - s).days == 6 and (pe - ps).days == 6
+
+    def test_月は先月まるごとと比べる(self):
+        assert timeutil.review_windows("monthly", now=self._jst_noon(2026, 9, 14)) == (
+            ("2026-09-01", "2026-09-14"), ("2026-08-01", "2026-08-31"),
+        )
+
+    def test_1月の前は前の年の12月(self):
+        _, prev = timeutil.review_windows("monthly", now=self._jst_noon(2027, 1, 5))
+        assert prev == ("2026-12-01", "2026-12-31")
+
+    def test_月のはじめの日も重ならない(self):
+        assert timeutil.review_windows("monthly", now=self._jst_noon(2028, 3, 1)) == (
+            ("2028-03-01", "2028-03-01"), ("2028-02-01", "2028-02-29"),
+        )
+
 
 class TestNowUtcIso:
     def test_タイムゾーン付きのUTCを返す(self):
