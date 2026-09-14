@@ -43,8 +43,9 @@ export default function DeepenResult({ result, onOpenRecord }) {
   }
 
   return (
-    <View className="bg-surface-lowest border border-border rounded-lg px-5 py-4 gap-4">
-      <View className="gap-1">
+    <View className="gap-3">
+      {/* 記録の枠。**本人が書いた文だけを置く** */}
+      <View className="bg-surface-lowest border border-border rounded-lg px-5 py-4 gap-1">
         <Text className="text-label-sm text-outline">同じ話として読んだ記録</Text>
         {result.records.map((r) => (
           <Pressable
@@ -59,8 +60,15 @@ export default function DeepenResult({ result, onOpenRecord }) {
         ))}
       </View>
 
-      <View className="gap-2.5">
-        <Text className="text-label-sm text-outline">Gleateの見立て</Text>
+      {/* **見立ての枠**（2026-09-14・作者から「見立て部分からも枠で囲いましょう。
+          どこから見立てなのか分かりません」）。
+
+          それまでは記録と見立てを1つの枠に入れ、見出しと間だけで分けていた。
+          **本人の文と Gleate の言葉が地続きに見えていた。**
+          見立ては Gleate の言葉なので、振り返りの観察と同じ砂色の面に置く。
+          問いと「当てはまらないこともあります」も、この枠の中に入れる */}
+      <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
+        <Text className="text-label-sm text-ai-ink">Gleateの見立て</Text>
         {result.readings.map((reading, i) => (
           <View key={i} className="gap-0.5">
             <Text className="text-body text-on-surface leading-relaxed">{reading.text}</Text>
@@ -69,15 +77,15 @@ export default function DeepenResult({ result, onOpenRecord }) {
             </Text>
           </View>
         ))}
+
+        {result.question ? (
+          <MarginNote>
+            <Text className="text-body text-on-surface-variant leading-relaxed">{result.question}</Text>
+          </MarginNote>
+        ) : null}
+
+        <Text className="text-label-sm text-outline">当てはまらないこともあります。</Text>
       </View>
-
-      {result.question ? (
-        <MarginNote>
-          <Text className="text-body text-on-surface-variant leading-relaxed">{result.question}</Text>
-        </MarginNote>
-      ) : null}
-
-      <Text className="text-label-sm text-outline">当てはまらないこともあります。</Text>
     </View>
   )
 }
