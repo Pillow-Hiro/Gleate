@@ -360,6 +360,13 @@ class TestPrompts:
         assert "迷ったら false" in _WEEKLY_ASK_CHECK_SYSTEM
         assert "strength" in _WEEKLY_ASK_CHECK_SYSTEM
 
+    # 2026-09-21 の採点で、記録の間が空いたことに触れた問いに × が付いた
+    def test_空いた期間に触れさせない(self):
+        from modules.ai import _WEEKLY_ASK_CHECK_SYSTEM, _WEEKLY_ASK_SYSTEM
+
+        assert "空いた期間・記録の少なさには触れない" in _WEEKLY_ASK_SYSTEM
+        assert "空いた期間・記録の少なさに触れている" in _WEEKLY_ASK_CHECK_SYSTEM
+
     def test_言い換えをかぎ括弧に入れさせない(self):
         from modules.ai import _WEEKLY_ASK_SYSTEM
 
