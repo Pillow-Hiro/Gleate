@@ -191,6 +191,8 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `buildStamp.js` | いま動いているのが同梱か配信か、配信ならいつのものか。**直っていないのか届いていないのかを区別する** | `buildStamp.test.js` |
 | `suggestCard.js` | 候補の一行をカードに読み解く。**言えることしか言わない**——曲と場所は同じ形で来るので見分けない | `suggestCard.test.js` |
 | `suggestStore.js` | 選んだ候補。**端末の中だけ**（AsyncStorage・記録ごと） | — |
+| `readingChoice.js` | 深掘りで選んだ見立ての印を、振り返りの控えに書き足す。**純粋** | `readingChoice.test.js` |
+| `readingChoiceStore.js` | 選んだ見立てを `POST /api/answers` に残し、控えにも印を置く。**記録の項目には混ぜない** | — |
 | `musicSearch.js` | Apple Music で曲を探す言葉の組み立てと読み解き。**押して初めて送る**（打つたびに送らない） | `musicSearch.test.js` |
 | `wordDrift.js` | **語を数えて月で引き算する。**形態素解析は入れず、漢字とカタカナの連なりを拾う | `wordDrift.test.js` |
 | `accent.js` | **灯りの色**。5つの束（蝋燭・月・焚火・蛍・灰）を明暗ともに持つ。当てるのは `app/_layout.jsx` の `vars()` | `accent.test.js` |

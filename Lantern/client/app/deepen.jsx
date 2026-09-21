@@ -10,6 +10,7 @@ import Paywall from '../components/Paywall'
 import GlassPressable from '../components/GlassPressable'
 import { authFetch } from '../lib/supabase'
 import { paywallMessage, readMaybePaywall } from '../lib/plan'
+import { chooseReading } from '../lib/readingChoiceStore'
 
 // 深掘りの全画面（2026-09-13・作者の指示「全画面にして、閉じたらカードのすぐ下に開く形」）。
 //
@@ -99,6 +100,19 @@ export default function DeepenScreen() {
     router.navigate({ pathname: '/journal', params: { date } })
   }
 
+  // 見立てを選ぶ（2026-09-22・作者の判断）。**選んだ事実を残すだけ**——
+  // 読み直さないので、料金も待ち時間も増えない（`lib/readingChoice.js`）
+  const [chosen, setChosen] = useState(null)
+  useEffect(() => {
+    const mark = pattern?.deepen?.chosen
+    setChosen(typeof mark === 'number' ? mark : null)
+  }, [pattern])
+
+  async function choose(index, reading) {
+    setChosen(index)
+    await chooseReading({ storageKey, index, reading, observation: pattern?.observation })
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top', 'bottom']}>
       <View className="flex-row items-center justify-between px-5 py-2">
@@ -146,7 +160,14 @@ export default function DeepenScreen() {
           </View>
         ) : null}
 
-        {!loading && result ? <DeepenResult result={result} onOpenRecord={openRecord} /> : null}
+        {!loading && result ? (
+          <DeepenResult
+            result={result}
+            onOpenRecord={openRecord}
+            chosen={chosen}
+            onChoose={choose}
+          />
+        ) : null}
 
         {restored && !pattern ? (
           <Text className="text-body text-outline">深掘りする観察がありません。</Text>

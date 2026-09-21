@@ -29,7 +29,12 @@ export function shortDate(date) {
   return m && d ? `${m}月${d}日` : String(date || '')
 }
 
-export default function DeepenResult({ result, onOpenRecord }) {
+// ## 見立ては選べる（2026-09-22・作者の判断）
+//
+// `CLAUDE.md` は見立てを「候補として出す。1つに決めない。**選ぶのは書いた人**」と
+// 決めている。押すと、その見立てを選んだことが残る（`lib/readingChoice.js`）。
+// **選んでも何も起きない。**合わない方は選ばれないだけで済む。
+export default function DeepenResult({ result, onOpenRecord, chosen = null, onChoose }) {
   if (!result) return null
 
   if (!result.found) {
@@ -69,14 +74,31 @@ export default function DeepenResult({ result, onOpenRecord }) {
           問いと「当てはまらないこともあります」も、この枠の中に入れる */}
       <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
         <Text className="text-label-sm text-ai-ink">Gleateの見立て</Text>
-        {result.readings.map((reading, i) => (
-          <View key={i} className="gap-0.5">
-            <Text className="text-body text-on-surface leading-relaxed">{reading.text}</Text>
-            <Text className="text-label-sm text-outline">
-              {reading.dates.map(shortDate).join('・')}の記録から
-            </Text>
-          </View>
-        ))}
+        {result.readings.map((reading, i) => {
+          const picked = chosen === i
+          return (
+            <Pressable
+              key={i}
+              onPress={() => onChoose?.(i, reading)}
+              disabled={!onChoose}
+              accessibilityLabel={picked ? '選んだ見立て' : 'この見立てを選ぶ'}
+              className={picked
+                ? 'gap-0.5 rounded-lg border border-ai-ink/30 bg-ai-surface px-3 py-2'
+                : 'gap-0.5 rounded-lg px-3 py-2 active:opacity-70'}
+            >
+              <Text className="text-body text-on-surface leading-relaxed">{reading.text}</Text>
+              <Text className="text-label-sm text-outline">
+                {reading.dates.map(shortDate).join('・')}の記録から
+              </Text>
+              {picked ? <Text className="text-label-sm text-ai-ink">選んだ見立て</Text> : null}
+            </Pressable>
+          )
+        })}
+
+        {/* **どちらか選べることを言う。**押せる形に見えないと押されない */}
+        {onChoose && result.readings.length > 1 && chosen === null ? (
+          <Text className="text-label-sm text-outline">近いほうを選べます。</Text>
+        ) : null}
 
         {result.question ? (
           <MarginNote>
