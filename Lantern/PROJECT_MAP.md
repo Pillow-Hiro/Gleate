@@ -105,7 +105,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `FormShell.jsx` | login | ネイティブ。素通しする |
 | `FormShell.web.jsx` | login | **Webだけ本物の `<form>` と隠しsubmitを出す。** これがないとパスワード自動入力とEnterが効かない |
 | `IdeasPanel.jsx` | 書く | アイデアの溜め場。件数を出さない。丸いチェック＋**左に払うとゴミ箱**（行が横スクロール。方向の裁定は OS に任せる） |
-| `LogDetail.jsx` | LogItem | 記録の詳細と削除。削除は赤。**直すのは `/write?id=`**（全画面。書く場所を2つに分けない）。読む側は4項目とも出る |
+| `LogDetail.jsx` | LogItem | 記録の詳細と削除。**問いに答えた言葉も出す**（`GET /api/answers`）。削除は赤。**直すのは `/write?id=`**（全画面。書く場所を2つに分けない）。読む側は4項目とも出る |
 | `LogItem.jsx` | LogList | 一覧の1行。日付＋抜粋2行。**開閉は `LayoutAnimation` で滑らかに** |
 | `LogList.jsx` | 記録 / ホーム | **一覧の作り。月ごとに1枚のカード、中を区切り線で分ける** |
 | `EditorToolbar.jsx` | _layout / RecordForm | **キーボードに貼り付く装飾の列**（太字・斜体・箇条書き・写真）。`InputAccessoryView` は使わない |
@@ -141,7 +141,7 @@ Web も同じ `client/` から `npx expo export --platform web` で出す。
 | `GlassPressable.jsx` | 認証4画面 / 保存 / 課金 / 手がかり / アイデア / 添える / 絞り込み / 装飾 | 琥珀で塗っていた押せるものを硝子に。**16箇所を1つにまとめた**——1つずつ書き換えると消し忘れが出るが、Tailwind は知らないクラスを黙って無視するので気づけない |
 | `GlassPanel.jsx` | 今日の灯り / WriteButton / PromptCard / WriteTabs / AttachRow の入力窓 | 硝子の面（Liquid Glass）。**琥珀の一色塗りをやめた4箇所。** iOS 26 未満は一色塗りに落ちる。影を消さないため切るのは内側だけ |
 | `HintCard.jsx` | HintPanel | 手がかりの面。問いを出すときは**足りないことを先に言う**。答えたあとは探し直さない |
-| `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えもその記録に `id` で足す（**`struggled` の唯一の書き手**） |
+| `HintPanel.jsx` | HomeCard の footer | 手がかりの入口。**カードの中に置く**——押したボタンの載っているカードが探す相手。答えは `POST /api/answers` に残す（**記録の項目に混ぜない**・2026-09-22） |
 | `WriteButton.jsx` | (tabs)/index・home・journal | 右下に浮くペン。押すと `/write`。**この3画面だけ**（分析と設定には置かない） |
 | `AttachRow.jsx` | LogDetail | **「＋ 添える」**。写真・ファイル・リンクをひとつの入口から。リンクは貼るだけ（`LinkList` も持つ） |
 | `SplashScreen.jsx` | _layout | 起動画面。`Animated.View` で包む（`Animated.Text` に className は効かない） |

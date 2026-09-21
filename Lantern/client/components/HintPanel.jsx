@@ -4,7 +4,6 @@ import Text from './Text'
 import HintCard from './HintCard'
 import { askHint } from '../lib/hint'
 import { authFetch } from '../lib/supabase'
-import { invalidateLogs } from '../lib/logsCache'
 
 // 手がかり。**書く紙の外に出した**（2026-09-03）。
 //
@@ -54,33 +53,35 @@ export default function HintPanel({ date, target, onSaved, onPaywall }) {
     }
   }
 
-  // 問いへの答えを「困ったこと」に残す。**新しい経路を作らない。**
+  // 問いへの答えは、**記録の項目に混ぜない**（2026-09-22・作者の指摘
+  // 「書くから深堀りをした際に『困ったこと』として記録に残るのは
+  // いかがなものか」）。
   //
-  // `/save` をそのまま使う。`defer_ai` を付けて灯りは頼まない——
-  // 答えを足しただけで灯りを作り直すと、書いた本人の言葉が
-  // 上書きされたように見える。
+  // 2026-09-04 から `/save` で `struggled`（困ったこと）に入れていた。
+  // 「手がかりを押す人は、いま詰まっている」という前提だったが、**外れる。**
+  // 旅の記録に置かれた問いへの答えが、困ったこととして残っていた。
+  // 混ぜると `modules/facts.py` がつまずきとして数える。
   //
-  // **書き先は手がかりが見ていた記録。** `id` を送らないと、
-  // サーバーはその日の最初の記録を書き換える（`main.py` の `/save`）。
-  // 中身もその記録から取る。空の4欄を送ると塗り潰しになる。
+  // 置き場は `log_answers`（`modules/answers.py`）。問いも一緒に残す——
+  // 答えだけでは、あとから読んで何の話か分からない。
+  //
+  // **表を流すまでは残らない**（`docs/sql/log_answers.sql` が返す 503）。
+  // 画面には出さずにここへ書く。カードは「残しました」を出したあと。
   async function answer(text) {
     if (!target?.id) return
     setSaving(true)
     try {
-      const res = await authFetch('/save', {
+      const res = await authFetch('/api/answers', {
         method: 'POST',
         body: JSON.stringify({
-          created: target.created || '',
-          enjoyable: target.enjoyable || '',
-          next: target.next || '',
-          struggled: text,
-          id: target.id,
+          log_id: target.id,
           date,
-          defer_ai: true,
+          question: hint?.text || '',
+          answer: text,
+          kind: 'hint',
         }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      invalidateLogs()
       onSaved?.()
     } catch (e) {
       // **画面には出さない。**カードは「残しました」を出したあと。

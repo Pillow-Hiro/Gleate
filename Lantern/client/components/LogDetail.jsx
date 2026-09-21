@@ -59,6 +59,29 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
     return () => { cancelled = true }
   }, [])
 
+  // Gleate の問いに答えた言葉（2026-09-22）。**記録の項目とは別に持つ**
+  // （`modules/answers.py`）。困ったことに入れていた頃は、答えが
+  // つまずきとして数えられていた。
+  //
+  // **表を流す前は空が返る**（`docs/sql/log_answers.sql`）。
+  // 読めなくても記録は出す。
+  const [answers, setAnswers] = useState([])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authFetch(`/api/answers?since=${log.date}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const mine = (data.answers || []).filter((a) => a.log_id === log.id)
+        if (!cancelled) setAnswers(mine)
+      } catch (e) {
+        console.warn('[記録] 答えを読めなかった', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [log.id, log.date])
+
   async function pickFile() {
     try {
       const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
@@ -119,6 +142,25 @@ export default function LogDetail({ log, onDelete, onUpdate }) {
           </View>
         ) : null
       )}
+
+      {/* Gleate の問いと、それに答えた言葉（2026-09-22・作者の指摘で
+          「困ったこと」から出した）。**答えは記録の項目ではない。**
+          問いも一緒に出す——答えだけでは何の話か分からない */}
+      {answers.map((a) => (
+        <View key={a.id}>
+          <Text className="text-[10px] text-outline">
+            {a.kind === 'reading' ? '選んだ見立て' : 'Gleateの問い'}
+          </Text>
+          {a.kind === 'reading' ? null : (
+            <Text className="text-body text-on-surface-variant leading-relaxed mt-0.5">
+              {a.question}
+            </Text>
+          )}
+          <View className="mt-0.5">
+            <RichText text={a.answer} className="text-body text-on-surface leading-relaxed" />
+          </View>
+        </View>
+      ))}
 
       {/* 添えたもの。**中身は端末の中だけ**（写真・ファイル・音楽・候補）。
           入口は下の「＋ 添える」ひとつにまとめてある（`AttachRow`） */}
