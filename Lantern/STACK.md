@@ -116,7 +116,7 @@ index.js が9ウェイト全部を require し、Metro は木揺すりで落と�
 | cryptography | 46.0.4 | 同上 |
 | google-api-python-client | 2.189.0 | YouTube |
 
-規模: モジュール 20 / API 43ルール・41パス。
+規模: モジュール 21 / API 45ルール・42パス。
 
 **I/O 待ちが仕事のほぼ全て**（Supabase・Anthropic）なので、
 プロセスを増やさずスレッドで捌く。**Render Starter は 512MB** なので

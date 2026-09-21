@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。43ルール / 41パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。45ルール / 42パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -256,6 +256,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | `hintusage.py` | 手がかりを使った回数。**通算**（1日あたりではない）。**表が無ければ素通し** | `test_hint.py` |
 | `deepen.py` | ai / main | 深掘り。**語ではなく記録で読ませ**、返ってきた日付と引用を実在する記録に照らして通す。見立ては出した記録に立つものだけ、多くて2つ |
 | `facts.py` | ai | 記録から**数えた事実**だけを取り出す。有料の振り返りは数もモデルに数えさせていて、**渡していない時刻について「夜に3日」と言わせていた。**数えるのはコード、言葉にするのはモデル |
+| `answers.py` | main | Gleate の問いに答えた言葉。**記録の項目に混ぜない**——困ったことに入れていた頃は `facts.py` がつまずきとして数えていた。中身は暗号化して入る（`docs/sql/log_answers.sql`） | `test_answers.py` |
 | `reader.py` | ai | 今週の振り返りを**決まった手順で読み、問いを1つ置く**（番号を振る→問いの候補を作る→記録に照らす→別の呼び出しで確かめる→いちばん考えたくなるものを選ぶ。通らなければ理由を渡して1回作り直す）。観察を並べる版は作者が20週すべてダメとした | `test_reader.py` |
 | `plan.py` | 無料と有料の線。**今日と今週は無料、掘るのは有料** | `test_plan.py` |
 | `billing.py` | RevenueCat の通知を受けて `subscriptions` を書く。**端末は経路に入らない** | `test_billing.py` |
@@ -274,7 +275,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・42ルール / 40パス）
+## 6. API（`main.py`・45ルール / 42パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
@@ -284,6 +285,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | 記録 | `POST /save`・**`POST /api/light`**（灯りだけ。`/save` から切り離した）・`GET /api/logs`・`DELETE /api/logs/<date>`・`PUT /api/logs/<date>/favorite` |
 | 問い | `GET /api/question` |
 | アイデア | `GET|POST /api/ideas`・`PATCH|DELETE /api/ideas/<int:idea_id>` |
+| 問いの答え | `GET|POST /api/answers`（手がかりの答え・選んだ見立て。記録の項目には入れない） |
 | 灯り | `GET /api/daily/quote`・`GET /api/splash/content` |
 | 振り返り | `POST /api/review/generate`・`GET /api/timeline-reflection`・`GET /api/insights/keywords` |
 | 節目 | `GET /api/milestone`・`GET /api/milestone/reflection` |

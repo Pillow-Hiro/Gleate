@@ -28,6 +28,7 @@ Lantern は新規登録を持つため、これが無いと審査を通らない
 # どれも user_id を持つ独立した表なので、依存関係はない。
 USER_TABLES = (
     "logs",
+    "log_answers",
     "ideas",
     "daily_quotes",
     "youtube_tokens",

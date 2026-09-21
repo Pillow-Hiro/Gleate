@@ -834,6 +834,42 @@ def deepen_review():
     return jsonify(result)
 
 
+# 問いに答えた言葉（2026-09-22・作者の判断）。**記録の項目に混ぜない。**
+#
+# それまでは手がかりの答えを「困ったこと」に入れていて、
+# `modules/facts.py` がつまずきとして数えていた（`modules/answers.py`）。
+@app.route("/api/answers", methods=["GET"])
+@require_auth
+def get_answers():
+    from modules.answers import load_answers
+
+    since = request.args.get("since") or None
+    return jsonify({"answers": load_answers(g.user_id, since)})
+
+
+@app.route("/api/answers", methods=["POST"])
+@require_auth
+def create_answer():
+    from modules.answers import KINDS, save_answer
+
+    data = request.get_json(silent=True) or {}
+    answer = str(data.get("answer") or "").strip()[:2000]
+    if not answer:
+        return jsonify({"error": "answer が要る"}), 400
+
+    kind = data.get("kind") if data.get("kind") in KINDS else "hint"
+    saved = save_answer(
+        g.user_id,
+        str(data.get("log_id") or ""),
+        str(data.get("date") or "") or today_str(),
+        str(data.get("question") or "").strip()[:400],
+        answer,
+        kind=kind,
+    )
+    # **残せなかったことを黙らない。**表を流す前は 503 が返る
+    return jsonify({"saved": saved}), (200 if saved else 503)
+
+
 @app.route("/api/daily/quote")
 @require_auth
 def daily_quote():

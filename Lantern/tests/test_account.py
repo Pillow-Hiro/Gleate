@@ -156,7 +156,7 @@ class TestTableList:
         画面には出ないので、気づく手段がこれしかない。
         """
         used = set()
-        for name in ("logs.py", "ideas.py", "twitch.py", "youtube.py"):
+        for name in ("logs.py", "answers.py", "ideas.py", "twitch.py", "youtube.py"):
             text = io.open(os.path.join(ROOT, "modules", name), encoding="utf-8").read()
             for node in ast.walk(ast.parse(text)):
                 if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
