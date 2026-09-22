@@ -1326,7 +1326,8 @@ def milestone_reflection():
     if not spend_ai_budget(g.user_id):
         return jsonify({"reflection": None})
 
-    reflection = generate_milestone_reflection(period_logs, hit_milestone)
+    # 返すのは `{"question", "hint"}`。**作れなかったときは None**（2026-09-22）
+    reflection = generate_milestone_reflection(period_logs)
     return jsonify({"reflection": reflection})
 
 

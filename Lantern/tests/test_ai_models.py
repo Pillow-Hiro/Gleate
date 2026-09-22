@@ -76,9 +76,10 @@ class TestModelSplit:
             "get_splash_quote",
             "get_ai_response",
             "get_weekly_review",       # 週次は無料（main.py の reviews）
-            "read_weekly_review",      # 週次を決まった手順で読む版。無料（2026-09-14）
+            # 決まった手順で問いを作る（2026-09-22）。通るのは週次を読む版
+            # （`read_weekly_review`）と節目（`generate_milestone_reflection`）で、どちらも無料
+            "_ask",
             "get_daily_quote",         # 今日の灯り
-            "generate_milestone_reflection",
             "generate_keyword_frequency",  # 1.0.0 がまだ叩く
             "generate_hint",
             "generate_hint_question",
