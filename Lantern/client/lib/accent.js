@@ -33,7 +33,7 @@
 // | `onGlow` | **その上に載る字** |
 // | `ink` | 明るい地の上のリンク・小さい字 |
 // | `onInk` | `ink` を地にしたときの字 |
-// | `soft` | 淡い帯（節目・お知らせ） |
+// | `soft` | 淡い帯（お知らせ） |
 // | `softInk` | その上の字 |
 // | `aiSurface` / `aiInk` | Gleate の言葉 |
 // | `discoverySurface` / `discoveryInk` | 今週の発見 |

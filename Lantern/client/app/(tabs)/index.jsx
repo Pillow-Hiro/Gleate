@@ -33,7 +33,6 @@ import { isLighting, subscribeLight, getLight, lightNote } from '../../lib/light
 // 余るぶんはただの余白で、足りないと書いている字が見えない。
 // **足りないほうが悪い**ので、多めに取る。
 const KEYBOARD_GAP = 120
-import MilestoneBanner from '../../components/MilestoneBanner'
 import IdeasPanel from '../../components/IdeasPanel'
 import Paywall from '../../components/Paywall'
 import { paywallMessage } from '../../lib/plan'
@@ -222,7 +221,8 @@ export default function Home() {
           </View>
         </View>
 
-        <MilestoneBanner />
+        {/* 節目（30・90・180日）のカードは 2026-09-23 に外した
+            （作者「90日のやつ消してください。必要ないです。」） */}
 
         {/* 記録とアイデアの切り替え。
             今日の灯りは 2026-08-12 に「ホーム」へ移した。ここには無い。

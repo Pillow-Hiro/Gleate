@@ -883,7 +883,7 @@ def read_weekly_review(period_logs, previous_logs=None, target_id=None):
 _READER_MIN_SECONDS = 8
 
 
-def _ask(system, records_text, entries, target_ref=None, deadline=None, refine=None):
+def _ask(system, records_text, entries, target_ref=None, deadline=None):
     """作る → 記録に照らす → 確かめる → 選ぶ（`modules/reader.py`）。
 
     どれも通らなければ、落ちた理由を渡して1回だけ作り直す（作者「黙るのもダメ」）。
@@ -892,7 +892,8 @@ def _ask(system, records_text, entries, target_ref=None, deadline=None, refine=N
 
     `deadline`（`time.monotonic()` の値）を渡すと、**その時刻までに返す。**
     1回ごとの待ちを残りに合わせ、SDK のやり直しもさせない（`call_claude` の `retries`）。
-    `refine` は、記録に照らしたあとに呼ぶ側だけが足す決まり（`reader.drop_span`）。
+    画面が返事を待つ呼び出しに使う——gunicorn の 60 秒を超えると、1 worker ごと落ちる。
+    （節目のカードが使っていた。2026-09-23 にカードを外した。週次をつなぐときに使う）
     """
     import time as _time
     from modules import reader as _reader
@@ -919,9 +920,6 @@ def _ask(system, records_text, entries, target_ref=None, deadline=None, refine=N
         if found is None:
             return False, None
         candidates, rejected = _reader.ground(found, entries, target_ref)
-        if refine:
-            candidates, more = refine(candidates)
-            rejected = rejected + more
         if candidates:
             verdicts = _call(_WEEKLY_ASK_CHECK_SYSTEM,
                              _reader.check_text(candidates, target) + "\n\n候補を確かめてください。",
@@ -1292,81 +1290,6 @@ def generate_video_insight(video, logs):
     # **失敗したときの戻り値。** 2026-08-18 まで「観察しています。」と
     # 返していたが、進行中に読める。来ないものを待たせるのは嘘と同じ。
     return "いまは観察を届けられませんでした。"
-
-
-# 節目（30・90・180日）に、**その間の記録から問いを1つ置く**（2026-09-22・作者「節目の文章も直して」）。
-#
-# それまでは観察1〜2文と問いを、「JSONだけを返せ」と頼んで1回で作っていた。
-# 作者の90日のカードは、**記録の項目名を主語にし、言い換えた文を「」に入れていた**
-# ——憲法が禁じている2つ。今週の振り返りで作者が「全部だめ」とした観察の形でもある。
-# 今週の振り返りと同じ手順（`_ask`）に載せ、問いを主役にした。
-#
-# **日数はモデルに渡さない。**カードの見出しが「記録を始めて90日が経ちました。」と
-# もう言っている。渡すと、問いが続けた日数に触れる（`reader.drop_span` でも落とす）。
-_MILESTONE_ASK_SYSTEM = lantern_prompt(
-    "この問いの指針",
-    """記録を始めてから今日までの記録を渡します。記録には番号が付いています（W1 から、日付の古い順）。
-この期間の記録を見渡して、**書いた本人が立ち止まって考えたくなる問い**を作ってください。
-
-【問いの起こし方】
-- 本人が書いた、具体的な言葉から起こす。どの期間の誰にでも言える問い（「この期間、何が残りましたか。」）にしない。
-- 離れた日の記録に、同じ言葉や同じ話が出てくることがある。並べると問いが深くなるなら並べてよい。並べるのは、同じ話だと記録から読めるときだけ。
-- 同じ話が無ければ、1件の記録から起こしてよい。短い日常の記録からも問いは作れる。長い記録や、気持ちを書いた記録ばかりを選ばない。
-- 記録にもう書いてあることを訊かない。記録を言い直さない。問いの中で「」に入れるのは、20文字までの短い言葉だけ。記録の一文をまるごと写さない。
-- 記録が書かずに残しているところに向ける。言い切った言葉の奥、書かれたことのその先。
-- 「誰」「なぜ」で問い詰めない。「どんな」「どのあたり」「どこから」で、本人が思い浮かべられる形で訊く。
-- 前と比べて変わった・変わっていないと言わない。変化を前提に置かない。2つの記録を並べて、どちらかを想像と、どちらかを実際と見立てて比べさせない。
-- 続けた日数・記録の数・記録がなかった日には触れない。続けたことを称えない。
-- 答えを迫らない。決めさせない。行動を促さない。評価しない・励まさない・意味を決めつけない。
-- 動作を確かめるための記録（「テスト」とだけ書いたものなど）は使わない。
-
-【返すもの】
-candidates … 問いの候補を3つ。考えたくなる順に並べる。
-- question … 問い（1文・「。」で終える・「？」を使わない）
-- hint … 問いを考えるときの手がかり（1文・省略可）。見る角度を1つ置くか、同じ話が出てくる別の日の記録を指すだけにして、答えや意味を言わない。記録に書いてあることを言い直さない（「9月2日に台本を直し、9月9日に収録した記録が並んでいます。」は言い直し）。
-- records … 問いのきっかけにした記録。ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
-
-「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。日付を書くときは「9月4日」の形で、きっかけにした記録の日付だけを書く。記録の番号（W1 など）は、問いにも手がかりにも書かない。
-
-【良い例】
-{"candidates": [{"question": "「声の出し方が決まらない」と書いたとき、決めようとしていたのは声のどのあたりでしょう。", "hint": "9月2日の記録にも、声の出し方のことが出ています。", "records": [{"ref": "W3", "quote": "声の出し方が決まらない"}, {"ref": "W21", "quote": "声の出し方に迷った"}]}]}
-{"candidates": [{"question": "「海まで歩いた」日、帰り道に見えていたのはどんな景色でしょう。", "hint": "", "records": [{"ref": "W12", "quote": "海まで歩いた"}]}]}
-
-【悪い例】
-{"candidates": [{"question": "記録を続けてきたこの期間で、どんなことが心に残っていますか。", "hint": "", "records": [{"ref": "W1", "quote": "収録した"}]}]}
-続けたことに触れ、どの期間の誰にでも言える。
-{"candidates": [{"question": "7月には迷っていた声の出し方が、9月には決まってきたのは、何が変わったからでしょう。", "hint": "", "records": [{"ref": "W3", "quote": "声の出し方が決まらない"}, {"ref": "W21", "quote": "声の出し方に迷った"}]}]}
-変わったことを前提に置き、変わった理由を決めさせている。""",
-)
-
-# 節目は**画面が返事を待っている**（`MilestoneBanner`）。gunicorn の 60 秒より前に
-# 必ず返す——1 worker なので、超えるとほかの人の読み書きごと落ちる
-_MILESTONE_BUDGET_SECONDS = 45
-
-
-def generate_milestone_reflection(logs):
-    """記録を始めてからの記録を読み、**問いを1つ置く**（`_ask`）。
-
-    返すのは `{"question", "hint"}`。**作れなかったときは None。**
-    2026-09-22 まで、読めなかったときも「記録が積み重なっています。」を返していた。
-    固定の文は、Gleate が記録を読んで書いた言葉に見える。
-    """
-    import time as _time
-    from modules import reader as _reader
-
-    entries = _reader.label(logs, None)
-    if not _reader.can_ask(entries):
-        return None
-    _, chosen = _ask(
-        _MILESTONE_ASK_SYSTEM,
-        _reader.as_text(entries, heading="記録を始めてから今日までの記録"),
-        entries,
-        deadline=_time.monotonic() + _MILESTONE_BUDGET_SECONDS,
-        refine=_reader.drop_span,
-    )
-    if not chosen:
-        return None
-    return {"question": chosen["question"], "hint": chosen.get("hint") or ""}
 
 
 def generate_keyword_frequency(logs_text):

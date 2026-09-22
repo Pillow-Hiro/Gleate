@@ -817,7 +817,7 @@ YouTube と Twitch をタブで切り替える。位置づけと制約は
 | 地 | `surface` | `#F9F9FB` | 画面の背景 |
 | 一段沈んだ面 | `surface-low` | `#F3F3F5` | 入力欄・区画 |
 | さらに沈んだ面 | `surface-high` | `#E8E8EA` | 読み込み中の板 |
-| **灯り** | `lantern-glow` | `#FBB03B` | **主要な操作・節目・選択中** |
+| **灯り** | `lantern-glow` | `#FBB03B` | **主要な操作・選択中** |
 | 灯りに載る文字 | `on-lantern` | `#1D1D1F` | 灯りのボタンの文字 |
 | 主要 | `primary` | `#825500` | 文字としての操作色 |
 | リンク | `secondary` | `#005CBA` | iOS の作法に合わせる |

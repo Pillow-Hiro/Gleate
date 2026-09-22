@@ -355,83 +355,43 @@ class TestReadWeeklyReview:
         assert ai.read_weekly_review(WEEK, PREV) is None
 
 
-class TestDropSpan:
-    """節目の問いで、続けた日数や記録の数に触れない（2026-09-22）"""
+class TestDeadline:
+    """締め切りのある読み（`ai._ask` の `deadline`）。**画面が返事を待つ呼び出しに使う**
 
-    @pytest.mark.parametrize("text", [
-        "90日間で、声の出し方はどのあたりに向いていたでしょう。",
-        "記録を続けてきて、いま浮かぶのはどんな場面でしょう。",
-        "30件の記録のうち、声の話はどのあたりでしょう。",
-    ])
-    def test_日数や数に触れた問いは落とす(self, text):
-        keep, dropped = reader.drop_span([{"question": text, "hint": None, "records": []}])
-        assert keep == [] and dropped[0]["reason"] == "続けた日数や記録の数に触れている"
-
-    # 本人の言葉（「」の中）は数えない——記録に「続けたい」と書く人はいる
-    def test_かぎ括弧の中は数えない(self):
-        text = "「もう少し続けたい」の「もう少し」は、どのあたりまででしょう。"
-        assert not reader.mentions_span(text)
-
-    def test_手がかりだけが触れていれば手がかりを外す(self):
-        keep, _ = reader.drop_span([{"question": ASK, "hint": "3か月のあいだに2回出ています。", "records": []}])
-        assert keep[0]["question"] == ASK and keep[0]["hint"] is None
-
-
-class TestMilestone:
-    """節目（30・90・180日）に、記録を始めてからの記録から問いを1つ置く（2026-09-22）"""
+    gunicorn の 60 秒を超えると 1 worker ごと落ちる。節目のカードが使っていた
+    （2026-09-23 にカードを外した）。週次を画面につなぐときに使う。
+    """
 
     fake = TestReadWeeklyReview.fake
     asks = staticmethod(TestReadWeeklyReview.asks)
     verdicts = staticmethod(TestReadWeeklyReview.verdicts)
 
-    def test_記録が無ければ呼ばずにNone(self, monkeypatch):
-        ai, seen = self.fake(monkeypatch, [])
-        assert ai.generate_milestone_reflection([log("x", "2026-09-10")]) is None
-        assert seen == []
+    def read(self, ai, deadline):
+        from modules.ai import _WEEKLY_ASK_SYSTEM
 
-    def test_問いと手がかりを返す(self, monkeypatch):
-        from modules.ai import _MILESTONE_ASK_SYSTEM, _WEEKLY_ASK_CHECK_SYSTEM
+        es = label(WEEK, PREV)
+        return ai._ask(_WEEKLY_ASK_SYSTEM, reader.as_text(es), es, deadline=deadline)
 
-        # 前の週に分けないので、9月2日が W1 になり、ほかは1つずつずれる
-        hint = "9月11日の記録にも、声の出し方のことが出ています。"
-        both = [("W2", "声の出し方が決まらない"), ("W3", "収録で声の出し方に迷った")]
-        ai, seen = self.fake(monkeypatch, [self.asks(cand(ASK, both, hint=hint)), self.verdicts((0, True, 2))])
-        got = ai.generate_milestone_reflection(WEEK + PREV)
-        assert got == {"question": ASK, "hint": hint}
-        assert [s for s, _, _ in seen] == [_MILESTONE_ASK_SYSTEM, _WEEKLY_ASK_CHECK_SYSTEM]
-        # 前の週に分けず、記録を始めてからの記録をすべて同じ見出しの下に置く
-        assert "【記録を始めてから今日までの記録】" in seen[0][1] and "【今週の記録】" not in seen[0][1]
-
-    # 画面が待っている。**gunicorn の 60 秒より前に返す**
     def test_締め切りに合わせて待ち_SDKにやり直させない(self, monkeypatch):
+        import time
+
         ai, seen = self.fake(monkeypatch, [self.asks(cand(ASK, VOICE)), self.verdicts((0, True, 2))])
-        ai.generate_milestone_reflection(WEEK)
+        read, chosen = self.read(ai, time.monotonic() + 45)
+        assert read and chosen["question"] == ASK
         for _, _, kw in seen:
             assert kw["retries"] == 0 and kw["timeout"] <= ai._READER_TIMEOUT_SECONDS
 
     def test_締め切りを過ぎていたら呼ばない(self, monkeypatch):
+        import time
+
         ai, seen = self.fake(monkeypatch, [])
-        monkeypatch.setattr(ai, "_MILESTONE_BUDGET_SECONDS", 0)
-        assert ai.generate_milestone_reflection(WEEK) is None
+        assert self.read(ai, time.monotonic()) == (False, None)
         assert seen == []
 
-    def test_続けた日数に触れた候補は確かめずに作り直す(self, monkeypatch):
-        counted = cand("90日間、「声の出し方が決まらない」はどのあたりに向いていたでしょう。", VOICE)
-        ai, seen = self.fake(monkeypatch, [self.asks(counted), self.asks(cand(ASK, VOICE)),
-                                           self.verdicts((0, True, 2))])
-        assert ai.generate_milestone_reflection(WEEK)["question"] == ASK
-        assert len(seen) == 3 and "続けた日数や記録の数に触れている" in seen[1][1]
-
-    # 2026-09-22 まで、読めなかったときも固定の文を返していた。**Gleate が読んだ言葉に見える**
-    @pytest.mark.parametrize("replies", [[None], ["{壊れた"], [json.dumps({"candidates": [cand(ASK, VOICE)]}), None]])
-    def test_読めなかったときは固定の文を返さずNone(self, monkeypatch, replies):
-        ai, _ = self.fake(monkeypatch, replies)
-        assert ai.generate_milestone_reflection(WEEK) is None
-
-    def test_作り直しても通らなければNone(self, monkeypatch):
-        ai, _ = self.fake(monkeypatch, [self.asks(cand(ASK, VOICE)), self.verdicts((0, False, 1)),
-                                        self.asks(cand(ASK, VOICE)), self.verdicts((0, False, 1))])
-        assert ai.generate_milestone_reflection(WEEK) is None
+    def test_締め切りが無ければ今までと同じ(self, monkeypatch):
+        ai, seen = self.fake(monkeypatch, [self.asks(cand(ASK, VOICE)), self.verdicts((0, True, 2))])
+        self.read(ai, None)
+        assert all("retries" not in kw for _, _, kw in seen)
 
 
 class TestCallClaudeOptions:
@@ -536,17 +496,13 @@ class TestPrompts:
         assert "その記録について訊いていない" in _WEEKLY_ASK_CHECK_SYSTEM
 
     def test_言い換えをかぎ括弧に入れさせない(self):
-        from modules.ai import _MILESTONE_ASK_SYSTEM, _WEEKLY_ASK_SYSTEM
+        from modules.ai import _WEEKLY_ASK_SYSTEM
 
         assert "言い換えたものを「」に入れない" in _WEEKLY_ASK_SYSTEM
-        assert "言い換えたものを「」に入れない" in _MILESTONE_ASK_SYSTEM
 
-    # 節目のカードは見出しが日数を言っている。問いで続けたことを数えて見せない
-    def test_節目は続けたことにも変化にも触れさせない(self):
-        from modules.ai import _MILESTONE_ASK_SYSTEM, _WEEKLY_ASK_CHECK_SYSTEM
+    # 憲法「継続を称えない」「変化を評価しない」
+    def test_続けたことにも変化にも触れさせない(self):
+        from modules.ai import _WEEKLY_ASK_CHECK_SYSTEM
 
-        assert "続けた日数・記録の数・記録がなかった日には触れない" in _MILESTONE_ASK_SYSTEM
-        assert "変化を前提に置かない" in _MILESTONE_ASK_SYSTEM
         assert "続けた日数・記録の数に触れている" in _WEEKLY_ASK_CHECK_SYSTEM
-        # 長い記録ばかりを選ぶ癖（2026-09-22 の採点「記録がスルーされるのはどうして？」）
-        assert "長い記録や、気持ちを書いた記録ばかりを選ばない" in _MILESTONE_ASK_SYSTEM
+        assert "変わった・変わっていないと言い切っている" in _WEEKLY_ASK_CHECK_SYSTEM

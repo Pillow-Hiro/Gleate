@@ -27,7 +27,6 @@ from modules.ai import (
     get_weekly_review, get_monthly_review,
     generate_channel_insight,
     generate_timeline_reflection,
-    generate_milestone_reflection,
     generate_keyword_frequency,
     generate_hint, generate_hint_question,
     generate_deepen,
@@ -88,7 +87,7 @@ def spend_ai_budget(user_id):
     表が無い間は素通しする（`modules/ratelimit.py`）。
 
     デコレータと別に関数を置いているのは、**実際に AI を呼ぶ直前で
-    数えたい経路がある**ため。今日の灯りと節目の振り返りは、
+    数えたい経路がある**ため。今日の灯りは、
     キャッシュに当たれば AI を呼ばない。入口で数えると、
     画面を開き直すだけで枠が減る。
     """
@@ -1273,62 +1272,9 @@ def timeline_reflection():
     })
 
 
-_MILESTONES = [30, 90, 180]
-
-
-def _get_milestone_hit(user_id):
-    """節目判定のみ。AI生成は行わない。hit した場合は (hit_milestone, period_logs) を返す。"""
-    all_logs = load_logs(user_id)
-    if not all_logs:
-        return None, None, 0
-
-    first_date = min(l.get("date", "") for l in all_logs)
-    try:
-        first_dt = datetime.strptime(first_date, "%Y-%m-%d").date()
-    except ValueError:
-        return None, None, 0
-
-    today = today_date()
-    days_since_start = (today - first_dt).days
-
-    for ms in _MILESTONES:
-        if ms - 1 <= days_since_start <= ms + 1:
-            period_logs = [l for l in all_logs if first_dt.isoformat() <= l.get("date", "") <= today.isoformat()]
-            return ms, period_logs, days_since_start
-
-    return None, None, days_since_start
-
-
-@app.route("/api/milestone")
-@require_auth
-def milestone():
-    """節目判定のみ返す。AI生成は /api/milestone/reflection で行う。"""
-    hit_milestone, _, days_since_start = _get_milestone_hit(g.user_id)
-
-    if hit_milestone is None:
-        return jsonify({"has_milestone": False, "days": days_since_start})
-
-    return jsonify({"has_milestone": True, "days": hit_milestone})
-
-
-@app.route("/api/milestone/reflection")
-@require_auth
-def milestone_reflection():
-    """節目の振り返りをAI生成して返す（フロントでキャッシュ済みの場合は呼ばない）。"""
-    days_param = request.args.get("days", type=int)
-    hit_milestone, period_logs, _ = _get_milestone_hit(g.user_id)
-
-    if hit_milestone is None or hit_milestone != days_param:
-        return jsonify({"reflection": None})
-
-    # 節目に当たった回だけ数える（2026-08-16）。
-    # 入口で数えると、節目でない日に開くたびに枠が減る
-    if not spend_ai_budget(g.user_id):
-        return jsonify({"reflection": None})
-
-    # 返すのは `{"question", "hint"}`。**作れなかったときは None**（2026-09-22）
-    reflection = generate_milestone_reflection(period_logs)
-    return jsonify({"reflection": reflection})
+# 節目（30・90・180日）のカードと `/api/milestone`・`/api/milestone/reflection` は
+# 2026-09-23 に外した（作者「90日のやつ消してください。必要ないです。」）。
+# 古いアプリが叩いても 404 で、カードは出ないだけ（`res.ok` を見ていた）
 
 
 @app.route("/api/apple-music/token")

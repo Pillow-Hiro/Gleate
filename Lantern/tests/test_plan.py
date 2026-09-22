@@ -88,7 +88,7 @@ class Test上限:
         assert plan.FREE_DAILY_AI < plan.PAID_DAILY_AI
 
     def test_無料でもふつうの1日には届く(self):
-        # 記録のAI・今日の灯り・節目・週次で4回。
+        # 記録のAI・今日の灯り・週次で3回（節目のカードは 2026-09-23 に外した）。
         # **書き直すぶんの余裕**がなければ、書いている最中に灯りが消える
         assert plan.FREE_DAILY_AI >= 8
 

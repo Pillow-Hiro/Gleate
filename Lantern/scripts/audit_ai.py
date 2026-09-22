@@ -94,7 +94,6 @@ def cases():
         ("今週の振り返り", lambda: ai.get_weekly_review(LOGS, None)),
         ("今月の振り返り", lambda: ai.get_monthly_review(LOGS, None)),
         ("過去との対話", lambda: ai.generate_timeline_reflection(LOGS[2:], LOGS[:1], 1)),
-        ("節目", lambda: ai.generate_milestone_reflection(LOGS)),
         ("チャンネルの観察", lambda: ai.generate_channel_insight(VIDEOS)),
         ("動画の観察", lambda: ai.generate_video_insight(VIDEOS[0], LOGS_TEXT)),
         ("配信の観察", lambda: ai.generate_stream_insight(STREAMS)),

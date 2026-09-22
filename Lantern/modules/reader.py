@@ -116,18 +116,15 @@ def entry_for(entries, ref):
     return next((e for e in entries if e["ref"] == ref), None)
 
 
-def as_text(entries, target_ref=None, heading="今週の記録"):
-    """モデルに渡す形。**選んだ記録があれば、いちばん上に別に置く**（2026-09-22）。
-
-    節目は、記録を始めてからの記録をすべて W に置き、見出しだけ替える
-    """
+def as_text(entries, target_ref=None):
+    """モデルに渡す形。**選んだ記録があれば、いちばん上に別に置く**（2026-09-22）"""
     week = [e for e in entries if e["this_week"]]
     prev = [e for e in entries if not e["this_week"]]
     lines = []
     target = entry_for(entries, target_ref)
     if target:
         lines += ["【訊いてほしい記録】", f"{target['ref']}（{_md(target['date'])}）: {target['line']}", ""]
-    lines += [f"【{heading}】"]
+    lines += ["【今週の記録】"]
     lines += [f"{e['ref']}（{_md(e['date'])}）: {e['line']}" for e in week]
     if prev:
         lines += ["", "【その前の週の記録】"]
@@ -220,7 +217,7 @@ def _banned(text):
 
 
 # 問いの中の「」の長さの上限（空白を除いた文字数）。**引くのは短い言葉だけ。**
-# 2026-09-22 の節目の試しで、記録の一文をまるごと写し、問いが記録の言い直しになった。
+# 2026-09-22 の試しで、記録の一文をまるごと写し、問いが記録の言い直しになった。
 # 今週の振り返りの試し（27件）で引いた言葉は、いちばん長くても14文字
 MAX_QUOTE_CHARS = 20
 
@@ -306,32 +303,6 @@ def ground(raw, entries, target_ref=None):
         if len(kept) == MAX_CANDIDATES:
             break
     return kept, dropped
-
-
-# 節目（30・90・180日）の問いで、**続けた日数や記録の数に触れない**（2026-09-22）。
-# カードの見出しがもう「記録を始めて90日が経ちました。」と言っている。問いでも言うと、
-# 続けたことを数えて見せる形になる（CLAUDE.md「継続を称えない」）
-_SPAN = re.compile(r"\d+\s*(日間|日目|か月|ヶ月|カ月|件)|続け|継続|積み重")
-
-
-def mentions_span(text):
-    return bool(_SPAN.search(_outside_quotes(text)))
-
-
-def drop_span(kept):
-    """節目の問いの候補から、続けた日数や記録の数に触れたものを落とす。
-
-    `(残すもの, 落としたもの)` を返す。手がかりだけが触れていれば、手がかりを外す
-    """
-    keep, dropped = [], []
-    for c in kept:
-        if mentions_span(c["question"]):
-            dropped.append({"question": c["question"], "reason": "続けた日数や記録の数に触れている"})
-            continue
-        if c.get("hint") and mentions_span(c["hint"]):
-            c = {**c, "hint": None}
-        keep.append(c)
-    return keep, dropped
 
 
 def check_text(candidates, target=None):
