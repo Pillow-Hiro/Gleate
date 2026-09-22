@@ -696,6 +696,51 @@ candidates … 問いの候補を3つ。考えたくなる順に並べる。
 行動を促し、手がかりが助言になっている。""",
 )
 
+# 本人が選んだ記録について問いを作る（2026-09-22・作者の判断「訊いてほしい記録を自分で選ぶ」）。
+#
+# 1週から問いを1つだけ選ばせると、長く内面を書いた記録ばかりが選ばれ、
+# 短い日常の記録が毎回スルーされていた。作者から
+# 「記録がスルーされるのはどうして？その記録を軽視しているの？」。
+#
+# 作者の採点（2026-09-22・20週で ○11 △1 ×8）から足したもの:
+# 「誰」より「どんな」で訊く／関係の分からない2つを比べさせない／具体的に訊いてよい
+_RECORD_ASK_SYSTEM = lantern_prompt(
+    "この問いの指針",
+    """本人が「この記録について訊いてほしい」と選んだ記録があります（【訊いてほしい記録】）。
+その記録から、**書いた本人が立ち止まって考えたくなる問い**を作ってください。
+今週とその前の週のほかの記録は、並べると問いが深くなるときだけ使ってよい。
+
+【問いの起こし方】
+- 選んだ記録に本人が書いた、具体的な言葉から起こす。どの記録にも言える問いにしない。
+- 記録にもう書いてあることを訊かない。
+- 記録が書かずに残しているところに向ける。言い切った言葉の奥、書かれたことのその先。
+- 「誰」「なぜ」で問い詰めない。「どんな」「どのあたり」「どこから」で、本人が思い浮かべられる形で訊く。
+- 関係の分からない2つの言葉を並べて比べさせない。並べるのは、同じ話だと記録から読めるときだけ。
+- 具体的に訊いてよい。思いついたことが書かれていれば、それがどんなものかを訊いてよい。
+- 記録を言い直さない。問いの中で引くのは短い言葉だけ。
+- 答えを迫らない。決めさせない。行動を促さない。評価しない・励まさない・意味を決めつけない。
+- 記録がなかった日・空いた期間・記録の少なさには触れない。
+- 短い記録でも問いは作れる。短いことには触れない。
+
+【返すもの】
+candidates … 問いの候補を3つ。考えたくなる順に並べる。
+- question … 問い（1文・「。」で終える・「？」を使わない）
+- hint … 問いを考えるときの手がかり（1文・省略可）。見る角度を1つ置くだけにして、答えや意味を言わない。
+- records … 問いのきっかけにした記録。**選んだ記録を必ず入れる。**ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
+
+「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。日付を書くときは「9月4日」の形で、きっかけにした記録の日付だけを書く。記録の番号（W1 など）は、問いにも手がかりにも書かない。
+
+【良い例】
+{"candidates": [{"question": "「新しい曲の構成を考えた」とき、最初に浮かんだのはどんな場面でしょう。", "hint": "", "records": [{"ref": "W2", "quote": "新しい曲の構成を考えた"}]}]}
+{"candidates": [{"question": "「収録で声の出し方に迷った」とき、迷っていたのは声のどのあたりでしょう。", "hint": "9月2日の記録にも、声の出し方のことが出ています。", "records": [{"ref": "W1", "quote": "収録で声の出し方に迷った"}, {"ref": "P1", "quote": "声の出し方が決まらない"}]}]}
+
+【悪い例】
+{"candidates": [{"question": "新しいツールは、誰のために作ったのでしょう。", "hint": "", "records": [{"ref": "W1", "quote": "新しいツールを作った"}]}]}
+「誰」で訊くと答えが1つに絞られる。「どんな」で訊く。
+{"candidates": [{"question": "「台本」と「配色」は、同じものの中の呼び方でしょうか。", "hint": "", "records": [{"ref": "W1", "quote": "台本を直した"}, {"ref": "W2", "quote": "配色を直した"}]}]}
+関係の分からない2つを比べさせている。""",
+)
+
 # 確かめる側。2026-09-14 の試しで、**落とすものだけを書くと、出してよいものまで落とす**
 # と分かった（観察を並べる版で、憲法の①②まで疑った）。出してよいものも書く。
 #
@@ -722,6 +767,8 @@ _WEEKLY_ASK_CHECK_SYSTEM = lantern_prompt(
 - 評価・励まし・意味の決めつけがある。問いの形でも「〜なのは、〜だからでしょう。」は決めつけ
 - 手がかりが答えや助言になっている
 - 記録がなかった日・空いた期間・記録の少なさに触れている
+- 【選んだ記録】があるのに、その記録について訊いていない
+- 関係の分からない2つの言葉を並べて比べさせている
 - 書かれていないことを、あったこととして言い切っている、または問いの前提に置いている（「いつもの収録と何が違ったのでしょう。」は、違ったことを前提にしている）
 
 落とすものに1つでも当てはまれば pass を false にする。迷ったら false。
@@ -796,8 +843,11 @@ def _json_or_none(raw):
     return data if isinstance(data, dict) else None
 
 
-def read_weekly_review(period_logs, previous_logs=None):
+def read_weekly_review(period_logs, previous_logs=None, target_id=None):
     """今週の振り返りを、決まった手順で読み、問いを1つ置く（`modules/reader.py`）。
+
+    `target_id` を渡すと、**本人が選んだその記録について**問いを作る
+    （2026-09-22・作者の判断「訊いてほしい記録を自分で選ぶ」）。
 
     返すのは `{"patterns": [...]}` の JSON 文字列。**黙るときは空。**
     **読めなかったときは None。**黙ったこと（空）と分ける——
@@ -811,24 +861,29 @@ def read_weekly_review(period_logs, previous_logs=None):
     entries = _reader.label(period_logs, previous_logs)
     if not _reader.can_ask(entries):
         return silent
+    target_ref = _reader.find_ref(entries, target_id) if target_id else None
+    if target_id and not target_ref:
+        return silent
+    target = _reader.entry_for(entries, target_ref)
+    system = _RECORD_ASK_SYSTEM if target_ref else _WEEKLY_ASK_SYSTEM
 
     started = _time.monotonic()
     rejected = []
     for _attempt in range(2):
         found = _json_or_none(call_claude(
-            _WEEKLY_ASK_SYSTEM,
-            _reader.as_text(entries) + _reader.retry_note(rejected)
+            system,
+            _reader.as_text(entries, target_ref) + _reader.retry_note(rejected)
             + "\n\n上記の記録から、問いの候補を返してください。",
             max_tokens=4000, timeout=_READER_TIMEOUT_SECONDS,
             schema=_WEEKLY_ASK_SCHEMA, effort="medium",
         ))
         if found is None:
             return None
-        candidates, rejected = _reader.ground(found, entries)
+        candidates, rejected = _reader.ground(found, entries, target_ref)
         if candidates:
             verdicts = _json_or_none(call_claude(
                 _WEEKLY_ASK_CHECK_SYSTEM,
-                _reader.check_text(candidates) + "\n\n候補を確かめてください。",
+                _reader.check_text(candidates, target) + "\n\n候補を確かめてください。",
                 max_tokens=3000, timeout=_READER_TIMEOUT_SECONDS,
                 schema=_WEEKLY_ASK_CHECK_SCHEMA, effort="medium",
             ))

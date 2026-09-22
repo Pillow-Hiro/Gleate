@@ -102,10 +102,29 @@ def can_ask(entries):
     return any(e["this_week"] for e in entries)
 
 
-def as_text(entries):
+def find_ref(entries, log_id):
+    """本人が選んだ記録の番号。**今週の記録からだけ探す。**無ければ None"""
+    if not log_id:
+        return None
+    for e in entries:
+        if e["this_week"] and str(e["id"]) == str(log_id):
+            return e["ref"]
+    return None
+
+
+def entry_for(entries, ref):
+    return next((e for e in entries if e["ref"] == ref), None)
+
+
+def as_text(entries, target_ref=None):
+    """モデルに渡す形。**選んだ記録があれば、いちばん上に別に置く**（2026-09-22）"""
     week = [e for e in entries if e["this_week"]]
     prev = [e for e in entries if not e["this_week"]]
-    lines = ["【今週の記録】"]
+    lines = []
+    target = entry_for(entries, target_ref)
+    if target:
+        lines += ["【訊いてほしい記録】", f"{target['ref']}（{_md(target['date'])}）: {target['line']}", ""]
+    lines += ["【今週の記録】"]
     lines += [f"{e['ref']}（{_md(e['date'])}）: {e['line']}" for e in week]
     if prev:
         lines += ["", "【その前の週の記録】"]
@@ -211,12 +230,13 @@ def _strip_label(quote):
     return _LABEL.sub("", str(quote or "").strip())
 
 
-def ground(raw, entries):
+def ground(raw, entries, target_ref=None):
     """問いの候補を、**記録に照らして通す。**`(通ったもの, 落ちたもの)` を返す。
 
     - 問いが1文で「。」で終わり、「？」を使っていない
     - きっかけの記録が実在し、引用がその記録の中に本当にある
     - 今週の記録をきっかけにしている
+    - 本人が記録を選んだときは、その記録をきっかけにしている
     - 問いの中の「」と日付が、きっかけの記録と合っている
     - 問いに記録の番号（W1 など）も、禁止ワードも入っていない
 
@@ -243,6 +263,8 @@ def ground(raw, entries):
                 used.append(entry)
         if reason is None and not used:
             reason = "きっかけにした記録が無い"
+        if reason is None and target_ref and target_ref not in {u["ref"] for u in used}:
+            reason = "選んだ記録から起こしていない"
         if reason is None and not any(u["this_week"] for u in used):
             reason = "今週の記録から起こしていない"
         if reason is None and not _is_question(question):
@@ -269,9 +291,14 @@ def ground(raw, entries):
     return kept, dropped
 
 
-def check_text(candidates):
-    """確かめる側に渡す形。**きっかけの記録は全文で渡す**——引用だけだと、答えが書いてあるか分からない"""
+def check_text(candidates, target=None):
+    """確かめる側に渡す形。**きっかけの記録は全文で渡す**——引用だけだと、答えが書いてあるか分からない。
+
+    本人が選んだ記録があれば先に置く。その記録について訊いているかも確かめさせる
+    """
     blocks = []
+    if target:
+        blocks.append(f"【選んだ記録】\n{_md(target['date'])}: {target['line']}")
     for i, c in enumerate(candidates):
         lines = [f"【候補{i}】", f"問い: {c['question']}", f"手がかり: {c['hint'] or 'なし'}", "きっかけの記録:"]
         lines += [f"{_md(r['date'])}: {r['line']}" for r in c["records"]]

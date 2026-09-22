@@ -166,6 +166,37 @@ class TestGround:
         assert ground(raw, entries()) == ([], [])
 
 
+class TestTarget:
+    """本人が選んだ記録について訊く（2026-09-22・作者の判断「訊いてほしい記録を自分で選ぶ」）"""
+
+    def test_選んだ記録の番号を今週から探す(self):
+        assert reader.find_ref(entries(), "w2") == "W2"
+
+    def test_前の週の記録は選べない(self):
+        assert reader.find_ref(entries(), "p1") is None
+
+    def test_知らない記録はNone(self):
+        assert reader.find_ref(entries(), "x") is None and reader.find_ref(entries(), "") is None
+
+    def test_選んだ記録をいちばん上に別に置く(self):
+        text = reader.as_text(entries(), "W2")
+        assert text.startswith("【訊いてほしい記録】\nW2（9月11日）: 収録で声の出し方に迷った")
+
+    # 1週から選ばせると、短い日常の記録が毎回スルーされていた
+    def test_選んだ記録から起こしていなければ落とす(self):
+        kept, dropped = ground({"candidates": [cand(ASK, VOICE)]}, entries(), target_ref="W2")
+        assert kept == [] and dropped[0]["reason"] == "選んだ記録から起こしていない"
+
+    def test_選んだ記録から起こしていれば通す(self):
+        q = "「収録で声の出し方に迷った」とき、迷っていたのは声のどのあたりでしょう。"
+        kept, _ = ground({"candidates": [cand(q, [("W2", "収録で声の出し方に迷った")])]}, entries(), target_ref="W2")
+        assert len(kept) == 1
+
+    def test_確かめる側にも選んだ記録を渡す(self):
+        target = reader.entry_for(entries(), "W2")
+        assert reader.check_text([], target).startswith("【選んだ記録】\n9月11日: 収録で声の出し方に迷った")
+
+
 class TestChoose:
     def test_通った中で考えたくなる度合いがいちばん高いもの(self):
         verdicts = {"verdicts": [{"index": 0, "pass": True, "strength": 2},
@@ -288,6 +319,22 @@ class TestReadWeeklyReview:
         assert json.loads(ai.read_weekly_review(WEEK, PREV)) == {"patterns": []}
         assert len(seen) == 2
 
+    def test_選んだ記録があれば記録用の指針で作る(self, monkeypatch):
+        from modules.ai import _RECORD_ASK_SYSTEM
+
+        q = "「収録で声の出し方に迷った」とき、迷っていたのは声のどのあたりでしょう。"
+        ai, seen = self.fake(monkeypatch, [self.asks(cand(q, [("W2", "収録で声の出し方に迷った")])),
+                                           self.verdicts((0, True, 2))])
+        got = json.loads(ai.read_weekly_review(WEEK, PREV, target_id="w2"))
+        assert got["patterns"][0]["question"] == q
+        assert seen[0][0] == _RECORD_ASK_SYSTEM
+        assert "【訊いてほしい記録】" in seen[0][1] and "【選んだ記録】" in seen[1][1]
+
+    def test_今週に無い記録を選んだら呼ばずに空(self, monkeypatch):
+        ai, seen = self.fake(monkeypatch, [])
+        assert json.loads(ai.read_weekly_review(WEEK, PREV, target_id="p1")) == {"patterns": []}
+        assert seen == []
+
     # **読めなかったことと、黙ったことを分ける**
     @pytest.mark.parametrize("replies", [[None], ["{壊れた"], [json.dumps({"candidates": [cand(ASK, VOICE)]}), None]])
     def test_読めなかったときはNone(self, monkeypatch, replies):
@@ -366,6 +413,15 @@ class TestPrompts:
 
         assert "空いた期間・記録の少なさには触れない" in _WEEKLY_ASK_SYSTEM
         assert "空いた期間・記録の少なさに触れている" in _WEEKLY_ASK_CHECK_SYSTEM
+
+    # 2026-09-22 の採点。「誰ではなく、どんな？がいい」「質問の意図が意味不明」
+    def test_選んだ記録の問いはどんなで訊き_関係の分からない2つを比べない(self):
+        from modules.ai import _RECORD_ASK_SYSTEM, _WEEKLY_ASK_CHECK_SYSTEM
+
+        assert "「どんな」" in _RECORD_ASK_SYSTEM
+        assert "関係の分からない2つの言葉を並べて比べさせない" in _RECORD_ASK_SYSTEM
+        assert "関係の分からない2つの言葉を並べて比べさせている" in _WEEKLY_ASK_CHECK_SYSTEM
+        assert "その記録について訊いていない" in _WEEKLY_ASK_CHECK_SYSTEM
 
     def test_言い換えをかぎ括弧に入れさせない(self):
         from modules.ai import _WEEKLY_ASK_SYSTEM

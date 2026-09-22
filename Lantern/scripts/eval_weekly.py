@@ -1,33 +1,34 @@
 # -*- coding: utf-8 -*-
 """今週の振り返りの物差し（2026-09-14）。**API に課金される。手で動かす。**
 
-    EVAL_USER_ID=<作者のUID> python scripts/eval_weekly.py run --variant v2 --ids week-2026-09-14,...
-    python scripts/eval_weekly.py sheet --variant v2          # 1件ずつ ○△× を付けるページ
-    python scripts/eval_weekly.py grades --variant v2 "1○ 2△ 3×"
+    EVAL_USER_ID=<作者のUID> python scripts/eval_weekly.py run --variant v3
+    python scripts/eval_weekly.py sheet --variant v3          # 1件ずつ ○△× を付けるページ
+    python scripts/eval_weekly.py grades --variant v3 "1○ 2△ 3×"
     python scripts/eval_weekly.py blind --variant v2          # いまの作りと伏せて並べるページ
     python scripts/eval_weekly.py picks "1A 2B 3同じ 4ダメ"
 
 `scripts/audit_ai.py` と同じく pytest には入れない。
 
-| variant | 呼ぶもの |
-|---|---|
-| `baseline` | `ai.get_weekly_review`（1回で観察を1つ） |
-| `v2` | `ai.read_weekly_review`（決まった手順で読み、問いを1つ置く・`modules/reader.py`） |
+| variant | 1件は | 呼ぶもの |
+|---|---|---|
+| `baseline` | 週 | `ai.get_weekly_review`（1回で観察を1つ） |
+| `v2` | 週 | `ai.read_weekly_review`（決まった手順で読み、問いを1つ置く） |
+| `v3` | 記録 | `ai.read_weekly_review(..., target_id=)`（**本人が選んだ記録について**問いを置く） |
 
 ## ここまでの結果
 
-- 2026-09-14 `baseline` と `v1`（記録どうしを並べて確かめてから観察を出す作り）を、
-  作者の記録20週で伏せて比べた。**作者の答えは20週すべて「どちらもダメ」。**
-  「知ってることの言い直し」「問いが無い・弱い」「黙るのもダメ」。v1 のコードは残していない
-- 2026-09-15 作者の判断で問いを主役にした `v2` を作った。いまの作りは全部ダメだったので、
-  伏せて比べても差しか分からない。**v2 だけを並べ、作者が1件ずつ ○（考えたくなる）
-  △（惜しい）×（ダメ）を付ける**
+- 2026-09-14 `baseline` と観察を並べる版（v1）を、作者の記録20週で伏せて比べた。
+  **作者の答えは20週すべて「どちらもダメ」。**v1 のコードは残していない
+- 2026-09-15〜22 問いを主役にした `v2` を作者が採点。**20週で ○11 △1 ×8**。
+  ×の理由は「記録がスルーされる」「前の週と同じ問い」「誰ではなく、どんな」「意図が意味不明」
+- 2026-09-22 作者の判断で、**訊いてほしい記録を本人が選ぶ**形にした（`v3`）。
+  1件は週ではなく記録。作者のテスト以外の記録すべてで動かす
 
 ## 記録をリポジトリに置かない
 
-`cases.json` にあるのは「いつ振り返るを押したか」の日付だけ。記録は動かすたびに
-`EVAL_USER_ID` のアカウントから読む。書き出す結果（`baseline/` `v2/` `blind.html`
-`blind_key.json` `picks.json`）は**記録の本文を含む**ので `.gitignore` で外している。
+`cases.json` にあるのは「いつ振り返るを押したか」の日付だけ。`v3` の1件は
+その場で作者の記録から組み立てる。記録は動かすたびに `EVAL_USER_ID` のアカウントから読む。
+書き出す結果は**記録の本文を含む**ので `.gitignore` で外している。
 
 テストのための記録（「テスト」とだけ書いたもの）は外す。作者の記録に4件ある。
 
@@ -67,17 +68,25 @@ SEED = "2026-09-14"
 USAGE_KEYS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 # 100万トークンあたりのドル（入力, 出力）。キャッシュの読みは入力の0.1倍、書きは1.25倍
 PRICES = {"claude-sonnet-5": (2.00, 10.00), "claude-opus-5": (5.00, 25.00)}
+# 記録の長さで分けて見る。**短い日常の記録がスルーされていた**ので、長短で差が出ないかを見る
+SHORT_CHARS = 25
 
 
-def _baseline(period, previous):
+def _baseline(period, previous, case):
     return ai.get_weekly_review(period, None, last_week_logs=previous or None)
 
 
-def _v2(period, previous):
+def _v2(period, previous, case):
     return ai.read_weekly_review(period, previous)
 
 
-VARIANTS = {"baseline": _baseline, "v2": _v2}
+def _v3(period, previous, case):
+    return ai.read_weekly_review(period, previous, target_id=case["target_id"])
+
+
+VARIANTS = {"baseline": _baseline, "v2": _v2, "v3": _v3}
+# 1件が記録の作り。ほかは週
+PER_RECORD = {"v3"}
 
 
 def is_test(log):
@@ -88,6 +97,28 @@ def is_test(log):
 def load_cases():
     with open(os.path.join(FLOW, "cases.json"), encoding="utf-8") as f:
         return json.load(f)["cases"]
+
+
+def record_cases(logs):
+    """記録1件ずつを1件にする。**その記録の日に押した**として、今週とその前の週を読む。
+
+    同じ日に何件もあるので、日付と順番で名前を付ける（記録の番号は外に出さない）。
+    """
+    by_date = {}
+    for log in sorted(logs, key=lambda l: (l.get("date", ""), str(l.get("id")))):
+        body = "".join((log.get(k) or "") for k in ("created", "enjoyable", "struggled", "next")).strip()
+        if log.get("date") and body:
+            by_date.setdefault(log["date"], []).append((log, body))
+    cases = []
+    for date, items in sorted(by_date.items()):
+        for k, (log, body) in enumerate(items, 1):
+            cases.append({
+                "id": f"rec-{date}-{k}",
+                "today": date,
+                "target_id": log.get("id"),
+                "tags": ["短い記録" if len(body) < SHORT_CHARS else "長い記録"],
+            })
+    return cases
 
 
 def select(cases, ids):
@@ -174,11 +205,12 @@ def run(args):
     os.makedirs(os.path.join(vdir, "traces"), exist_ok=True)
     results_path = os.path.join(vdir, "results.jsonl")
     errors_path = os.path.join(vdir, "errors.jsonl")
-    # **できた週は飛ばす。**途中で落ちても、やり直すと残りだけ呼ぶ
+    # **できた件は飛ばす。**途中で落ちても、やり直すと残りだけ呼ぶ
     done = {(r.get("prompt_id"), r.get("rep")) for r in read_jsonl(results_path)}
 
     logs = [l for l in load_logs(uid) if not is_test(l)]
-    cases = select(load_cases(), args.ids)
+    cases = record_cases(logs) if args.variant in PER_RECORD else load_cases()
+    cases = select(cases, args.ids)
     if args.limit:
         cases = cases[: args.limit]
     todo = [(c, rep) for c in cases for rep in range(args.reps) if (c["id"], rep) not in done]
@@ -195,8 +227,8 @@ def run(args):
         t0 = time.time()
         error = None
         try:
-            out = call(period, previous)
-        except Exception as e:  # 1週が落ちても、残りの週は回す
+            out = call(period, previous, case)
+        except Exception as e:  # 1件が落ちても、残りは回す
             out, error = None, f"{type(e).__name__}: {e}"
         finally:
             ai.RESPONSE_HOOK = None
@@ -232,10 +264,12 @@ def run(args):
             patterns = json.loads(out).get("patterns") or []
         except (json.JSONDecodeError, AttributeError):
             patterns = []
+        entries = reader.label(period, previous)
+        target_ref = reader.find_ref(entries, case.get("target_id"))
         row = {
             "prompt_id": case["id"],
             "rep": rep,
-            "prompt": reader.as_text(reader.label(period, previous)),
+            "prompt": reader.as_text(entries, target_ref),
             "tags": case.get("tags", []),
             "meta": {"today": case["today"], "calls": len(calls), "stop_reasons": stops,
                      "no_call": not calls},
@@ -287,18 +321,20 @@ def _md(date):
 
 
 def _split(prompt):
-    """`reader.as_text` の文を、今週とその前の週の (日付, 本文) に戻す"""
-    week, prev, target = [], [], None
+    """`reader.as_text` の文を、選んだ記録・今週・その前の週の (日付, 本文) に戻す"""
+    target, week, prev, into = [], [], [], None
     for line in prompt.splitlines():
-        if line.startswith("【今週"):
-            target = week
+        if line.startswith("【訊いてほしい記録"):
+            into = target
+        elif line.startswith("【今週"):
+            into = week
         elif line.startswith("【その前の週"):
-            target = prev
+            into = prev
         else:
             m = re.match(r"^[WP]\d+（(.+?)）: (.*)$", line)
-            if m and target is not None:
-                target.append((m.group(1), m.group(2)))
-    return week, prev
+            if m and into is not None:
+                into.append((m.group(1), m.group(2)))
+    return target, week, prev
 
 
 def _records_html(rows):
@@ -340,6 +376,7 @@ main{max-width:680px;margin:0 auto;padding:20px 16px 60px}h1{font-size:20px;marg
 header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px}.no{font-weight:700;font-size:18px;min-width:1.6em}
 .when{font-weight:600}.chip{background:var(--sand);color:var(--sandink);border-radius:999px;padding:0 10px;font-size:12px}
 h3{font-size:13px;color:var(--sub);margin:10px 0 4px;font-weight:600}.rec{border-top:1px solid var(--line);padding:6px 0}
+.pick .rec{border-top:none;font-weight:600}
 .date{font-size:12px;color:var(--sub);margin-right:8px}.none{color:var(--sub);font-size:13px;padding:6px 0}
 details{margin-top:6px}summary{color:var(--sub);font-size:13px;cursor:pointer}
 .pair{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}@media (min-width:560px){.pair{grid-template-columns:1fr 1fr}}
@@ -359,37 +396,57 @@ def _page(title, lead, sections):
     )
 
 
-def _case_head(n, case, prompt):
-    week, prev = _split(prompt)
-    return (
+def _case_head(n, today, tag, prompt):
+    target, week, prev = _split(prompt)
+    head = (
         f'<header><span class="no">{n}</span>'
-        f'<span class="when">{_md(case["today"])}に押したとき</span>'
-        f'<span class="chip">今週{html.escape(case["tags"][0])}</span></header>'
-        f'<h3>今週の記録</h3>{_records_html(week)}'
+        f'<span class="when">{_md(today)}に押したとき</span>'
+        f'<span class="chip">{html.escape(tag)}</span></header>'
+    )
+    if target:
+        # **選んだ記録を先に、太く。**ほかの記録は開けば見える
+        others = [r for r in week if r not in target]
+        return (
+            head + f'<h3>訊いてほしい記録</h3><div class="pick">{_records_html(target)}</div>'
+            f'<details><summary>今週のほかの記録（{len(others)}件）</summary>{_records_html(others)}</details>'
+            f'<details><summary>その前の週の記録（{len(prev)}件）</summary>{_records_html(prev)}</details>'
+        )
+    return (
+        head + f'<h3>今週の記録</h3>{_records_html(week)}'
         f'<details><summary>その前の週の記録（{len(prev)}件）</summary>{_records_html(prev)}</details>'
     )
+
+
+def _tag(row):
+    tags = row.get("tags") or []
+    if not tags:
+        return "—"
+    return tags[0] if tags[0].endswith("記録") else f"今週{tags[0]}"
 
 
 def sheet(args):
     """1件ずつ ○△× を付けるページ。**伏せない**ので、きっかけの日付も出す"""
     rows = latest(args.variant)
-    cases = [c for c in select(load_cases(), args.ids) if c["id"] in rows]
-    if not cases:
+    ordered = sorted(rows.values(), key=lambda r: (r["meta"]["today"], r["prompt_id"]))
+    if args.ids:
+        wanted = set(args.ids.split(","))
+        ordered = [r for r in ordered if r["prompt_id"] in wanted]
+    if not ordered:
         print(f"{args.variant} の結果が無い。先に run を動かすこと。")
         return 2
     vdir = os.path.join(FLOW, args.variant)
     key, sections = [], []
-    for n, c in enumerate(cases, 1):
-        key.append({"no": n, "id": c["id"]})
+    for n, r in enumerate(ordered, 1):
+        key.append({"no": n, "id": r["prompt_id"], "tag": _tag(r)})
         sections.append(
-            f'<section class="case">{_case_head(n, c, rows[c["id"]]["prompt"])}'
-            f'{_output_html("", rows[c["id"]]["output"], show_dates=True)}</section>'
+            f'<section class="case">{_case_head(n, r["meta"]["today"], _tag(r), r["prompt"])}'
+            f'{_output_html("", r["output"], show_dates=True)}</section>'
         )
-    lead = ("その日に「振り返る」を押したら出る問いです。1件ずつ、<b>○ 考えたくなる</b>、"
+    lead = ("その記録について「訊いてほしい」と押したら出る問いです。1件ずつ、<b>○ 考えたくなる</b>、"
             "<b>△ 惜しい</b>、<b>× ダメ</b> を付けてください。<br>"
             "返信は「1○ 2△ 3×」の形で。△と×には、ひとことでも理由があると直しやすくなります。")
     with open(os.path.join(vdir, "sheet.html"), "w", encoding="utf-8") as f:
-        f.write(_page(f"今週の振り返り・問いを見る（{len(cases)}週）", lead, sections))
+        f.write(_page(f"振り返りの問いを見る（{len(ordered)}件）", lead, sections))
     with open(os.path.join(vdir, "sheet_key.json"), "w", encoding="utf-8") as f:
         json.dump(key, f, ensure_ascii=False, indent=1)
     print(os.path.join(vdir, "sheet.html"))
@@ -403,28 +460,27 @@ def grades(args):
         print("sheet_key.json が無い。先に sheet を動かすこと。")
         return 2
     with open(key_path, encoding="utf-8") as f:
-        key = {k["no"]: k["id"] for k in json.load(f)}
+        key = {k["no"]: k for k in json.load(f)}
     text = unicodedata.normalize("NFKC", args.text).replace("〇", "○").replace("◯", "○")
     marks = {}
-    for no, mark in re.findall(r"(\d+)\s*[:\-]?\s*([○△×xX])", text):
+    for no, mark in re.findall(r"(\d+)\s*[:\-.]?\s*([○△×xX])", text):
         no = int(no)
         if no in key:
             marks[no] = "×" if mark in "xX" else mark
     with open(os.path.join(vdir, "grades.json"), "w", encoding="utf-8") as f:
-        json.dump([{"no": n, "id": key[n], "mark": marks[n]} for n in sorted(marks)], f,
+        json.dump([{"no": n, "id": key[n]["id"], "mark": marks[n]} for n in sorted(marks)], f,
                   ensure_ascii=False, indent=1)
-    tags = {c["id"]: c["tags"][0] for c in load_cases()}
     counts = Counter(marks.values())
-    print(f"付けた {len(marks)} 週 / 付けていない番号: {sorted(set(key) - set(marks)) or 'なし'}")
+    print(f"付けた {len(marks)} 件 / 付けていない番号: {sorted(set(key) - set(marks)) or 'なし'}")
     print(f"  ○ {counts['○']} / △ {counts['△']} / × {counts['×']}")
     scores = [{"○": 1.0, "△": 0.5, "×": 0.0}[m] for m in marks.values()]
     if len(scores) >= 2:
         mean = sum(scores) / len(scores)
         half = 1.96 * statistics.stdev(scores) / math.sqrt(len(scores))
         print(f"  点（○=1 △=0.5 ×=0）{mean:.2f}（95%の幅 {max(0.0, mean - half):.2f}〜{min(1.0, mean + half):.2f}）")
-    for tag in sorted({tags[key[n]] for n in marks}):
-        group = Counter(m for n, m in marks.items() if tags[key[n]] == tag)
-        print(f"  今週{tag}: ○ {group['○']} / △ {group['△']} / × {group['×']}")
+    for tag in sorted({key[n].get("tag", "—") for n in marks}):
+        group = Counter(m for n, m in marks.items() if key[n].get("tag", "—") == tag)
+        print(f"  {tag}: ○ {group['○']} / △ {group['△']} / × {group['×']}")
     return 0
 
 
@@ -442,7 +498,7 @@ def blind(args):
                     "A": args.variant if new_is_a else "baseline",
                     "B": "baseline" if new_is_a else args.variant})
         sections.append(
-            f'<section class="case">{_case_head(n, c, base[c["id"]]["prompt"])}'
+            f'<section class="case">{_case_head(n, c["today"], f"今週{c["tags"][0]}", base[c["id"]]["prompt"])}'
             f'<div class="pair">{_output_html("A", a[c["id"]]["output"])}{_output_html("B", b[c["id"]]["output"])}</div>'
             "</section>"
         )
@@ -504,16 +560,16 @@ def main():
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="作者の記録で呼ぶ（課金される）")
     r.add_argument("--variant", choices=sorted(VARIANTS), required=True)
-    r.add_argument("--ids", help="呼ぶ週を , 区切りで選ぶ（例: week-2026-09-14,week-2026-08-12）")
-    r.add_argument("--limit", type=int, help="先頭から何週だけ呼ぶか")
+    r.add_argument("--ids", help="呼ぶ件を , 区切りで選ぶ（例: week-2026-09-14 / rec-2026-09-09-1）")
+    r.add_argument("--limit", type=int, help="先頭から何件だけ呼ぶか")
     r.add_argument("--reps", type=int, default=1)
     s = sub.add_parser("sheet", help="1件ずつ ○△× を付けるページを作る")
-    s.add_argument("--variant", default="v2")
+    s.add_argument("--variant", default="v3")
     s.add_argument("--ids")
     g = sub.add_parser("grades", help="作者が付けた ○△× を数える")
-    g.add_argument("--variant", default="v2")
+    g.add_argument("--variant", default="v3")
     g.add_argument("text")
-    b = sub.add_parser("blind", help="いまの作りと伏せて並べたページを作る")
+    b = sub.add_parser("blind", help="いまの作りと伏せて並べたページを作る（週の作りどうし）")
     b.add_argument("--variant", default="v2")
     k = sub.add_parser("picks", help="伏せたページで作者が選んだものを数える")
     k.add_argument("text")
