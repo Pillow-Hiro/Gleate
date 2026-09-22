@@ -76,8 +76,15 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
   return (
     <View>
       <View className="flex-row items-center justify-center gap-2 mb-2">
-        <Pressable onPress={prevMonth} className="p-1" accessibilityLabel="前月">
-          <Text className="text-outline text-aux">‹</Text>
+        {/* **矢印を押しやすく**（2026-09-22・作者「日付移動のボタンが小さいので
+            少しだけ大きく」）。字を少し大きくし、指の当たる範囲を 44pt にする。
+            枠は付けない——見た目は「少しだけ」にとどめる */}
+        <Pressable
+          onPress={prevMonth}
+          className="min-w-touch min-h-touch items-center justify-center"
+          accessibilityLabel="前月"
+        >
+          <Text className="text-outline text-body-lg">‹</Text>
         </Pressable>
         <Text className="font-strong text-body-md text-on-surface w-28 text-center">
           {viewYear}年{viewMonth + 1}月
@@ -85,10 +92,10 @@ export default function ActivityCalendar({ logs, selectedDate, onDateSelect }) {
         <Pressable
           onPress={nextMonth}
           disabled={isCurrentMonth}
-          className="p-1 disabled:opacity-25"
+          className="min-w-touch min-h-touch items-center justify-center disabled:opacity-25"
           accessibilityLabel="翌月"
         >
-          <Text className="text-outline text-aux">›</Text>
+          <Text className="text-outline text-body-lg">›</Text>
         </Pressable>
         {/* **「今日」と書く**（2026-08-23）。押すと `goToday` が走り、
             今月を出したうえで**今日を選ぶ。**「今月」だと、
