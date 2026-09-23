@@ -1014,10 +1014,14 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
     )
 
 
-# 深掘り（2026-09-13・作者との壁打ち）。**有料・Opus 5。**
+# 深掘り（2026-09-13 / 2026-09-24・作者との壁打ち）。**有料・Opus 5。**
 #
-# ひとつの観察を、この3か月の記録に戻して深める。この場所でだけ
+# ひとつの記録を、これまでの記録に戻して**見立てを1つ立てる。**この場所でだけ
 # Gleate の見立て（解釈の候補）を置いてよい（`CLAUDE.md`）。
+#
+# **主役は見立て。**記録を並べるのは根拠を示すためだけ（作者「記録を並べるのはサブで、
+# 本質はその記録を読んで、深い見立てを建てること」）。見立てを2つ並べて選ばせる形は、
+# 選んでも何も起きず、作者から「意味がよくわからない」——やめた。
 #
 # **語ではなく記録で読む。**語の一致を足場にすると、同じ話の記録が落ち、
 # 違う話の記録が混ざり、語から本人の書いていない話ができる
@@ -1026,77 +1030,97 @@ def get_monthly_review(period_logs, goals, last_month_logs=None):
 # 返ってきた日付と引用は `modules/deepen.py` が実在する記録に照らして通す。
 _DEEPEN_SYSTEM = lantern_prompt(
     "この深掘りの指針",
-    """ひとつの観察を、この3か月の記録に戻して深めます。
+    """ひとつの記録と、それに添えた問いを渡します。あわせて、その人がこれまでに書いた記録を渡します。
 **この場所でだけ、見立て（解釈の候補）を置いてよい。**
-決めつけない。「つまり〜です」「〜な人です」と言わず、「〜かもしれません」と候補として置く。
 
-【読み方】
-- 観察と同じ話をしている記録を探す。**語が同じかどうかではなく、書かれた文で判断する。**
+【見立ての作り方】
+- 渡した記録と同じ話をしている記録を、これまでの記録から探す。**語が同じかどうかではなく、書かれた文で判断する。**
 - 同じ語でも違う話なら含めない。違う言い方でも同じ話なら含める。
+- **2件以上の記録にまたがって、初めて言えることを言う。**1件を言い直すだけの見立ては置かない。
+- 決めつけない。「つまり〜です」「〜な人です」と言わず、「〜かもしれません」と候補として置く。
 - 本人が書いていないことを、書いてあったことのように言わない。
 - **書かれていないことを、無かったことのように言わない。**「その日は音に触れていない」とは言えない——書いていないだけかもしれない。
-- 同じ話に見える記録が無ければ、found を false にして、何も作らない。
+- 「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。
+- 評価しない・褒めない・励まさない。行動を勧めない（「〇〇しましょう」「〜してみては」を使わない）。箇条書きの報告口調にしない。
+- 同じ話に見える記録が2件に満たなければ、found を false にして、何も作らない。
 
 【返すもの】
-- records … 同じ話として読んだ記録。日付と、その記録の中の文をそのまま抜き出した quote。多くて8件
-- readings … 見立ての候補。多くて2つ。1つに決めない。dates に、その見立ての根拠にした記録の日付を入れる
-- question … 見立てを受けて深めた問い。1文。答えを迫らない。「。」で終える
-
-評価しない・褒めない・励まさない。行動を勧めない（「〇〇しましょう」「〜してみては」を使わない）。
-箇条書きの報告口調にしない。
-
-【出力形式】
-必ずJSON形式のみで返す。前置き・説明・Markdownは一切不要。
-{"found": true, "records": [{"date": "2026-09-02", "quote": "記録の中の文をそのまま"}], "readings": [{"text": "見立て（1〜2文）", "dates": ["2026-09-02"]}], "question": "深めた問い"}
+- found … 同じ話の記録が2件以上あれば true
+- reading … 見立て。**3行（2〜4文）に収める。**長くしない
+- records … 見立てが立っている記録。date と、その記録の中の文をそのまま抜き出した quote（30文字まで）。多くて3件
+- question … 見立てを受けて深めた問い。1文。答えを迫らない。「。」で終える。「？」を使わない
 
 【良い例】
-{"found": true, "records": [{"date": "2026-09-02", "quote": "音響の調整が難しい"}, {"date": "2026-09-11", "quote": "音響の調整にまた手間取った"}], "readings": [{"text": "2日も11日も、音そのものより、合わせる手間のほうに言葉が向いているのかもしれません。", "dates": ["2026-09-02", "2026-09-11"]}], "question": "合わせようとしていたのは、音そのものだったのでしょうか。"}
+{"found": true, "reading": "音そのものより、合わせる手間のほうに言葉が向いているのかもしれません。9月2日も9月11日も、難しいと書かれているのは音の良し悪しではなく、合わせる作業のほうです。", "records": [{"date": "2026-09-02", "quote": "音響の調整が難しい"}, {"date": "2026-09-11", "quote": "音響の調整にまた手間取った"}], "question": "合わせようとしていたのは、音そのものだったのでしょうか。"}
 
 【悪い例】
-{"found": true, "records": [], "readings": [{"text": "あなたは完璧主義な傾向があります。", "dates": []}], "question": "次は音響の本を読んでみてはどうですか？"}""",
+{"found": true, "reading": "あなたは完璧主義な傾向があります。", "records": [], "question": "次は音響の本を読んでみてはどうですか？"}
+人柄を断じていて、根拠の記録が無く、問いが行動を勧めている。""",
 )
+
+# 返す形。**この形の JSON しか返らない**（`call_claude` の `schema`）
+_DEEPEN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "found": {"type": "boolean"},
+        "reading": {"type": "string"},
+        "records": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"date": {"type": "string"}, "quote": {"type": "string"}},
+                "required": ["date", "quote"],
+                "additionalProperties": False,
+            },
+        },
+        "question": {"type": "string"},
+    },
+    "required": ["found", "reading", "records", "question"],
+    "additionalProperties": False,
+}
+
+# **画面が待っている。**作者「45秒は長すぎる。遅くとも10秒以内にしてください」。
+#
+# 2026-09-24 に作者の記録31件で測った（全部読ませて、見立て1つ）。
+#
+# | 設定 | かかった時間 | 1回 |
+# |---|---|---|
+# | Opus 5・考える深さ 既定（high） | 9.1〜13.4秒 | 約4円 |
+# | Opus 5・低い（low）＋出す量を絞る | 6.2〜7.9秒 | 約3円 |
+# | Sonnet 5・低い | 3.9〜5.0秒 | 約1円 |
+#
+# Sonnet は速いが、見立てが「旅行の記録が2件あります」で止まった。**有料の機能なので
+# Opus を残し、考える深さを下げる。**速い口（fast mode）はこのアカウントでは使えない（上限0）。
+#
+# 記録の量を増やしても時間は変わらない（2万文字でも6.6〜7.7秒）。増えるのは費用だけなので、
+# 読む量は `deepen.MAX_CHARS` で切る。
+_DEEPEN_TIMEOUT_SECONDS = 10
+_DEEPEN_MAX_TOKENS = 600
 
 
 def generate_deepen(observation, question, logs):
-    """観察を3か月分の記録に戻して深める。**画面にそのまま出せる形**を返す。
+    """ひとつの記録を、これまでの記録に戻して見立てを1つ立てる。
 
-    読むのはモデル、確かめるのは `modules/deepen.py`。
+    **画面にそのまま出せる形**を返す。読むのはモデル、確かめるのは `modules/deepen.py`。
     **読めなかったときは None。**「見つからなかった」（found: false）とは分ける。
     """
-    import json as _json
-    import re as _re
     from modules import deepen as _deepen
 
     if not observation or not logs:
         return _deepen.empty()
 
-    asked = f"（そのとき添えた問い: {question}）\n" if question else ""
+    asked = f"（そのとき置いた問い: {question}）\n" if question else ""
     user_message = (
-        f"【深掘りする観察】\n{observation}\n{asked}\n"
-        f"【この3か月の記録】{_fmt_logs(logs)}\n\n"
-        "上記の記録を読んで返してください。"
+        f"【深掘りする記録】\n{observation}\n{asked}\n"
+        f"【これまでの記録】{_fmt_logs(logs)}\n\n"
+        "上記を読んで返してください。"
     )
-    raw = call_claude(
-        _DEEPEN_SYSTEM, user_message, max_tokens=1500,
-        model=_MODEL_DEEP, timeout=_DEEP_TIMEOUT_SECONDS,
-    )
-    if not raw or raw == _TIMEOUT_MESSAGE:
-        return None
-
-    text = _re.sub(r'^```(?:json)?\s*', '', raw.strip())
-    text = _re.sub(r'\s*```$', '', text)
-    data = None
-    try:
-        data = _json.loads(text)
-    except _json.JSONDecodeError:
-        m = _re.search(r'\{.*\}', text, _re.DOTALL)
-        if m:
-            try:
-                data = _json.loads(m.group())
-            except _json.JSONDecodeError:
-                data = None
+    data = _json_or_none(call_claude(
+        _DEEPEN_SYSTEM, user_message, max_tokens=_DEEPEN_MAX_TOKENS,
+        model=_MODEL_DEEP, timeout=_DEEPEN_TIMEOUT_SECONDS, retries=0,
+        schema=_DEEPEN_SCHEMA, effort="low",
+    ))
     if data is None:
-        print(f"[AI] JSON解析に失敗（deepen）。{_shape(raw)}")
         return None
     return _deepen.ground(data, logs)
 

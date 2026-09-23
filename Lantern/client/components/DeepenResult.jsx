@@ -1,19 +1,26 @@
-import { Pressable, View } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import { AccessibilityInfo, Animated, Easing, Pressable, View } from 'react-native'
 import Text from './Text'
 import MarginNote from './MarginNote'
+import { splitSentences } from '../lib/sentences'
 
-// 深掘りの結果（2026-09-13・作者との壁打ち）。
+// 深掘りの結果（2026-09-13 / 2026-09-24・作者との壁打ち）。
 //
-// ## 事実と見立てを別の段に置く
+// ## 主役は見立て（2026-09-24・作者の判断）
 //
-// 上に「同じ話として読んだ記録」、下に「Gleateの見立て」。
-// `CLAUDE.md`「深掘りでは Gleate の見立てを置いてよい」は、見立てを
-// **事実とも本人の結論とも混ざらないように置く**と決めている。画面の形で守る。
+// 作者から「**記録を並べるのがメインになっている。記録を並べるのはサブで、
+// 本質はその記録を読んで、深い見立てを建てることだ**」。
 //
-// ## 件数ではなく、記録そのものを見せる
+// それまでは上に記録を8件まで並べ、下に見立ての候補を2つ置いて選ばせていた。
+// いまは**見立てが1つ、いちばん上。**記録は、その見立てがどこに立っているかを
+// 示すために、日付だけを下に小さく置く。押すとその日の記録が開く
+// （無料。自分の記録への道に料金をかけない）。
 //
-// 本人が書いた文が並ぶので、**見当外れなら本人がすぐ気づける。**
-// 押すとその日の記録が開く（無料。自分の記録への道に料金をかけない）。
+// ## 出来た文を1文ずつ出す
+//
+// 作者から「**ロード中だと不安なので、できた文章をフェードインするみたいに**」。
+// 届いた見立てを句点で切り、1文ずつ薄く浮かび上がらせる（`lib/sentences.js`）。
+// **動きを減らす設定の人には、いきなり全部出す**（`AccessibilityInfo`）。
 //
 // ## AIとは名乗らない
 //
@@ -29,12 +36,59 @@ export function shortDate(date) {
   return m && d ? `${m}月${d}日` : String(date || '')
 }
 
-// ## 見立ては選べる（2026-09-22・作者の判断）
-//
-// `CLAUDE.md` は見立てを「候補として出す。1つに決めない。**選ぶのは書いた人**」と
-// 決めている。押すと、その見立てを選んだことが残る（`lib/readingChoice.js`）。
-// **選んでも何も起きない。**合わない方は選ばれないだけで済む。
-export default function DeepenResult({ result, onOpenRecord, chosen = null, onChoose }) {
+// 1文が現れるまでの間。**速すぎると点滅に見え、遅いと待たされる**
+const STEP_MS = 320
+const FADE_MS = 420
+
+/** 1文。順番が来たら薄く浮かび上がる */
+function Sentence({ text, index, instant }) {
+  const opacity = useRef(new Animated.Value(instant ? 1 : 0)).current
+
+  useEffect(() => {
+    if (instant) {
+      opacity.setValue(1)
+      return
+    }
+    const animation = Animated.timing(opacity, {
+      toValue: 1,
+      duration: FADE_MS,
+      delay: index * STEP_MS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    })
+    animation.start()
+    return () => animation.stop()
+  }, [index, instant, opacity])
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <Text className="text-body-md text-on-surface leading-loose">{text}</Text>
+    </Animated.View>
+  )
+}
+
+/** 見立て。**届いてから1文ずつ出す** */
+function Reading({ text }) {
+  const [instant, setInstant] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    AccessibilityInfo.isReduceMotionEnabled?.()
+      .then((reduce) => { if (!cancelled && reduce) setInstant(true) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  return (
+    <View className="gap-1.5">
+      {splitSentences(text).map((sentence, i) => (
+        <Sentence key={i} text={sentence} index={i} instant={instant} />
+      ))}
+    </View>
+  )
+}
+
+export default function DeepenResult({ result, onOpenRecord }) {
   if (!result) return null
 
   if (!result.found) {
@@ -49,56 +103,12 @@ export default function DeepenResult({ result, onOpenRecord, chosen = null, onCh
 
   return (
     <View className="gap-3">
-      {/* 記録の枠。**本人が書いた文だけを置く** */}
-      <View className="bg-surface-lowest border border-border rounded-lg px-5 py-4 gap-1">
-        <Text className="text-label-sm text-outline">同じ話として読んだ記録</Text>
-        {result.records.map((r) => (
-          <Pressable
-            key={r.id || `${r.date}-${r.excerpt}`}
-            onPress={() => onOpenRecord?.(r.date)}
-            accessibilityLabel={`${shortDate(r.date)}の記録を開く`}
-            className="py-1.5 active:opacity-70"
-          >
-            <Text className="text-label-sm text-outline">{shortDate(r.date)}</Text>
-            <Text className="text-body text-on-surface leading-relaxed">{r.excerpt}</Text>
-          </Pressable>
-        ))}
-      </View>
-
       {/* **見立ての枠**（2026-09-14・作者から「見立て部分からも枠で囲いましょう。
           どこから見立てなのか分かりません」）。
-
-          それまでは記録と見立てを1つの枠に入れ、見出しと間だけで分けていた。
-          **本人の文と Gleate の言葉が地続きに見えていた。**
-          見立ては Gleate の言葉なので、振り返りの観察と同じ砂色の面に置く。
-          問いと「当てはまらないこともあります」も、この枠の中に入れる */}
-      <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-4 gap-2.5">
+          見立ては Gleate の言葉なので、振り返りの観察と同じ砂色の面に置く */}
+      <View className="bg-ai-surface/60 border border-ai-ink/20 rounded-lg px-5 py-5 gap-3">
         <Text className="text-label-sm text-ai-ink">Gleateの見立て</Text>
-        {result.readings.map((reading, i) => {
-          const picked = chosen === i
-          return (
-            <Pressable
-              key={i}
-              onPress={() => onChoose?.(i, reading)}
-              disabled={!onChoose}
-              accessibilityLabel={picked ? '選んだ見立て' : 'この見立てを選ぶ'}
-              className={picked
-                ? 'gap-0.5 rounded-lg border border-ai-ink/30 bg-ai-surface px-3 py-2'
-                : 'gap-0.5 rounded-lg px-3 py-2 active:opacity-70'}
-            >
-              <Text className="text-body text-on-surface leading-relaxed">{reading.text}</Text>
-              <Text className="text-label-sm text-outline">
-                {reading.dates.map(shortDate).join('・')}の記録から
-              </Text>
-              {picked ? <Text className="text-label-sm text-ai-ink">選んだ見立て</Text> : null}
-            </Pressable>
-          )
-        })}
-
-        {/* **どちらか選べることを言う。**押せる形に見えないと押されない */}
-        {onChoose && result.readings.length > 1 && chosen === null ? (
-          <Text className="text-label-sm text-outline">近いほうを選べます。</Text>
-        ) : null}
+        <Reading text={result.reading} />
 
         {result.question ? (
           <MarginNote>
@@ -108,6 +118,26 @@ export default function DeepenResult({ result, onOpenRecord, chosen = null, onCh
 
         <Text className="text-label-sm text-outline">当てはまらないこともあります。</Text>
       </View>
+
+      {/* 見立てが立っている記録。**本人が書いた文なので、見当外れならすぐ気づける** */}
+      {result.records?.length ? (
+        <View className="gap-1.5">
+          <Text className="text-label-sm text-outline">この見立てが立っている記録</Text>
+          {result.records.map((r) => (
+            <Pressable
+              key={r.id || `${r.date}-${r.excerpt}`}
+              onPress={() => onOpenRecord?.(r.date)}
+              accessibilityLabel={`${shortDate(r.date)}の記録を開く`}
+              className="flex-row gap-2.5 py-1.5 active:opacity-70"
+            >
+              <Text className="text-label-sm text-outline w-16">{shortDate(r.date)}</Text>
+              <Text className="flex-1 text-label-md text-on-surface-variant leading-relaxed">
+                {r.excerpt}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
     </View>
   )
 }

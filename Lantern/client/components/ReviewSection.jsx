@@ -10,7 +10,6 @@ import { useRouter } from 'expo-router'
 import GlassPressable from './GlassPressable'
 import DeepenResult, { shortDate } from './DeepenResult'
 import { useRefreshOnFocus } from '../lib/refreshOnFocus'
-import { chooseReading } from '../lib/readingChoiceStore'
 
 // 振り返りの出し方（2026-09-13・作者の指示「分かりやすく表示したい」→ B案）。
 //
@@ -246,19 +245,7 @@ export default function ReviewSection({ title, type, description }) {
           {/* 深掘り（2026-09-13）。**押すと全画面、閉じると結果がここに残る**
               （作者の指示）。一度深掘りしたものは、ボタンの代わりに結果を出す */}
           {patterns[0].deepen ? (
-            /* 見立ては、閉じたあとのここでも選べる（2026-09-22）。
-               深掘りの結果が出たあと、全画面へ戻る道が無い */
-            <DeepenResult
-              result={patterns[0].deepen}
-              onOpenRecord={openDate}
-              chosen={typeof patterns[0].deepen.chosen === 'number' ? patterns[0].deepen.chosen : null}
-              onChoose={async (index, reading) => {
-                await chooseReading({
-                  storageKey, index, reading, observation: patterns[0].observation,
-                })
-                reload()
-              }}
-            />
+            <DeepenResult result={patterns[0].deepen} onOpenRecord={openDate} />
           ) : (
             <View className="items-start gap-1 mt-1">
               <GlassPressable

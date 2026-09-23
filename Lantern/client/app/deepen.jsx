@@ -10,7 +10,6 @@ import Paywall from '../components/Paywall'
 import GlassPressable from '../components/GlassPressable'
 import { authFetch } from '../lib/supabase'
 import { paywallMessage, readMaybePaywall } from '../lib/plan'
-import { chooseReading } from '../lib/readingChoiceStore'
 
 // 深掘りの全画面（2026-09-13・作者の指示「全画面にして、閉じたらカードのすぐ下に開く形」）。
 //
@@ -100,19 +99,6 @@ export default function DeepenScreen() {
     router.navigate({ pathname: '/journal', params: { date } })
   }
 
-  // 見立てを選ぶ（2026-09-22・作者の判断）。**選んだ事実を残すだけ**——
-  // 読み直さないので、料金も待ち時間も増えない（`lib/readingChoice.js`）
-  const [chosen, setChosen] = useState(null)
-  useEffect(() => {
-    const mark = pattern?.deepen?.chosen
-    setChosen(typeof mark === 'number' ? mark : null)
-  }, [pattern])
-
-  async function choose(index, reading) {
-    setChosen(index)
-    await chooseReading({ storageKey, index, reading, observation: pattern?.observation })
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top', 'bottom']}>
       <View className="flex-row items-center justify-between px-5 py-2">
@@ -138,12 +124,10 @@ export default function DeepenScreen() {
           />
         ) : null}
 
+        {/* **待っている間は静かにする**（2026-09-24・作者「ロード中だと不安」）。
+            偽の行を並べて読んでいるふりをしない。10秒以内に返る（`modules/ai.py`）*/}
         {loading ? (
-          <View className="bg-surface-low/60 rounded-lg px-5 py-5 gap-2.5">
-            <Text className="text-label-md text-outline">3か月分の記録を読んでいます...</Text>
-            <View className="h-3.5 bg-surface-high rounded-full w-full" />
-            <View className="h-3.5 bg-surface-high rounded-full w-4/5" />
-          </View>
+          <Text className="text-label-md text-outline">これまでの記録を読んでいます</Text>
         ) : null}
 
         {!loading && failed ? (
@@ -161,12 +145,7 @@ export default function DeepenScreen() {
         ) : null}
 
         {!loading && result ? (
-          <DeepenResult
-            result={result}
-            onOpenRecord={openRecord}
-            chosen={chosen}
-            onChoose={choose}
-          />
+          <DeepenResult result={result} onOpenRecord={openRecord} />
         ) : null}
 
         {restored && !pattern ? (

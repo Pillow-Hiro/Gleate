@@ -167,24 +167,33 @@ def _dates_match(text, used):
     return True
 
 
-def _quotes_real(text, used):
-    """文の中の「」が、**きっかけにした記録の文をそのまま写したものか。**
+def quotes_real(text, bodies):
+    """文の中の「」が、**渡した記録の文をそのまま写したものか。**
 
     2026-09-14 の試し。記録に書かれた一文を、観察の文では言い換えたまま
     かぎ括弧に入れていた。
     **かぎ括弧は本人の言葉の印なので、言い換えを入れると作られた引用になる。**
+
+    深掘りの見立ても同じ決まりで確かめる（`modules/deepen.py`）。
     """
-    bodies = [_squash(u["body"]) for u in used]
+    squashed = [_squash(b) for b in bodies]
     for inner in re.findall(r"「([^」]*)」", unicodedata.normalize("NFKC", text)):
         q = _squash(inner)
-        if q and not any(q in body for body in bodies):
+        if q and not any(q in body for body in squashed):
             return False
     return True
 
 
-def _is_question(text):
+def _quotes_real(text, used):
+    return quotes_real(text, [u["body"] for u in used])
+
+
+def is_question(text):
     """問いは「。」で終える。**「？」は答えを迫る形なので使わない**（`LANTERN_IDENTITY`）"""
     return text.endswith("。") and "？" not in text and "?" not in text
+
+
+_is_question = is_question
 
 
 def _outside_quotes(text):
@@ -211,9 +220,13 @@ BANNED = (
 )
 
 
-def _banned(text):
+def banned(text):
+    """禁止ワードが「」の外に入っていないか。深掘りの見立ても同じ決まりで見る"""
     plain = _outside_quotes(text)
     return any(word in plain for word in BANNED)
+
+
+_banned = banned
 
 
 # 問いの中の「」の長さの上限（空白を除いた文字数）。**引くのは短い言葉だけ。**

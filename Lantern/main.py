@@ -802,9 +802,9 @@ def generate_review():
     return jsonify({"patterns": patterns, "period_label": period_label})
 
 
-# 深掘り（2026-09-13・作者との壁打ち）。**有料。**
+# 深掘り（2026-09-13 / 2026-09-24・作者との壁打ち）。**有料。**
 #
-# 振り返りの観察ひとつを、この3か月の記録に戻して深める。
+# ひとつの記録を、これまでの記録に戻して**見立てを1つ立てる。**
 # **語ではなく記録で読む**（`modules/deepen.py` の冒頭）。
 #
 # 受け取るのは観察の文と問いだけ。**日付や件数は受け取らない**——
@@ -817,7 +817,7 @@ def generate_review():
 @require_paid
 @require_ai_budget
 def deepen_review():
-    from modules.deepen import DEEPEN_DAYS
+    from modules.deepen import recent
 
     data = request.get_json(silent=True) or {}
     observation = str(data.get("observation") or "").strip()[:400]
@@ -825,8 +825,9 @@ def deepen_review():
     if not observation:
         return jsonify({"error": "observation が要る"}), 400
 
-    since = days_ago_str(DEEPEN_DAYS)
-    logs = [l for l in load_logs(g.user_id) if l.get("date", "") >= since]
+    # **日付では切らない**（2026-09-24・作者「90日前以前の記録もスルーしている」）。
+    # 新しい順に、量で切る（`modules/deepen.py` の `recent`）
+    logs = recent(load_logs(g.user_id))
     result = generate_deepen(observation, question, logs)
     if result is None:
         return jsonify({"error": "読めなかった"}), 503
