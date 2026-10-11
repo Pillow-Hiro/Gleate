@@ -377,6 +377,18 @@ def make_hint():
 # 特に service_role キーを使う Supabase クエリは user_id で必ずフィルタする
 # （フィルタ漏れは他ユーザーのデータ漏洩に直結する）。
 
+# 生きているかだけを返す（2026-10-11・Cloud Run へ移すため）。
+#
+# **外には何も訊かない。**`/api/debug/version` は Apple に署名を出して
+# 確かめるので、温め直しに使うと10分ごとに Apple を叩くことになる。
+#
+# 使い道は2つ。器が立ち上がったかの確認と、**眠らせないための定期の一叩き**
+# （`docs/deploy-cloudrun.md`）。返すのは真偽値1つで、利用者のものは何も含まない。
+@app.route("/api/health")
+def health():
+    return jsonify({"ok": True})
+
+
 @app.route("/api/debug/version")
 def debug_version():
     # 認証なしで残している。デプロイ後の稼働バージョン確認を curl 一発でやるため。
@@ -384,7 +396,11 @@ def debug_version():
     # （リダイレクトURIは OAuth 中にユーザーのブラウザから見える値）。
     # コミットはハードコードしない。以前は固定文字列を返していたため、
     # 何をデプロイしても同じ値が返り、稼働バージョンの判定を誤らせた。
-    # RENDER_GIT_COMMIT は Render が自動で設定する。ローカルでは未設定になる。
+    # コミットとブランチは置き場所ごとに別の変数で届く（2026-10-11）。
+    # Cloud Run は `GIT_COMMIT` / `GIT_BRANCH`（`Dockerfile` の ARG に
+    # Cloud Build が `$SHORT_SHA` / `$BRANCH_NAME` を渡す）。
+    # Render は `RENDER_GIT_*` を自動で入れる。**両方を見る**——
+    # 移している途中は、どちらが本番かが日によって変わる。
     # リダイレクトURIは環境変数の生値ではなく、モジュールが実際に使う解決後の値を返す。
     # 生値だと「未設定」としか分からず、何処へリダイレクトするのかが見えない。
     #
@@ -394,7 +410,9 @@ def debug_version():
     from modules.youtube import REDIRECT_URI as youtube_redirect
     from modules.twitch import REDIRECT_URI as twitch_redirect
 
-    on_render = bool(os.environ.get("RENDER_GIT_COMMIT"))
+    commit = os.environ.get("GIT_COMMIT") or os.environ.get("RENDER_GIT_COMMIT") or "unknown"
+    branch = os.environ.get("GIT_BRANCH") or os.environ.get("RENDER_GIT_BRANCH") or "unknown"
+    deployed = commit != "unknown"
     misconfigured = [
         name
         for name, uri in (("youtube", youtube_redirect), ("twitch", twitch_redirect))
@@ -419,8 +437,8 @@ def debug_version():
     apple_music = applemusic.verify()
 
     return jsonify({
-        "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:7],
-        "branch": os.environ.get("RENDER_GIT_BRANCH", "unknown"),
+        "commit": commit[:7],
+        "branch": branch,
         "youtube_redirect": youtube_redirect,
         "twitch_redirect": twitch_redirect,
         # ok … 検索が返る / empty … 受け付けられたが曲が0件
@@ -428,7 +446,7 @@ def debug_version():
         # bad_key … 変数はあるが PEM が読めない / unset … 変数が足りない
         "apple_music": apple_music,
         # 本番なのに localhost を指しているものがあれば設定漏れ
-        "redirect_misconfigured": misconfigured if on_render else [],
+        "redirect_misconfigured": misconfigured if deployed else [],
     })
 
 

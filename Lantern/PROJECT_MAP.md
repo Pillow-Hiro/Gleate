@@ -32,7 +32,7 @@
 | 画面 | `client/app/` | expo-router。ファイル名がURLになる |
 | 部品 | `client/components/` | 23ファイル |
 | 純粋関数 | `client/lib/` | vitest の対象。ここだけを test している |
-| API | `main.py` | ルートは全てここ。43ルール / 40パス。本番は gunicorn が読み込む |
+| API | `main.py` | ルートは全てここ。44ルール / 41パス。本番は gunicorn が読み込む |
 | ドメイン | `modules/` | Flask に依存しない処理 |
 | 検査 | `tests/`（pytest）/ `client/lib/*.test.js`（vitest） | |
 | 静的配信 | `client/public/` | expo export が出力の直下へ複製する。**SPAを通らないのでログイン不要で開ける** |
@@ -274,7 +274,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 
 ---
 
-## 6. API（`main.py`・43ルール / 40パス）
+## 6. API（`main.py`・44ルール / 41パス）
 
 `callback` の2本を除き、全てに `@require_auth` が付く。
 `test_route_auth.py` が全ルートを走査して固定している。
@@ -291,7 +291,7 @@ vitest は `client/lib/` の純粋関数だけを対象にする（`vitest.confi
 | Twitch | `auth-url`・`callback`・`status`・`disconnect`・`streams`・`channel`・`stream-insight` |
 | アカウント | `DELETE /api/account`（記録・アイデア・連携・認証をすべて消す） |
 | Apple Music | `GET /api/apple-music/token`（MusicKit の開発者トークン。鍵が無ければ 503）／`GET /api/apple-music/search?q=`（曲を探す。**こちらで代わりに叩く**） |
-| 運用 | `GET /api/debug/version` |
+| 運用 | `GET /api/health`（生きているかだけ。眠らせないための一叩き）・`GET /api/debug/version` |
 
 `serve_react` は 2026-08-04 に削除した。Flask は静的ファイルを配らない。
 

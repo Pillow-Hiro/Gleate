@@ -1,0 +1,43 @@
+# GitHub に push したら器を作って差し替える（2026-10-11）。
+#
+# Render は push を見て自動で入れ替えていた。**同じ速さを保つ**ために、
+# Cloud Build の引き金（trigger）を `main` に付ける（`docs/deploy-cloudrun.md`）。
+#
+# 無料枠は月2,500分。1回の作り直しは2〜4分なので、1日20回押しても収まる。
+#
+# `$SHORT_SHA` と `$BRANCH_NAME` は Cloud Build が入れる。器の中の
+# `GIT_COMMIT` / `GIT_BRANCH` になり、`/api/debug/version` から見える。
+#
+# **環境変数（鍵）はここに書かない。**サービス側に付けたものが引き継がれる
+# （`--set-env-vars` を渡さなければ、Cloud Run は今の値を保つ）。
+substitutions:
+  _SERVICE: lantern-api
+  _REGION: asia-northeast1
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=GIT_COMMIT=$SHORT_SHA
+      - --build-arg=GIT_BRANCH=$BRANCH_NAME
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, $_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA
+      - --region=$_REGION
+      - --quiet
+
+options:
+  logging: CLOUD_LOGGING_ONLY

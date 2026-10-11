@@ -40,3 +40,6 @@ AuthKey_*
 # 作り直せるものは置かない（scripts/build_store_frames.py）。
 screenshots/
 design-export
+
+# Cloud Run に渡す環境変数（2026-10-11）。**鍵が入るのでリポジトリに入れない**
+env.yaml

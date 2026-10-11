@@ -1,0 +1,32 @@
+# 器に入れないもの（2026-10-11）。**入れると鍵が漏れるか、器が太る。**
+.env
+.env.*
+*.p8
+*.pem
+*.key
+
+.git
+.gitignore
+.claude
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# 端末のアプリ（Expo）はサーバーに要らない。**ここが器の大きさのほとんど**
+client/
+
+# 文書・試し・設計の控え
+docs/
+screenshots/
+design-export/
+tests/
+scripts/
+data/
+*.md
+conftest.py
+pytest.ini
+migrate.py
+_ul*
+nul
