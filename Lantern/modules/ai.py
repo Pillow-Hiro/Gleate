@@ -1,7 +1,32 @@
 import os
 import time
-import anthropic
 from modules.logs import get_current_weekly_goal, get_current_monthly_goal
+
+
+# **`anthropic` は、実際に呼ぶまで読まない**（2026-10-11・Cloud Run へ移すため）。
+#
+# 器の起動にかかる2.5秒のうち、**1.4秒がこの読み込みだった**（実測）。
+# 残りは flask 0.7秒と supabase 0.3秒で、こちらは最初の一画面でも要る。
+#
+# 最初に開く画面（記録の一覧）は AI を呼ばない。後ろに回せば、**眠りから起きた
+# 最初の表示が1.4秒早くなる。**代わりに最初の AI 呼び出しが1.4秒遅くなるが、
+# そちらはもともと数秒待つ場所なので埋もれる。
+#
+# `anthropic.Anthropic` も `anthropic.APITimeoutError` も、ここを通って本物に届く。
+# 差し替え（`monkeypatch.setattr(ai.anthropic, "Anthropic", ...)`）も今までどおり効く——
+# 入れた値はこの箱に残り、`__getattr__` は**無い名前のときだけ**呼ばれる。
+class _Anthropic:
+    _module = None
+
+    def __getattr__(self, name):
+        if _Anthropic._module is None:
+            import anthropic as module
+
+            _Anthropic._module = module
+        return getattr(_Anthropic._module, name)
+
+
+anthropic = _Anthropic()
 
 # 使う模型（2026-09-13・作者の指示「有料だけ Opus 5、今日の灯りは Sonnet 5」）。
 #

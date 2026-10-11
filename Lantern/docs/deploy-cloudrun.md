@@ -58,12 +58,24 @@ gcloud secrets create apple-music-key --data-file=AuthKey_XXXX.p8
 ## 2. 最初のデプロイ
 
 ```bash
-gcloud run deploy lantern-api --source . --region asia-northeast1 --env-vars-file env.yaml --set-secrets APPLE_MUSIC_KEY=apple-music-key:latest --allow-unauthenticated --cpu 1 --memory 512Mi --concurrency 8 --max-instances 2 --timeout 60
+gcloud run deploy lantern-api --source . --region asia-northeast1 --env-vars-file env.yaml --set-secrets APPLE_MUSIC_KEY=apple-music-key:latest --allow-unauthenticated --cpu 1 --memory 512Mi --cpu-boost --concurrency 8 --max-instances 2 --timeout 60
 ```
 
 **Render と同じ形**にしてある。gunicorn は `Dockerfile` が1ワーカー・8スレッドで起こす
 （`STACK.md`「I/O 待ちが仕事のほぼ全て」）。`--concurrency 8` はスレッド数と合わせたもの。
 `--max-instances 2` は費用の頭押さえで、同時に Unsplash のキャッシュの数も2つまでに抑える。
+`--cpu-boost` は立ち上がりだけ CPU を増やす（無料枠の消費は立ち上がりの数秒ぶんだけ）。
+
+### 手元で測った起動の中身（2026-10-11・Docker で確認）
+
+| | |
+|---|---|
+| 器の大きさ | 388MB（`client/` の642MBは `.dockerignore` で外してある） |
+| 使うメモリ | 約90MB（512Mi で十分） |
+| 起動（読み込み） | **1.55秒**（flask 0.7 / supabase 0.3 / その他） |
+
+`anthropic` の読み込み（0.9〜1.4秒）は**後ろに回した**（`modules/ai.py`）。
+最初に開く画面は AI を呼ばないので、眠りから起きた最初の表示がそのぶん早い。
 
 ## 3. 動いているか
 
