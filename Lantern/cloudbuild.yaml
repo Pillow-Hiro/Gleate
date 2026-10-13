@@ -10,23 +10,30 @@
 #
 # **環境変数（鍵）はここに書かない。**サービス側に付けたものが引き継がれる
 # （`--set-env-vars` を渡さなければ、Cloud Run は今の値を保つ）。
+# **リポジトリの根は `Lantern/` の1つ上。**サーバーのコードはこの下にあるので、
+# それぞれの手順を `dir` でここに入れてから動かす（2026-10-14）。
+#
+# 器の置き場は `cloud-run-source-deploy`——最初の `gcloud run deploy --source` が
+# 作ったもの。**置き場を2つ持たない。**無料枠は0.5GBで、1つの器が388MB。
 substitutions:
   _SERVICE: lantern-api
   _REGION: asia-northeast1
+  _REPO: cloud-run-source-deploy
 
 steps:
   - id: build
     name: gcr.io/cloud-builders/docker
+    dir: Lantern
     args:
       - build
       - --build-arg=GIT_COMMIT=$SHORT_SHA
       - --build-arg=GIT_BRANCH=$BRANCH_NAME
-      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA
+      - --tag=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$SHORT_SHA
       - .
 
   - id: push
     name: gcr.io/cloud-builders/docker
-    args: [push, $_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA]
+    args: [push, $_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$SHORT_SHA]
 
   - id: deploy
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
@@ -35,7 +42,7 @@ steps:
       - run
       - deploy
       - $_SERVICE
-      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/lantern/$_SERVICE:$SHORT_SHA
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$SHORT_SHA
       - --region=$_REGION
       - --quiet
 
