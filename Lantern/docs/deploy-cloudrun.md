@@ -5,6 +5,23 @@
 
 **月 $7 → $0。** この規模なら無料枠（月200万リクエスト・18万vCPU秒・36万GiB秒）に収まる。
 
+## いまの状態（2026-10-14）
+
+| | |
+|---|---|
+| プロジェクト | `lantern-501215`（請求先 `0125E1-…` を紐づけ済み） |
+| サービス | `lantern-api`（`asia-northeast1`） |
+| URL | `https://lantern-api-1042770718423.asia-northeast1.run.app` |
+| 環境変数 | 16件（`~/env.cloudrun.yaml`）。Apple の鍵だけ Secret Manager（`apple-music-key`） |
+| 眠らせない | Cloud Scheduler `lantern-warm`（10分おきに `/api/health`） |
+| 費用の見張り | 予算 ¥200・50%と100%で通知 |
+| 速さ（実測） | **Cloud Run 中央値 0.075秒 / Render 0.179秒**（10回ずつ・同じ `/api/health`） |
+
+**まだ切り替えていない。**`api.golantern.app` は Render を向いたままで、アプリは今までどおり動く。
+
+残り: ①ドメインの所有確認（Search Console の TXT）→ 割り当て ②push での自動入れ替え
+③アプリから一通り触る ④1週間ようすを見て Render を解約。
+
 ## 気をつけること
 
 - **カードの登録が要る。**無料枠を超えた分は課金される（止める仕組みは無い）。
