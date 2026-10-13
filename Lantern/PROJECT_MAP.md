@@ -340,6 +340,7 @@ Lantern は言葉が中身なので、**言葉だけを見る仕掛けを3つ持
 | `tests/test_ui_words.py` | 画面の JSX から禁止ワード・「AI」の名乗り・`？` を拾う | 毎回（pytest） |
 | `tests/test_prompts.py` | AI へのプロンプトを見る。**人格が渡っているか**も見る | 毎回（pytest） |
 | `scripts/collect_words.py` | 画面と応答に出る日本語だけを抜き出す（コメントを落とす） | 手で |
+| `scripts/env_to_yaml.py` | 環境変数の写し（`KEY=値`）を Cloud Run に渡せる YAML に直す。**値は画面に出さない。**足りない変数も知らせる | Cloud Run に移すとき |
 | `scripts/eval_weekly.py` | 今週の振り返りの物差し。作者の記録で動かし、**作者が1件ずつ ○△× を付ける**（いまの作りと伏せて並べることもできる）。課金される | 読み方を変えたとき |
 | `.claude/agents/lantern-words.md` | 抜き出したものを AI憲法に照らして読む点検役 | 言葉を足したとき・リリース前 |
 

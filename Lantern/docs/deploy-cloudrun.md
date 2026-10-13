@@ -45,6 +45,16 @@ Render の画面にある値を、Cloud Shell で `env.yaml` に書く。**こ�
 | `FRONTEND_ORIGIN` | CORS の許可元 |
 | `APP_TIMEZONE` | 日付の基準（`Asia/Tokyo`） |
 
+**形は「キー: 値」の YAML。**`KEY=値`（`.env` と同じ形）で写すと、`gcloud` が
+`expected map-like data` と言って止まる（2026-10-14 にここで止まった）。
+写したファイルがその形なら、直す道具を通す。**値は画面に出ない。**
+
+```bash
+python3 scripts/env_to_yaml.py env.yaml env.cloudrun.yaml
+```
+
+足りない変数があれば名前で知らせる。以降は `--env-vars-file env.cloudrun.yaml` を渡す。
+
 **`YOUTUBE_REDIRECT_URI` と `TWITCH_REDIRECT_URI` は `https://api.golantern.app/...` のまま。**
 ドメインを変えないので、Google と Twitch の登録を触る必要は無い。
 
