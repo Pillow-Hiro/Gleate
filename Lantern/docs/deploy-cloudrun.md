@@ -77,6 +77,20 @@ gcloud run deploy lantern-api --source . --region asia-northeast1 --env-vars-fil
 `anthropic` の読み込み（0.9〜1.4秒）は**後ろに回した**（`modules/ai.py`）。
 最初に開く画面は AI を呼ばないので、眠りから起きた最初の表示がそのぶん早い。
 
+### 古い器を溜めない
+
+器の置き場（Artifact Registry）の無料枠は **0.5GB**。1つの器が388MBなので、
+**2版で超える**（超えた分は 1GB あたり月$0.10 なので、溜めても月数円）。
+気になったら古い版を消す。
+
+```bash
+gcloud artifacts docker images list asia-northeast1-docker.pkg.dev/<プロジェクトID>/cloud-run-source-deploy/lantern-api --include-tags
+```
+
+```bash
+gcloud artifacts docker images delete <上で出た digest> --delete-tags
+```
+
 ## 3. 動いているか
 
 ```bash
