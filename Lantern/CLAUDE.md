@@ -602,7 +602,7 @@ UIの比重（グラフを中心に据えるか、記録との照合を中心に
 | バックエンド | Flask（API専用） |
 | AI | Anthropic Claude API（claude-sonnet-4-6） |
 | データ保存 | Supabase PostgreSQL |
-| デプロイ | Render |
+| デプロイ | Cloud Run（東京）。2026-10-14 に Render から移行 |
 
 ---
 

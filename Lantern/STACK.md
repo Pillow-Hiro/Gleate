@@ -19,7 +19,7 @@
 ```
 利用者
   ├─ iOS / Android ─┐
-  └─ Web（Vercel） ─┴→ Flask API（api.golantern.app / Render）→ Supabase
+  └─ Web（Vercel） ─┴→ Flask API（api.golantern.app / Cloud Run 東京）→ Supabase
                                           ├→ Anthropic（AI応答）
                                           ├→ YouTube Data API（任意）
                                           ├→ Twitch API（任意）
@@ -119,7 +119,7 @@ index.js が9ウェイト全部を require し、Metro は木揺すりで落と�
 規模: モジュール 21 / API 44ルール・41パス。
 
 **I/O 待ちが仕事のほぼ全て**（Supabase・Anthropic）なので、
-プロセスを増やさずスレッドで捌く。**Render Starter は 512MB** なので
+プロセスを増やさずスレッドで捌く。**Cloud Run も 512MB** にしてある（実測で使うのは約90MB）ので
 ワーカーを増やすとメモリが厳しい（無料枠から上げてもここは同じ）。1プロセスなら
 Unsplash のプロセス内キャッシュも1つで済む。
 
@@ -132,7 +132,8 @@ Unsplash のプロセス内キャッシュも1つで済む。
 
 | 用途 | サービス | プラン | 費用 |
 |---|---|---|---|
-| API | Render | **Starter** | 月 $7 |
+| API | **Cloud Run**（`asia-northeast1`） | 無料枠（月200万リクエスト・18万vCPU秒） | **$0** |
+| （移行前）API | Render | Starter | 月 $7。**2026-10-14 に移行。解約はこれから** |
 | ドメイン | `golantern.app`（お名前.com）。API は `api.golantern.app` | — | 年額はレジストラによる |
 | Web | Vercel | Hobby | $0 |
 | DB・認証 | Supabase | Free | $0 |
@@ -140,11 +141,18 @@ Unsplash のプロセス内キャッシュも1つで済む。
 | ストア | Apple Developer Program | — | 年 $99 |
 | AI | Anthropic API | 従量 | 記録の保存時とボタン押下時のみ |
 
-**Render を Starter にしたのは冷え起動のため。**
-無料枠は一定時間で停止し、眠りからの初回が **43.8秒**かかっていた
-（温まっていれば 0.2秒）。Lantern は1日1回開く道具なので毎回冷えていた。
-プランで解決する問題だったため、他社への移行はしていない。
-比較検討の結果は `HANDOFF.md` に残してある。
+**2026-10-14 に Cloud Run（東京）へ移した**（作者「renderのサブスクが痛いから完全無料で」）。
+手順と、13通り調べた結果は `docs/deploy-cloudrun.md`。
+
+- 速さは変わらない（どちらも中央値 0.18秒）。**独自ドメインの入口を通ると110ミリ秒増える**
+  ので、Cloud Run 直の 0.07秒は出ない
+- 眠らせないために、10分おきに `/api/health` を叩く（Cloud Scheduler・無料枠）
+- `main` に push すると Cloud Build が作り直して入れ替える（`cloudbuild.yaml`）
+- 費用の見張り: 予算 ¥200 で通知。インスタンス上限2
+
+Render の無料枠は一定時間で停止し、眠りからの初回が **43.8秒**かかっていた
+（温まっていれば 0.2秒）ため Starter を契約していた。Cloud Run は縮んでも
+**冷えは0.5〜2秒**で、温め続ければ起きない。
 
 AI は**定期実行しない**。人が押したときだけ動く。
 

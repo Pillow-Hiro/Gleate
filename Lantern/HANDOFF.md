@@ -30,7 +30,7 @@
 | バージョン | v2.0（Expo + Flask API + Supabase） |
 | ブランチ | `main` |
 | Web | Vercel（`client/` から `npx expo export --platform web`） |
-| API | `https://api.golantern.app`（Render Starter・gunicorn） |
+| API | `https://api.golantern.app`（**Cloud Run 東京**・gunicorn。2026-10-14 に Render から移行） |
 | ネイティブ | **iOSビルド #13 を TestFlight へアップロード済み**（2026-08-15・commit `f6b2eca`・版数 1.0.0 / ビルド番号 13・runtime `ab1c3362…`）。編集画面（WebView）とファイル添付を載せた最初のビルド |
 | 実データ | 記録18件・アイデア0件・利用者は作者1人 |
 | 検査 | pytest 936件 / vitest 236件 |
