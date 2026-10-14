@@ -142,11 +142,23 @@ gcloud scheduler jobs create http lantern-warm --location asia-northeast1 --sche
 **3通りあり、どれも無料。速さが違うので、測って決める。**
 Google 純正のロードバランサは月$18なので使わない。
 
-| 方法 | 速さ | 注意 |
+**2026-10-14 に `api2.golantern.app` を立てて実測した。**
+
+| 入口 | 中央値（12回） |
+|---|---|
+| Cloud Run 直（`run.app`） | **0.070秒** |
+| **Cloud Run ＋ ドメイン割り当て（`ghs.googlehosted.com`）** | **0.182秒** |
+| Render（いまの `api`） | 0.182秒 |
+
+**ドメイン割り当てを通すと110ミリ秒増え、Render と同じになる。**2023年に報告された
+「米国経由で遅くなる」が、いまも起きている。それでも**速さは今と同じで、月1,000円が0円**になるので移す。
+
+さらに速くする道（どちらも無料・切り替えたあとで試せる）:
+
+| 方法 | 見込み | 注意 |
 |---|---|---|
-| Cloud Run のドメイン割り当て | 2023年の実測で**2倍以上遅くなった**例がある（米国経由） | preview 扱い。東京は対応済み |
-| Firebase Hosting で受けて中へ流す | Google の配信網の端から入る | 同じプロジェクトに Hosting を足す |
-| Cloudflare を前に置く | Cloudflare の東京から入る | Host ヘッダの書き換えが要る（Origin Rules） |
+| Firebase Hosting で受けて中へ流す | Google の配信網の端から入る | `*.web.app` の仮URLで**DNSを触らずに測れる。**Cloud Shell の `firebase` は自分のログインを持っていないので、`firebase login` が要る |
+| Cloudflare を前に置く | Cloudflare の東京から入る | ネームサーバーごと移すので**全レコードを作り直す**（`_dmarc` が消えた事故と同じ 危なさ）。Host ヘッダの書き換えも要る |
 
 **まず `api2.golantern.app` のような仮の名前で試して、`api.golantern.app` は最後に切り替える。**
 
