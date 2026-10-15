@@ -133,7 +133,7 @@ Unsplash のプロセス内キャッシュも1つで済む。
 | 用途 | サービス | プラン | 費用 |
 |---|---|---|---|
 | API | **Cloud Run**（`asia-northeast1`） | 無料枠（月200万リクエスト・18万vCPU秒） | **$0** |
-| （移行前）API | Render | Starter | 月 $7。**2026-10-14 に移行。解約はこれから** |
+| （移行前）API | Render | Starter | 月 $7。**2026-10-14 に移行し、10-15 に Suspend。支払いは終了** |
 | ドメイン | `golantern.app`（お名前.com）。API は `api.golantern.app` | — | 年額はレジストラによる |
 | Web | Vercel | Hobby | $0 |
 | DB・認証 | Supabase | Free | $0 |
