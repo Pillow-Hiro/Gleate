@@ -121,6 +121,20 @@ def require_ai_budget(f):
 
 _splash_photo_cache = {"photo_url": None, "photographer": None, "cached_at": 0}
 
+# 起動画面の一言も、写真と同じ長さだけ持つ（2026-10-16）。
+#
+# **この口は認証が要らない。**`@require_ai_budget` も通らない（`g.user_id` が無い）。
+# 写真は6時間持っていたのに**一言は毎回 AI を呼んでいた**ので、連打されれば
+# 叩かれただけ課金される口になっていた。1回0.1円でも、1万回で1,000円を超える。
+#
+# 種類ごとに持つ。起動のたびに2種類から選ぶ作りは変えない——**見た目は変わらず、
+# 呼ぶ回数だけが「6時間に2回まで」になる。**
+_splash_quote_cache = {"zen": {"quote": None, "cached_at": 0},
+                       "snoopy": {"quote": None, "cached_at": 0}}
+
+# 写真と一言を持つ長さ（秒）
+_SPLASH_CACHE_SECONDS = 21600
+
 
 @app.route("/save", methods=["POST"])
 @require_auth
@@ -984,7 +998,7 @@ def splash_content_api():
     quote_type = random.choice(("zen", "snoopy"))
 
     now = time.time()
-    if now - _splash_photo_cache["cached_at"] > 21600:
+    if now - _splash_photo_cache["cached_at"] > _SPLASH_CACHE_SECONDS:
         unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY", "")
         photo_url = ""
         photographer = ""
@@ -1014,8 +1028,15 @@ def splash_content_api():
             "cached_at": now,
         })
 
-    from modules.ai import get_splash_quote
-    quote = get_splash_quote(quote_type)
+    # 持っている間は呼ばない。**認証の要らない口なので、呼ぶ回数に蓋をする**
+    held = _splash_quote_cache[quote_type]
+    if held["quote"] and now - held["cached_at"] <= _SPLASH_CACHE_SECONDS:
+        quote = held["quote"]
+    else:
+        from modules.ai import get_splash_quote
+
+        quote = get_splash_quote(quote_type)
+        _splash_quote_cache[quote_type] = {"quote": quote, "cached_at": now}
     print(f"[Splash] quote_type={quote_type}")
 
     return jsonify({
