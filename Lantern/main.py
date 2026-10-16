@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, g, redirect
+from flask import Flask, request, jsonify, g, redirect, Response
 from flask_cors import CORS
 import os
 import random
@@ -390,6 +390,19 @@ def make_hint():
 # 追加するときは必ず @require_auth を付け、g.user_id で対象を絞ること。
 # 特に service_role キーを使う Supabase クエリは user_id で必ずフィルタする
 # （フィルタ漏れは他ユーザーのデータ漏洩に直結する）。
+
+# 検索エンジンに、ここは見なくていいと伝える（2026-10-16）。
+#
+# ドメイン全体を Search Console に登録した（Cloud Run の証明書のため）ので、
+# **API まで巡回されるようになった。**ここはページを配る場所ではないので、
+# 巡回されても 404 と転送ばかりが報告される。
+#
+# **巡回を止めることが目的で、守りではない。**行儀の悪い相手には効かない。
+# 認証と上限は、それぞれの経路が持っている。
+@app.route("/robots.txt")
+def api_robots():
+    return Response("User-agent: *\nDisallow: /\n", mimetype="text/plain")
+
 
 # 生きているかだけを返す（2026-10-11・Cloud Run へ移すため）。
 #

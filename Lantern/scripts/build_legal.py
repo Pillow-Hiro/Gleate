@@ -65,6 +65,16 @@ DOCS = [
     ("TOKUSHOHO.md", "tokushoho.html", "特定商取引法に基づく表記"),
 ]
 
+# 検索エンジンに渡す案内（2026-10-16）。
+#
+# Search Console から「ページがインデックスに登録されない」と来たので調べたら、
+# **`robots.txt` も `sitemap.xml` も実体が無かった。**Vercel はどのURLでも
+# アプリの殻（HTML）を返すので、案内板を置いたつもりで何も置けていなかった。
+#
+# **ここで一緒に作る。**法務ページの一覧（`DOCS`）と同じ場所から作れば、
+# ページを足したときに片方だけ古くなることがない。
+SITE = "https://www.golantern.app"
+
 STYLE = """
 :root { color-scheme: light dark; }
 * { box-sizing: border-box; }
@@ -194,6 +204,30 @@ def render(md, title="プライバシーポリシー"):
     )
 
 
+def robots():
+    """検索エンジンへの案内。**閉じない**——紹介も法務も読まれてよいページ"""
+    return (
+        "User-agent: *\n"
+        "Allow: /\n"
+        f"Sitemap: {SITE}/sitemap.xml\n"
+    )
+
+
+def sitemap():
+    """載せるのは**実体のあるページだけ。**
+
+    アプリの中（`/journal` など）は載せない。ログインが要るうえ、
+    どのURLでもアプリの殻が返るので、載せても中身の無いページが並ぶ。
+    """
+    urls = [f"{SITE}/"] + [f"{SITE}/{target}" for _, target, _ in DOCS]
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for url in urls:
+        lines += ["  <url>", f"    <loc>{html.escape(url)}</loc>", "  </url>"]
+    lines.append("</urlset>")
+    return "\n".join(lines) + "\n"
+
+
 def build():
     out = []
     for source, target, title in DOCS:
@@ -201,6 +235,11 @@ def build():
         path = os.path.join(ROOT, "client", "public", target)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         io.open(path, "w", encoding="utf-8", newline="\n").write(render(md, title))
+        out.append(path)
+
+    for target, body in (("robots.txt", robots()), ("sitemap.xml", sitemap())):
+        path = os.path.join(ROOT, "client", "public", target)
+        io.open(path, "w", encoding="utf-8", newline="\n").write(body)
         out.append(path)
     return out
 

@@ -22,6 +22,7 @@ PUBLIC_ENDPOINTS = {
     "static": "Flask標準の静的配信",
     "debug_version": "デプロイ後の稼働バージョン確認。commit/branch/公開redirect_uriのみ",
     "health": "生きているかだけを返す（真偽値1つ）。器の起動確認と、眠らせないための定期の一叩き",
+    "api_robots": "検索エンジンに、APIは巡回しなくてよいと伝えるだけの固定文",
     "splash_content_api": "起動画面の写真と引用。ユーザー個別のデータを含まない",
     "youtube_callback": "GoogleからのOAuthリダイレクト先。stateで本人性を確認する",
     "twitch_callback": "TwitchからのOAuthリダイレクト先。stateで本人性を確認する",
