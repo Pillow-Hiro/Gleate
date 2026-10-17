@@ -332,16 +332,27 @@ class TestReadWeeklyReview:
         assert json.loads(ai.read_weekly_review(WEEK, PREV)) == {"patterns": []}
         assert len(seen) == 2
 
-    def test_選んだ記録があれば記録用の指針で作る(self, monkeypatch):
-        from modules.ai import _RECORD_ASK_SYSTEM
+    # 選んだ記録の問いは、モデルが選んだ足がかりを型に埋めて作る（2026-10-18）
+    def test_選んだ記録は足がかりを型に埋めて問いにする(self, monkeypatch):
+        from modules.ai import _FRAME_ASK_SYSTEM
 
-        q = "「収録で声の出し方に迷った」とき、迷っていたのは声のどのあたりでしょう。"
-        ai, seen = self.fake(monkeypatch, [self.asks(cand(q, [("W2", "収録で声の出し方に迷った")])),
-                                           self.verdicts((0, True, 2))])
+        found = json.dumps({"candidates": [{"frame": "scene", "quotes": ["収録で声の出し方に迷った"]}]})
+        ai, seen = self.fake(monkeypatch, [found])
         got = json.loads(ai.read_weekly_review(WEEK, PREV, target_id="w2"))
-        assert got["patterns"][0]["question"] == q
-        assert seen[0][0] == _RECORD_ASK_SYSTEM
-        assert "【訊いてほしい記録】" in seen[0][1] and "【選んだ記録】" in seen[1][1]
+        assert got["patterns"][0]["question"].startswith("「収録で声の出し方に迷った」")
+        assert "hint" not in got["patterns"][0]
+        assert len(seen) == 1 and seen[0][0] == _FRAME_ASK_SYSTEM
+        assert "【訊いてほしい記録】" in seen[0][1] and "台本を直した" not in seen[0][1]
+        # 待たせない: 1回・やり直し無し・考えは浅く
+        assert seen[0][2]["retries"] == 0 and seen[0][2]["effort"] == "low"
+        assert seen[0][2]["timeout"] <= 10
+
+    # 作者「黙るのもダメ」。候補が全部落ちても、記録の言葉で場面を訊く
+    def test_候補が全部落ちたら記録の言葉で場面を訊く(self, monkeypatch):
+        found = json.dumps({"candidates": [{"frame": "scene", "quotes": ["作られた言葉"]}]})
+        ai, seen = self.fake(monkeypatch, [found])
+        got = json.loads(ai.read_weekly_review(WEEK, PREV, target_id="w2"))
+        assert got["patterns"][0]["question"] == "「収録で声の出し方に迷った」と書いたとき、思い浮かんでいたのはどんな場面でしょう。"             or "収録で声の出し方に迷った" in got["patterns"][0]["question"]
 
     def test_今週に無い記録を選んだら呼ばずに空(self, monkeypatch):
         ai, seen = self.fake(monkeypatch, [])
@@ -486,14 +497,14 @@ class TestPrompts:
         assert "空いた期間・記録の少なさには触れない" in _WEEKLY_ASK_SYSTEM
         assert "空いた期間・記録の少なさに触れている" in _WEEKLY_ASK_CHECK_SYSTEM
 
-    # 2026-09-22 の採点。「誰ではなく、どんな？がいい」「質問の意図が意味不明」
-    def test_選んだ記録の問いはどんなで訊き_関係の分からない2つを比べない(self):
-        from modules.ai import _RECORD_ASK_SYSTEM, _WEEKLY_ASK_CHECK_SYSTEM
+    # 2026-10-18 の採点。引用の無い5件は全部×、書かれていないことを前提に置く問いも×
+    def test_足がかりと型だけを選ばせる(self):
+        from modules.ai import _FRAME_ASK_SYSTEM
 
-        assert "「どんな」" in _RECORD_ASK_SYSTEM
-        assert "関係の分からない2つの言葉を並べて比べさせない" in _RECORD_ASK_SYSTEM
-        assert "関係の分からない2つの言葉を並べて比べさせている" in _WEEKLY_ASK_CHECK_SYSTEM
-        assert "その記録について訊いていない" in _WEEKLY_ASK_CHECK_SYSTEM
+        assert "問いの文はこちらで組み立てます" in _FRAME_ASK_SYSTEM
+        assert "記録にない出来事や気持ちを足さない" in _FRAME_ASK_SYSTEM
+        for frame in ("scene", "origin", "intent", "pair"):
+            assert f"{frame} …" in _FRAME_ASK_SYSTEM
 
     def test_言い換えをかぎ括弧に入れさせない(self):
         from modules.ai import _WEEKLY_ASK_SYSTEM
@@ -506,3 +517,95 @@ class TestPrompts:
 
         assert "続けた日数・記録の数に触れている" in _WEEKLY_ASK_CHECK_SYSTEM
         assert "変わった・変わっていないと言い切っている" in _WEEKLY_ASK_CHECK_SYSTEM
+
+
+class TestFrames:
+    """記録を選んだときの問いは、**型に言葉を埋めて作る**（`reader.FRAMES`）。
+
+    前提を置く文も、事実を訊く文も、作りようが無い。
+    """
+
+    ENTRY = {"id": "w1", "date": "2026-09-09", "body": "これからのキャリアを考えた。答えはないと悟った。\n信念や意志が弱い人間だなぁと痛感した"}
+
+    def pick(self, *cands):
+        return reader.pick_frame({"candidates": list(cands)}, self.ENTRY)
+
+    def test_記録にある言葉は型に埋まる(self):
+        got = self.pick({"frame": "scene", "quotes": ["これからのキャリアを考えた"]})
+        assert got["question"].startswith("「これからのキャリアを考えた」")
+        assert got["question"].endswith("でしょう。") and got["hint"] is None
+
+    @pytest.mark.parametrize("frame", list(reader.FRAMES))
+    def test_どの型も問いの決まりを守る(self, frame):
+        quotes = ["これからのキャリアを考えた", "答えはないと悟った"] if frame == "pair" else ["これからのキャリアを考えた"]
+        q = self.pick({"frame": frame, "quotes": quotes})["question"]
+        assert reader.is_question(q) and q.count("。") == 1 and "？" not in q
+        assert not reader.banned(q)
+
+    # **作られた言葉を出さない**
+    def test_記録に無い言葉は落とす(self):
+        assert self.pick({"frame": "scene", "quotes": ["とても疲れていた"]}) is None
+
+    def test_言い換えは落とす(self):
+        assert self.pick({"frame": "scene", "quotes": ["キャリアを考えました"]}) is None
+
+    def test_長い言葉は落とす(self):
+        long_body = dict(self.ENTRY, body="あ" * 30)
+        assert reader.pick_frame({"candidates": [{"frame": "scene", "quotes": ["あ" * 21]}]}, long_body) is None
+
+    def test_項目名は引かない(self):
+        entry = dict(self.ENTRY, body="スマホで触れた")
+        got = reader.pick_frame({"candidates": [{"frame": "scene", "quotes": ["よかったこと: スマホで触れた"]}]}, entry)
+        assert got["question"].startswith("「スマホで触れた」")
+
+    def test_型が知らないものは落とす(self):
+        assert self.pick({"frame": "why", "quotes": ["これからのキャリアを考えた"]}) is None
+
+    def test_pairは2つ要る(self):
+        assert self.pick({"frame": "pair", "quotes": ["これからのキャリアを考えた"]}) is None
+        assert self.pick({"frame": "scene", "quotes": ["これからのキャリアを考えた", "答えはないと悟った"]}) is None
+
+    def test_pairは同じ言葉を二度並べない(self):
+        assert self.pick({"frame": "pair", "quotes": ["答えはない", "答えはないと悟った"]}) is None
+
+    def test_先に並んだ有効な候補を選ぶ(self):
+        got = self.pick({"frame": "scene", "quotes": ["作られた言葉"]},
+                        {"frame": "origin", "quotes": ["答えはないと悟った"]},
+                        {"frame": "scene", "quotes": ["これからのキャリアを考えた"]})
+        assert got["question"] == "「答えはないと悟った」は、どんな場面から浮かんできたのでしょう。"
+
+    def test_読めない形は空(self):
+        for raw in (None, "x", {}, {"candidates": "x"}, {"candidates": [1, {"frame": "scene"}, {"frame": "scene", "quotes": "x"}]}):
+            assert reader.pick_frame(raw, self.ENTRY) is None
+
+    # 同じ型の繰り返しで口癖にならないよう、記録ごとに言い回しを替える
+    def test_言い回しは記録で変わる(self):
+        seen = {reader.compose("scene", ["x1"], {"id": i}) for i in ("a", "b", "c", "d")}
+        assert len(seen) == 2
+
+    def test_同じ記録なら同じ言い回し(self):
+        e = {"id": "w1"}
+        assert reader.compose("scene", ["x1"], e) == reader.compose("scene", ["x1"], e)
+
+
+class TestFallback:
+    def test_最初のひとかたまりで場面を訊く(self):
+        e = {"id": "a", "date": "2026-07-19", "body": "熱海旅行"}
+        assert reader.fallback_question(e)["question"].startswith("「熱海旅行」")
+
+    # いちばん薄い最初の所ではなく、いちばん具体的（長い）所を引く
+    def test_いちばん長いひとかたまりを引く(self):
+        e = {"id": "a", "date": "2026-08-01", "body": "朝早く起きて、ジムで汗を流し、読書をしました。"}
+        assert reader.fallback_question(e)["question"].startswith("「ジムで汗を流し」")
+
+    def test_空白でも区切る(self):
+        e = {"id": "a", "date": "2026-08-19", "body": "CCNAの勉強 3houseとpp69のチケットに申し込んだ"}
+        assert reader.fallback_question(e)["question"].startswith("「CCNAの勉強」")
+
+    def test_引ける言葉が無ければ空(self):
+        assert reader.fallback_question({"id": "a", "date": "2026-08-01", "body": "。"}) is None
+
+    # 区切りの無い長い一文は、助詞で切って末尾の助詞を落とす
+    def test_区切りの無い長い一文は助詞で切る(self):
+        e = {"id": "a", "date": "2026-07-07", "body": "アプリ開発でyoutubeの連携を実装しました"}
+        assert reader.fallback_question(e)["question"].startswith("「youtubeの連携」")

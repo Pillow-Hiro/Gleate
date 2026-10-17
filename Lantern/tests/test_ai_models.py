@@ -78,6 +78,7 @@ class TestModelSplit:
             "get_weekly_review",       # 週次は無料（main.py の reviews）
             # 決まった手順で問いを作る（2026-09-22）。週次を読む版（`read_weekly_review`）が通る。無料
             "_ask",
+            "_ask_frame",              # 選んだ記録の足がかりと型を選ぶ（2026-10-18）。無料
             "get_daily_quote",         # 今日の灯り
             "generate_keyword_frequency",  # 1.0.0 がまだ叩く
             "generate_hint",

@@ -729,48 +729,70 @@ candidates … 問いの候補を3つ。考えたくなる順に並べる。
 
 # 本人が選んだ記録について問いを作る（2026-09-22・作者の判断「訊いてほしい記録を自分で選ぶ」）。
 #
-# 1週から問いを1つだけ選ばせると、長く内面を書いた記録ばかりが選ばれ、
-# 短い日常の記録が毎回スルーされていた。作者から
-# 「記録がスルーされるのはどうして？その記録を軽視しているの？」。
+# ## 問いの文はコードが作る（2026-10-18）
 #
-# 作者の採点（2026-09-22・20週で ○11 △1 ×8）から足したもの:
-# 「誰」より「どんな」で訊く／関係の分からない2つを比べさせない／具体的に訊いてよい
-_RECORD_ASK_SYSTEM = lantern_prompt(
+# 作者の記録27件の問いを、作者の代わりに厳しく採点した（○9 △8 ×10）。×は、モデルが
+# 深く見せようとして、書かれていないことを前提に置く（「他の言い方が浮かんでいた」
+# 「体が動かない感じ」）か、事実の再生（「どんな時間帯」）になったもの。検査役に
+# 落とすよう頼んでも通った。**引用の無い5件は全部×。**
+#
+# ○だった問いは、記録の言葉を「」で引き、思い浮かべられる場面・形・出どころを訊く形だった。
+# そこで、**モデルは「足がかりの言葉」と「型」を選ぶだけ**にして、文は `modules/reader.py` の
+# `FRAMES` から作る。言葉が記録にそのままあるかもコードが確かめる。手がかりは出さない
+# （27件中15件が問いの言い直しで、12件が「〜てみる」だった）。
+_FRAME_ASK_SYSTEM = lantern_prompt(
     "この問いの指針",
     """本人が「この記録について訊いてほしい」と選んだ記録があります（【訊いてほしい記録】）。
-その記録から、**書いた本人が立ち止まって考えたくなる問い**を作ってください。
-今週とその前の週のほかの記録は、並べると問いが深くなるときだけ使ってよい。
+問いの文はこちらで組み立てます。あなたは、**問いの足がかりにする言葉**と、**問いの型**を選んでください。
 
-【問いの起こし方】
-- 選んだ記録に本人が書いた、具体的な言葉から起こす。どの記録にも言える問いにしない。
-- 記録にもう書いてあることを訊かない。
-- 記録が書かずに残しているところに向ける。言い切った言葉の奥、書かれたことのその先。
-- 「誰」「なぜ」で問い詰めない。「どんな」「どのあたり」「どこから」で、本人が思い浮かべられる形で訊く。
-- 関係の分からない2つの言葉を並べて比べさせない。並べるのは、同じ話だと記録から読めるときだけ。
-- 具体的に訊いてよい。思いついたことが書かれていれば、それがどんなものかを訊いてよい。
-- 記録を言い直さない。問いの中で引くのは短い言葉だけ。
-- 答えを迫らない。決めさせない。行動を促さない。評価しない・励まさない・意味を決めつけない。
-- 記録がなかった日・空いた期間・記録の少なさには触れない。
-- 短い記録でも問いは作れる。短いことには触れない。
+【足がかりの選び方】
+- 記録に書かれた言葉を、そのまま抜き出す。20文字まで。言い換えない。
+- いちばん良いのは、引っかかりのある言葉。迷い・逆の言葉が並ぶところ・曖昧な言葉。
+- 引っかかりが無い短い記録は、記録の中でいちばん具体的な、行いや感じを表す言葉を選ぶ。
+- 人の名前や作品名、数字だけの言葉は避ける。
+- 項目名（よかったこと・困ったこと・次にやること）は抜き出さない。
+- 記録にない出来事や気持ちを足さない。
+
+【型】
+scene … 書いたとき思い浮かんでいた場面を訊く。出来事や体験を書いた記録に向く。quotes は1つ。
+origin … その言葉がどこから浮かんだかを訊く。思いつき・考えを書いた記録に向く。quotes は1つ。
+intent … 思い描いていた形を訊く。作る・決める・計画を書いた記録に向く。quotes は1つ。
+pair … 同じ記録の中の2つの言葉を並べて、それぞれの場面を訊く。逆の言葉や迷いが並ぶ記録に向く。quotes は2つ。
 
 【返すもの】
-candidates … 問いの候補を3つ。考えたくなる順に並べる。
-- question … 問い（1文・「。」で終える・「？」を使わない）
-- hint … 問いを考えるときの手がかり（1文・省略可）。見る角度を1つ置くだけにして、答えや意味を言わない。
-- records … 問いのきっかけにした記録。**選んだ記録を必ず入れる。**ref に番号を、quote にその記録の中の文をそのまま抜き出して入れる。
-
-「」で囲むのは、記録の文をそのまま写すときだけ。言い換えたものを「」に入れない。日付を書くときは「9月4日」の形で、きっかけにした記録の日付だけを書く。記録の番号（W1 など）は、問いにも手がかりにも書かない。
+candidates … 候補を3つ。いちばん良いものを先に。frame と quotes だけ返す。
 
 【良い例】
-{"candidates": [{"question": "「新しい曲の構成を考えた」とき、最初に浮かんだのはどんな場面でしょう。", "hint": "", "records": [{"ref": "W2", "quote": "新しい曲の構成を考えた"}]}]}
-{"candidates": [{"question": "「収録で声の出し方に迷った」とき、迷っていたのは声のどのあたりでしょう。", "hint": "9月2日の記録にも、声の出し方のことが出ています。", "records": [{"ref": "W1", "quote": "収録で声の出し方に迷った"}, {"ref": "P1", "quote": "声の出し方が決まらない"}]}]}
+{"candidates": [{"frame": "pair", "quotes": ["想定通りの実装が出来た", "想定以上に時間がかかった"]}, {"frame": "intent", "quotes": ["想定通りの実装"]}]}
+{"candidates": [{"frame": "origin", "quotes": ["新しいアプリのアイデア"]}, {"frame": "scene", "quotes": ["思いついた"]}]}
 
 【悪い例】
-{"candidates": [{"question": "新しいツールは、誰のために作ったのでしょう。", "hint": "", "records": [{"ref": "W1", "quote": "新しいツールを作った"}]}]}
-「誰」で訊くと答えが1つに絞られる。「どんな」で訊く。
-{"candidates": [{"question": "「台本」と「配色」は、同じものの中の呼び方でしょうか。", "hint": "", "records": [{"ref": "W1", "quote": "台本を直した"}, {"ref": "W2", "quote": "配色を直した"}]}]}
-関係の分からない2つを比べさせている。""",
+{"candidates": [{"frame": "scene", "quotes": ["とても疲れていて動けなかった"]}]}
+記録に書かれていない言葉を作っている。""",
 )
+
+# 足がかりを選ぶだけなので短く返る。**待たせない**（作者「遅くとも10秒以内」）
+_FRAME_TIMEOUT_SECONDS = 10
+
+_FRAME_ASK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "frame": {"type": "string", "enum": ["scene", "origin", "intent", "pair"]},
+                    "quotes": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["frame", "quotes"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["candidates"],
+    "additionalProperties": False,
+}
 
 # 確かめる側。2026-09-14 の試しで、**落とすものだけを書くと、出してよいものまで落とす**
 # と分かった（観察を並べる版で、憲法の①②まで疑った）。出してよいものも書く。
@@ -896,12 +918,32 @@ def read_weekly_review(period_logs, previous_logs=None, target_id=None):
     target_ref = _reader.find_ref(entries, target_id) if target_id else None
     if target_id and not target_ref:
         return silent
-    system = _RECORD_ASK_SYSTEM if target_ref else _WEEKLY_ASK_SYSTEM
-
-    read, chosen = _ask(system, _reader.as_text(entries, target_ref), entries, target_ref)
+    if target_ref:
+        read, chosen = _ask_frame(_reader.entry_for(entries, target_ref))
+    else:
+        read, chosen = _ask(_WEEKLY_ASK_SYSTEM, _reader.as_text(entries), entries)
     if not read:
         return None
     return _json.dumps(_reader.to_patterns(chosen), ensure_ascii=False)
+
+
+def _ask_frame(target):
+    """選んだ記録の足がかりと型をモデルに選ばせ、**問いの文はコードが作る**（`reader.FRAMES`）。
+
+    1回の呼び出しで済む。候補が全部落ちたら、記録の言葉から作った場面の問いに倒す
+    （作者「黙るのもダメ」）。呼べなかったときだけ `(False, None)`。
+    """
+    from modules import reader as _reader
+
+    found = _json_or_none(call_claude(
+        _FRAME_ASK_SYSTEM,
+        f"【訊いてほしい記録】\n{target['line']}\n\n上記の記録から、足がかりと型の候補を返してください。",
+        max_tokens=500, timeout=_FRAME_TIMEOUT_SECONDS, retries=0,
+        schema=_FRAME_ASK_SCHEMA, effort="low",
+    ))
+    if found is None:
+        return False, None
+    return True, _reader.pick_frame(found, target) or _reader.fallback_question(target)
 
 
 # 締め切りのある読みで、**残りがこれより短ければ呼ばない。**呼んでも間に合わない

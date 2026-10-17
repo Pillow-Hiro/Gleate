@@ -318,6 +318,98 @@ def ground(raw, entries, target_ref=None):
     return kept, dropped
 
 
+# ## 記録を選んだときの問いは、型に言葉を埋めて作る（2026-10-18）
+#
+# 作者の記録27件で作った問いを、作者の代わりに厳しく採点した（○9 △8 ×10）。
+# ×の原因は、モデルが「深く見せよう」として、**書かれていないことを前提に置く**
+# （「他の言い方が浮かんでいた」「体が動かない感じ」）か、事実の再生（「どんな時間帯」）に
+# 落ちることだった。**検査役のモデルに「落とせ」と頼んでも通った。**
+# 引用が無い5件は、全部×だった。
+#
+# ○だった問いは形が決まっていた——記録の言葉を「」で引き、本人が思い浮かべられる
+# 場面・形・出どころを訊く。**そこで、問いの文はコードが作る。**モデルは「足がかりの言葉」と
+# 「型」を選ぶだけで、言葉が記録に本当にあるかはコードが確かめる。
+# 前提を置く文も、事実を訊く文も、作りようが無い。
+FRAMES = {
+    "scene": ("「{a}」と書いたとき、思い浮かんでいたのはどんな場面でしょう。",
+              "「{a}」と書いたその場面は、どんな様子だったでしょう。"),
+    "origin": ("「{a}」は、どんな場面から浮かんできたのでしょう。",),
+    "intent": ("「{a}」と書いたとき、思い描いていたのはどんな形でしょう。",
+               "「{a}」というとき、頭にあったのはどんな形でしょう。"),
+    "pair": ("「{a}」と「{b}」は、それぞれどんな場面だったでしょう。",),
+}
+
+_TRAILING = "。．.！!、,　 "
+
+
+def _phrase(raw, body):
+    """足がかりの言葉。**記録にそのままある、短い言葉だけ**を通す。通らなければ None"""
+    text = _strip_label(str(raw or "")).strip().strip(_TRAILING)
+    if not (2 <= len(_squash(text)) <= MAX_QUOTE_CHARS):
+        return None
+    if any(ch in text for ch in "「」\n。"):
+        return None
+    # 空白や全角半角の違いも許さない。**画面に出す引用は、記録の文字そのまま**にする
+    return text if text in body else None
+
+
+def _variant(variants, entry):
+    seed = sum(ord(c) for c in str(entry.get("id") or entry.get("date") or ""))
+    return variants[seed % len(variants)]
+
+
+def compose(frame, phrases, entry):
+    """型に言葉を埋めて、問いを作る。**型が決まっていれば、前提を置く文は作れない**"""
+    variants = FRAMES.get(frame)
+    if not variants:
+        return None
+    wanted = 2 if frame == "pair" else 1
+    if len(phrases) != wanted or (wanted == 2 and (
+            phrases[0] == phrases[1] or phrases[0] in phrases[1] or phrases[1] in phrases[0])):
+        return None
+    return _variant(variants, entry).format(a=phrases[0], b=phrases[-1])
+
+
+def pick_frame(found, entry):
+    """モデルの候補から、**先に並んだ有効なもの**を選ぶ。無ければ None"""
+    candidates = found.get("candidates") if isinstance(found, dict) else None
+    for cand in candidates or []:
+        if not isinstance(cand, dict) or not isinstance(cand.get("quotes"), list):
+            continue
+        phrases = [_phrase(q, entry["body"]) for q in cand["quotes"][:2]]
+        if None in phrases:
+            continue
+        question = compose(str(cand.get("frame") or ""), phrases, entry)
+        if question and is_question(question) and _sentences(question) == 1:
+            return {"question": question, "hint": None, "records": [entry]}
+    return None
+
+
+def fallback_question(entry):
+    """**黙らない**（作者「黙るのもダメ」）。モデルの候補が全部落ちたときは、記録を句読点と
+    空白で区切り、**いちばん長い（＝具体的な）ひとかたまり**を引いて場面を訊く。
+    モデルを呼ばないので、外れようがない。
+
+    最初のひとかたまりにすると「朝早く起きて」のような、いちばん薄い所を引いてしまう
+    （2026-10-18 に作者の27件で確かめた）。
+    """
+    best = None
+    for piece in re.split(r"[。、\n！!？?　 ]", entry["body"]):
+        phrase = _phrase(piece, entry["body"])
+        if phrase and (best is None or len(phrase) > len(best)):
+            best = phrase
+    if best is None:
+        # 区切りの無い長い一文（「アプリ開発でyoutubeの連携を実装しました」）は、助詞で切って
+        # 末尾の助詞を落とす（「youtubeの連携」）
+        for piece in re.split(r"(?<=[でをにがはと])", entry["body"]):
+            phrase = _phrase(piece.rstrip("でをにがはと"), entry["body"])
+            if phrase and (best is None or len(phrase) > len(best)):
+                best = phrase
+    if best is None:
+        return None
+    return {"question": compose("scene", [best], entry), "hint": None, "records": [entry]}
+
+
 def check_text(candidates, target=None):
     """確かめる側に渡す形。**きっかけの記録は全文で渡す**——引用だけだと、答えが書いてあるか分からない。
 
